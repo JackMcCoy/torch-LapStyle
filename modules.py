@@ -19,7 +19,7 @@ class ConvBlock(nn.Module):
     def __init__(self, dim1, dim2,noise=0):
         super(ConvBlock, self).__init__()
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        nn.Conv2d(dim1, dim2, (3, 3)),
+                                        nn.Conv2d(dim1, dim2, 3),
                                         nn.ReLU())
 
     def forward(self, x):
