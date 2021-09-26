@@ -14,8 +14,8 @@ decoder_1 = nn.Sequential(
     )),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(512, 256, kernel_size=3),
-    nn.ReLU(),
-)
+    nn.ReLU())
+
 decoder_2 = nn.Sequential(
     ResBlock(nn.Sequential(
         nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -25,18 +25,16 @@ decoder_2 = nn.Sequential(
     )),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(256, 128, kernel_size=3),
-    nn.ReLU(),
-
-)
+    nn.ReLU()
+    )
 decoder_3 = nn.Sequential(
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(128, 128, kernel_size=3),
     nn.ReLU(),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(128, 64, kernel_size=3),
-    nn.ReLU(),
-
-)
+    nn.ReLU()
+    )
 decoder_4 = nn.Sequential(
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(64, 64, kernel_size=3),
