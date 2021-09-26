@@ -2,27 +2,30 @@ import argparse
 from pathlib import Path
 
 import torch
-import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.utils.data as data
 from PIL import Image, ImageFile
 from tensorboardX import SummaryWriter
 from torchvision import transforms
 from tqdm import tqdm
-
+from torchvision.utils import save_image
+import re
+import math
 import net
 from sampler import InfiniteSamplerWrapper
+from functools import partial
+from collections import OrderedDict
+import numpy as np
 
-cudnn.benchmark = True
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-def train_transform():
+def train_transform(load_size, crop_size):
     transform_list = [
-        transforms.Resize(size=(512, 512)),
-        transforms.RandomCrop(256),
+        transforms.Resize(size=(load_size, load_size)),
+        transforms.RandomCrop(crop_size),
         transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
@@ -57,11 +60,14 @@ def adjust_learning_rate(optimizer, iteration_count):
 
 parser = argparse.ArgumentParser()
 # Basic options
+parser.add_argument('--train_model', type=str, default='drafting')
 parser.add_argument('--content_dir', type=str, required=True,
                     help='Directory path to a batch of content images')
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
 parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
+parser.add_argument('--load_size', type=int, default=128)
+parser.add_argument('--crop_size', type=int, default=128)
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -89,48 +95,63 @@ decoder = net.decoder
 vgg = net.vgg
 
 vgg.load_state_dict(torch.load(args.vgg))
-vgg = nn.Sequential(*list(vgg.children())[:31])
+vgg = nn.Sequential(*list(vgg.children()))
 network = net.Net(vgg, decoder)
 network.train()
 network.to(device)
 
-content_tf = train_transform()
-style_tf = train_transform()
+if args.train_model=='drafting':
 
-content_dataset = FlatFolderDataset(args.content_dir, content_tf)
-style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    network = net.Net(vgg, decoder_1,decoder_2,decoder_3,decoder_4,args.memory_save)
+    network.train()
+    network.to(device)
 
-content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
-    sampler=InfiniteSamplerWrapper(content_dataset),
-    num_workers=args.n_threads))
-style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size,
-    sampler=InfiniteSamplerWrapper(style_dataset),
-    num_workers=args.n_threads))
+    content_tf = train_transform()
+    style_tf = train_transform()
 
-optimizer = torch.optim.Adam(network.decoder.parameters(), lr=args.lr)
+    content_dataset = FlatFolderDataset(args.content_dir, content_tf)
+    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
-for i in tqdm(range(args.max_iter)):
-    adjust_learning_rate(optimizer, iteration_count=i)
-    content_images = next(content_iter).to(device)
-    style_images = next(style_iter).to(device)
-    loss_c, loss_s = network(content_images, style_images)
-    loss_c = args.content_weight * loss_c
-    loss_s = args.style_weight * loss_s
-    loss = loss_c + loss_s
+    content_iter = iter(data.DataLoader(
+        content_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(content_dataset),
+        num_workers=args.n_threads))
+    style_iter = iter(data.DataLoader(
+        style_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(style_dataset),
+        num_workers=args.n_threads))
 
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+    optimizer = torch.optim.Adam(list(network.decoder_1.parameters())+list(network.decoder_2.parameters())+list(network.decoder_3.parameters())+list(network.decoder_4.parameters()), lr=args.lr)
+    for i in tqdm(range(args.max_iter)):
+        adjust_learning_rate(optimizer, i,args)
+        content_images = next(content_iter).to(device)
+        style_images = next(style_iter).to(device)
+        y = network(content_images, style_images,losses=False)
+        optimizer.zero_grad()
+        losses = network.calc_losses(style_image=style_images,content_image=content_images)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2 = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                    l_identity1 * 50 + l_identity2 * 1 + loss_r * 10 + 16*loss_ss
+        loss.backward()
+        optimizer.step()
+        print(loss.item())
+        print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
 
-    writer.add_scalar('loss_content', loss_c.item(), i + 1)
-    writer.add_scalar('loss_style', loss_s.item(), i + 1)
+        writer.add_scalar('loss_content', loss_c.item(), i + 1)
+        writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
-    if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-        state_dict = net.decoder.state_dict()
-        for key in state_dict.keys():
-            state_dict[key] = state_dict[key].to(torch.device('cpu'))
-        torch.save(state_dict, save_dir /
-                   'decoder_iter_{:d}.pth.tar'.format(i + 1))
-writer.close()
+        if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+            print(loss)
+            state_dict = [net.decoder_1.state_dict(),net.decoder_2.state_dict(),net.decoder_3.state_dict(),net.decoder_4.state_dict()]
+            for idx,s_dict in enumerate(state_dict):
+                for key in state_dict[idx].keys():
+                    state_dict[idx][key] = state_dict[idx][key].to(torch.device('cpu'))
+            network.eval()
+            y = network(content_images, style_images,losses=False)
+            y = y.to('cpu')
+            for j in range(y.size()[0]):
+                save_image(y[j], 'output/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+            torch.save(state_dict, save_dir /
+                       'decoder_iter_{:d}.pth.tar'.format(i + 1))
+            network.train()
+    writer.close()
