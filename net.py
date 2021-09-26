@@ -122,7 +122,7 @@ class Discriminator(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder):
         super(Net, self).__init__()
         enc_layers = list(encoder.children())
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1

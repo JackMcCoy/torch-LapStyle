@@ -91,12 +91,11 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(log_dir=str(log_dir))
 
-decoder = net.decoder
 vgg = net.vgg
 
 vgg.load_state_dict(torch.load(args.vgg))
 vgg = nn.Sequential(*list(vgg.children()))
-network = net.Net(vgg, decoder)
+network = net.Net(vgg)
 network.train()
 network.to(device)
 
