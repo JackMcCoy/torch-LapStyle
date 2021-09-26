@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -101,14 +102,14 @@ class Discriminator(nn.Module):
         self.body = nn.Sequential()
         for i in range(depth - 2):
             self.body.add_sublayer(
-                nn.Conv2D(num_channel,
-                          num_channel,
+                nn.Conv2D(num_channels,
+                          num_channels,
                           kernel_size=3,
                           stride=1,
                           padding=1))
-            self.body.add_sublayer(nn.BatchNorm2D(num_channel))
+            self.body.add_sublayer(nn.BatchNorm2D(num_channels))
             self.body.add_sublayer(nn.LeakyReLU(0.2))
-        self.tail = nn.Conv2D(num_channel,
+        self.tail = nn.Conv2D(num_channels,
                               1,
                               kernel_size=3,
                               stride=1,
