@@ -124,7 +124,7 @@ if args.train_model=='drafting':
         style_images = next(style_iter).to(device)
         y = network(content_images, style_images,losses=False)
         optimizer.zero_grad()
-        losses = network.calc_losses(style_image=style_images,content_image=content_images)
+        losses = network.calc_losses(y,style_images,content_image=content_images)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2 = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + loss_r * 10 + 16*loss_ss
