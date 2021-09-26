@@ -206,13 +206,14 @@ class Net(nn.Module):
         g_t = self.decoder_4(g_t)
         return g_t
 
-    def forward(self, content, style, alpha=1.0):
+    def forward(self, content, style, alpha=1.0,losses=True):
         assert 0 <= alpha <= 1
-        sizes=[64,128,256,512]
-        if hasattr(self,'style_feats_fixed'):
-            self.style_feats=self.style_feats_fixed
-        else:
-            self.style_feats = self.encode_with_intermediate(style)
+        self.style_feats = self.encode_with_intermediate(style)
         self.content_feat = self.encode_with_intermediate(content)
-        g_t = self.decode(self.style_feats,self.content_feat)
-        return g_t
+        g_t = self.decode(self.content_feat,self.style_feats)
+        self.styled=g_t
+        if losses==True:
+            losses= self.calc_losses(content_image=content,style_image=style)
+            return g_t,losses
+        else:
+            return g_t
