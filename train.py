@@ -102,8 +102,8 @@ if args.train_model=='drafting':
     network.train()
     network.to(device)
 
-    content_tf = train_transform()
-    style_tf = train_transform()
+    content_tf = train_transform(args.load_size, args.crop_size)
+    style_tf = train_transform(args.load_size, args.crop_size)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
