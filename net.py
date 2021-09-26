@@ -6,23 +6,13 @@ from modules import ResBlock, ConvBlock
 from losses import CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 
 decoder_1 = nn.Sequential(
-    ResBlock(nn.Sequential(
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(512, 512, kernel_size=3),
-        nn.ReLU(),
-        nn.Conv2d(512, 512, kernel_size=1),
-    )),
+    ResBlock(512),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(512, 256, kernel_size=3),
     nn.ReLU())
 
 decoder_2 = nn.Sequential(
-    ResBlock(nn.Sequential(
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(256, 256, kernel_size=3),
-        nn.ReLU(),
-        nn.Conv2d(256, 256, kernel_size=1),
-    )),
+    ResBlock(256),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(256, 128, kernel_size=3),
     nn.ReLU()
