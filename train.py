@@ -95,13 +95,10 @@ vgg = net.vgg
 
 vgg.load_state_dict(torch.load(args.vgg))
 vgg = nn.Sequential(*list(vgg.children()))
-network = net.Net(vgg)
-network.train()
-network.to(device)
 
 if args.train_model=='drafting':
 
-    network = net.Net(vgg, decoder_1,decoder_2,decoder_3,decoder_4,args.memory_save)
+    network = net.Net(vgg)
     network.train()
     network.to(device)
 
