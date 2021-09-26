@@ -51,7 +51,7 @@ class FlatFolderDataset(data.Dataset):
         return 'FlatFolderDataset'
 
 
-def adjust_learning_rate(optimizer, iteration_count):
+def adjust_learning_rate(optimizer, iteration_count,args):
     """Imitating the original implementation"""
     lr = args.lr / (1.0 + args.lr_decay * iteration_count)
     for param_group in optimizer.param_groups:
