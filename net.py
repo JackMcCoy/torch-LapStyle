@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 
-#from gaussian_diff import xdog, make_gaussians
+from gaussian_diff import xdog, make_gaussians
 from typing import Dict
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -64,7 +64,7 @@ vgg = nn.Sequential(
     nn.ReLU()  # relu5-4
 )
 
-#gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
+gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 class Encoder(nn.Module):
     def __init__(self, vggs):
@@ -157,7 +157,7 @@ class Discriminator(nn.Module):
         return x
 
 
-mse_loss = nn.MSELoss()
+mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
 content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
@@ -186,5 +186,20 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
+    if mdog_losses:
+        cX,_ = xdog(self.ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        sX,_ = xdog(self.si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cXF = encoder(cX)
+        sXF = encoder(sX)
+        stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cdogF = encoder(stylized_dog)
+
+        mxdog_content = calc_content_loss(stylized_feats['r31'], cXF['r31'])+calc_content_loss(stylized_feats['r41'], cXF['r41'])
+        mxdog_content_contraint = calc_content_loss(cdogF['r31'], cXF['r31'])+calc_content_loss(cdogF['r41'], cXF['r41'])
+        mxdog_style = mse_loss(cdogF['r31'],sXF['r31']) + mse_loss(self.cdogF['r41'],sXF['r41'])
+        mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
+    else:
+        mxdog_losses = 0
+
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses
 

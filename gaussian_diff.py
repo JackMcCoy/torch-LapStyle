@@ -60,7 +60,7 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     for i in range(morphs):
         morphed=morph_conv(imdiff)
         morphed.stop_gradient=True
-        passedlow= paddle.multiply((imdiff>= exmean).float(),(morphed>= morph_cutoff).float())
+        passedlow= torch.multiply((imdiff>= exmean).float(),(morphed>= morph_cutoff).float())
     for i in range(morphs):
         passed = morph_conv(passedlow)
         passed= (passed>0).float()
