@@ -83,5 +83,5 @@ def make_gaussians(device):
     morph_conv = torch.nn.Conv2d(3, 3, 3, stride= 1, padding=1, groups=3,
                                            padding_mode='reflect', bias=False,
                                            )
-    morph_conv.weight = torch.nn.parameter.Parameter(torch.ones((1,3,3)).to(device),requires_grad=False)
+    morph_conv.weight = torch.nn.parameter.Parameter(torch.ones((1,1,3,3)).to(device),requires_grad=False)
     return gaussian_filter, gaussian_filter2, morph_conv
