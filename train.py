@@ -127,7 +127,6 @@ if args.train_model=='drafting':
         adjust_learning_rate(optimizer, i,args)
         content_images = next(content_iter).to(device)
         style_images = next(style_iter).to(device)
-        print(content_images[0])
         y = network(content_images, style_images,losses=False)
         optimizer.zero_grad()
         losses = network.calc_losses(y,style_image=style_images,content_image=content_images)
