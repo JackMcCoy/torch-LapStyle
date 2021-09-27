@@ -12,6 +12,7 @@ from torchvision.utils import save_image
 import re, os
 import math
 import net
+from function import init_weights
 from net import calc_losses
 from sampler import InfiniteSamplerWrapper
 from functools import partial
@@ -110,6 +111,7 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     dec_ = net.Decoder()
+    init_weights(dec_)
     dec_.train()
     enc_.to(device)
     dec_.to(device)

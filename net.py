@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+from gaussian_diff import xdog, make_gaussians
 from typing import Dict
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -62,6 +63,8 @@ vgg = nn.Sequential(
     nn.Conv2d(512, 512, kernel_size=3),
     nn.ReLU()  # relu5-4
 )
+
+gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 class Encoder(nn.Module):
     def __init__(self, vggs):
@@ -154,15 +157,13 @@ class Discriminator(nn.Module):
         return x
 
 
-
-
 mse_loss = nn.MSELoss()
 style_remd_loss = CalcStyleEmdLoss()
 content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, calc_mdog = True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         Icc = decoder(cF,cF)
@@ -184,6 +185,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True):
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+
+    if calc_mdog:
+
 
     return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
 

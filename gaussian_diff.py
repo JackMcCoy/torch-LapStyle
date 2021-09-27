@@ -4,7 +4,7 @@ def gaussian(kernel_size, sigma,channels=3):
     x_coord = torch.arange(kernel_size)
     x_grid = torch.expand(x_coord,(kernel_size,kernel_size))
     y_grid = x_grid.t()
-    xy_grid = paddle.stack([x_grid, y_grid], axis=-1)
+    xy_grid = torch.stack([x_grid, y_grid], axis=-1)
 
     mean = (kernel_size - 1) / 2.
     variance = sigma ** 2.
@@ -64,3 +64,25 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
         passed = morph_conv(passedlow)
         passed= (passed>0).float()
     return passed, [min,max,mean]
+
+def make_gaussians(device):
+    symm_gauss_1 = np.repeat(gaussian(11, 1).numpy(), 3, axis=0)
+    symm_gauss_2 = np.repeat(gaussian(21, 3).numpy(), 3, axis=0)
+    gaussian_filter = torch.nn.Conv2d(3, 3, 11,
+                            groups=3, bias=False,
+                            padding=5, padding_mode='reflect'
+                            ).to(device)
+    gaussian_filter.weight = torch.Tensor(symm_gauss_1).to(device)
+    gaussian_filter2 = torch.nn.Conv2d(3, 3, 21,
+                            groups=3, bias=False,
+                            padding=10, padding_mode='reflect'
+                            ).to(device)
+    gaussian_filter2.weight = torch.Tensor(symm_gauss_2).to(device)
+    gaussian_filter.requires_grad = False
+    gaussian_filter2.requires_grad = False
+    morph_conv = torch.nn.Conv2d(3, 3, 3, padding=1, groups=3,
+                                           padding_mode='reflect', bias=False,
+                                           )
+    morph_conv.weight = torch.ones((3,3)).to(device)
+    morph_conv.requires_grad = False
+    return gaussian_filter, gaussian_filter2, morph_conv
