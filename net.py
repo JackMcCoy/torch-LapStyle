@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 
-from gaussian_diff import xdog, make_gaussians
+#from gaussian_diff import xdog, make_gaussians
 from typing import Dict
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
@@ -64,7 +64,7 @@ vgg = nn.Sequential(
     nn.ReLU()  # relu5-4
 )
 
-gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
+#gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 class Encoder(nn.Module):
     def __init__(self, vggs):
