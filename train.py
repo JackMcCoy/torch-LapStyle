@@ -136,16 +136,33 @@ if args.train_model=='drafting':
         adjust_learning_rate(optimizer, i,args)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
-        cF = enc_(ci)
-        sF = enc_(si)
-        stylized = dec_(sF, cF)
-        optimizer.zero_grad()
+        cF = enc_(ci).detach()
+        sF = enc_(si).detach()
+        stylized = dec_(sF, cF).detach()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + loss_r * 16 + 10*loss_ss + mdog
-        loss.backward()
+        loss.backward().detach()
+        with torch.no_grad():
+            for p in dec_.gradients():
+                p.grad *= p.square()
+                p.grad *= 0.05
+                p.add_(p.grad)
+                p.prev_step = p.grad
+                p.grad = None
+        stylized = dec_(sF, cF).detach()
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight + \
+               l_identity1 * 50 + l_identity2 * 1 + loss_r * 16 + 10 * loss_ss + mdog
+        loss.backward().detach()
         optimizer.step()
+        with torch.no_grad():
+            for p in dec_.gradients():
+                p.sub_(p.prev_step)
+                p.prev_step = None
+                p.grad = None
         if (i + 1) % 10 == 0:
             print(loss.item())
             print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
