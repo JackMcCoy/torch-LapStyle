@@ -45,6 +45,7 @@ class CalcContentReltLoss():
     """
     def __init__(self):
         super(CalcContentReltLoss, self).__init__()
+        self.eps = 1e-13
 
     def __call__(self, pred, target):
         """Forward Function.
@@ -55,9 +56,9 @@ class CalcContentReltLoss():
         """
         dM = 1.
         Mx = calc_emd_loss(pred, pred)
-        Mx = Mx / Mx.sum(1, keepdim=True)
+        Mx = Mx / (Mx.sum(1, keepdim=True) + self.eps)
         My = calc_emd_loss(target, target)
-        My = My / My.sum(1, keepdim=True)
+        My = My / (My.sum(1, keepdim=True) + self.eps)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
