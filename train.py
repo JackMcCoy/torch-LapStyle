@@ -143,14 +143,17 @@ if args.train_model=='drafting':
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
+                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 25 + l_identity4 * .5 +\
                     loss_r * 16 + 10*loss_ss + mdog
         loss.backward()
         optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(loss.item())
-            print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} id1: {l_identity1.item():.3f}\
+            id2: {l_identity2.item():.3f} id3: {l_identity3.item():.3f} id4: {l_identity4.item():.3f} \
+            mdog: {mdog.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
