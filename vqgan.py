@@ -100,7 +100,7 @@ class VQGANLayers(nn.Module):
             mask = torch.bernoulli(self.pkeep * torch.ones(z_indices.shape,
                                                            device=z_indices.device))
             mask = mask.round().to(dtype=torch.int64)
-            r_indices = torch.randint_like(z_indices, 1024)
+            r_indices = torch.randint_like(z_indices, 32)
             a_indices = mask * z_indices + (1 - mask) * r_indices
         else:
             a_indices = z_indices
