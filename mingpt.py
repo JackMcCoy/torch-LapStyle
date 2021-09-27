@@ -129,7 +129,6 @@ class GPT(nn.Module):
         self.block_size = config.block_size
         self.apply(self._init_weights)
         self.config = config
-        logger.info("number of parameters: %e", sum(p.numel() for p in self.parameters()))
 
     def get_block_size(self):
         return self.block_size
@@ -229,7 +228,6 @@ class CodeGPT(nn.Module):
         self.block_size = config.block_size
         self.apply(self._init_weights)
         self.config = config
-        logger.info("number of parameters: %e", sum(p.numel() for p in self.parameters()))
 
     def get_block_size(self):
         return self.block_size
