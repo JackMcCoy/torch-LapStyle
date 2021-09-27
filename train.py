@@ -57,10 +57,8 @@ class FlatFolderDataset(data.Dataset):
         return 'FlatFolderDataset'
 
 def set_requires_grad(nets, requires_grad=False):
-    for net in nets:
-        if net is not None:
-            for param in net.parameters():
-                param.trainable = requires_grad
+    for param in nets.parameters():
+        param.trainable = requires_grad
 
 def adjust_learning_rate(optimizer, iteration_count,args):
     """Imitating the original implementation"""
