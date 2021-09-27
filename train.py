@@ -17,6 +17,8 @@ from functools import partial
 from collections import OrderedDict
 import numpy as np
 
+torch.autograd.set_detect_anomaly(True)
+
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
