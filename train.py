@@ -148,6 +148,10 @@ if args.train_model=='drafting':
         loss.backward()
         optimizer.step()
 
+        if (i + 1) % 10 == 0:
+            print(loss.item())
+            print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
+
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
