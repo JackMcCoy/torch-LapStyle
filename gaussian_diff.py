@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 def gaussian(kernel_size, sigma,channels=3):
     x_coord = torch.arange(kernel_size)
