@@ -135,7 +135,7 @@ if args.train_model=='drafting':
                     l_identity1 * 50 + l_identity2 * 1 + loss_r * 10 + 16*loss_ss
         loss.backward()
         optimizer.step()
-        if (1 + 1) % 10 == 0:
+        if (i + 1) % 10 == 0:
             print(loss.item())
             print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
 
