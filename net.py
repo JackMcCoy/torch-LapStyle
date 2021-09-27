@@ -76,18 +76,19 @@ class Encoder(nn.Module):
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
         self.enc_5 = nn.Sequential(*enc_layers[31:])
 
-    def forward(self, x):
+    def forward(self, x, detach_all=False):
         encodings = {}
+        detach_if_true = lambda x: x if detach_all == False else x.detach()
         x = self.enc_1(x)
-        encodings['r1_1'] = x
+        encodings['r1_1'] = detach_if_true(x)
         x = self.enc_2(x)
-        encodings['r2_1'] = x
+        encodings['r2_1'] = detach_if_true(x)
         x = self.enc_3(x)
-        encodings['r3_1'] = x
+        encodings['r3_1'] = detach_if_true(x)
         x = self.enc_4(x)
-        encodings['r4_1'] = x
+        encodings['r4_1'] = detach_if_true(x)
         x = self.enc_5(x)
-        encodings['r5_1'] = x
+        encodings['r5_1'] = detach_if_true(x)
         return encodings
 
 class Decoder(nn.Module):
