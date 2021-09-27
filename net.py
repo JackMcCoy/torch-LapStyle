@@ -63,8 +63,8 @@ vgg = nn.Sequential(
 )
 
 class Encoder(nn.Module):
-    def __init__(self,encoder):
-        super(Encoder,(self).__init__())
+    def __init__(self, encoder):
+        super(Encoder,(self)).__init__()
         enc_layers = list(encoder.children())
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
