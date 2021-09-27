@@ -163,7 +163,7 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, calc_mdog = True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, mdog_losses = True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         Icc = decoder(cF,cF)
