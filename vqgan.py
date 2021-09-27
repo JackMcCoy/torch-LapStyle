@@ -87,9 +87,9 @@ class VQGANLayers(nn.Module):
         self.context_mod = self.context_mod[:32]
         self.z_mod = self.z_mod[:32]
 
-        self.quantize_4_z = VectorQuantize(18, 128)
-        self.quantize_4_s = VectorQuantize(18, 128)
-        self.transformer_4 = GPT(1024, 512, 24, 16, 1024)
+        self.quantize_4_z = VectorQuantize(18, 640)
+        self.quantize_4_s = VectorQuantize(18, 640)
+        self.transformer_4 = GPT(640, 512, 24, 16, 640)
 
     def forward(self, ci, si, training=True):
         zF = self.z_mod(ci)
