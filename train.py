@@ -152,7 +152,7 @@ if args.train_model=='drafting':
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
         if (i + 1) % 100 == 0:
-            y = y.to('cpu')
+            stylized = stylized.to('cpu')
             for j in range(1):
                 save_image(stylized[j], args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
 
