@@ -7,62 +7,8 @@ from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
-
-vgg = nn.Sequential(
-    nn.Conv2d(3, 3, kernel_size=1),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(3, 64, kernel_size=3),
-    nn.ReLU(),  # relu1-1
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(64, 64, kernel_size=3),
-    nn.ReLU(),  # relu1-2
-    nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(64, 128, kernel_size=3),
-    nn.ReLU(),  # relu2-1
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(128, 128, kernel_size=3),
-    nn.ReLU(),  # relu2-2
-    nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(128, 256, kernel_size=3),
-    nn.ReLU(),  # relu3-1
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(256, 256, kernel_size=3),
-    nn.ReLU(),  # relu3-2
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(256, 256, kernel_size=3),
-    nn.ReLU(),  # relu3-3
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(256, 256, kernel_size=3),
-    nn.ReLU(),  # relu3-4
-    nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(256, 512, kernel_size=3),
-    nn.ReLU(),  # relu4-1, this is the last layer used
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu4-2
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu4-3
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu4-4
-    nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu5-1
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu5-2
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU(),  # relu5-3
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 512, kernel_size=3),
-    nn.ReLU()  # relu5-4
-)
+from vgg import vgg
+from vqgan import VQGANLayers
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -145,6 +91,62 @@ class Decoder(nn.Module):
         t = self.upsample(t)
         t = self.decoder_4(t)
         return t
+
+class DecoderVQGAN(nn.Module):
+    def __init__(self, vgg_path):
+        super(Decoder, self).__init__()
+        self.vqgan = VQGANLayers(vgg_path)
+        self.decoder_1 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512,256))
+
+        self.decoder_2 = nn.Sequential(
+            ResBlock(256),
+            ConvBlock(256,128)
+            )
+        self.decoder_3 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 64)
+            )
+        self.decoder_4 = nn.Sequential(
+            ConvBlock(64, 64),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 3, kernel_size=3)
+        )
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+    @torch.no_grad()
+    def _clip_gradient(self):
+        for p in self.gradients():
+            g_norm = p.grad.norm(2, 0, True).clamp(min=1e-6)
+            p_norm = p.norm(2, 0, True).clamp(min=1e-3)
+            grad_scale = (p_norm / g_norm * 0.01).clamp(max=1)
+            p.grad.data.copy_(p.grad * grad_scale)
+
+    @torch.no_grad()
+    def zero_grad(self):
+        for p in self.parameters():
+            p.grad = None
+
+    @torch.no_grad()
+    def gradients(self):
+        for p in self.parameters():
+            if p.grad is None:
+                continue
+            yield p
+
+    def forward(self, sF, cF, ci, si):
+        t, l = self.vqgan(ci, si)
+        t = self.decoder_1(t)
+        t = self.upsample(t)
+        t += adain(cF['r3_1'], sF['r3_1'])
+        t = self.decoder_2(t)
+        t = self.upsample(t)
+        t += adain(cF['r2_1'], sF['r2_1'])
+        t = self.decoder_3(t)
+        t = self.upsample(t)
+        t = self.decoder_4(t)
+        return t, l
 
 
 class Discriminator(nn.Module):
