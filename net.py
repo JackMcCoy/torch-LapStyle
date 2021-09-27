@@ -168,7 +168,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True):
         Icc = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
-        l_identity_2 = 0
+        l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
     else:
