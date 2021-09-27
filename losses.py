@@ -17,9 +17,9 @@ class CalcStyleEmdLoss():
         CX_M = calc_emd_loss(pred, target)
         m1, _ = CX_M.min(2)
         m2, _ = CX_M.min(1)
-        m1mean=m1.mean(0,keepdim=True)
-        m2mean=m2.mean(0,keepdim=True)
-        loss_remd = torch.max(m1mean,m2mean)
+        m1_mean = m1.mean()
+        m2_mean = m2.mean()
+        loss_remd = torch.maximum(m1_mean,m2_mean)
         return loss_remd
 
 def calc_emd_loss(pred, target):
