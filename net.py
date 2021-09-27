@@ -163,7 +163,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True):
-    stylized_feats = self.encode_with_intermediate(stylized)
+    stylized_feats = encoder(stylized)
     if calc_identity==True:
         Icc = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
