@@ -186,8 +186,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
-    if calc_mdog:
-
-
     return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
 
