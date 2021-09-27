@@ -74,7 +74,7 @@ class VectorQuantize(nn.Module):
 
 class VQGANLayers(nn.Module):
     def __init__(self, vgg_state_dict):
-        super(VQGAN, self).__init__()
+        super(VQGANLayers, self).__init__()
 
         self.context_mod = vgg
         self.z_mod = vgg
