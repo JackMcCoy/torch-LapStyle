@@ -129,7 +129,7 @@ if args.train_model=='drafting':
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
 
-    optimizer = torch.optim.Adam(dec_.parameters, lr=args.lr)
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i,args)
         ci = next(content_iter).to(device)
