@@ -106,6 +106,4 @@ def init_weights(net,
             torch.nn.init.normal_(m.weight, 1.0, init_gain)
             torch.nn.init.constant_(m.bias, 0.0)
 
-    logger = get_logger()
-    logger.debug('initialize network with %s' % init_type)
     net.apply(init_func)
