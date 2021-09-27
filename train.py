@@ -156,8 +156,6 @@ if args.train_model=='drafting':
             network.eval()
             y = network(content_images, style_images,losses=False)
             y = y.to('cpu')
-            for j in range(y.size()[0]):
-                save_image(y[j], 'output/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
             torch.save(state_dict, save_dir /
                        'decoder_iter_{:d}.pth.tar'.format(i + 1))
             network.train()
