@@ -187,8 +187,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
     if mdog_losses:
-        cX,_ = xdog(self.ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-        sX,_ = xdog(self.si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cXF = encoder(cX)
         sXF = encoder(sX)
         stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
@@ -196,7 +196,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
 
         mxdog_content = calc_content_loss(stylized_feats['r31'], cXF['r31'])+calc_content_loss(stylized_feats['r41'], cXF['r41'])
         mxdog_content_contraint = calc_content_loss(cdogF['r31'], cXF['r31'])+calc_content_loss(cdogF['r41'], cXF['r41'])
-        mxdog_style = mse_loss(cdogF['r31'],sXF['r31']) + mse_loss(self.cdogF['r41'],sXF['r41'])
+        mxdog_style = mse_loss(cdogF['r31'],sXF['r31']) + mse_loss(cdogF['r41'],sXF['r41'])
         mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
     else:
         mxdog_losses = 0
