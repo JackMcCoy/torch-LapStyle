@@ -146,31 +146,7 @@ if args.train_model=='drafting':
                     l_identity1 * 50 + l_identity2 * 1 + l_identity1 * 50 + l_identity2 * 1 +\
                     loss_r * 16 + 10*loss_ss + mdog
         loss.backward()
-        loss.detach()
-        with torch.no_grad():
-            for p in dec_.gradients():
-                p.grad *= p.square()
-                p.grad *= 0.05
-                p.add_(p.grad)
-                p.prev_step = p.grad
-                p.grad = None
-        stylized = dec_(sF, cF).detach()
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog = losses
-        loss = loss_c * args.content_weight + loss_s * args.style_weight + \
-               l_identity1 * 50 + l_identity2 * 1 + l_identity1 * 50 + l_identity2 * 1 + \
-               loss_r * 16 + 10 * loss_ss + mdog
-        loss.backward()
-        loss.detach()
         optimizer.step()
-        with torch.no_grad():
-            for p in dec_.gradients():
-                p.sub_(p.prev_step)
-                p.prev_step = None
-                p.grad = None
-        if (i + 1) % 10 == 0:
-            print(loss.item())
-            print('c: '+str(loss_c.item())+ ' s: '+str( loss_s.item())+ ' r: '+str( loss_r.item())+ ' ss: '+str( loss_ss.item())+' id1: '+ str( l_identity1.item())+ ' id2: '+str( l_identity2.item()))
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
