@@ -12,6 +12,7 @@ from torchvision.utils import save_image
 import re, os
 import math
 import net
+from net import calc_losses
 from sampler import InfiniteSamplerWrapper
 from functools import partial
 from collections import OrderedDict
@@ -55,6 +56,11 @@ class FlatFolderDataset(data.Dataset):
     def name(self):
         return 'FlatFolderDataset'
 
+def set_requires_grad(nets, requires_grad=False):
+    for net in nets:
+        if net is not None:
+            for param in net.parameters():
+                param.trainable = requires_grad
 
 def adjust_learning_rate(optimizer, iteration_count,args):
     """Imitating the original implementation"""
@@ -103,9 +109,12 @@ vgg = nn.Sequential(*list(vgg.children()))
 
 if args.train_model=='drafting':
 
-    network = net.Net(vgg)
-    network.train()
-    network.to(device)
+    enc_ = net.Encoder(vgg)
+    set_requires_grad(enc_, False)
+    dec_ = net.Decoder()
+    dec_.train()
+    enc_.to(device)
+    dec_.to(device)
 
     content_tf = train_transform(args.load_size, args.crop_size)
     style_tf = train_transform(args.load_size, args.crop_size)
@@ -122,14 +131,16 @@ if args.train_model=='drafting':
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
 
-    optimizer = torch.optim.Adam(list(network.decoder_1.parameters())+list(network.decoder_2.parameters())+list(network.decoder_3.parameters())+list(network.decoder_4.parameters()), lr=args.lr)
+    optimizer = torch.optim.Adam(dec_.parameters, lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i,args)
-        content_images = next(content_iter).to(device)
-        style_images = next(style_iter).to(device)
-        y = network(content_images, style_images,losses=False)
+        ci = next(content_iter).to(device)
+        si = next(style_iter).to(device)
+        cF = enc_(ci)
+        sF = enc_(si)
+        stylized = dec(sF, cF)
         optimizer.zero_grad()
-        losses = network.calc_losses(y,style_image=style_images,content_image=content_images)
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2 = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + loss_r * 16 + 10*loss_ss
@@ -145,18 +156,14 @@ if args.train_model=='drafting':
         if (i + 1) % 100 == 0:
             y = y.to('cpu')
             for j in range(1):
-                save_image(y[j], args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                save_image(stylized[j], args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
 
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(loss)
-            state_dict = [net.decoder_1.state_dict(),net.decoder_2.state_dict(),net.decoder_3.state_dict(),net.decoder_4.state_dict()]
+            state_dict = dec_.state_dict()
             for idx,s_dict in enumerate(state_dict):
                 for key in state_dict[idx].keys():
                     state_dict[idx][key] = state_dict[idx][key].to(torch.device('cpu'))
-            network.eval()
-            y = network(content_images, style_images,losses=False)
-            y = y.to('cpu')
             torch.save(state_dict, save_dir /
                        'decoder_iter_{:d}.pth.tar'.format(i + 1))
-            network.train()
     writer.close()

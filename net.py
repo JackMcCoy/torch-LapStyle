@@ -6,35 +6,6 @@ from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 
-decoder_1 = nn.Sequential(
-    ResBlock(512),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(512, 256, kernel_size=3),
-    nn.ReLU())
-
-decoder_2 = nn.Sequential(
-    ResBlock(256),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(256, 128, kernel_size=3),
-    nn.ReLU()
-    )
-decoder_3 = nn.Sequential(
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(128, 128, kernel_size=3),
-    nn.ReLU(),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(128, 64, kernel_size=3),
-    nn.ReLU()
-    )
-decoder_4 = nn.Sequential(
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(64, 64, kernel_size=3),
-    nn.ReLU(),
-    nn.Upsample(scale_factor=2, mode='nearest'),
-    nn.ReflectionPad2d((1, 1, 1, 1)),
-    nn.Conv2d(64, 3, kernel_size=3),
-)
-
 vgg = nn.Sequential(
     nn.Conv2d(3, 3, kernel_size=1),
     nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -91,6 +62,66 @@ vgg = nn.Sequential(
     nn.ReLU()  # relu5-4
 )
 
+class Encoder(nn.Module):
+    def __init__(self,encoder):
+        super(Encoder,(self).__init__())
+        enc_layers = list(encoder.children())
+        self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
+        self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
+        self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
+        self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+        self.enc_5 = nn.Sequential(*enc_layers[31:])
+
+    def forward(self, x):
+        encodings = {}
+        x = self.enc_1(x)
+        encodings['r1_1'] = x
+        x = self.enc_2
+        encodings['r2_1'] = x
+        x = self.enc_3
+        encodings['r3_1'] = x
+        x = self.enc_4
+        encodings['r4_1'] = x
+        x = self.enc_5
+        encodings['r5_1'] = x
+        return x
+
+class Decoder(nn.Module):
+    def __init__(self):
+        super(Decoder, self).__init__()
+        self.decoder_1 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512,256))
+
+        self.decoder_2 = nn.Sequential(
+            ResBlock(256),
+            ConvBlock(256,128)
+            )
+        self.decoder_3 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 64)
+            )
+        self.decoder_4 = nn.Sequential(
+            ConvBlock(64, 64),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2D(64, 3, kernel_size=3)
+        )
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+    def forward(self, sF, cF):
+        t = adain(cF['r4_1'], sF['r4_1'])
+        t = self.decoder_1(t)
+        t = self.upsample(t)
+        t += adain(cF['r3_1'], sF['r3_1'])
+        t = self.decoder_2(t)
+        t = self.upsample(t)
+        t += adain(cF['r2_1'], sF['r2_1'])
+        t = self.decoder_3(t)
+        t = self.upsample(t)
+        t = self.decoder_4(t)
+        return t
+
+
 class Discriminator(nn.Module):
     def __init__(self, depth, num_channels):
         super(Discriminator, self).__init__()
@@ -122,101 +153,36 @@ class Discriminator(nn.Module):
         return x
 
 
-class Net(nn.Module):
-    def __init__(self, encoder):
-        super(Net, self).__init__()
-        enc_layers = list(encoder.children())
-        self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
-        self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
-        self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
-        self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        self.enc_5 = nn.Sequential(*enc_layers[31:])
-        self.decoder_1 = decoder_1
-        self.decoder_2 = decoder_2
-        self.decoder_3 = decoder_3
-        self.decoder_4 = decoder_4
 
-        self.mse_loss = nn.MSELoss()
-        self.style_remd_loss = CalcStyleEmdLoss()
-        self.content_emd_loss = CalcContentReltLoss()
-        self.content_loss = CalcContentLoss()
-        self.style_loss = CalcStyleLoss()
 
-        # fix the encoder
-        for name in ['enc_1', 'enc_2', 'enc_3', 'enc_4', 'enc_5']:
-            for param in getattr(self, name).parameters():
-                param.requires_grad = False
+mse_loss = nn.MSELoss()
+style_remd_loss = CalcStyleEmdLoss()
+content_emd_loss = CalcContentReltLoss()
+content_loss = CalcContentLoss()
+style_loss = CalcStyleLoss()
 
-    def fix_decoder(self):
-        for name in ['decoder_1', 'decoder_2', 'decoder_3', 'decoder_4']:
-            for param in getattr(self, name).parameters():
-                param.requires_grad = False
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True):
+    stylized_feats = self.encode_with_intermediate(stylized)
+    if calc_identity==True:
+        Icc = decoder(cF,cF)
+        l_identity1 = content_loss(Icc, ci)
+        Fcc = encoder(Icc)
+        l_identity_2 = 0
+        for key in cF.keys():
+            l_identity2 += content_loss(Fcc[key], cF[key])
+    else:
+        l_identity1 = None
+        l_identity2 = None
+    loss_c = 0
+    for key in cF.keys():
+        loss_c += content_loss(stylized_feats[key], cF[key],norm=True)
+    loss_s = 0
+    for key in sF.keys():
+        loss_s += style_loss(stylized_feats[key], sF[key])
+    loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+        content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+    remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+        style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
-    # extract relu1_1, relu2_1, relu3_1, relu4_1 from input image
-    def encode_with_intermediate(self, input):
-        results = [input]
-        for i in range(5):
-            func = getattr(self, 'enc_{:d}'.format(i + 1))
-            results.append(func(results[-1]))
-        return results[1:]
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
 
-    def calc_losses(self,g_t,content_image=None,style_image=None,calc_identity=True):
-        g_t_feats = self.encode_with_intermediate(g_t)
-        if calc_identity==True:
-            Icc = self.decode(self.content_feat,self.content_feat)
-            l_identity1 = self.content_loss(Icc, content_image)
-            Fcc = self.encode_with_intermediate(Icc)
-            l_identity2 = self.content_loss(Fcc[0], self.content_feat[0])
-        else:
-            l_identity1 = None
-            l_identity2 = None
-        loss_c = self.content_loss(g_t_feats[0], self.content_feat[0],norm=True)
-        loss_s = self.style_loss(g_t_feats[0], self.style_feats[0])
-        loss_ss = self.content_emd_loss(g_t_feats[2], self.content_feat[2])
-        loss_ss += self.content_emd_loss(g_t_feats[3], self.content_feat[3])
-        remd_loss = self.style_remd_loss(g_t_feats[2],self.style_feats[2])
-        remd_loss += self.style_remd_loss(g_t_feats[3],self.style_feats[3])
-        for i in range(1,5):
-            loss_s += self.style_loss(g_t_feats[i], self.style_feats[i])
-            loss_c += self.content_loss(g_t_feats[i], self.content_feat[i],norm=True)
-            if calc_identity==True:
-                l_identity2 += self.content_loss(Fcc[i], self.content_feat[i])
-        return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
-
-    # extract relu4_1 from input image
-    def encode(self, input):
-        for i in range(5):
-            input = getattr(self, 'enc_{:d}'.format(i + 1))(input)
-        return input
-
-    def decode(self, content_feat,style_feats,alpha=1):
-        t = adain(content_feat[-2], style_feats[-2])
-        t = alpha * t + (1 - alpha) * content_feat[-2]
-        g_t = self.decoder_1(t)
-        m = nn.Upsample(scale_factor=2, mode='nearest')
-        g_t = m(g_t)
-        #t_2 = UPSCALE CONTENT FEAT!
-        t = adain(content_feat[-3], style_feats[-3])
-        t = alpha * t + (1 - alpha) * content_feat[-3]
-
-        t = torch.add(g_t,t)
-        g_t = self.decoder_2(t)
-        t = adain(content_feat[-4], style_feats[-4])
-        t = alpha * t + (1 - alpha) * content_feat[-4]
-        g_t = m(g_t)
-        t = torch.add(g_t,t)
-        g_t = self.decoder_3(t)
-        g_t = self.decoder_4(g_t)
-        return g_t
-
-    def forward(self, content, style, alpha=1.0,losses=True):
-        assert 0 <= alpha <= 1
-        self.style_feats = self.encode_with_intermediate(style)
-        self.content_feat = self.encode_with_intermediate(content)
-        g_t = self.decode(self.content_feat,self.style_feats)
-        self.styled=g_t
-        if losses==True:
-            losses= self.calc_losses(content_image=content,style_image=style)
-            return g_t,losses
-        else:
-            return g_t
