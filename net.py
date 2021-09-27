@@ -193,9 +193,18 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
+
+        Iss = decoder(sF, sF)
+        l_identity3 = content_loss(Iss, si)
+        Fss = encoder(Iss)
+        l_identity4 = 0
+        for key in cF.keys():
+            l_identity4 += content_loss(Fss[key], sF[key])
     else:
         l_identity1 = None
         l_identity2 = None
+        l_identity3 = None
+        l_identity4 = None
     loss_c = 0
     for key in cF.keys():
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True)
@@ -222,5 +231,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     else:
         mxdog_losses = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses
 
