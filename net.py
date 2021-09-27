@@ -104,7 +104,7 @@ class Decoder(nn.Module):
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2D(64, 3, kernel_size=3)
+            nn.Conv2d(64, 3, kernel_size=3)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
