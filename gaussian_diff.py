@@ -3,7 +3,7 @@ import numpy as np
 
 def gaussian(kernel_size, sigma,channels=3):
     x_coord = torch.arange(kernel_size)
-    x_grid = torch.expand(x_coord,(kernel_size,kernel_size))
+    x_grid = x_coord.expand((kernel_size,kernel_size))
     y_grid = x_grid.t()
     xy_grid = torch.stack([x_grid, y_grid], axis=-1)
 
