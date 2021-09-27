@@ -109,6 +109,7 @@ class Decoder(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
+        print(cF)
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
