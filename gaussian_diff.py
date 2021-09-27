@@ -74,12 +74,12 @@ def make_gaussians(device):
                             groups=3, bias=False,
                             padding=5, padding_mode='reflect'
                             ).to(device)
-    gaussian_filter.weight = torch.nn.Parameter(symm_gauss_1,requires_grad=False).to(device)
+    gaussian_filter.weight = torch.nn.Parameter(torch.Tensor(symm_gauss_1),requires_grad=False).to(device)
     gaussian_filter2 = torch.nn.Conv2d(3, 3, 21,
                             groups=3, bias=False,
                             padding=10, padding_mode='reflect'
                             ).to(device)
-    gaussian_filter2.weight = torch.nn.Parameter(symm_gauss_2,requires_grad=False).to(device)
+    gaussian_filter2.weight = torch.nn.Parameter(torch.Tensor(symm_gauss_2),requires_grad=False).to(device)
     morph_conv = torch.nn.Conv2d(3, 3, 3, padding=1, groups=3,
                                            padding_mode='reflect', bias=False,
                                            )
