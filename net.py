@@ -187,6 +187,7 @@ class Net(nn.Module):
     # extract relu4_1 from input image
     def encode(self, input):
         for i in range(1,5):
+            print(i)
             input = getattr(self, 'enc_{:d}'.format(i + 1))(input)
         return input
 
