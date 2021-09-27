@@ -121,6 +121,18 @@ class Decoder(nn.Module):
             grad_scale = (p_norm / g_norm * 0.01).clamp(max=1)
             p.grad.data.copy_(p.grad * grad_scale)
 
+    @torch.no_grad()
+    def zero_grad(self):
+        for p in self.parameters():
+            p.grad = None
+
+    @torch.no_grad()
+    def gradients(self):
+        for p in self.parameters():
+            if p.grad is None:
+                continue
+            yield p
+
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
