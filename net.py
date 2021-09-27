@@ -155,7 +155,7 @@ class Net(nn.Module):
     # extract relu1_1, relu2_1, relu3_1, relu4_1 from input image
     def encode_with_intermediate(self, input):
         results = [input]
-        for i in range(5):
+        for i in range(1,6):
             func = getattr(self, 'enc_{:d}'.format(i + 1))
             results.append(func(results[-1]))
         return results[1:]
@@ -185,7 +185,7 @@ class Net(nn.Module):
 
     # extract relu4_1 from input image
     def encode(self, input):
-        for i in range(4):
+        for i in range(1,5):
             input = getattr(self, 'enc_{:d}'.format(i + 1))(input)
         return input
 
