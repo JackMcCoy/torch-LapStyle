@@ -144,6 +144,8 @@ class GPT(nn.Module):
 
     def forward(self, idx, embeddings=None, targets=None):
         # forward the GPT model
+        print(idx.shape)
+        print(idx)
         token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
 
         if embeddings is not None: # prepend explicit embeddings
