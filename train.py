@@ -141,6 +141,11 @@ if args.train_model=='drafting':
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
+        if (i + 1) % 100 = 0:
+            y = y.to('cpu')
+            for j in range(y.size()[0]):
+                save_image(y[j], save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(loss)
             state_dict = [net.decoder_1.state_dict(),net.decoder_2.state_dict(),net.decoder_3.state_dict(),net.decoder_4.state_dict()]
