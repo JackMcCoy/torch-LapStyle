@@ -139,6 +139,8 @@ class Net(nn.Module):
         self.mse_loss = nn.MSELoss()
         self.style_remd_loss = CalcStyleEmdLoss()
         self.content_emd_loss = CalcContentReltLoss()
+        self.content_loss = CalcContentLoss()
+        self.style_loss = CalcStyleLoss()
 
         # fix the encoder
         for name in ['enc_1', 'enc_2', 'enc_3', 'enc_4', 'enc_5']:
@@ -162,23 +164,23 @@ class Net(nn.Module):
         g_t_feats = self.encode_with_intermediate(g_t)
         if calc_identity==True:
             Icc = self.decode(self.content_feat,self.content_feat)
-            l_identity1 = CalcContentLoss(Icc, content_image)
+            l_identity1 = self.content_loss(Icc, content_image)
             Fcc = self.encode_with_intermediate(Icc)
-            l_identity2 = CalcContentLoss(Fcc[0], self.content_feat[0])
+            l_identity2 = self.content_loss(Fcc[0], self.content_feat[0])
         else:
             l_identity1 = None
             l_identity2 = None
-        loss_c = CalcContentLoss(g_t_feats[0], self.content_feat[0],norm=True)
-        loss_s = CalcStyleLoss(g_t_feats[0], self.style_feats[0])
-        loss_ss = CalcContentReltLoss(g_t_feats[2], self.content_feat[2])
-        loss_ss += CalcContentReltLoss(g_t_feats[3], self.content_feat[3])
-        remd_loss = CalcStyleEmdLoss(g_t_feats[2],self.style_feats[2])
-        remd_loss += CalcStyleEmdLoss(g_t_feats[3],self.style_feats[3])
+        loss_c = self.content_loss(g_t_feats[0], self.content_feat[0],norm=True)
+        loss_s = self.style_loss(g_t_feats[0], self.style_feats[0])
+        loss_ss = self.content_emd_loss(g_t_feats[2], self.content_feat[2])
+        loss_ss += self.content_emd_loss(g_t_feats[3], self.content_feat[3])
+        remd_loss = self.style_remd_loss(g_t_feats[2],self.style_feats[2])
+        remd_loss += self.style_remd_loss(g_t_feats[3],self.style_feats[3])
         for i in range(1, 6):
-            loss_s += CalcStyleLoss(g_t_feats[i], self.style_feats[i])
-            loss_c += CalcContentLoss(g_t_feats[i], self.content_feat[i],norm=True)
+            loss_s += self.style_loss(g_t_feats[i], self.style_feats[i])
+            loss_c += self.content_loss(g_t_feats[i], self.content_feat[i],norm=True)
             if calc_identity==True:
-                l_identity2 += CalcContentLoss(Fcc[i], self.content_feat[i])
+                l_identity2 += self.content_loss(Fcc[i], self.content_feat[i])
         return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2
 
     # extract relu4_1 from input image
