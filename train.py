@@ -143,7 +143,8 @@ if args.train_model=='drafting':
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + loss_r * 16 + 10*loss_ss + mdog
-        loss.backward().detach()
+        loss.backward()
+        loss.detach()
         with torch.no_grad():
             for p in dec_.gradients():
                 p.grad *= p.square()
@@ -156,7 +157,8 @@ if args.train_model=='drafting':
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight + \
                l_identity1 * 50 + l_identity2 * 1 + loss_r * 16 + 10 * loss_ss + mdog
-        loss.backward().detach()
+        loss.backward()
+        loss.detach()
         optimizer.step()
         with torch.no_grad():
             for p in dec_.gradients():
