@@ -71,16 +71,16 @@ def make_gaussians(device):
     symm_gauss_1 = np.repeat(gaussian(11, 1).numpy(), 3, axis=0)
     symm_gauss_2 = np.repeat(gaussian(21, 3).numpy(), 3, axis=0)
     gaussian_filter = torch.nn.Conv2d(3, 3, 11,
-                            groups=3, bias=False,
+                            groups=3, bias=False, stride=1,
                             padding=5, padding_mode='reflect'
                             ).to(device)
     gaussian_filter.weight = torch.nn.parameter.Parameter(torch.Tensor(symm_gauss_1).to(device),requires_grad=False)
     gaussian_filter2 = torch.nn.Conv2d(3, 3, 21,
-                            groups=3, bias=False,
+                            groups=3, bias=False, stride = 1,
                             padding=10, padding_mode='reflect'
                             ).to(device)
     gaussian_filter2.weight = torch.nn.parameter.Parameter(torch.Tensor(symm_gauss_2).to(device),requires_grad=False)
-    morph_conv = torch.nn.Conv2d(3, 3, 3, padding=1, groups=3,
+    morph_conv = torch.nn.Conv2d(3, 3, 3, stride= 1, padding=1, groups=3,
                                            padding_mode='reflect', bias=False,
                                            )
     morph_conv.weight = torch.nn.parameter.Parameter(torch.ones((1,3,3)).to(device),requires_grad=False)
