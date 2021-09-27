@@ -96,6 +96,7 @@ class DecoderVQGAN(nn.Module):
     def __init__(self, vgg_path):
         super(DecoderVQGAN, self).__init__()
         self.vqgan = VQGANLayers(vgg_path)
+        self.vqgan.training = True
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
