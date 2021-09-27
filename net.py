@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+from typing import Dict
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 from modules import ResBlock, ConvBlock
@@ -73,7 +74,7 @@ class Encoder(nn.Module):
         self.enc_5 = nn.Sequential(*enc_layers[31:])
 
     def forward(self, x):
-        encodings = {}
+        encodings: Dict[torch.Tensor] = {}
         x = self.enc_1(x)
         encodings['r1_1'] = x
         x = self.enc_2
