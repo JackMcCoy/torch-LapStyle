@@ -155,7 +155,7 @@ class Net(nn.Module):
     # extract relu1_1, relu2_1, relu3_1, relu4_1 from input image
     def encode_with_intermediate(self, input):
         results = [input]
-        for i in range(6):
+        for i in range(5):
             func = getattr(self, 'enc_{:d}'.format(i + 1))
             results.append(func(results[-1]))
         return results[1:]
@@ -176,7 +176,7 @@ class Net(nn.Module):
         loss_ss += self.content_emd_loss(g_t_feats[3], self.content_feat[3])
         remd_loss = self.style_remd_loss(g_t_feats[2],self.style_feats[2])
         remd_loss += self.style_remd_loss(g_t_feats[3],self.style_feats[3])
-        for i in range(1, 6):
+        for i in range(1,5):
             loss_s += self.style_loss(g_t_feats[i], self.style_feats[i])
             loss_c += self.content_loss(g_t_feats[i], self.content_feat[i],norm=True)
             if calc_identity==True:
