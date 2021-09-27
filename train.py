@@ -9,7 +9,7 @@ from tensorboardX import SummaryWriter
 from torchvision import transforms
 from tqdm import tqdm
 from torchvision.utils import save_image
-import re
+import re, os
 import math
 import net
 from sampler import InfiniteSamplerWrapper
@@ -36,8 +36,11 @@ def train_transform(load_size, crop_size):
 class FlatFolderDataset(data.Dataset):
     def __init__(self, root, transform):
         super(FlatFolderDataset, self).__init__()
-        self.root = root
-        self.paths = list(Path(self.root).glob('*'))
+        if os.path.isdir():
+            self.root = root
+            self.paths = list(Path(self.root).glob('*'))
+        else:
+            self.paths = [self.root]
         self.transform = transform
 
     def __getitem__(self, index):
