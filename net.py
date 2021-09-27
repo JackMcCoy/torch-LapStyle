@@ -156,6 +156,7 @@ class Net(nn.Module):
     def encode_with_intermediate(self, input):
         results = [input]
         for i in range(1,6):
+            print(i)
             func = getattr(self, 'enc_{:d}'.format(i + 1))
             results.append(func(results[-1]))
         return results[1:]
