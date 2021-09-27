@@ -145,7 +145,7 @@ if args.train_model=='drafting':
         if (i + 1) % 100 == 0:
             y = y.to('cpu')
             for j in range(y.size()[0]):
-                save_image(y[j], save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                save_image(y[j], args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
 
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(loss)
