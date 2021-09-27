@@ -77,6 +77,7 @@ class VQGANLayers(nn.Module):
     def __init__(self, vgg_state_dict):
         super(VQGANLayers, self).__init__()
 
+        self.pkeep = .8
         self.context_mod = vgg
         self.z_mod = vgg
 
