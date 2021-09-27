@@ -105,7 +105,7 @@ class VQGANLayers(nn.Module):
             a_indices = mask * z_indices + (1 - mask) * r_indices
         else:
             a_indices = z_indices
-        zs = paddle.concat([s_indices, a_indices], axis=1)
+        zs = torch.cat([s_indices, a_indices], axis=1)
         target = z_indices
         logits, _ = self.transformer_4(zs[:, :-1])
         logits = logits[:, s_indices.shape[1] - 1:]
