@@ -36,11 +36,11 @@ def train_transform(load_size, crop_size):
 class FlatFolderDataset(data.Dataset):
     def __init__(self, root, transform):
         super(FlatFolderDataset, self).__init__()
-        if os.path.isdir():
+        if os.path.isdir(root):
             self.root = root
             self.paths = list(Path(self.root).glob('*'))
         else:
-            self.paths = [self.root]
+            self.paths = [root]
         self.transform = transform
 
     def __getitem__(self, index):
