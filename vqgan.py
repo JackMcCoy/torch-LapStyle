@@ -56,7 +56,6 @@ class VectorQuantize(nn.Module):
             + self.embed.pow(2).sum(0, keepdim=True)
         )
         _, embed_ind = (-dist).max(1)
-        print(embed_ind.shape)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
         embed_ind = embed_ind.view(*input.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
@@ -89,7 +88,7 @@ class VQGANLayers(nn.Module):
 
         self.quantize_4_z = VectorQuantize(18, 128)
         self.quantize_4_s = VectorQuantize(18, 128)
-        self.transformer_4 = GPT(640, 512, 24, 16, 640)
+        self.transformer_4 = GPT(1024, 1024, 16, 16, 1024)
 
     def forward(self, ci, si, training=True):
         zF = self.z_mod(ci)
