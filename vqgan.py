@@ -77,7 +77,7 @@ class VectorQuantize(nn.Module):
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
 
-        ones = torch.ones((b, n), dtype="int64")
+        ones = torch.ones(b, n)
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
         position_ids.stop_gradient = True
