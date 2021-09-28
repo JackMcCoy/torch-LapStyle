@@ -143,7 +143,7 @@ if args.train_model=='drafting':
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i,args)
+        warmup_lr_adjust(optimizer, i,args)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
         cF = enc_(ci, detach_all=True)
