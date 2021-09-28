@@ -137,8 +137,9 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF, ci, si):
+        print(cF['r4_1'].shape)
         t, l = self.vqgan(ci, si)
-        print(l)
+        print(t.shape)
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
