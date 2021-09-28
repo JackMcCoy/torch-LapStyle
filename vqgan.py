@@ -125,9 +125,7 @@ class VQGANLayers(nn.Module):
             loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), target.reshape(-1))
         else:
             loss = 0
-
-        print(logits)
-        print(logits.shape)
+        logits = logits.transpose(1,2)
         logits = logits.reshape((logits.shape[0], 1024, 18, 18))
         logits = self.post_quant_conv(logits)
         return logits, loss
