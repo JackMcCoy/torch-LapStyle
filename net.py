@@ -222,6 +222,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
+        '''
         Iss, cbloss = decoder(sF, sF)
         l_identity3 = content_loss(Iss, si)
         codebook_loss += cbloss
@@ -229,6 +230,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         l_identity4 = 0
         for key in cF.keys():
             l_identity4 += content_loss(Fss[key], sF[key])
+        '''
+        l_identity3 = 0
+        l_identity4 = 0
     else:
         l_identity1 = None
         l_identity2 = None
