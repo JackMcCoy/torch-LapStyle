@@ -96,7 +96,9 @@ class VQGANLayers(nn.Module):
         sF = self.context_mod(si)
         print(zF.shape)
         quant_z, z_indices, loss1 = self.quantize_4_z(zF)
+        z_indices = z_indices[2].view(quant_z.shape[0], -1)
         quant_s, s_indices, loss2 = self.quantize_4_s(sF)
+        s_indices = s_indices[2].view(quant_s.shape[0], -1)
         if self.training and self.pkeep < 1.0:
             mask = torch.bernoulli(self.pkeep * torch.ones(z_indices.shape,
                                                            device=z_indices.device))
