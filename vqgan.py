@@ -99,6 +99,7 @@ class VQGANLayers(nn.Module):
 
     def forward(self, ci, si, training=True):
         zF = self.z_mod(ci)
+        print(zF.shape)
         sF = self.context_mod(si)
 
         #zF = self.quant_conv_z(zF)
