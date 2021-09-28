@@ -191,12 +191,13 @@ elif args.train_model=='vqgan_pretrain':
         lr = warmup_lr_adjust(optimizer, i)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
-        stylized, l = dec_(ci, si)
+        stylized, l, l1, l2 = dec_(ci, si)
         optimizer.zero_grad()
-        l.backward()
+        loss = l + l1 + l2
+        loss.backward()
         optimizer.step()
         if (i + 1) % 10 == 0:
-            print(f'lr: {lr:.7f} loss: {l.item():.3f}')
+            print(f'lr: {lr:.7f} loss: {l.item():.3f} content_codebook: {l1.item():.3f} style_codebook: {l2.item()')
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(l)
             state_dict = dec_.state_dict()

@@ -128,5 +128,5 @@ class VQGANLayers(nn.Module):
         logits = logits.transpose(1,2)
         logits = logits.reshape((logits.shape[0], 1024, 16, 16))
         logits = self.post_quant_conv(logits)
-        return logits, loss
+        return logits, loss, loss1, loss2
 

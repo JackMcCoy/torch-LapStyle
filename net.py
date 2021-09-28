@@ -99,8 +99,8 @@ class VQGANTrain(nn.Module):
         self.vqgan.train()
 
     def forward(self, ci, si):
-        t, l = self.vqgan(ci, si)
-        return t, l
+        t, l, l1, l2 = self.vqgan(ci, si)
+        return t, l, l1, l2
 
 class DecoderVQGAN(nn.Module):
     def __init__(self, vgg_path):
