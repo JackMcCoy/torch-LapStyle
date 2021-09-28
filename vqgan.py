@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
 from mingpt import GPT
-from einops import rearrange
+from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer
 
 
@@ -48,11 +48,11 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed_avg', embed.clone())
 
         if n_embed != 1280:
-            self.rearrange = rearrange('b c h w -> b (h w) c')
-            self.decompose_axis = rearrange('b (h w) c -> b c h w',h=dim)
+            self.rearrange = Rearrange('b c h w -> b (h w) c')
+            self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=dim)
         else:
-            self.rearrange = rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
-            self.decompose_axis = rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
 
         if transformer_size==1:
             self.transformer = Transformer(dim**2*2, 8, 16, 64, n_embed)
@@ -67,7 +67,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(1024, 1, 8, 64, n_embed)
             self.pos_embedding = nn.Embedding(256, 1024)
             self.rearrange=rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
-            self.decompose_axis = rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32, e=4,d=4)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32, e=4,d=4)
 
     @property
     def codebook(self):
