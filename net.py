@@ -125,6 +125,11 @@ class DecoderVQGAN(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
+    def set_vqgan_state(self, vqgan_save):
+        self.vqgan.load_state_dict(torch.load(vqgan_save)['vqgan'])
+        print('VQGAN layer loaded.')
+        self.vqgan.pkeep=1
+
     @torch.no_grad()
     def _clip_gradient(self):
         for p in self.gradients():
