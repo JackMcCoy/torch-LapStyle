@@ -47,9 +47,9 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed', embed)
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
-
-        self.rearrange = Rearrange('b c h w -> b (h w) c')
-        self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=dim)
+        if n_embed != 1280:
+            self.rearrange = Rearrange('b c h w -> b (h w) c')
+            self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=dim)
         else:
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
