@@ -75,6 +75,7 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
+        print(quantize.shape)
         b, n, _ = quantize.shape
 
         ones = torch.ones(b, n).int().to(device)
