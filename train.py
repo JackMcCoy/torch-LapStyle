@@ -107,6 +107,21 @@ vgg = vgg.vgg
 vgg.load_state_dict(torch.load(args.vgg))
 vgg = nn.Sequential(*list(vgg.children()))
 
+content_tf = train_transform(args.load_size, args.crop_size)
+style_tf = train_transform(args.load_size, args.crop_size)
+
+content_dataset = FlatFolderDataset(args.content_dir, content_tf)
+style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+
+content_iter = iter(data.DataLoader(
+    content_dataset, batch_size=args.batch_size,
+    sampler=InfiniteSamplerWrapper(content_dataset),
+    num_workers=args.n_threads))
+style_iter = iter(data.DataLoader(
+    style_dataset, batch_size=args.batch_size,
+    sampler=InfiniteSamplerWrapper(style_dataset),
+    num_workers=args.n_threads))
+
 if args.train_model=='drafting':
 
     enc_ = net.Encoder(vgg)
@@ -116,21 +131,6 @@ if args.train_model=='drafting':
     dec_.train()
     enc_.to(device)
     dec_.to(device)
-
-    content_tf = train_transform(args.load_size, args.crop_size)
-    style_tf = train_transform(args.load_size, args.crop_size)
-
-    content_dataset = FlatFolderDataset(args.content_dir, content_tf)
-    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
-
-    content_iter = iter(data.DataLoader(
-        content_dataset, batch_size=args.batch_size,
-        sampler=InfiniteSamplerWrapper(content_dataset),
-        num_workers=args.n_threads))
-    style_iter = iter(data.DataLoader(
-        style_dataset, batch_size=args.batch_size,
-        sampler=InfiniteSamplerWrapper(style_dataset),
-        num_workers=args.n_threads))
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
@@ -169,4 +169,26 @@ if args.train_model=='drafting':
             state_dict = dec_.state_dict()
             torch.save(state_dict, save_dir /
                        'decoder_iter_{:d}.pth.tar'.format(i + 1))
+    writer.close()
+elif args.train_model=='vqgan_pretrain':
+    dec_ = net.VQGANTrain(args.vgg)
+    init_weights(dec_)
+    dec_.train()
+    dec_.to(device)
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+    for i in tqdm(range(args.max_iter)):
+        adjust_learning_rate(optimizer, i, args)
+        ci = next(content_iter).to(device)
+        si = next(style_iter).to(device)
+        stylized, l = dec_(ci, si)
+        optimizer.zero_grad()
+        l.backward()
+        optimizer.step()
+        if (i + 1) % 10 == 0:
+            print(l.item())
+        if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+            print(l)
+            state_dict = dec_.state_dict()
+            torch.save(state_dict, save_dir /
+                       'vqgan{:d}.pth.tar'.format(i + 1))
     writer.close()

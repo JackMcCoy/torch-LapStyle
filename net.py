@@ -92,6 +92,16 @@ class Decoder(nn.Module):
         t = self.decoder_4(t)
         return t
 
+class VQGANTrain(nn.Module):
+    def __init__(self, vgg_path):
+        super(DecoderVQGAN, self).__init__()
+        self.vqgan = VQGANLayers(vgg_path)
+        self.vqgan.train()
+
+    def forward(self, ci, si):
+        t, l = self.vqgan(ci, si)
+        return t, l
+
 class DecoderVQGAN(nn.Module):
     def __init__(self, vgg_path):
         super(DecoderVQGAN, self).__init__()
