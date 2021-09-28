@@ -94,7 +94,7 @@ class VQGANLayers(nn.Module):
     def forward(self, ci, si, training=True):
         zF = self.z_mod(ci)
         sF = self.context_mod(si)
-
+        print(zF.shape)
         quant_z, z_indices, loss1 = self.quantize_4_z(zF)
         quant_s, s_indices, loss2 = self.quantize_4_s(sF)
         if self.training and self.pkeep < 1.0:
