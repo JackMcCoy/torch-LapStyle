@@ -104,6 +104,7 @@ class VectorQuantize(nn.Module):
         dtype = input.dtype
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
+        print(quantize.shape)
         quantize = self.transformer(self.pos_embedding[:,:(n)]+quantize)
         quantize = self.decompose_axis(quantize)
 
