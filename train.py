@@ -141,7 +141,7 @@ if args.train_model=='drafting':
     set_requires_grad(enc_, False)
     dec_ = net.DecoderVQGAN(args.vgg)
     init_weights(dec_)
-    dec_.load_state_dict(torch.load(args.vqgan_save)
+    dec_.load_state_dict(torch.load(args.vqgan_save))
     dec_.train()
     enc_.to(device)
     dec_.to(device)
