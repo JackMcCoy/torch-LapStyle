@@ -72,7 +72,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 1024,
                                             heads = 8,
                                             depth = 8,
-                                            max_seq_len = 256,
+                                            max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==4:
