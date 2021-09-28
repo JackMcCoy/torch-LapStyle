@@ -20,8 +20,6 @@ from functools import partial
 from collections import OrderedDict
 import numpy as np
 
-torch.autograd.set_detect_anomaly(True)
-
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -151,14 +149,37 @@ if args.train_model=='drafting':
         cF = enc_(ci, detach_all=True)
         sF = enc_(si, detach_all=True)
         stylized, l = dec_(sF, cF)
-        optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
                     loss_r * 16 + 10*loss_ss + mdog + l
         loss.backward()
+        loss.detach()
+        with torch.no_grad():
+          for p in dec_.gradients():
+            p.grad *= p.square()
+            p.grad *= 0.05
+            p.add_(p.grad)
+            p.prev_step = p.grad
+            p.grad = None
+        cF = enc_(ci, detach_all=True)
+        sF = enc_(si, detach_all=True)
+        stylized, l = dec_(sF, cF)
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
+                    loss_r * 16 + 10*loss_ss + mdog + l
+        loss.backward()
+        loss.detach()
         optimizer.step()
+
+        with torch.no_grad():
+          for p in dec_.gradients():
+            p.sub_(p.prev_step)
+            p.prev_step = None
+            p.grad = None
 
         if (i + 1) % 10 == 0:
             print(loss.item())
