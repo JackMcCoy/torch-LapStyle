@@ -49,7 +49,7 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed', embed)
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
-        if n_embed != 60000:
+        if n_embed != 1280:
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=dim)
         else:
@@ -61,7 +61,6 @@ class VectorQuantize(nn.Module):
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 256,
-                                            reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==2:
@@ -69,14 +68,12 @@ class VectorQuantize(nn.Module):
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 1024,
-                                            reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 512,
                                             heads = 16,
                                             depth = 8,
-                                            reversible=True,
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
