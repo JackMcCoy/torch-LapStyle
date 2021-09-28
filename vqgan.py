@@ -55,7 +55,7 @@ class VectorQuantize(nn.Module):
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
 
         if transformer_size==1:
-            self.transformer = Transformer(dim**2*2, 512, 16, 12, 64, n_embed)
+            self.transformer = Transformer(n_embed, 512, 16, 12, dim)
             self.pos_embedding = nn.Embedding(256, 512)
         elif transformer_size==2:
             self.transformer = Transformer(256, 8, 16, 64, n_embed)
