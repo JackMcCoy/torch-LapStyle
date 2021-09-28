@@ -82,7 +82,7 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Parameter(torch.randn(1, 512, 512))
+            self.pos_embedding = nn.Parameter(torch.randn(1, 1024, 512))
         elif transformer_size==4:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
