@@ -95,7 +95,6 @@ class VQGANLayers(nn.Module):
         self.quant_conv_z = torch.nn.Conv2d(z_channels, embed_dim, 1)
         self.transformer_4 = GPT(codebook_size, 1023, 16, 9, embed_dim)
         self.transformer_4.train()
-        self.decompose_axis = Rearrange('b c (h w) -> b c h w', h=512, w=512)
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, z_channels, 1)
 
     def forward(self, ci, si, training=True):
