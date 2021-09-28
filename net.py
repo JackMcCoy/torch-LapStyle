@@ -106,7 +106,7 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
-        self.quantize_3 = VectorQuantize(32, 640, transformer_size=2)
+        self.quantize_3 = VectorQuantize(32, 3200, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),

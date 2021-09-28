@@ -70,7 +70,7 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==3:
-            self.transformer = Transformer(dim = 1280,
+            self.transformer = Transformer(dim = 2048,
                                             heads = 8,
                                             depth = 8,
                                             max_seq_len = 256,
@@ -89,7 +89,6 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
-        print(quantize.shape)
 
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
