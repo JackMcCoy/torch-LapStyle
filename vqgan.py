@@ -102,6 +102,7 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
+        b, n, _ = quantize.shape
         ones = torch.ones(b, n, dtype="int64").to(device)
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
