@@ -91,7 +91,7 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             attend_axially = True)
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 16, p2 = 16)
-        self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,d=8,e=8)
+            self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,d=8,e=8)
 
     @property
     def codebook(self):
