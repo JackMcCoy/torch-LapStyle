@@ -87,6 +87,8 @@ parser.add_argument('--content_dir', type=str, required=True,
                     help='Directory path to a batch of content images')
 parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
+parser.add_argument('--vqgan_save', type=str, required=True,
+                    help='Location of pretrained vqgan layer')
 parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
 parser.add_argument('--load_size', type=int, default=128)
 parser.add_argument('--crop_size', type=int, default=128)
@@ -138,6 +140,7 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     dec_ = net.DecoderVQGAN(args.vgg)
+    dec_.set_vqgan_state(vqgan_save)
     init_weights(dec_)
     dec_.train()
     enc_.to(device)

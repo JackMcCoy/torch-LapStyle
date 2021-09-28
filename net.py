@@ -106,7 +106,6 @@ class DecoderVQGAN(nn.Module):
     def __init__(self, vgg_path):
         super(DecoderVQGAN, self).__init__()
         self.vqgan = VQGANLayers(vgg_path)
-        self.vqgan.train()
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
@@ -125,6 +124,11 @@ class DecoderVQGAN(nn.Module):
             nn.Conv2d(64, 3, kernel_size=3)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+    def set_vqgan_state(self, vqgan_save):
+        self.vqgan.load_state_dict(torch.load(vqgan_save))
+        print('VQGAN layer loaded.')
+        self.vqgan.pkeep=1
 
     @torch.no_grad()
     def _clip_gradient(self):
