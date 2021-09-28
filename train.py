@@ -139,13 +139,13 @@ if args.train_model=='drafting':
         si = next(style_iter).to(device)
         cF = enc_(ci, detach_all=True)
         sF = enc_(si, detach_all=True)
-        stylized = dec_(sF, cF, ci, si)
+        stylized, l = dec_(sF, cF, ci, si)
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
-                    loss_r * 16 + 10*loss_ss + mdog
+                    loss_r * 16 + 10*loss_ss + mdog + l
         loss.backward()
         optimizer.step()
 

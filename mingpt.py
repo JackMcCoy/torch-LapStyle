@@ -146,15 +146,12 @@ class GPT(nn.Module):
         # forward the GPT model
 
         token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
-        print(token_embeddings.shape)
         if embeddings is not None: # prepend explicit embeddings
             token_embeddings = torch.cat((embeddings, token_embeddings), dim=1)
 
         t = token_embeddings.shape[1]
-        print(t)
         assert t <= self.block_size, "Cannot forward, model block size is exhausted."
         position_embeddings = self.pos_emb[:, :t, :] # each position maps to a (learnable) vector
-        print(position_embeddings.shape)
         x = self.drop(token_embeddings + position_embeddings)
         x = self.blocks(x)
         x = self.ln_f(x)

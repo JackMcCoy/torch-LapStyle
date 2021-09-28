@@ -93,7 +93,7 @@ class VQGANLayers(nn.Module):
         self.quantize_4_s = VectorQuantize(embed_dim, codebook_size)
         self.quant_conv_s = torch.nn.Conv2d(z_channels, embed_dim, 1)
         self.quant_conv_z = torch.nn.Conv2d(z_channels, embed_dim, 1)
-        self.transformer_4 = GPT(18, 1023, 16, 9, 18)
+        self.transformer_4 = GPT(18, 1023, 16, 9, embed_dim)
         self.transformer_4.train()
 
     def forward(self, ci, si, training=True):
@@ -102,7 +102,6 @@ class VQGANLayers(nn.Module):
 
         zF = self.quant_conv_z(zF)
         sF = self.quant_conv_s(sF)
-        print(zF.shape)
 
         quant_z, z_indices, loss1 = self.quantize_4_z(zF)
         z_indices = z_indices.view(quant_z.shape[0], -1)
@@ -125,5 +124,5 @@ class VQGANLayers(nn.Module):
             loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), target.reshape(-1))
         else:
             loss = 0
-        return logits, target, loss
+        return logits, loss
 
