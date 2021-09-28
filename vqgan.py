@@ -64,7 +64,7 @@ class VectorQuantize(nn.Module):
                                             reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Embedding(256, 512)
+            self.pos_embedding = nn.Parameter(torch.randn(1, 256 + 1, 512))
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
@@ -73,7 +73,7 @@ class VectorQuantize(nn.Module):
                                             reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Embedding(256, 256)
+            self.pos_embedding = nn.Parameter(torch.randn(1, 256 + 1, 256))
         elif transformer_size==3:
             self.transformer = Transformer(dim = 512,
                                             heads = 16,
@@ -82,7 +82,7 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Embedding(512, 512)
+            self.pos_embedding = nn.Parameter(torch.randn(1, 512 + 1, 512))
         elif transformer_size==4:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
@@ -91,7 +91,7 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 4096,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Embedding(4096, 256)
+            self.pos_embedding = nn.Parameter(torch.randn(1, 4096 + 1, 256))
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
 
@@ -104,13 +104,7 @@ class VectorQuantize(nn.Module):
         dtype = input.dtype
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
-        ones = torch.ones(b, n).int()
-        seq_length = torch.cumsum(ones, axis=1)
-        position_ids = seq_length - ones
-
-        position_ids.stop_gradient = True
-        position_embeddings = self.pos_embedding(position_ids)
-        quantize = self.transformer(position_embeddings+quantize)
+        quantize = self.transformer(self.pos_embedding[:,:(n+1)]+quantize)
         quantize = self.decompose_axis(quantize)
 
         quantize = input + (quantize - input).detach()
