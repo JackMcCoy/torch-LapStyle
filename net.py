@@ -106,6 +106,8 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
+        self.quantize_3 = VectorQuantize(32, 640, transformer_size=2)
+        self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
@@ -158,9 +160,13 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
+        t, embed_ind, bl = self.quantize_3(t)
+        book_loss += bl
         t = self.decoder_2(t)
         t = self.upsample(t)
         t += adain(cF['r2_1'], sF['r2_1'])
+        t, embed_ind, bl = self.quantize_2(t)
+        book_loss += bl
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)

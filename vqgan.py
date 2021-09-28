@@ -63,11 +63,19 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==2:
-            self.transformer = Transformer(256, 8, 16, 64, 256, dropout=0.05)
-            self.pos_embedding = nn.Embedding(1024, 256)
+            self.transformer = Transformer(dim = 256,
+                                            heads = 8,
+                                            depth = 8,
+                                            max_seq_len = 256,
+                                            shift_tokens = True,
+                                            attend_axially = True)
         elif transformer_size==3:
-            self.transformer = Transformer(2048, 8, 16, 64, 768, dropout=0.05)
-            self.pos_embedding = nn.Embedding(256, 2048)
+            self.transformer = Transformer(dim = 1280,
+                                            heads = 8,
+                                            depth = 8,
+                                            max_seq_len = 256,
+                                            shift_tokens = True,
+                                            attend_axially = True)
         elif transformer_size==4:
             self.transformer = Transformer(1024, 1, 8, 64, 64, dropout=0.05)
             self.pos_embedding = nn.Embedding(256, 1024)
@@ -81,6 +89,7 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
+        print(quantize.shape)
 
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
