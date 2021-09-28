@@ -77,6 +77,7 @@ def warmup_lr_adjust(optimizer, iteration_count, warmup_start=6.5e-7, warmup_ite
         lr = max_lr / (1.0 + decay * (iteration_count - warmup_iters))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+    return lr
 
 
 parser = argparse.ArgumentParser()
