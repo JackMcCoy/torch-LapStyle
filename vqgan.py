@@ -82,12 +82,12 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==4:
-            self.transformer = Transformer(dim = 512,
+            self.transformer = Transformer(dim = 256,
                                             heads = 8,
                                             depth = 8,
-                                            ff_chunks = 8,
+                                            ff_chunks = 16,
                                             reversible=True,
-                                            max_seq_len = 512,
+                                            max_seq_len = 4096,
                                             shift_tokens = True,
                                             attend_axially = True)
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
