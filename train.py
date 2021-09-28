@@ -195,7 +195,7 @@ elif args.train_model=='vqgan_pretrain':
         l.backward()
         optimizer.step()
         if (i + 1) % 10 == 0:
-            print(f'lr: {lr:.7f} loss: {l.item():.3f})
+            print(f'lr: {lr:.7f} loss: {l.item():.3f}')
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(l)
             state_dict = dec_.state_dict()
