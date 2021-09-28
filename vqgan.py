@@ -102,8 +102,8 @@ class VQGANLayers(nn.Module):
         print(zF.shape)
         sF = self.context_mod(si)
 
-        #zF = self.quant_conv_z(zF)
-        #sF = self.quant_conv_s(sF)
+        zF = self.quant_conv_z(zF)
+        sF = self.quant_conv_s(sF)
 
         quant_z, z_indices, loss1 = self.quantize_4_z(zF)
         z_indices = z_indices.view(quant_z.shape[0], -1)
