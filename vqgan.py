@@ -3,7 +3,6 @@ from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
 from mingpt import GPT
-from einops import Rearrange
 
 '''
 VectorQuantize taken from LucidRains repo (https://github.com/lucidrains/vector-quantize-pytorch)
