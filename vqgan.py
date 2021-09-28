@@ -3,6 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
 from mingpt import GPT
+from einops import Rearrange
 
 '''
 VectorQuantize taken from LucidRains repo (https://github.com/lucidrains/vector-quantize-pytorch)
@@ -95,6 +96,7 @@ class VQGANLayers(nn.Module):
         self.quant_conv_z = torch.nn.Conv2d(z_channels, embed_dim, 1)
         self.transformer_4 = GPT(codebook_size, 1023, 16, 9, embed_dim)
         self.transformer_4.train()
+        self.decompose_axis = Rearrange('b c (h w) -> b c h w', h=512, w=512)
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, z_channels, 1)
 
     def forward(self, ci, si, training=True):
@@ -125,6 +127,7 @@ class VQGANLayers(nn.Module):
             loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), target.reshape(-1))
         else:
             loss = 0
+        logits = self.decompose_axis(logits)
         logits = self.post_quant_conv(logits)
         print(logits)
         print(logits.shape)
