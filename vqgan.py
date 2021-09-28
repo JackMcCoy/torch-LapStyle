@@ -83,9 +83,10 @@ class VectorQuantize(nn.Module):
         )
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
-        embed_ind = embed_ind.view(*input.shape[:-1])
         print(embed_ind.shape)
         embed_ind = self.transformer(embed_ind)
+        print(embed_ind.shape)
+        embed_ind = embed_ind.view(*input.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
         if self.training:
