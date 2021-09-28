@@ -137,9 +137,7 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF, ci, si):
-        print(cF['r4_1'].shape)
         t, l = self.vqgan(ci, si)
-        print(t.shape)
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
@@ -192,15 +190,15 @@ style_loss = CalcStyleLoss()
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, mdog_losses = True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc = decoder(cF,cF)
-        l_identity1, codebook_loss = content_loss(Icc, ci)
+        Icc, codebook_loss = decoder(cF,cF, ci, ci)
+        l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
         l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
 
-        Iss = decoder(sF, sF)
-        l_identity3, cbloss = content_loss(Iss, si)
+        Iss, cbloss = decoder(sF, sF, si, si)
+        l_identity3 = content_loss(Iss, si)
         codebook_loss += cbloss
         Fss = encoder(Iss)
         l_identity4 = 0
