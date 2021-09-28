@@ -64,16 +64,16 @@ class VectorQuantize(nn.Module):
                                             reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Parameter(torch.randn(1, 256 + 1, 512))
+            self.pos_embedding = nn.Parameter(torch.randn(1, 256, 512))
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
                                             depth = 8,
-                                            max_seq_len = 256,
+                                            max_seq_len = 1024,
                                             reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Parameter(torch.randn(1, 256 + 1, 256))
+            self.pos_embedding = nn.Parameter(torch.randn(1, 1024, 256))
         elif transformer_size==3:
             self.transformer = Transformer(dim = 512,
                                             heads = 16,
@@ -82,7 +82,7 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Parameter(torch.randn(1, 512 + 1, 512))
+            self.pos_embedding = nn.Parameter(torch.randn(1, 512, 512))
         elif transformer_size==4:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
@@ -91,7 +91,7 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 4096,
                                             shift_tokens = True,
                                             attend_axially = True)
-            self.pos_embedding = nn.Parameter(torch.randn(1, 4096 + 1, 256))
+            self.pos_embedding = nn.Parameter(torch.randn(1, 4096, 256))
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
 
