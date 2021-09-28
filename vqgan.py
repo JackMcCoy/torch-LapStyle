@@ -101,6 +101,7 @@ class VQGANLayers(nn.Module):
         zF = self.z_mod(ci)
         print(zF.shape)
         sF = self.context_mod(si)
+        print(sF.shape)
 
         zF = self.quant_conv_z(zF)
         sF = self.quant_conv_s(sF)
