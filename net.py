@@ -94,7 +94,7 @@ class Decoder(nn.Module):
 
 class VQGANTrain(nn.Module):
     def __init__(self, vgg_path):
-        super(DecoderVQGAN, self).__init__()
+        super(VQGANTrain, self).__init__()
         self.vqgan = VQGANLayers(vgg_path)
         self.vqgan.train()
 
