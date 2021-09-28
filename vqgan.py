@@ -88,7 +88,7 @@ class VQGANLayers(nn.Module):
 
         embed_dim = 16
         z_channels = 512
-        codebook_size = 1024
+        codebook_size = 640
         self.quantize_4_z = VectorQuantize(embed_dim, codebook_size)
         self.quantize_4_s = VectorQuantize(embed_dim, codebook_size)
         self.quant_conv_s = torch.nn.Conv2d(z_channels, embed_dim, 1)
