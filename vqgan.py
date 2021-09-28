@@ -54,8 +54,12 @@ class VectorQuantize(nn.Module):
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
 
         if transformer_size==1:
-            self.transformer = Transformer(dim**2*2, 8, 16, 64, dim**2*2)
-            self.pos_embedding = nn.Embedding(256, 512)
+            self.transformer = Transformer(dim = 512,
+                                            heads = 8,
+                                            depth = 8,
+                                            max_seq_len = 256,
+                                            n_local_attn_heads = 4,
+                                            use_axial_pos_emb = True)
         elif transformer_size==2:
             self.transformer = Transformer(256, 8, 16, 64, 256, dropout=0.05)
             self.pos_embedding = nn.Embedding(1024, 256)
@@ -75,16 +79,8 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
-        print(quantize.shape)
-        b, n, _ = quantize.shape
 
-        ones = torch.ones(b, n).int().to(device)
-        seq_length = torch.cumsum(ones, axis=1)
-        position_ids = seq_length - ones
-        position_ids.stop_gradient = True
-        position_embeddings = self.pos_embedding(position_ids)
-
-        quantize = self.transformer(quantize + position_embeddings)
+        quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
 
         quantize = input + (quantize - input).detach()
