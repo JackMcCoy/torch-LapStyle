@@ -86,7 +86,7 @@ class VQGANLayers(nn.Module):
         self.context_mod = self.context_mod[:32]
         self.z_mod = self.z_mod[:32]
 
-        embed_dim = 2560
+        embed_dim = 18
         z_channels = 512
         codebook_size = 1024
         self.quantize_4_z = VectorQuantize(embed_dim, codebook_size)
