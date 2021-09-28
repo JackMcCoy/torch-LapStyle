@@ -83,12 +83,12 @@ class VQGANLayers(nn.Module):
         self.context_mod.load_state_dict(torch.load(vgg_state_dict))
         self.z_mod.load_state_dict(torch.load(vgg_state_dict))
 
-        self.context_mod = self.context_mod[:32]
-        self.z_mod = self.z_mod[:32]
+        self.context_mod = self.context_mod[:31]
+        self.z_mod = self.z_mod[:31]
 
-        embed_dim = 256
+        embed_dim = 16
         z_channels = 512
-        codebook_size = 640
+        codebook_size = 1024
         self.quantize_4_z = VectorQuantize(embed_dim, codebook_size)
         self.quantize_4_s = VectorQuantize(embed_dim, codebook_size)
         self.quant_conv_s = torch.nn.Conv2d(z_channels, embed_dim, 1)
@@ -129,6 +129,7 @@ class VQGANLayers(nn.Module):
             loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), target.reshape(-1))
         else:
             loss = 0
+        print(logits.shape)
         logits = logits.transpose(1,2)
         logits = logits.reshape((logits.shape[0], 1024, 16, 16))
         logits = self.post_quant_conv(logits)
