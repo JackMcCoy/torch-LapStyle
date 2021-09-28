@@ -153,8 +153,7 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        t = adain(cF['r3_1'], sF['r3_1'])
-        print(t.shape)
+        t = adain(cF['r4_1'], sF['r4_1'])
         t, embed_ind, book_loss = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
