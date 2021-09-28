@@ -105,7 +105,7 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
-        self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
+        self.quantize_4 = VectorQuantize(512, 3200, transformer_size=1)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
