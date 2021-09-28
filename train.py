@@ -140,7 +140,7 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     dec_ = net.DecoderVQGAN(args.vgg)
-    dec_.set_vqgan_state(vqgan_save)
+    dec_.set_vqgan_state(args.vqgan_save)
     init_weights(dec_)
     dec_.train()
     enc_.to(device)
