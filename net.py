@@ -99,8 +99,8 @@ class VQGANTrain(nn.Module):
         self.vqgan.train()
 
     def forward(self, ci, si):
-        t, l, l1, l2 = self.vqgan(ci, si)
-        return t, l, l1, l2
+        t, l = self.vqgan(ci, si)
+        return t, l
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
@@ -213,8 +213,6 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
-        codebook_loss += l1
-        codebook_loss += l2
         Iss, cbloss = decoder(sF, sF)
         l_identity3 = content_loss(Iss, si)
         codebook_loss += cbloss
