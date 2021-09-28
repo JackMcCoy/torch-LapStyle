@@ -138,6 +138,7 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF, ci, si):
         t, l = self.vqgan(ci, si)
+        print(l)
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
