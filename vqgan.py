@@ -125,5 +125,6 @@ class VQGANLayers(nn.Module):
         else:
             loss = 0
         print(logits)
+        print(logits.shape)
         return logits, loss
 
