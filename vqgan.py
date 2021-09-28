@@ -98,6 +98,8 @@ class VQGANLayers(nn.Module):
         self.post_quant_conv = torch.nn.Conv2d(1024, z_channels, 1)
 
     def forward(self, ci, si, training=True):
+        print(ci.shape)
+        print(si.shape)
         zF = self.z_mod(ci)
         print(zF.shape)
         sF = self.context_mod(si)
