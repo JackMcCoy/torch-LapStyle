@@ -31,7 +31,7 @@ class VectorQuantize(nn.Module):
         commitment = 1.,
         eps = 1e-5,
         n_embed = None,
-        transformer_size = 4
+        transformer_size = 1
     ):
         super().__init__()
         n_embed = default(n_embed, codebook_size)
