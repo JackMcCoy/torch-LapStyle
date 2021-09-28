@@ -58,6 +58,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 512,
                                             heads = 8,
                                             depth = 8,
+                                            ff_chunks = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             attend_axially = True)
@@ -65,6 +66,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 256,
                                             heads = 8,
                                             depth = 8,
+                                            ff_chunks = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             attend_axially = True)
@@ -72,6 +74,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 512,
                                             heads = 8,
                                             depth = 8,
+                                            ff_chunks = 8,
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
