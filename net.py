@@ -171,6 +171,7 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t, embed_ind, bl = self.quantize_1(t)
+        book_loss += bl
         t = self.decoder_4(t)
         return t, book_loss
 
