@@ -8,7 +8,7 @@ from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from vgg import vgg
-from vqgan import VQGANLayers
+from vqgan import VQGANLayers, VectorQuantize
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -105,7 +105,7 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self, vgg_path):
         super(DecoderVQGAN, self).__init__()
-        self.vqgan = VQGANLayers(vgg_path)
+        self.vectorize_4 = VectorQuantize(16, 3200, 1)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
@@ -152,8 +152,9 @@ class DecoderVQGAN(nn.Module):
                 continue
             yield p
 
-    def forward(self, sF, cF, ci, si):
-        t, l, l1, l2 = self.vqgan(ci, si)
+    def forward(self, sF, cF):
+        t = adain(cF['r3_1'], sF['r3_1'])
+        t, embed_ind, book_loss = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
@@ -163,7 +164,7 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-        return t, l, l1, l2
+        return t, book_loss
 
 
 class Discriminator(nn.Module):
@@ -206,7 +207,7 @@ style_loss = CalcStyleLoss()
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, mdog_losses = True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc, codebook_loss, l1, l2 = decoder(cF,cF, ci, ci)
+        Icc, codebook_loss = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
         l_identity2 = 0
@@ -214,11 +215,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
             l_identity2 += content_loss(Fcc[key], cF[key])
         codebook_loss += l1
         codebook_loss += l2
-        Iss, cbloss, l1, l2 = decoder(sF, sF, si, si)
+        Iss, cbloss = decoder(sF, sF)
         l_identity3 = content_loss(Iss, si)
         codebook_loss += cbloss
-        codebook_loss += l1
-        codebook_loss += l2
         Fss = encoder(Iss)
         l_identity4 = 0
         for key in cF.keys():
