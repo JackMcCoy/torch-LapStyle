@@ -5,7 +5,7 @@ from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 
-
+device = torch.device('cuda')
 '''
 VectorQuantize taken from LucidRains repo (https://github.com/lucidrains/vector-quantize-pytorch)
 '''
@@ -77,7 +77,7 @@ class VectorQuantize(nn.Module):
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
 
-        ones = torch.ones(b, n).int()
+        ones = torch.ones(b, n).int().to(device)
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
         position_ids.stop_gradient = True
