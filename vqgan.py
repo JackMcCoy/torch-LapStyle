@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
-from mingpt import CodeGPT as Transformer
+from mingpt import GPT as Transformer
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer
 
