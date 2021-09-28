@@ -153,7 +153,7 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF, ci, si):
-        t, l = self.vqgan(ci, si)
+        t, l, l1, l2 = self.vqgan(ci, si)
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1'])
@@ -163,7 +163,7 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-        return t, l
+        return t, l, l1, l2
 
 
 class Discriminator(nn.Module):

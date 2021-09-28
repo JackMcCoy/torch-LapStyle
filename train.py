@@ -156,10 +156,10 @@ if args.train_model=='drafting':
         stylized, l = dec_(sF, cF, ci, si)
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, cb1, cb2 = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
-                    loss_r * 16 + 10*loss_ss + mdog + l + codebook_loss
+                    loss_r * 16 + 10*loss_ss + mdog + l + codebook_loss + cb1 + cb2
         loss.backward()
         optimizer.step()
 
