@@ -167,9 +167,6 @@ if args.train_model=='drafting':
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(loss)
             state_dict = dec_.state_dict()
-            for idx,s_dict in enumerate(state_dict):
-                for key in state_dict[idx].keys():
-                    state_dict[idx][key] = state_dict[idx][key].to(torch.device('cpu'))
             torch.save(state_dict, save_dir /
                        'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
