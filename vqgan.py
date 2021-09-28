@@ -86,7 +86,7 @@ class VQGANLayers(nn.Module):
         self.context_mod = self.context_mod[:32]
         self.z_mod = self.z_mod[:32]
 
-        embed_dim = 18
+        embed_dim = 16
         z_channels = 512
         codebook_size = 1024
         self.quantize_4_z = VectorQuantize(embed_dim, codebook_size)
@@ -126,7 +126,7 @@ class VQGANLayers(nn.Module):
         else:
             loss = 0
         logits = logits.transpose(1,2)
-        logits = logits.reshape((logits.shape[0], 1024, 18, 18))
+        logits = logits.reshape((logits.shape[0], 1024, 16, 16))
         logits = self.post_quant_conv(logits)
         return logits, loss
 
