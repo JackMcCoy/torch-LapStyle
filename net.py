@@ -108,7 +108,6 @@ class DecoderVQGAN(nn.Module):
         self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
         self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
-        self.quantize_1 = VectorQuantize(128, 2048, transformer_size=4)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
@@ -170,7 +169,6 @@ class DecoderVQGAN(nn.Module):
         book_loss += bl
         t = self.decoder_3(t)
         t = self.upsample(t)
-        t, embed_ind, bl = self.quantize_1(t)
         book_loss += bl
         t = self.decoder_4(t)
         return t, book_loss
