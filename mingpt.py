@@ -144,10 +144,9 @@ class GPT(nn.Module):
 
     def forward(self, idx, embeddings=None, targets=None):
         # forward the GPT model
-        print(idx.shape)
-        print(idx)
-        token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
 
+        token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
+        print(token_embeddings.shape)
         if embeddings is not None: # prepend explicit embeddings
             token_embeddings = torch.cat((embeddings, token_embeddings), dim=1)
 
