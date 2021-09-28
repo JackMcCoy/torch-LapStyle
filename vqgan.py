@@ -56,7 +56,7 @@ class VectorQuantize(nn.Module):
 
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
-                                            heads = 8,
+                                            heads = 16,
                                             depth = 8,
                                             ff_chunks = 8,
                                             max_seq_len = 256,
@@ -65,7 +65,7 @@ class VectorQuantize(nn.Module):
                                             attend_axially = True)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
-                                            heads = 8,
+                                            heads = 16,
                                             depth = 8,
                                             ff_chunks = 8,
                                             max_seq_len = 256,
@@ -74,7 +74,7 @@ class VectorQuantize(nn.Module):
                                             attend_axially = True)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 512,
-                                            heads = 8,
+                                            heads = 16,
                                             depth = 8,
                                             ff_chunks = 8,
                                             reversible=True,
@@ -83,7 +83,7 @@ class VectorQuantize(nn.Module):
                                             attend_axially = True)
         elif transformer_size==4:
             self.transformer = Transformer(dim = 256,
-                                            heads = 8,
+                                            heads = 16,
                                             depth = 8,
                                             ff_chunks = 16,
                                             reversible=True,
