@@ -95,6 +95,7 @@ class VectorQuantize(nn.Module):
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
 
+
     @property
     def codebook(self):
         return self.embed.transpose(0, 1)
@@ -103,9 +104,10 @@ class VectorQuantize(nn.Module):
         dtype = input.dtype
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
-        ones = torch.ones(b, n).int().to(device)
+        ones = torch.ones(b, n).int()
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
+
         position_ids.stop_gradient = True
         position_embeddings = self.pos_embedding(position_ids)
         quantize = self.transformer(position_embeddings+quantize)
