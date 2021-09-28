@@ -60,6 +60,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             ff_chunks = 8,
                                             max_seq_len = 256,
+                                            reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==2:
@@ -68,6 +69,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             ff_chunks = 8,
                                             max_seq_len = 256,
+                                            reversible=True,
                                             shift_tokens = True,
                                             attend_axially = True)
         elif transformer_size==3:
@@ -75,6 +77,7 @@ class VectorQuantize(nn.Module):
                                             heads = 8,
                                             depth = 8,
                                             ff_chunks = 8,
+                                            reversible=True,
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attend_axially = True)
