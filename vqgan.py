@@ -58,8 +58,8 @@ class VectorQuantize(nn.Module):
                                             heads = 8,
                                             depth = 8,
                                             max_seq_len = 256,
-                                            n_local_attn_heads = 4,
-                                            use_axial_pos_emb = True)
+                                            shift_tokens = True,
+                                            attend_axially = True)
         elif transformer_size==2:
             self.transformer = Transformer(256, 8, 16, 64, 256, dropout=0.05)
             self.pos_embedding = nn.Embedding(1024, 256)
