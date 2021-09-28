@@ -100,7 +100,6 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         quantize = self.rearrange(input)
-        print(quantize.shape)
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
 
