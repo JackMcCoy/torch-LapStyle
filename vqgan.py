@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
+from losses import CalcContentLoss
 
 device = torch.device('cuda')
 '''
@@ -40,6 +41,7 @@ class VectorQuantize(nn.Module):
         self.decay = decay
         self.eps = eps
         self.commitment = commitment
+        self.perceptual_loss = CalcContentLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
@@ -103,7 +105,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = F.mse_loss(quantize.detach(), input) * self.commitment
+        self.perceptual_loss(quantize.detach(), input, norm=True) * self.commitment
         quantize = input + (quantize - input).detach()
         return quantize, embed_ind, loss
 
