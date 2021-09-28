@@ -187,7 +187,7 @@ elif args.train_model=='vqgan_pretrain':
     dec_.to(device)
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
-        warmup_lr_adjust(optimizer, i)
+        lr = warmup_lr_adjust(optimizer, i)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
         stylized, l = dec_(ci, si)
@@ -195,7 +195,7 @@ elif args.train_model=='vqgan_pretrain':
         l.backward()
         optimizer.step()
         if (i + 1) % 10 == 0:
-            print(l.item())
+            print(f'lr: {lr:.7f} loss: {l.item():.3f})
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
             print(l)
             state_dict = dec_.state_dict()
