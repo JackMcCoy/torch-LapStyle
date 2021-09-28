@@ -158,12 +158,6 @@ if args.train_model=='drafting':
         loss.backward()
         optimizer.step()
 
-        with torch.no_grad():
-          for p in dec_.gradients():
-            p.sub_(p.prev_step)
-            p.prev_step = None
-            p.grad = None
-
         if (i + 1) % 10 == 0:
             print(loss.item())
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
