@@ -86,21 +86,27 @@ class VQGANLayers(nn.Module):
         self.context_mod = self.context_mod[:32]
         self.z_mod = self.z_mod[:32]
 
-        self.quantize_4_z = VectorQuantize(18, 2560)
-        self.quantize_4_s = VectorQuantize(18, 2560)
+        embed_dim = 2560
+        z_channels = 18
+        self.quantize_4_z = VectorQuantize(z_channels, embed_dim)
+        self.quantize_4_s = VectorQuantize(z_channels, embed_dim)
+        self.quant_conv_s = torch.nn.Conv2d(z_channels, embed_dim, 1)
+        self.quant_conv_z = torch.nn.Conv2d(z_channels, embed_dim, 1)
         self.transformer_4 = GPT(18, 1023, 16, 8, 2560)
         self.transformer_4.train()
 
     def forward(self, ci, si, training=True):
         zF = self.z_mod(ci)
         sF = self.context_mod(si)
+
+        zF = self.quant_conv_z(zF)
+        sF = self.quant_conv_s(sF)
         print(zF.shape)
+
         quant_z, z_indices, loss1 = self.quantize_4_z(zF)
-        print(z_indices.shape)
-        print(z_indices)
-        z_indices = z_indices.view(quant_z.shape[0], -1)
+        z_indices = z_indices[2].view(quant_z.shape[0], -1)
         quant_s, s_indices, loss2 = self.quantize_4_s(sF)
-        s_indices = s_indices.view(quant_s.shape[0], -1)
+        s_indices = s_indices[2].view(quant_s.shape[0], -1)
         if self.training and self.pkeep < 1.0:
             mask = torch.bernoulli(self.pkeep * torch.ones(z_indices.shape,
                                                            device=z_indices.device))
