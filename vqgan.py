@@ -98,12 +98,8 @@ class VQGANLayers(nn.Module):
         self.post_quant_conv = torch.nn.Conv2d(1024, z_channels, 1)
 
     def forward(self, ci, si, training=True):
-        print(ci.shape)
-        print(si.shape)
         zF = self.z_mod(ci)
-        print(zF.shape)
         sF = self.context_mod(si)
-        print(sF.shape)
 
         zF = self.quant_conv_z(zF)
         sF = self.quant_conv_s(sF)
@@ -129,7 +125,6 @@ class VQGANLayers(nn.Module):
             loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), target.reshape(-1))
         else:
             loss = 0
-        print(logits.shape)
         logits = logits.transpose(1,2)
         logits = logits.reshape((logits.shape[0], 1024, 16, 16))
         logits = self.post_quant_conv(logits)
