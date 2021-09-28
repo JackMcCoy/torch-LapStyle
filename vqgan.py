@@ -93,7 +93,7 @@ class VQGANLayers(nn.Module):
         self.quantize_4_s = VectorQuantize(embed_dim, codebook_size)
         self.quant_conv_s = torch.nn.Conv2d(z_channels, embed_dim, 1)
         self.quant_conv_z = torch.nn.Conv2d(z_channels, embed_dim, 1)
-        self.transformer_4 = GPT(18, 1023, 16, 8, 18)
+        self.transformer_4 = GPT(18, 1023, 16, 9, 18)
         self.transformer_4.train()
 
     def forward(self, ci, si, training=True):
