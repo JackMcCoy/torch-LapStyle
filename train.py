@@ -139,7 +139,7 @@ if args.train_model=='drafting':
         si = next(style_iter).to(device)
         cF = enc_(ci, detach_all=True)
         sF = enc_(si, detach_all=True)
-        stylized = dec_(sF, cF)
+        stylized = DecoderVQGAN(sF, cF, ci, si)
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog = losses
