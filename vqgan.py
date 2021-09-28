@@ -105,7 +105,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        self.perceptual_loss(quantize.detach(), input, norm=True) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), input, norm=True) * self.commitment
         quantize = input + (quantize - input).detach()
         return quantize, embed_ind, loss
 
