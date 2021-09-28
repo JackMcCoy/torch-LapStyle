@@ -122,12 +122,11 @@ class VectorQuantize(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = self.perceptual_loss(quantize.detach(), input, norm=True) * self.commitment
+
         quantize = self.rearrange(quantize)
         b, n, _ = quantize.shape
         quantize = self.transformer(self.pos_embedding[:, :(n)] + quantize)
         quantize = self.decompose_axis(quantize)
-
-        quantize = input + (quantize - input).detach()
         quantize = input + (quantize - input).detach()
         return quantize, embed_ind, loss
 
