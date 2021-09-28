@@ -127,8 +127,8 @@ class DecoderVQGAN(nn.Module):
 
     def set_vqgan_state(self, vqgan_save):
         state = torch.load(vqgan_save)
-        print(state)
-        self.vqgan.load_state_dict()
+        newstate = {'.'.join(k.split('.')[1:]):v for k,v in state}
+        self.vqgan.load_state_dict(newstate)
         print('VQGAN layer loaded.')
         self.vqgan.pkeep=1
 
