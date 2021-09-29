@@ -145,7 +145,8 @@ if args.train_model=='drafting':
     dec_.to(device)
     disc_.to(device)
 
-    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(list(dec_.parameters())+list(dec_.quantize_4.parameters())+\
+                                  list(dec_.quantize_3.parameters())+list(dec_.quantize_2.parameters()), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
@@ -187,11 +188,11 @@ if args.train_model=='drafting':
         if (i + 1) % 100 == 0:
             stylized = stylized.to('cpu')
             for j in range(1):
-                save_image(stylized[j], args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
-                save_image(ci[j],
+                save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                save_image(ci[j].detach(),
                            args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
                                i + 1) + '.jpg')
-                save_image(debug_cX[j],
+                save_image(debug_cX[j].detach(),
                            args.save_dir + '/drafting_training_' + str(j) + '_iter_cX' + str(
                                i + 1) + '.jpg')
 
