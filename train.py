@@ -203,13 +203,15 @@ elif args.train_model=='vqgan_pretrain':
         d_optimizer.step()
         d_optimizer.zero_grad()
 
-        set_requires_grad(disc_, False)
-
-        loss = l + l1 + l2
+        set_requires_grad(disc_,(ci, si)
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 25 + l_identity4 * 1 +\
+                    loss_r * 16 + 10*loss_ss + mdog + l + l1 + l2
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-
         if (i + 1) % 10 == 0:
             print(f'lr: {lr:.7f} loss: {l.item():.3f} content_codebook: {l1.item()} style_codebook: {l2.item()}')
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
