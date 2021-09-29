@@ -136,14 +136,20 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     dec_ = net.DecoderVQGAN()
+    disc_ = net.Discriminator()
     init_weights(dec_)
+    init_weights(disc_)
     dec_.train()
+    disc_.train()
     enc_.to(device)
     dec_.to(device)
+    disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
+        warmup_lr_adjust(opt_D, i)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
         cF = enc_(ci, detach_all=True)
@@ -153,8 +159,8 @@ if args.train_model=='drafting':
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
-                    loss_r * 16 + 10*loss_ss + mdog + l + codebook_loss
+                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 25 + l_identity4 * .5 +\
+                    loss_r * 16 + 10*loss_ss + mdog + l
         loss.backward()
         optimizer.step()
 
@@ -190,10 +196,20 @@ elif args.train_model=='vqgan_pretrain':
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
         stylized, l, l1, l2 = dec_(ci, si)
-        optimizer.zero_grad()
+
+        set_requires_grad(disc_, True)
+        loss_D = disc_.losses(si.detach(),stylized.detach())
+        loss_D.backward()
+        d_optimizer.step()
+        d_optimizer.zero_grad()
+
+        set_requires_grad(disc_, False)
+
         loss = l + l1 + l2
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
+
         if (i + 1) % 10 == 0:
             print(f'lr: {lr:.7f} loss: {l.item():.3f} content_codebook: {l1.item()} style_codebook: {l2.item()}')
         if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:

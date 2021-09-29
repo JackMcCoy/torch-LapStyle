@@ -6,7 +6,7 @@ from typing import Dict
 from function import adaptive_instance_normalization as adain
 from function import calc_mean_std
 from modules import ResBlock, ConvBlock
-from losses import CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
+from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from vgg import vgg
 from vqgan import VQGANLayers, VectorQuantize
 
@@ -197,6 +197,15 @@ class Discriminator(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1)
+        self.ganloss = GANLoss()
+
+    def losses(self, real, fake):
+        pred_real = self(si)
+        loss_D_real = self.ganloss(pred_real, True)
+        pred_fake = self(stylized)
+        loss_D_fake = self.ganloss(pred_fake, False)
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        return loss_D
 
     def forward(self, x):
         x = self.head(x)
