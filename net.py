@@ -190,7 +190,7 @@ class Discriminator(nn.Module):
                           kernel_size=3,
                           stride=1,
                           padding=1))
-            self.body.append(nn.BatchNorm2D(num_channels))
+            self.body.append(nn.BatchNorm2d(num_channels))
             self.body.append(nn.LeakyReLU(0.2))
         self.body = nn.Sequential(*body)
         self.tail = nn.Conv2s(num_channels,
