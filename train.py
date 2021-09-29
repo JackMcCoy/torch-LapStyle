@@ -188,22 +188,23 @@ if args.train_model=='drafting':
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
-        if (i + 1) % 100 == 0:
-            stylized = stylized.to('cpu')
-            for j in range(1):
-                save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
-                save_image(ci[j].detach(),
-                           args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
-                               i + 1) + '.jpg')
-                save_image(debug_cX[j].detach(),
-                           args.save_dir + '/drafting_training_' + str(j) + '_iter_cX' + str(
-                               i + 1) + '.jpg')
+        with torch.no_grad():
+            if (i + 1) % 100 == 0:
+                stylized = stylized.to('cpu')
+                for j in range(1):
+                    save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                    save_image(ci[j].detach(),
+                               args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
+                                   i + 1) + '.jpg')
+                    save_image(debug_cX[j].detach(),
+                               args.save_dir + '/drafting_training_' + str(j) + '_iter_cX' + str(
+                                   i + 1) + '.jpg')
 
-        if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-            print(loss)
-            state_dict = dec_.state_dict()
-            torch.save(state_dict, save_dir /
-                       'decoder_iter_{:d}.pth.tar'.format(i + 1))
+            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+                print(loss)
+                state_dict = dec_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='vqgan_pretrain':
     dec_ = net.VQGANTrain(args.vgg)
