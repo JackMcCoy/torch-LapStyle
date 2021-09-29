@@ -152,8 +152,8 @@ if args.train_model=='drafting':
         warmup_lr_adjust(opt_D, i)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
-        cF = enc_(ci, detach_all=True)
-        sF = enc_(si, detach_all=True)
+        cF = enc_(ci)
+        sF = enc_(si)
         stylized, l = dec_(sF, cF)
 
         opt_D.zero_grad()
