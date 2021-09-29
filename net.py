@@ -8,7 +8,7 @@ from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from vgg import vgg
-from vqgan import VQGANLayers, VectorQuantize
+from vqgan import VQGANLayers, ADAInTransformer
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
