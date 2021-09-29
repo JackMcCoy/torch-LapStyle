@@ -99,7 +99,6 @@ class VectorQuantize(nn.Module):
         quantize = self.transformer(self.pos_embedding[:,:(n)]+quantize)
         quantize = self.decompose_axis(quantize)
 
-        quantize = input + (quantize - input).detach()
         flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
