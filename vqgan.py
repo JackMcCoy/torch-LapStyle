@@ -103,7 +103,6 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-        print(input.shape)
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
@@ -116,7 +115,6 @@ class VectorQuantize(nn.Module):
 
         quantize = self.decompose_axis(quantize+ position_embeddings)
         quantize = input + (quantize - input).detach()
-        print(quantize.shape)
         flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
