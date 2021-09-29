@@ -63,15 +63,15 @@ class VectorQuantize(nn.Module):
             self.rearrange = Rearrange('b c h w -> b c (h w)')
             self.decompose_axis = Rearrange('b c (h w) -> b c h w',h=dim)
         elif transformer_size==2:
-            self.transformer = Transformer(dim = 256,
+            self.transformer = Transformer(dim = 1024,
                                             heads = 32,
                                             depth = 16,
-                                            max_seq_len = 1024,
+                                            max_seq_len = 256,
                                             shift_tokens = True,
                                             attn_layer_dropout = .1,
                                             attn_dropout = .1,
                                             n_local_attn_heads = 4)
-            self.pos_embedding = nn.Embedding(1024, 256)
+            self.pos_embedding = nn.Embedding(256, 1024)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (c p1 p2) (h w)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (c e d) (h w) -> b c (h e) (w d)',h=32,w=32, e=2,d=2)
         elif transformer_size==3:
@@ -103,7 +103,6 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-        print(input.shape)
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
@@ -115,7 +114,6 @@ class VectorQuantize(nn.Module):
         position_embeddings = self.pos_embedding(position_ids)
 
         quantize = self.decompose_axis(quantize+ position_embeddings)
-        print(quantize.shape)
         quantize = input + (quantize - input).detach()
         flatten = quantize.reshape(-1, self.dim)
         dist = (
