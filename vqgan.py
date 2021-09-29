@@ -75,17 +75,17 @@ class VectorQuantize(nn.Module):
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (c p1 p2) (h w)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32, e=2,d=2)
         elif transformer_size==3:
-            self.transformer = Transformer(dim = 2048,
+            self.transformer = Transformer(dim = 256,
                                             heads = 16,
                                             depth = 16,
-                                            max_seq_len = 512,
+                                            max_seq_len = 2048,
                                             shift_tokens = True,
                                             attn_layer_dropout = .1,
                                             attn_dropout = .1,
                                             n_local_attn_heads = 8)
-            self.pos_embedding = nn.Embedding(512, 2048)
+            self.pos_embedding = nn.Embedding(2048, 256)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=8,w=8, e=4,d=4)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
         elif transformer_size==4:
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
