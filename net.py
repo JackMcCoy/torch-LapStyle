@@ -221,7 +221,7 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, mdog_losses = True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         Icc, codebook_loss = decoder(cF,cF)
@@ -253,6 +253,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
+    mxdog_losses = 0
     if mdog_losses:
         cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
@@ -265,8 +266,11 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
         mxdog_content_contraint = content_loss(cdogF['r3_1'], cXF['r3_1'])+content_loss(cdogF['r4_1'], cXF['r4_1'])
         mxdog_style = mse_loss(cdogF['r3_1'],sXF['r3_1']) + mse_loss(cdogF['r4_1'],sXF['r4_1'])
         mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
-    else:
-        mxdog_losses = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, codebook_loss
+    loss_Gp_GAN = 0
+    if disc_loss:
+        pred_fake_p = disc_(stylized)
+        loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
+
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, codebook_loss, loss_Gp_GAN
 

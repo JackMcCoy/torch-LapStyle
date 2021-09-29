@@ -163,21 +163,21 @@ if args.train_model=='drafting':
         opt_D.zero_grad()
 
         set_requires_grad(disc_,False)
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 25 + l_identity4 * 1 +\
-                    loss_r * 16 + 10*loss_ss + mdog + codebook_loss
+                    loss_r * 16 + 10*loss_ss + mdog + codebook_loss + loss_Gp_GAN
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
 
         if (i + 1) % 10 == 0:
             print(loss.item())
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            print(f'disc: {loss_D} c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
             id1: {l_identity1.item():.3f} id2: {l_identity2.item():.3f} \
-            mdog: {mdog.item():.3f} codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss:.3f}')
+            mdog: {mdog.item():.3f} codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss.item():.3f}, loss_Gp_GAN: {loss_Gp_GAN.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
