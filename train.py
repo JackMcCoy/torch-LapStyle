@@ -203,12 +203,12 @@ elif args.train_model=='vqgan_pretrain':
         d_optimizer.step()
         d_optimizer.zero_grad()
 
-        set_requires_grad(disc_,(ci, si)
+        set_requires_grad(disc_,False)
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 25 + l_identity4 * 1 +\
-                    loss_r * 16 + 10*loss_ss + mdog + l + l1 + l2
+                    loss_r * 16 + 10*loss_ss + mdog + l + l1 + l2Z
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
