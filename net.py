@@ -230,18 +230,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         l_identity2 = 0
         for key in cF.keys():
             l_identity2 += content_loss(Fcc[key], cF[key])
-        Iss, cbloss = decoder(sF, sF)
-        l_identity3 = content_loss(Iss, si)
-        codebook_loss += cbloss
-        Fss = encoder(Iss)
-        l_identity4 = 0
-        for key in cF.keys():
-            l_identity4 += content_loss(Fss[key], sF[key])
     else:
         l_identity1 = None
         l_identity2 = None
-        l_identity3 = None
-        l_identity4 = None
     loss_c = 0
     for key in cF.keys():
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True)
