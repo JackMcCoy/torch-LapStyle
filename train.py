@@ -159,8 +159,8 @@ if args.train_model=='drafting':
         set_requires_grad(disc_, True)
         loss_D = disc_.losses(si.detach(),stylized.detach())
         loss_D.backward()
-        d_optimizer.step()
-        d_optimizer.zero_grad()
+        opt_D.step()
+        opt_D.zero_grad()
 
         set_requires_grad(disc_,False)
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True)
