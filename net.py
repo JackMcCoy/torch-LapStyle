@@ -272,5 +272,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         pred_fake_p = disc_(stylized)
         loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, codebook_loss, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, codebook_loss, loss_Gp_GAN, cX
 
