@@ -145,8 +145,8 @@ if args.train_model=='drafting':
     dec_.to(device)
     disc_.to(device)
 
-    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
+    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
         warmup_lr_adjust(opt_D, i)
