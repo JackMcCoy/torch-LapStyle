@@ -149,22 +149,20 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
-        t, embed_ind, book_loss = self.quantize_4(t)
+        t = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
-        quantized, embed_ind, bl = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
-        book_loss += bl
+        quantized = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
         t += quantized
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized, embed_ind, bl = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
-        book_loss += bl
+        quantized = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
         t+=quantized
         t = self.decoder_3(t)
         t = self.upsample(t)
         book_loss += bl
         t = self.decoder_4(t)
-        return t, book_loss
+        return t
 
 
 class Discriminator(nn.Module):
@@ -217,7 +215,7 @@ style_loss = CalcStyleLoss()
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc, codebook_loss = decoder(cF,cF)
+        Icc = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
         l_identity2 = 0
@@ -256,5 +254,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         pred_fake_p = disc_(stylized)
         loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, codebook_loss, loss_Gp_GAN, cX
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, loss_Gp_GAN, cX
 
