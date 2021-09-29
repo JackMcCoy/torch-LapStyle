@@ -182,16 +182,17 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(0.2)
             )
-        self.body = nn.Sequential()
+        self.body = []
         for i in range(depth - 2):
-            self.body.add_sublayer(
+            self.body.append(
                 nn.Conv2D(num_channels,
                           num_channels,
                           kernel_size=3,
                           stride=1,
                           padding=1))
-            self.body.add_sublayer(nn.BatchNorm2D(num_channels))
-            self.body.add_sublayer(nn.LeakyReLU(0.2))
+            self.body.append(nn.BatchNorm2D(num_channels))
+            self.body.append(nn.LeakyReLU(0.2))
+        self.body = nn.Sequential(*body)
         self.tail = nn.Conv2D(num_channels,
                               1,
                               kernel_size=3,
