@@ -190,13 +190,13 @@ if args.train_model=='drafting':
 
         with torch.no_grad():
             if (i + 1) % 100 == 0:
-                stylized = stylized.to('cpu')
+                stylized = stylized.float().to('cpu')
                 for j in range(1):
                     save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
-                    save_image(ci[j].detach(),
+                    save_image(ci[j].float().detach(),
                                args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
                                    i + 1) + '.jpg')
-                    save_image(debug_cX[j].detach(),
+                    save_image(debug_cX[j].float().detach(),
                                args.save_dir + '/drafting_training_' + str(j) + '_iter_cX' + str(
                                    i + 1) + '.jpg')
 
