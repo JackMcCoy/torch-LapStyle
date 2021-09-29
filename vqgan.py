@@ -94,6 +94,7 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
+        print(input.shape)
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
