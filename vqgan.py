@@ -53,7 +53,7 @@ class VectorQuantize(nn.Module):
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
                                             heads = 32,
-                                            depth = 8,
+                                            depth = 16,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             attn_layer_dropout = .1,
@@ -65,19 +65,19 @@ class VectorQuantize(nn.Module):
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
                                             heads = 32,
-                                            depth = 8,
+                                            depth = 16,
                                             max_seq_len = 1024,
                                             shift_tokens = True,
                                             attn_layer_dropout = .1,
                                             attn_dropout = .1,
                                             n_local_attn_heads = 4)
-            self.pos_embedding = nn.Embedding(1024, 1024)
-            self.rearrange = Rearrange('b c h w -> b c (h w)')
-            self.decompose_axis = Rearrange('b c (h w) -> b c h w',h=dim)
+            self.pos_embedding = nn.Embedding(1024, 256)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (c p1 p2) (h w)',p1=2,p2=2)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32, e=2,d=2)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
                                             heads = 16,
-                                            depth = 8,
+                                            depth = 16,
                                             max_seq_len = 512,
                                             shift_tokens = True,
                                             attn_layer_dropout = .1,
