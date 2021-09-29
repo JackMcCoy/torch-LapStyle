@@ -16,10 +16,11 @@ import net
 from function import init_weights
 from net import calc_losses
 from sampler import InfiniteSamplerWrapper
-from functools import partial
+from torch.cuda.amp import autocast, GradScaler
 from collections import OrderedDict
 import numpy as np
 
+scaler = GradScaler()
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -151,29 +152,31 @@ if args.train_model=='drafting':
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
         warmup_lr_adjust(opt_D, i)
-        ci = next(content_iter).to(device)
-        si = next(style_iter).to(device)
-        cF = enc_(ci)
-        sF = enc_(si)
-        stylized, l = dec_(sF, cF)
+        with autocast():
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            cF = enc_(ci)
+            sF = enc_(si)
+            stylized, l = dec_(sF, cF)
 
-        opt_D.zero_grad()
-        set_requires_grad(disc_, True)
-        loss_D = disc_.losses(si.detach(),stylized.detach())
-        loss_D.backward()
-        opt_D.step()
-        opt_D.zero_grad()
+            opt_D.zero_grad()
+            set_requires_grad(disc_, True)
+            loss_D = disc_.losses(si.detach(),stylized.detach())
+        scaler.scale(loss_D).backward()
+        scaler.step(opt_D)
+        scaler.update()
 
-        set_requires_grad(disc_,False)
-        optimizer.zero_grad()
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
-        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                    l_identity1 * 50 + l_identity2 * 1 +\
-                    loss_r * 9 + 16*loss_ss + mdog + codebook_loss + loss_Gp_GAN
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
+        with autocast():
+            set_requires_grad(disc_,False)
+            optimizer.zero_grad()
+            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
+            loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
+            loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                        l_identity1 * 50 + l_identity2 * 1 +\
+                        loss_r * 9 + 16*loss_ss + mdog + codebook_loss + loss_Gp_GAN
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         if (i + 1) % 10 == 0:
             print(loss.item())
