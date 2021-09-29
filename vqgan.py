@@ -98,7 +98,7 @@ class VectorQuantize(nn.Module):
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
 
-        ones = torch.ones((b, n)).int()
+        ones = torch.ones((b, n)).int().to(device)
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
         position_ids.stop_gradient = True
