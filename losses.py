@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-
+device = torch.device('cuda')
 class CalcStyleEmdLoss():
     """Calc Style Emd Loss.
     """
@@ -155,13 +155,13 @@ class GANLoss(nn.Module):
         if target_is_real:
             if not hasattr(self, 'target_real_tensor'):
                 self.target_real_tensor = torch.full(
-                    shape=prediction.shape,
+                    prediction.shape,
                     fill_value=self.target_real_label).float().to(device)
             target_tensor = self.target_real_tensor
         else:
             if not hasattr(self, 'target_fake_tensor'):
                 self.target_fake_tensor = torch.full(
-                    shape=prediction.shape,
+                    prediction.shape,
                     fill_value=self.target_fake_label).float().to(device)
             target_tensor = self.target_fake_tensor
 
