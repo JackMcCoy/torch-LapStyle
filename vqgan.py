@@ -24,7 +24,7 @@ def laplace_smoothing(x, n_categories, eps=1e-5):
 
 device = torch.device('cuda')
 
-class VectorQuantize(nn.Module):
+class ADAInTransformer(nn.Module):
     def __init__(
         self,
         dim,
@@ -40,15 +40,6 @@ class VectorQuantize(nn.Module):
 
         self.dim = dim
         self.n_embed = n_embed
-        self.decay = decay
-        self.eps = eps
-        self.commitment = commitment
-        self.perceptual_loss = CalcContentLoss()
-
-        embed = torch.randn(dim, n_embed)
-        self.register_buffer('embed', embed)
-        self.register_buffer('cluster_size', torch.zeros(n_embed))
-        self.register_buffer('embed_avg', embed.clone())
 
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
@@ -102,7 +93,6 @@ class VectorQuantize(nn.Module):
         return self.embed.transpose(0, 1)
 
     def forward(self, input):
-        dtype = input.dtype
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
@@ -115,28 +105,8 @@ class VectorQuantize(nn.Module):
 
         quantize = self.decompose_axis(quantize+ position_embeddings)
         quantize = input + (quantize - input).detach()
-        flatten = quantize.reshape(-1, self.dim)
-        dist = (
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ self.embed
-            + self.embed.pow(2).sum(0, keepdim=True)
-        )
-        _, embed_ind = (-dist).max(1)
-        embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
-        embed_ind = embed_ind.view(*input.shape[:-1])
-        quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
-        if self.training:
-            ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
-            embed_sum = flatten.transpose(0, 1) @ embed_onehot
-            ema_inplace(self.embed_avg, embed_sum, self.decay)
-            cluster_size = laplace_smoothing(self.cluster_size, self.n_embed, self.eps) * self.cluster_size.sum()
-            embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
-            self.embed.data.copy_(embed_normalized)
-
-        loss = F.mse_loss(quantize.detach(), input) * self.commitment
-
-        return quantize, embed_ind, loss
+        return quantize
 
 class VQGANLayers(nn.Module):
     def __init__(self, vgg_state_dict):
