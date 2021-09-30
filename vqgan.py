@@ -137,6 +137,7 @@ class VectorQuantize(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = F.mse_loss(quantize.detach(), input) * self.commitment
+        quantize = input + (quantize - input).detach()
 
         return quantize, embed_ind, loss
 
