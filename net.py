@@ -89,7 +89,7 @@ class DecoderVQGAN(nn.Module):
         self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
         self.vit = Transformer(192, 8, 16, 256, 192, shift_tokens=True,
-                               local_attention_heads=2,
+                               n_local_attn_heads=2,
                                local_attn_window_size = 64)
 
         patch_height, patch_width = (8,8)
