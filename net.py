@@ -176,7 +176,7 @@ style_loss = CalcStyleLoss()
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc = decoder(cF,cF)
+        Icc, cb_loss = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
         l_identity2 = 0
@@ -215,5 +215,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         pred_fake_p = disc_(stylized)
         loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, loss_Gp_GAN, cX
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, cb_loss, loss_Gp_GAN, cX
 
