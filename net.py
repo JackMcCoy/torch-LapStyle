@@ -24,17 +24,16 @@ class Encoder(nn.Module):
 
     def forward(self, x, detach_all=False):
         encodings = {}
-        detach_if_true = lambda x: x if detach_all == False else x.detach()
         x = self.enc_1(x)
-        encodings['r1_1'] = detach_if_true(x)
+        encodings['r1_1'] = x
         x = self.enc_2(x)
-        encodings['r2_1'] = detach_if_true(x)
+        encodings['r2_1'] = x
         x = self.enc_3(x)
-        encodings['r3_1'] = detach_if_true(x)
+        encodings['r3_1'] = x
         x = self.enc_4(x)
-        encodings['r4_1'] = detach_if_true(x)
+        encodings['r4_1'] = x
         x = self.enc_5(x)
-        encodings['r5_1'] = detach_if_true(x)
+        encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
