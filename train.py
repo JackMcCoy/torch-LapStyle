@@ -16,9 +16,6 @@ import net
 from function import init_weights
 from net import calc_losses
 from sampler import InfiniteSamplerWrapper
-from torch.cuda.amp import autocast, GradScaler
-from collections import OrderedDict
-import numpy as np
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -168,11 +165,11 @@ if args.train_model=='drafting':
 
         dec_.zero_grad()
         optimizer.zero_grad()
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=False)
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 25 + l_identity4 * .5 +\
-                    loss_r * 9 + 16*loss_ss + + loss_Gp_GAN + l
+                    loss_r * 9 + 16*loss_ss + mdog + loss_Gp_GAN + l
         loss.backward()
         optimizer.step()
 
