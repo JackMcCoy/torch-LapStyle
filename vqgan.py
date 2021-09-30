@@ -95,9 +95,9 @@ class VectorQuantize(nn.Module):
 
     def set_embeddings(self, b, n, d):
         ones = torch.ones((b, n)).int().to(device)
-        seq_length = torch.cumsum(ones, axis=1)
-        self.position_ids = seq_length - ones
-        self.pos_embedding = nn.Embedding(d, n)
+        seq_length = torch.cumsum(ones, axis=1).to(device)
+        self.position_ids = (seq_length - ones).to(device)
+        self.pos_embedding = nn.Embedding(d, n).to(device)
         self.embeddings_set = True
 
     @property
