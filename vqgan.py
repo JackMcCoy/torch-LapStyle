@@ -113,7 +113,7 @@ class VectorQuantize(nn.Module):
             b, n, _ = quantize.shape
             if not self.embeddings_set:
                 self.set_embeddings(b,n,_)
-            position_embeddings = self.pos_embedding(position_ids.detach())
+            position_embeddings = self.pos_embedding(self.position_ids.detach())
             inputs.append(quantize + position_embeddings)
         quantize = self.transformer(inputs[0],context=inputs[1])
         quantize = self.decompose_axis(quantize)
