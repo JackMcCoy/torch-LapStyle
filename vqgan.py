@@ -101,7 +101,7 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-
+        print(input.shape)
         flatten = input.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
