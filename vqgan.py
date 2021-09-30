@@ -115,7 +115,6 @@ class VectorQuantize(nn.Module):
         position_embeddings = self.pos_embedding(position_ids)
 
         quantize = self.decompose_axis(quantize+ position_embeddings)
-        quantize = input + (quantize - input).detach()
 
         flatten = quantize.reshape(-1, self.dim)
         dist = (
@@ -136,7 +135,8 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = F.mse_loss(quantize.detach(), input, norm = True) * self.commitment
+        loss = F.mse_loss(quantize.detach(), input) * self.commitment
+        quantize = input + (quantize - input).detach()
 
         return quantize, embed_ind, loss
 
