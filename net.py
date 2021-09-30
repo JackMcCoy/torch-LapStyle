@@ -8,7 +8,7 @@ from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from vgg import vgg
-from vqgan import VQGANLayers, VectorQuantize
+from vqgan import VQGANLayers, ADAInTransformer
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -85,9 +85,9 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
-        self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
-        self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2)
-        self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
+        self.quantize_4 = ADAInTransformer(16, 3200, transformer_size=1)
+        self.quantize_3 = ADAInTransformer(32, 1200, transformer_size=2)
+        self.quantize_2 = ADAInTransformer(64, 1280, transformer_size=3)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
@@ -109,22 +109,19 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
-        t, embed_ind, book_loss = self.quantize_4(t)
+        t = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
-        quantized, embed_ind, bl = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
-        book_loss += bl
+        quantized = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
         t += quantized
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized, embed_ind, bl = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
-        book_loss += bl
+        quantized = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
         t+=quantized
         t = self.decoder_3(t)
         t = self.upsample(t)
-        book_loss += bl
         t = self.decoder_4(t)
-        return t, book_loss
+        return t
 
 
 class Discriminator(nn.Module):
@@ -177,7 +174,7 @@ style_loss = CalcStyleLoss()
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc, codebook_loss = decoder(cF,cF)
+        Icc = decoder(cF,cF)
         l_identity1 = content_loss(Icc, ci)
         Fcc = encoder(Icc)
         l_identity2 = 0
@@ -216,5 +213,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         pred_fake_p = disc_(stylized)
         loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, codebook_loss, loss_Gp_GAN, cX
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, loss_Gp_GAN, cX
 
