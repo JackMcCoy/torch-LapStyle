@@ -59,26 +59,6 @@ class Decoder(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
-    @torch.no_grad()
-    def _clip_gradient(self):
-        for p in self.gradients():
-            g_norm = p.grad.norm(2, 0, True).clamp(min=1e-6)
-            p_norm = p.norm(2, 0, True).clamp(min=1e-3)
-            grad_scale = (p_norm / g_norm * 0.01).clamp(max=1)
-            p.grad.data.copy_(p.grad * grad_scale)
-
-    @torch.no_grad()
-    def zero_grad(self):
-        for p in self.parameters():
-            p.grad = None
-
-    @torch.no_grad()
-    def gradients(self):
-        for p in self.parameters():
-            if p.grad is None:
-                continue
-            yield p
-
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
@@ -115,26 +95,6 @@ class DecoderVQGAN(nn.Module):
             nn.Conv2d(64, 3, kernel_size=3)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-
-    @torch.no_grad()
-    def _clip_gradient(self):
-        for p in self.gradients():
-            g_norm = p.grad.norm(2, 0, True).clamp(min=1e-6)
-            p_norm = p.norm(2, 0, True).clamp(min=1e-3)
-            grad_scale = (p_norm / g_norm * 0.01).clamp(max=1)
-            p.grad.data.copy_(p.grad * grad_scale)
-
-    @torch.no_grad()
-    def zero_grad(self):
-        for p in self.parameters():
-            p.grad = None
-
-    @torch.no_grad()
-    def gradients(self):
-        for p in self.parameters():
-            if p.grad is None:
-                continue
-            yield p
 
     def forward(self, sF, cF, ci, si):
         t, l = self.vqgan(ci, si)
