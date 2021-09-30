@@ -20,7 +20,6 @@ from torch.cuda.amp import autocast, GradScaler
 from collections import OrderedDict
 import numpy as np
 
-scaler = GradScaler(init_scale=1024)
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -153,26 +152,25 @@ if args.train_model=='drafting':
         warmup_lr_adjust(optimizer, i)
 
         warmup_lr_adjust(opt_D, i)
-        with autocast():
-            ci = next(content_iter).to(device)
-            si = next(style_iter).to(device)
-            cF = enc_(ci)
-            sF = enc_(si)
-            stylized, l = dec_(sF, cF)
 
-            set_requires_grad(disc_, True)
-            loss_D = disc_.losses(si.detach(),stylized.detach())
-            with torch.no_grad():
-                for p in disc_.gradients():
-                    p.grad *= p.square()
-                    p.grad *= 0.05
-                    p.add_(p.grad)
-                    p.prev_step = p.grad
-                    p.grad = None
-            loss_D = disc_.losses(si.detach(), stylized.detach())
-        scaler.scale(loss_D).backward()
-        scaler.step(opt_D)
-        scaler.update()
+        ci = next(content_iter).to(device)
+        si = next(style_iter).to(device)
+        cF = enc_(ci)
+        sF = enc_(si)
+        stylized, l = dec_(sF, cF)
+
+        set_requires_grad(disc_, True)
+        loss_D = disc_.losses(si.detach(),stylized.detach())
+        with torch.no_grad():
+            for p in disc_.gradients():
+                p.grad *= p.square()
+                p.grad *= 0.05
+                p.add_(p.grad)
+                p.prev_step = p.grad
+                p.grad = None
+        loss_D = disc_.losses(si.detach(), stylized.detach())
+        loss_D.backward()
+        opt_D.step()
         with torch.no_grad():
             for p in disc_.gradients():
                 p.sub_(p.prev_step)
@@ -180,28 +178,27 @@ if args.train_model=='drafting':
                 p.grad = None
         set_requires_grad(disc_,False)
 
-        with autocast():
-            losses = calc_losses(stylized.detach(), ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
-            loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
-            loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                        l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
-                        loss_r * 9 + 16*loss_ss + mdog * .5 + l + codebook_loss + loss_Gp_GAN
-            with torch.no_grad():
-                for p in dec_.gradients():
-                    p.grad *= p.square()
-                    p.grad *= 0.05
-                    p.add_(p.grad)
-                    p.prev_step = p.grad
-                    p.grad = None
-            losses = calc_losses(stylized.detach(), ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
-            loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
-            loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                        l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
-                        loss_r * 9 + 16*loss_ss + mdog * .5 + l + codebook_loss + loss_Gp_GAN
 
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        losses = calc_losses(stylized.detach(), ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                    l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
+                    loss_r * 9 + 16*loss_ss + mdog * .5 + l + codebook_loss + loss_Gp_GAN
+        with torch.no_grad():
+            for p in dec_.gradients():
+                p.grad *= p.square()
+                p.grad *= 0.05
+                p.add_(p.grad)
+                p.prev_step = p.grad
+                p.grad = None
+        losses = calc_losses(stylized.detach(), ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight +\
+                    l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
+                    loss_r * 9 + 16*loss_ss + mdog * .5 + l + codebook_loss + loss_Gp_GAN
+
+        loss.backward()
+        optimizer.step()
         with torch.no_grad():
             for p in dec_.gradients():
                 p.sub_(p.prev_step)
