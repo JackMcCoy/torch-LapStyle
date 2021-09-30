@@ -183,7 +183,7 @@ def identity_loss(i, F, encoder, decoder):
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
-        l_identity2 += content_loss(Fcc[key], F[key])
+        l_identity2 += content_loss(Fcc[key], F[key]).data
     return l_identity1, l_identity2, cb_loss
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
