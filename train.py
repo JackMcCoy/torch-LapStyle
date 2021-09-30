@@ -174,8 +174,8 @@ if args.train_model=='drafting':
         optimizer.step()
 
         if (i + 1) % 10 == 0:
-            print(loss.item())
-            print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item()}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            print(f'{loss.item():.2f}')
+            print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item():.3f}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
             id1: {l_identity1.item():.3f} id2: {l_identity2.item():.3f} \
             codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss.item():.3f}')
