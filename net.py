@@ -62,10 +62,10 @@ class Decoder(nn.Module):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
-        t += adain(cF['r3_1'], sF['r3_1'])
+        t = t + adain(cF['r3_1'], sF['r3_1'])
         t = self.decoder_2(t)
         t = self.upsample(t)
-        t += adain(cF['r2_1'], sF['r2_1'])
+        t = t + adain(cF['r2_1'], sF['r2_1'])
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
@@ -121,12 +121,12 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_1(t)
         t = self.upsample(t)
         quantized, idx, cbloss = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
-        codebook_loss += cbloss
+        codebook_loss += cbloss.data
         t += quantized
         t = self.decoder_2(t)
         t = self.upsample(t)
         quantized, idx, cbloss = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
-        codebook_loss += cbloss
+        codebook_loss += cbloss.data
         t+=quantized
         t = self.decoder_3(t)
         t = self.upsample(t)
@@ -212,7 +212,6 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
-    mxdog_losses = 0
     if mdog_losses:
         cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
@@ -225,11 +224,14 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_content_contraint = content_loss(cdogF['r3_1'], cXF['r3_1'])+content_loss(cdogF['r4_1'], cXF['r4_1'])
         mxdog_style = mse_loss(cdogF['r3_1'],sXF['r3_1']) + mse_loss(cdogF['r4_1'],sXF['r4_1'])
         mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
+    else:
+        mxdog_losses = 0
 
-    loss_Gp_GAN = 0
     if disc_loss:
         pred_fake_p = disc_(stylized)
-        loss_Gp_GAN += disc_.ganloss(pred_fake_p, True).data
+        loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
+    else:
+        loss_Gp_GAN = 0
 
     return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN, cX
 
