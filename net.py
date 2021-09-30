@@ -2,12 +2,10 @@ import torch.nn as nn
 import torch
 
 from gaussian_diff import xdog, make_gaussians
-from typing import Dict
 from function import adaptive_instance_normalization as adain
-from function import calc_mean_std
 from modules import ResBlock, ConvBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
-from vgg import vgg
+from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 
