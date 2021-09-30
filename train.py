@@ -159,7 +159,6 @@ if args.train_model=='drafting':
         stylized, l = dec_(sF, cF)
         optimizer.zero_grad()
         l.backward()
-        optimizer.step()
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
