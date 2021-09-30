@@ -137,20 +137,20 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     dec_ = net.DecoderVQGAN()
-    disc_ = net.Discriminator(depth=9)
+    #disc_ = net.Discriminator(depth=9)
     init_weights(dec_)
-    init_weights(disc_)
+    #init_weights(disc_)
     dec_.train()
-    disc_.train()
+    #disc_.train()
     enc_.to(device)
     dec_.to(device)
-    disc_.to(device)
+    #disc_.to(device)
 
-    optimizer = torch.optim.AdamW(list(dec_.parameters())+list(dec_.quantize_4.parameters())+\
-                                  list(dec_.quantize_3.parameters())+list(dec_.quantize_2.parameters()), lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
+    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
+    #opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
+        '''
         warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
@@ -165,15 +165,16 @@ if args.train_model=='drafting':
         scaler.scale(loss_D).backward()
         scaler.step(opt_D)
         scaler.update()
+        set_requires_grad(disc_,False)
+        '''
 
         with autocast():
-            set_requires_grad(disc_,False)
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
+            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=False)
             loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
             loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                         l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
-                        loss_r * 9 + 16*loss_ss + mdog + codebook_loss + l + loss_Gp_GAN
+                        loss_r * 9 + 16*loss_ss + mdog + codebook_loss + l
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
