@@ -56,8 +56,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            attn_layer_dropout = .1,
-                                            attn_dropout = .1,
+                                            reversible = True,
                                             n_local_attn_heads = 2)
             self.pos_embedding = nn.Embedding(512, 256)
             self.rearrange = Rearrange('b c h w -> b c (h w)')
@@ -68,8 +67,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            attn_layer_dropout = .1,
-                                            attn_dropout = .1,
+                                            reversible = True,
                                             n_local_attn_heads = 4)
             self.pos_embedding = nn.Embedding(256, 1024)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
@@ -80,8 +78,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 2048,
                                             shift_tokens = True,
-                                            attn_layer_dropout = .1,
-                                            attn_dropout = .1,
+                                            reversible = True,
                                             n_local_attn_heads = 8)
             self.pos_embedding = nn.Embedding(256, 2048)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
@@ -91,6 +88,7 @@ class VectorQuantize(nn.Module):
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 4096,
+                                            reversible = True,
                                             shift_tokens = True)
             self.pos_embedding = nn.Embedding(4096, 1024)
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
