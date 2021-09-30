@@ -151,7 +151,9 @@ class DecoderVQGAN(nn.Module):
         codebook_loss += cbloss.data
         t += quantized.data
         t = self.decoder_3(t)
+        print(t.shape)
         t = self.upsample(t)
+        print(t.shape)
         quantized, idx, cbloss = self.quantize_1(cF['r1_1'], context = sF['r1_1'])
         codebook_loss += cbloss.data
         t += quantized.data
