@@ -52,7 +52,7 @@ class VectorQuantize(nn.Module):
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
         self.embeddings_set = False
-        rc = dict(receives_context=receives_context)
+        rc = dict(receives_context=receives_ctx)
 
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
