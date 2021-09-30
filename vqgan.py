@@ -59,8 +59,8 @@ class VectorQuantize(nn.Module):
                                             reversible = True,
                                             n_local_attn_heads = 2)
             self.pos_embedding = nn.Embedding(512, 256)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=4,p2=4)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 1024,
                                             heads = 32,
@@ -69,7 +69,7 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             reversible = True,
                                             n_local_attn_heads = 4)
-            self.pos_embedding = nn.Embedding(256, 1024)
+            self.pos_embedding = nn.Embedding(256, 512)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
         elif transformer_size==3:
@@ -101,7 +101,6 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-        print(input.shape)
         flatten = input.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
