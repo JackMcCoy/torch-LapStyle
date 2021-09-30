@@ -106,6 +106,7 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input, context=None):
         target = adain(input, context)
+        print(input.shape)
         dtype = input.dtype
         inputs = []
         for input in [input,context]:
