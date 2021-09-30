@@ -200,10 +200,10 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity4 = None
     loss_c = 0
     for key in cF.keys():
-        loss_c += content_loss(stylized_feats[key], cF[key],norm=True)
+        loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data[0]
     loss_s = 0
     for key in sF.keys():
-        loss_s += style_loss(stylized_feats[key], sF[key])
+        loss_s += style_loss(stylized_feats[key], sF[key]).data[0]
     loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
@@ -227,7 +227,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     loss_Gp_GAN = 0
     if disc_loss:
         pred_fake_p = disc_(stylized)
-        loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
+        loss_Gp_GAN += disc_.ganloss(pred_fake_p, True).data[0]
 
     return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN, cX
 
