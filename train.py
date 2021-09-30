@@ -169,6 +169,11 @@ if args.train_model=='drafting':
         '''
 
         with autocast():
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            cF = enc_(ci)
+            sF = enc_(si)
+            stylized, l = dec_(sF, cF)
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=False)
             loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
