@@ -161,21 +161,8 @@ if args.train_model=='drafting':
 
         set_requires_grad(disc_, True)
         loss_D = disc_.losses(si.detach(),stylized.detach())
-        with torch.no_grad():
-            for p in disc_.gradients():
-                p.grad *= p.square()
-                p.grad *= 0.05
-                p.add_(p.grad)
-                p.prev_step = p.grad
-                p.grad = None
-        loss_D = disc_.losses(si.detach(), stylized.detach())
         loss_D.backward()
         opt_D.step()
-        with torch.no_grad():
-            for p in disc_.gradients():
-                p.sub_(p.prev_step)
-                p.prev_step = None
-                p.grad = None
         set_requires_grad(disc_,False)
 
 
