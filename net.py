@@ -151,13 +151,13 @@ class DecoderVQGAN(nn.Module):
         t = self.upsample(t)
         t = self.decoder_4(t)
 
-        b, n, _, _ = out.shape
+        b, n, _, _ = t.shape
 
         ones = torch.ones((1, 256)).int().to(device)
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
         position_embeddings = self.pos_embedding(position_ids.detach())
-        transformer = self.rearrange(out)
+        transformer = self.rearrange(t)
         transformer = transformer + position_embeddings
         transformer = self.vit(transformer)
         transformer = self.decompose_axis(transformer)
