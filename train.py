@@ -163,7 +163,7 @@ if args.train_model=='drafting':
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
             with torch.no_grad():
-                for p in class_model.gradients():
+                for p in disc_.gradients():
                     p.grad *= p.square()
                     p.grad *= 0.05
                     p.add_(p.grad)
