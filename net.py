@@ -121,13 +121,13 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_1(t)
         t = self.upsample(t)
         quantized, idx, cbloss = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
-        codebook_loss += cbloss.data
-        t += quantized.data
+        codebook_loss = codebook_loss + cbloss
+        t = t + quantized
         t = self.decoder_2(t)
         t = self.upsample(t)
         quantized, idx, cbloss = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
-        codebook_loss += cbloss.data
-        t+= quantized.data
+        codebook_loss = codebook_loss + cbloss
+        t= t + quantized
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
@@ -158,7 +158,7 @@ class Discriminator(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1)
-        self.ganloss = GANLoss('lsgan')
+        self.ganloss = GANLoss('vanilla')
 
     def losses(self, real, fake):
         pred_real = self(real)
@@ -187,7 +187,7 @@ def identity_loss(i, F, encoder, decoder):
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
-        l_identity2 += content_loss(Fcc[key], F[key]).data
+        l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2, cb_loss
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
@@ -195,7 +195,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     if calc_identity==True:
         l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
-        cb_loss += cb.data
+        cb_loss = cb_loss + cb
     else:
         l_identity1 = None
         l_identity2 = None
@@ -203,10 +203,10 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity4 = None
     loss_c = 0
     for key in cF.keys():
-        loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data
+        loss_c = loss_c + content_loss(stylized_feats[key], cF[key],norm=True)
     loss_s = 0
     for key in sF.keys():
-        loss_s += style_loss(stylized_feats[key], sF[key]).data
+        loss_s = loss_s + style_loss(stylized_feats[key], sF[key])
     loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
     remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
