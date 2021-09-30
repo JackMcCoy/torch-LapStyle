@@ -173,13 +173,12 @@ if args.train_model=='drafting':
         scaler.scale(loss_D).backward()
         scaler.step(opt_D)
         scaler.update()
-        set_requires_grad(disc_,False)
         with torch.no_grad():
             for p in disc_.gradients():
                 p.sub_(p.prev_step)
                 p.prev_step = None
                 p.grad = None
-
+        set_requires_grad(disc_,False)
 
         with autocast():
             losses = calc_losses(stylized.detach(), ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
