@@ -88,7 +88,9 @@ class DecoderVQGAN(nn.Module):
         self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
         self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
-        self.vit = Transformer(192, 8, 16, 256, 192, shift_tokens=True)
+        self.vit = Transformer(192, 8, 16, 256, 192, shift_tokens=True,
+                               local_attention_heads=2,
+                               local_attn_window_size = 64)
 
         patch_height, patch_width = (8,8)
         self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width)

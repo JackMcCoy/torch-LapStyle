@@ -52,23 +52,21 @@ class VectorQuantize(nn.Module):
 
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
-                                            heads = 32,
+                                            heads = 16,
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True,
-                                            n_local_attn_heads = 2)
+                                            reversible = True)
             self.pos_embedding = nn.Embedding(256, 512)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 1024,
-                                            heads = 32,
+                                            heads = 16,
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True,
-                                            n_local_attn_heads = 4)
+                                            reversible = True)
             self.pos_embedding = nn.Embedding(256, 1024)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
@@ -78,8 +76,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 2048,
                                             shift_tokens = True,
-                                            reversible = True,
-                                            n_local_attn_heads = 8)
+                                            reversible = True)
             self.pos_embedding = nn.Embedding(256, 2048)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
