@@ -101,7 +101,17 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-        flatten = input.reshape(-1, self.dim)
+        quantize = self.rearrange(input)
+        b, n, _ = quantize.shape
+        b, n, _ = quantize.shape
+
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1)
+        position_ids = seq_length - ones
+        position_embeddings = self.pos_embedding(position_ids.detach())
+
+        quantize = self.decompose_axis(quantize+ position_embeddings)
+        flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
             - 2 * flatten @ self.embed
@@ -122,17 +132,6 @@ class VectorQuantize(nn.Module):
 
         loss = self.perceptual_loss(quantize.detach(), input) * self.commitment
 
-        quantize = self.rearrange(quantize)
-        b, n, _ = quantize.shape
-        b, n, _ = quantize.shape
-
-        ones = torch.ones((b, n)).int().to(device)
-        seq_length = torch.cumsum(ones, axis=1)
-        position_ids = seq_length - ones
-        position_ids.stop_gradient = True
-        position_embeddings = self.pos_embedding(position_ids)
-
-        quantize = self.decompose_axis(quantize+ position_embeddings)
         quantize = input + (quantize.detach() - input)
 
         return quantize, embed_ind, loss
