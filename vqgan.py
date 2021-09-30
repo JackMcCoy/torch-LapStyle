@@ -5,6 +5,7 @@ from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from losses import CalcContentLoss
+from function import adaptive_instance_normalization as adain
 
 device = torch.device('cuda')
 '''
@@ -33,7 +34,8 @@ class VectorQuantize(nn.Module):
         commitment = 1.,
         eps = 1e-5,
         n_embed = None,
-        transformer_size = 1
+        transformer_size = 1,
+        receives_context = False
     ):
         super().__init__()
         n_embed = default(n_embed, codebook_size)
@@ -49,6 +51,8 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed', embed)
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
+        self.embeddings_set = False
+        rc = dict(receives_context=receives_context)
 
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
@@ -56,8 +60,8 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True)
-            self.pos_embedding = nn.Embedding(256, 512)
+                                            reversible = True,
+                                            **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
         elif transformer_size==2:
@@ -66,8 +70,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True)
-            self.pos_embedding = nn.Embedding(256, 1024)
+                                            reversible = True, **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
         elif transformer_size==3:
@@ -76,8 +79,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True)
-            self.pos_embedding = nn.Embedding(256, 2048)
+                                            reversible = True, **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
         elif transformer_size==4:
@@ -86,28 +88,36 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 4096,
                                             reversible = True,
-                                            shift_tokens = True)
-            self.pos_embedding = nn.Embedding(4096, 1024)
+                                            shift_tokens = True, **rc)
+
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
 
+    def set_embeddings(self, b, n, d):
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1)
+        self.position_ids = seq_length - ones
+        self.pos_embedding = nn.Embedding(d, n)
+        self.embeddings_set = True
 
     @property
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, input):
+    def forward(self, input, context=None):
+        target = adain(input, context)
         dtype = input.dtype
-        quantize = self.rearrange(input)
-        b, n, _ = quantize.shape
-        b, n, _ = quantize.shape
+        inputs = []
+        for input in [input,context]:
+            quantize = self.rearrange(input)
+            b, n, _ = quantize.shape
+            if not self.embeddings_set:
+                self.set_embeddings(b,n,_)
+            position_embeddings = self.pos_embedding(position_ids.detach())
+            inputs.append(quantize + position_embeddings)
+        quantize = self.transformer(inputs[0],context=inputs[1])
+        quantize = self.decompose_axis(quantize)
 
-        ones = torch.ones((b, n)).int().to(device)
-        seq_length = torch.cumsum(ones, axis=1)
-        position_ids = seq_length - ones
-        position_embeddings = self.pos_embedding(position_ids.detach())
-        quantize = self.transformer(quantize)
-        quantize = self.decompose_axis(quantize+ position_embeddings)
         flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
@@ -127,7 +137,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), input) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
         quantize = input + (quantize.detach() - input)
 

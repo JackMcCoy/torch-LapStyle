@@ -85,13 +85,12 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
-        self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1)
-        self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2)
-        self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
-        self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
-                               n_local_attn_heads = 4,
-                               local_attn_window_size = 32,
-                               attend_axially = True)
+        rc = dict(recieves_ctx=True)
+        self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1, **rc)
+        self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2, **rc)
+        self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
+        '''
+        self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True)
 
         patch_height, patch_width = (8,8)
         self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width)
@@ -102,6 +101,7 @@ class DecoderVQGAN(nn.Module):
         self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
         self.transformer_relu = nn.ReLU()
+        '''
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256),
@@ -138,26 +138,36 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        t = adain(cF['r4_1'], sF['r4_1'])
+        t, idx, codebook_loss = self.quantize_4(cF['r4_1'], context = sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
-        t = t + adain(cF['r3_1'], sF['r3_1'])
+        quantized, idx, cbloss = self.quantize_3(cF['r3_1'], context = sF['r3_1'])
+        codebook_loss += cbloss.data
+        t += quantized.data
         t = self.decoder_2(t)
         t = self.upsample(t)
-        t = t + adain(cF['r2_1'], sF['r2_1'])
+        quantized, idx, cbloss = self.quantize_2(cF['r2_1'], context = sF['r2_1'])
+        codebook_loss += cbloss.data
+        t += quantized.data
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-
+        '''
         b, n, _, _ = t.shape
 
+        ones = torch.ones((1, 256)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1)
+        position_ids = seq_length - ones
+        position_embeddings = self.pos_embedding(position_ids.detach())
         transformer = self.rearrange(t)
+        transformer = transformer + position_embeddings
         transformer = self.vit(transformer)
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
         t = t+transformer
-        return t
+        '''
+        return t, codebook_loss
 
 
 class Discriminator(nn.Module):
@@ -215,19 +225,20 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc = decoder(F, F)
+    Icc, cb_loss = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
-    return l_identity1, l_identity2
+    return l_identity1, l_identity2, cb_loss
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2  = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+        l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+        cb_loss = cb.data
     else:
         l_identity1 = None
         l_identity2 = None
@@ -265,5 +276,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN
 
