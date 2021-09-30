@@ -169,7 +169,7 @@ if args.train_model=='drafting':
         dec_.zero_grad()
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=False)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 25 + l_identity4 * .5 +\
                     loss_r * 9 + 16*loss_ss + + loss_Gp_GAN + l + codebook_loss
@@ -193,9 +193,6 @@ if args.train_model=='drafting':
                     save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
                     save_image(ci[j].float().detach(),
                                args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
-                                   i + 1) + '.jpg')
-                    save_image(debug_cX[j].float().detach(),
-                               args.save_dir + '/drafting_training_' + str(j) + '_iter_cX' + str(
                                    i + 1) + '.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
