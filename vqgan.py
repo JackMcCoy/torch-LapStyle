@@ -49,7 +49,7 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed', embed)
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
-        '''
+
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
                                             heads = 32,
@@ -95,7 +95,7 @@ class VectorQuantize(nn.Module):
             self.pos_embedding = nn.Embedding(4096, 1024)
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
-        '''
+
 
     @property
     def codebook(self):
@@ -103,7 +103,7 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input):
         dtype = input.dtype
-        '''
+
         quantize = self.rearrange(input)
         b, n, _ = quantize.shape
         b, n, _ = quantize.shape
@@ -116,8 +116,8 @@ class VectorQuantize(nn.Module):
 
         quantize = self.decompose_axis(quantize+ position_embeddings)
         quantize = input + (quantize - input).detach()
-        '''
-        flatten = input.reshape(-1, self.dim)
+
+        flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
             - 2 * flatten @ self.embed
