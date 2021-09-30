@@ -167,15 +167,13 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         dec_.zero_grad()
-        stylized, l2 = dec_(sF, cF)
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
-                    loss_r * 9 + 16*loss_ss + mdog * .33 + loss_Gp_GAN
+                    loss_r * 9 + 16*loss_ss + mdog * .33 + loss_Gp_GAN + l
         loss.backward()
-        l.backward()
         optimizer.step()
 
         if (i + 1) % 10 == 0:
