@@ -109,19 +109,21 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
-        t = self.quantize_4(t)
+        t, idx, codebook_loss = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
-        quantized = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
+        quantized, idx, cbloss = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
+        codebook_loss += cbloss
         t += quantized
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
+        quantized, idx, cbloss = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
+        codebook_loss += cbloss
         t+=quantized
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-        return t
+        return t, codebook_loss
 
 
 class Discriminator(nn.Module):
