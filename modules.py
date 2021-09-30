@@ -6,7 +6,7 @@ class ResBlock(nn.Module):
         super(ResBlock, self).__init__()
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim, dim, kernel_size=3),
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim, dim, kernel_size=3))
 
@@ -20,7 +20,7 @@ class ConvBlock(nn.Module):
         super(ConvBlock, self).__init__()
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim1, dim2, kernel_size=3),
-                                        nn.ReLU())
+                                        nn.LeakyReLU())
 
     def forward(self, x):
         out = self.conv_block(x)
