@@ -189,7 +189,7 @@ def identity_loss(i, F, encoder, decoder):
         l_identity2 += content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2, cb_loss
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
