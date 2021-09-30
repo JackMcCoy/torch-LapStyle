@@ -115,6 +115,13 @@ class DecoderVQGAN(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
+    @torch.no_grad()
+    def gradients(self):
+        for p in self.parameters():
+            if p.grad is None:
+                continue
+            yield p
+
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
         t, idx, codebook_loss = self.quantize_4(t)
@@ -167,6 +174,13 @@ class Discriminator(nn.Module):
         loss_D_fake = self.ganloss(pred_fake, False)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
+
+    @torch.no_grad()
+    def gradients(self):
+        for p in self.parameters():
+            if p.grad is None:
+                continue
+            yield p
 
     def forward(self, x):
         x = self.head(x)
