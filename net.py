@@ -158,7 +158,7 @@ class Discriminator(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1)
-        self.ganloss = GANLoss('lsgan')
+        self.ganloss = GANLoss('vanilla')
 
     def losses(self, real, fake):
         pred_real = self(real)
