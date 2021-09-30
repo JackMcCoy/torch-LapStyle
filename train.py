@@ -157,8 +157,6 @@ if args.train_model=='drafting':
         cF = enc_(ci)
         sF = enc_(si)
         stylized, l = dec_(sF, cF)
-        optimizer.zero_grad()
-        l.backward()
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -177,6 +175,7 @@ if args.train_model=='drafting':
                     l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
                     loss_r * 9 + 16*loss_ss + mdog * .33 + loss_Gp_GAN
         loss.backward()
+        l.backward()
         optimizer.step()
 
         if (i + 1) % 10 == 0:
