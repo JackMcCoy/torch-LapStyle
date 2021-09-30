@@ -181,7 +181,7 @@ if args.train_model=='drafting':
             print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item()}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
             id1: {l_identity1.item():.3f} id2: {l_identity2.item():.3f} \
-            mdog: {mdog.item():.3f} codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss.item():.3f}')
+            codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
