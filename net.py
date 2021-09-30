@@ -138,17 +138,12 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
-        t, idx, codebook_loss = self.quantize_4(t)
         t = self.decoder_1(t)
         t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_3(adain(cF['r3_1'], sF['r3_1']))
-        codebook_loss += cbloss.data
-        t += quantized.data
+        t = t + adain(cF['r3_1'], sF['r3_1'])
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_2(adain(cF['r2_1'], sF['r2_1']))
-        codebook_loss += cbloss.data
-        t += quantized.data
+        t = t + adain(cF['r2_1'], sF['r2_1'])
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
@@ -166,7 +161,7 @@ class DecoderVQGAN(nn.Module):
         transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
         t = t+transformer
-        return t, codebook_loss
+        return t
 
 
 class Discriminator(nn.Module):
@@ -224,19 +219,19 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc, cb_loss = decoder(F, F)
+    Icc = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
-    return l_identity1, l_identity2, cb_loss
+    return l_identity1, l_identity2
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+        l_identity1, l_identity2  = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
         cb_loss = cb.data
     else:
         l_identity1 = None
@@ -275,5 +270,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
 
