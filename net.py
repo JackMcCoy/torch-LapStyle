@@ -173,18 +173,27 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
+def identity_loss(i, F, encoder, decoder):
+    Icc, cb_loss = decoder(i, i)
+    l_identity1 = content_loss(Icc, i)
+    Fcc = encoder(Icc)
+    l_identity2 = 0
+    for key in F.keys():
+        l_identity2 += content_loss(Fcc[key], F[key])
+    return l_identity1, l_identity2, cb_loss
+
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        Icc, cb_loss = decoder(cF,cF)
-        l_identity1 = content_loss(Icc, ci)
-        Fcc = encoder(Icc)
-        l_identity2 = 0
-        for key in cF.keys():
-            l_identity2 += content_loss(Fcc[key], cF[key])
+        l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+        cb_loss += cb
+        del(cb)
     else:
         l_identity1 = None
         l_identity2 = None
+        l_identity3 = None
+        l_identity4 = None
     loss_c = 0
     for key in cF.keys():
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True)
@@ -215,5 +224,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_, calc_identity
         pred_fake_p = disc_(stylized)
         loss_Gp_GAN += disc_.ganloss(pred_fake_p, True)
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, cb_loss, loss_Gp_GAN, cX
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN, cX
 
