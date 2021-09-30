@@ -90,7 +90,8 @@ class DecoderVQGAN(nn.Module):
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
                                n_local_attn_heads = 4,
-                               local_attn_window_size = 32)
+                               local_attn_window_size = 32,
+                               attend_axially = True)
 
         patch_height, patch_width = (8,8)
         self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width)
@@ -150,12 +151,7 @@ class DecoderVQGAN(nn.Module):
 
         b, n, _, _ = t.shape
 
-        ones = torch.ones((1, 256)).int().to(device)
-        seq_length = torch.cumsum(ones, axis=1)
-        position_ids = seq_length - ones
-        position_embeddings = self.pos_embedding(position_ids.detach())
         transformer = self.rearrange(t)
-        transformer = transformer + position_embeddings
         transformer = self.vit(transformer)
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
