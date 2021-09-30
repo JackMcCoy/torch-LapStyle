@@ -106,12 +106,10 @@ class VectorQuantize(nn.Module):
 
     def forward(self, input, context=None):
         target = adain(input, context)
-        print(input.shape)
         dtype = input.dtype
         inputs = []
         for input in [input,context]:
             quantize = self.rearrange(input)
-            print(quantize.shape)
             b, n, _ = quantize.shape
             if not self.embeddings_set:
                 self.set_embeddings(b,n,_)
