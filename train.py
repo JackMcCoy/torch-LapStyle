@@ -138,20 +138,20 @@ if args.train_model=='drafting':
     set_requires_grad(enc_, False)
     enc_.train(False)
     dec_ = net.DecoderVQGAN()
-    #disc_ = net.Discriminator(depth=9)
+    disc_ = net.Discriminator(depth=9)
     init_weights(dec_)
-    #init_weights(disc_)
+    init_weights(disc_)
     dec_.train()
-    #disc_.train()
+    disc_.train()
     enc_.to(device)
     dec_.to(device)
-    #disc_.to(device)
+    disc_.to(device)
 
     optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
-    #opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
-        '''
+
         warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
@@ -167,7 +167,7 @@ if args.train_model=='drafting':
         scaler.step(opt_D)
         scaler.update()
         set_requires_grad(disc_,False)
-        '''
+
 
         with autocast():
             ci = next(content_iter).to(device)
@@ -177,18 +177,18 @@ if args.train_model=='drafting':
             stylized, l = dec_(sF, cF)
             dec_.zero_grad()
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True, disc_loss=False)
+            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True)
             loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mdog, codebook_loss, loss_Gp_GAN, debug_cX = losses
             loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                        l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 50 + l_identity4 * 1 +\
-                        loss_r * 9 + 16*loss_ss + mdog + l + codebook_loss
+                        l_identity1 * 50 + l_identity2 * 1 +l_identity3 * 25 + l_identity4 * .5 +\
+                        loss_r * 9 + 16*loss_ss + mdog + l + codebook_loss + loss_D + loss_Gp_GAN
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
 
         if (i + 1) % 10 == 0:
             print(loss.item())
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item()}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
             id1: {l_identity1.item():.3f} id2: {l_identity2.item():.3f} \
             mdog: {mdog.item():.3f} codebook_loss: {l.item():.3f} ident_cb_loss: {codebook_loss.item():.3f}')
