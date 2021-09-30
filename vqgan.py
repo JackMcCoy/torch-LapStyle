@@ -106,7 +106,7 @@ class VectorQuantize(nn.Module):
         seq_length = torch.cumsum(ones, axis=1)
         position_ids = seq_length - ones
         position_embeddings = self.pos_embedding(position_ids.detach())
-
+        quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize+ position_embeddings)
         flatten = quantize.reshape(-1, self.dim)
         dist = (
