@@ -90,8 +90,8 @@ class VectorQuantize(nn.Module):
                                             reversible = True,
                                             shift_tokens = True, **rc)
 
-            self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 2, p2 = 2)
-            self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=64,w=64,d=2,e=2)
+            self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
+            self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
 
     def set_embeddings(self, b, n, d):
         ones = torch.ones((b, n)).int().to(device)
