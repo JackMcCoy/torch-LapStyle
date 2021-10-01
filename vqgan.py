@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
-from losses import CalcContentLoss
+from losses import CalcContentLoss, CalcStyleLoss
 from function import adaptive_instance_normalization as adain
 
 device = torch.device('cuda')
@@ -46,6 +46,7 @@ class VectorQuantize(nn.Module):
         self.eps = eps
         self.commitment = commitment
         self.perceptual_loss = CalcContentLoss()
+        self.style_loss = CalcStyleLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
@@ -138,6 +139,7 @@ class VectorQuantize(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss += (self.style_loss(quantize.detach(), target).data * 5)
 
         quantize = target + (quantize.detach() - target)
 
