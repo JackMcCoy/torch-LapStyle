@@ -104,8 +104,8 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, input, context=None, skip = None):
-        target = adain(input, context) + skip.detach()
+    def forward(self, input, context=None):
+        target = adain(input, context)
         dtype = input.dtype
         inputs = []
         for input in [input+(skip.detach()),context]:
@@ -139,7 +139,7 @@ class VectorQuantize(nn.Module):
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
-        quantize = skip + (quantize.detach() - skip)
+        quantize = target + (quantize.detach() - target)
 
         return quantize, embed_ind, loss
 
