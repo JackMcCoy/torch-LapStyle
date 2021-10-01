@@ -86,11 +86,9 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=True)
-        '''
         self.quantize_4 = VectorQuantize(16, 3200, transformer_size=1, **rc)
         self.quantize_3 = VectorQuantize(32, 1200, transformer_size=2, **rc)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
-        '''
         self.quantize_1 = VectorQuantize(128, 2560, transformer_size=4, **rc)
         '''
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True)
@@ -141,20 +139,37 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        t = adain(cF['r4_1'], sF['r4_1'])
+        t, idx, codebook_loss = self.quantize_4(cF['r4_1'], context = sF['r4_1'], skip=t)
         t = self.decoder_1(t)
         t = self.upsample(t)
-        ada = adain(cF['r3_1'], sF['r3_1'])
-        t += ada.data
+        quantized, idx, cbloss = self.quantize_3(cF['r3_1'], context = sF['r3_1'], skip=t)
+        codebook_loss += cbloss.data
+        t += quantized.data
         t = self.decoder_2(t)
         t = self.upsample(t)
-        ada = adain(cF['r2_1'], sF['r2_1'])
-        t += ada.data
+        quantized, idx, cbloss = self.quantize_2(cF['r2_1'], context = sF['r2_1'], skip=t)
+        codebook_loss += cbloss.data
+        t += quantized.data
         t = self.decoder_3(t)
         t = self.upsample(t)
-        quantized, idx, codebook_loss = self.quantize_1(cF['r1_1'], context = sF['r1_1'], skip=t)
+        quantized, idx, cbloss = self.quantize_1(cF['r1_1'], context = sF['r1_1'], skip=t)
         t += quantized.data
         t = self.decoder_4(t)
+        '''
+        b, n, _, _ = t.shape
+
+        ones = torch.ones((1, 256)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1)
+        position_ids = seq_length - ones
+        position_embeddings = self.pos_embedding(position_ids.detach())
+        transformer = self.rearrange(t)
+        transformer = transformer + position_embeddings
+        transformer = self.vit(transformer)
+        transformer = self.decompose_axis(transformer)
+        transformer = self.transformer_res(transformer)
+        transformer = self.transformer_conv(transformer)
+        t = t+transformer
+        '''
         return t, codebook_loss
 
 
