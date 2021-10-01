@@ -108,7 +108,7 @@ class VectorQuantize(nn.Module):
         target = adain(input, context)
         dtype = input.dtype
         inputs = []
-        for input in [input+(skip.detach()),context]:
+        for input in [input,context]:
             quantize = self.rearrange(input)
             b, n, _ = quantize.shape
             if not self.embeddings_set:
