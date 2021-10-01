@@ -104,11 +104,11 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, input, context=None):
-        target = adain(input, context)
+    def forward(self, input, context=None, i = None):
+        target = adain(input, context) + i
         dtype = input.dtype
         inputs = []
-        for input in [input,context]:
+        for input in [input+i,context]:
             quantize = self.rearrange(input)
             b, n, _ = quantize.shape
             if not self.embeddings_set:

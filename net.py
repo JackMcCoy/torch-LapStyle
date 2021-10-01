@@ -152,7 +152,7 @@ class DecoderVQGAN(nn.Module):
         t += ada.data
         t = self.decoder_3(t)
         t = self.upsample(t)
-        quantized, idx, codebook_loss = self.quantize_1(cF['r1_1'], context = sF['r1_1'])
+        quantized, idx, codebook_loss = self.quantize_1(cF['r1_1'], context = sF['r1_1'], skip=t)
         t += quantized.data
         t = self.decoder_4(t)
         return t, codebook_loss
