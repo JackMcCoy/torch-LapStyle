@@ -148,7 +148,7 @@ class DecoderVQGAN(nn.Module):
         t += ada.data
         t = self.decoder_2(t)
         t = self.upsample(t)
-        ada = ada(cF['r2_1'], sF['r2_1'])
+        ada = adain(cF['r2_1'], sF['r2_1'])
         t += ada.data
         t = self.decoder_3(t)
         t = self.upsample(t)
