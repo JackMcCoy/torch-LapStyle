@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
-from mingpt import GPT
 
 '''
 VectorQuantize taken from LucidRains repo (https://github.com/lucidrains/vector-quantize-pytorch)
