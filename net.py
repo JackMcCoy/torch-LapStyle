@@ -82,7 +82,10 @@ class SingleTransDecoder(nn.Module):
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True,
-                                            attend_axially = True)
+                                            attend_axially = True,
+                                            ff_dropout = 0.1,
+                                            attn_layer_dropout = .1,
+                                            attn_dropout = .1)
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
         self.decoder_1 = nn.Sequential(
