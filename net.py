@@ -72,6 +72,68 @@ class Decoder(nn.Module):
         t = self.decoder_4(t)
         return t
 
+class SingleTransDecoder(nn.Module):
+    def __init__(self):
+        super(Decoder, self).__init__()
+        self.transformer = Transformer(dim = 512,
+                                            heads = 32,
+                                            depth = 16,
+                                            max_seq_len = 256,
+                                            shift_tokens = True,
+                                            reversible = True,
+                                            attend_axially = True)
+        self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
+        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
+        self.decoder_1 = nn.Sequential(
+            ResBlock(512))
+        self.decoder_1_2 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512,256))
+
+        self.decoder_2 = nn.Sequential(
+            ResBlock(256),
+            ConvBlock(256,128)
+            )
+        self.decoder_3 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 64)
+            )
+        self.decoder_4 = nn.Sequential(
+            ConvBlock(64, 64),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 3, kernel_size=3)
+        )
+
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+    def set_embeddings(self, b, n, d):
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1).to(device)
+        self.position_ids = (seq_length - ones).to(device)
+        self.pos_embedding = nn.Embedding(n, d).to(device)
+        self.embeddings_set = True
+
+    def forward(self, sF, cF):
+        t = adain(cF['r4_1'], sF['r4_1'])
+        t = self.decoder_1(t)
+        transformer = self.rearrange(t)
+        b, n, _ = transformer.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b,n,_)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        transformer = self.transformer(transformer + position_embeddings)
+        t += transformer.data
+        t = self.decoder_1_2(t)
+        t = self.upsample(t)
+        t = t + adain(cF['r3_1'], sF['r3_1'])
+        t = self.decoder_2(t)
+        t = self.upsample(t)
+        t = t + adain(cF['r2_1'], sF['r2_1'])
+        t = self.decoder_3(t)
+        t = self.upsample(t)
+        t = self.decoder_4(t)
+        return t
+
 class VQGANTrain(nn.Module):
     def __init__(self, vgg_path):
         super(VQGANTrain, self).__init__()
@@ -230,20 +292,20 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc, cb_loss = decoder(F, F)
+    Icc = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
-    return l_identity1, l_identity2, cb_loss
+    return l_identity1, l_identity2
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
-        cb_loss = cb.data
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+        #l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+        #cb_loss = cb.data
     else:
         l_identity1 = None
         l_identity2 = None
@@ -281,5 +343,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, cb_loss, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, mxdog_losses, loss_Gp_GAN
 
