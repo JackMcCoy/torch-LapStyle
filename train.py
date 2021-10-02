@@ -63,7 +63,7 @@ def adjust_learning_rate(optimizer, iteration_count,args):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def warmup_lr_adjust(optimizer, iteration_count, warmup_start=6.5e-8, warmup_iters=1500, max_lr = 1e-4, decay=5e-5):
+def warmup_lr_adjust(optimizer, iteration_count, warmup_start=6.5e-8, warmup_iters=1500, max_lr = 1e-3, decay=5e-5):
     """Imitating the original implementation"""
     warmup_step = (max_lr - warmup_start) / warmup_iters
     if iteration_count < warmup_iters:
@@ -169,7 +169,7 @@ if args.train_model=='drafting':
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 +\
-                    loss_r * 12 + 22*loss_ss + mdog * .1 + loss_Gp_GAN * 1.5
+                    loss_r * 18 + 18*loss_ss + mdog * .1 + loss_Gp_GAN * 1.5
         loss.backward()
         optimizer.step()
 
