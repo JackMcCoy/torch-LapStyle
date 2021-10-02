@@ -75,6 +75,7 @@ class Decoder(nn.Module):
 class SingleTransDecoder(nn.Module):
     def __init__(self):
         super(SingleTransDecoder, self).__init__()
+        self.embeddings_set = False
         self.transformer = Transformer(dim = 512,
                                             heads = 32,
                                             depth = 16,
