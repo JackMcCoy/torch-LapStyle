@@ -123,6 +123,7 @@ class SingleTransDecoder(nn.Module):
             self.set_embeddings(b,n,_)
         position_embeddings = self.pos_embedding(self.position_ids.detach())
         transformer = self.transformer(transformer + position_embeddings)
+        transformer = self.decompose_axis(transformer)
         t += transformer.data
         t = self.decoder_1_2(t)
         t = self.upsample(t)
