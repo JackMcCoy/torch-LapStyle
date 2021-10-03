@@ -78,7 +78,7 @@ class SingleTransDecoder(nn.Module):
         self.embeddings_set = False
         self.transformer = Transformer(dim = 192,
                                             heads = 32,
-                                            depth = 16,
+                                            depth = 24,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True,
@@ -88,7 +88,7 @@ class SingleTransDecoder(nn.Module):
                                             local_attn_window_size = 256)
         self.ctx_transformer = Transformer(dim=192,
                                        heads=32,
-                                       depth=16,
+                                       depth=24,
                                        max_seq_len=256,
                                        shift_tokens=True,
                                        reversible=True,
