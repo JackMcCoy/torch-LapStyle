@@ -83,9 +83,9 @@ class SingleTransDecoder(nn.Module):
                                             shift_tokens = True,
                                             reversible = True,
                                             attend_axially = True,
-                                            ff_dropout = 0.1,
-                                            attn_layer_dropout = .1,
-                                            attn_dropout = .1,
+                                            ff_dropout = 0.05,
+                                            attn_layer_dropout = .05,
+                                            attn_dropout = .05,
                                             receives_context = True)
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
