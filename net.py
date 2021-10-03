@@ -119,19 +119,16 @@ class SingleTransDecoder(nn.Module):
         self.embeddings_set = True
 
     def forward(self, si, ci):
-        transformer = self.rearrange(ci)
         b, n, _ = transformer.shape
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
         position_embeddings = self.pos_embedding(self.position_ids.detach())
-        ctx_position_embeddings = self.ctx_pos_embedding(self.position_ids.detach())
         style_rearranged = self.rearrange(si)
         content_rearranged = self.rearrange(ci)
-        context = self.ctx_transformer(content_rearranged + ctx_position_embeddings, context = style_rearranged + ctx_position_embeddings)
-        transformer = self.transformer(transformer + position_embeddings, context = context + position_embeddings)
-        transformer = self.decompose_axis(transformer)
-        t = self.transformer_conv(transformer)
-        return t
+        transformed = self.ctx_transformer(content_rearranged + position_embeddings, context = style_rearranged + position_embeddings)
+        transformed = self.decompose_axis(transformed)
+        transformed = self.transformer_conv(transformed)
+        return transformed
 
 class VQGANTrain(nn.Module):
     def __init__(self, vgg_path):
