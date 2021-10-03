@@ -311,7 +311,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc = decoder(F, F)
+    Icc, cb = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
