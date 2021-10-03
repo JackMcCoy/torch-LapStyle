@@ -76,7 +76,7 @@ class SingleTransDecoder(nn.Module):
     def __init__(self):
         super(SingleTransDecoder, self).__init__()
         self.embeddings_set = False
-        self.transformer = Transformer(dim = 512,
+        self.transformer = Transformer(dim = 192,
                                             heads = 32,
                                             depth = 16,
                                             max_seq_len = 256,
@@ -86,11 +86,9 @@ class SingleTransDecoder(nn.Module):
                                             ff_dropout = 0.1,
                                             attn_layer_dropout = .1,
                                             attn_dropout = .1)
-        self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
-        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
+        self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
+        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
         self.decoder_1 = nn.Sequential(
-            ResBlock(512))
-        self.decoder_1_2 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
 
@@ -107,7 +105,10 @@ class SingleTransDecoder(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, kernel_size=3)
         )
-
+        self.to_patch_embedding = nn.Linear(256, 192)
+        self.transformer_res = ResnetBlock(3)
+        self.transformer_conv = ConvBlock(3, 3)
+        self.transformer_relu = nn.ReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def set_embeddings(self, b, n, d):
@@ -120,15 +121,6 @@ class SingleTransDecoder(nn.Module):
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
-        transformer = self.rearrange(t)
-        b, n, _ = transformer.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b,n,_)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        transformer = self.transformer(transformer + position_embeddings)
-        transformer = self.decompose_axis(transformer)
-        t += transformer.data
-        t = self.decoder_1_2(t)
         t = self.upsample(t)
         t = t + adain(cF['r3_1'], sF['r3_1'])
         t = self.decoder_2(t)
@@ -137,6 +129,19 @@ class SingleTransDecoder(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
+        transformer = self.rearrange(t)
+        b, n, _ = transformer.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b,n,_)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        transformer = self.to_patch_embedding(transformer)
+        transformer = self.transformer(transformer + position_embeddings)
+        transformer = self.decompose_axis(transformer)
+        transformer = self.transformer_res(transformer)
+        transformer = self.transformer_conv(transformer)
+        transformer = self.transformer_relu(transformer)
+        t += transformer.data
+
         return t
 
 class VQGANTrain(nn.Module):
