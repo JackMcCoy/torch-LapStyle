@@ -8,6 +8,8 @@ from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLo
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
+from h_transformer_1d import HTransformer1D
+
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -76,27 +78,16 @@ class SingleTransDecoder(nn.Module):
     def __init__(self):
         super(SingleTransDecoder, self).__init__()
         self.embeddings_set = False
-        self.transformer = Transformer(dim = 192,
+        self.transformer = HTransformer1D(num_tokens = 192,
+                                          dim = 192,
                                             heads = 32,
-                                            depth = 16,
+                                            depth = 12,
+                                            dim_head = 64,
                                             max_seq_len = 256,
+                                            block_size = 128,
                                             shift_tokens = True,
                                             reversible = True,
-                                            attend_axially = True,
-                                            receives_context = True,
-                                            n_local_attn_heads = 32,
-                                            local_attn_window_size = 128)
-        self.ctx_transformer = Transformer(dim=192,
-                                       heads=32,
-                                       depth=16,
-                                       max_seq_len=256,
-                                       shift_tokens=True,
-                                       reversible=True,
-                                       attend_axially=True,
-                                       receives_context=True,
-                                       n_local_attn_heads=32,
-                                       local_attn_window_size=128
-                                    )
+                                            receives_context = True)
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
         self.decoder_1 = nn.Sequential(
@@ -116,9 +107,8 @@ class SingleTransDecoder(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, kernel_size=3)
         )
-        self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
-        self.transformer_relu = nn.ReLU()
+        self.transformer_out = nn.Conv2d(64, 3, kernel_size=3)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def set_embeddings(self, b, n, d):
@@ -142,19 +132,11 @@ class SingleTransDecoder(nn.Module):
         t = self.decoder_4(t)
         transformer = self.rearrange(t)
         b, n, _ = transformer.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b,n,_)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        ctx_position_embeddings = self.ctx_pos_embedding(self.position_ids.detach())
-        style_rearranged = self.rearrange(si)
-        content_rearranged = self.rearrange(ci)
-        context = self.ctx_transformer(content_rearranged + ctx_position_embeddings, context = style_rearranged + ctx_position_embeddings)
-        transformer = self.transformer(transformer + position_embeddings, context = context + position_embeddings)
+        transformer = self.transformer(transformer)
         transformer = self.decompose_axis(transformer)
         t = t + transformer.data
-        t = self.transformer_res(t)
         t = self.transformer_conv(t)
-        t = self.transformer_relu(t)
+        t = self.transformer_out(t)
         return t
 
 class VQGANTrain(nn.Module):
