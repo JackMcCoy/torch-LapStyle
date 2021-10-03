@@ -85,7 +85,8 @@ class SingleTransDecoder(nn.Module):
                                             attend_axially = True,
                                             ff_dropout = 0.1,
                                             attn_layer_dropout = .1,
-                                            attn_dropout = .1)
+                                            attn_dropout = .1,
+                                            receives_context = True)
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
         self.decoder_1 = nn.Sequential(
@@ -117,7 +118,7 @@ class SingleTransDecoder(nn.Module):
         self.pos_embedding = nn.Embedding(n, d).to(device)
         self.embeddings_set = True
 
-    def forward(self, sF, cF):
+    def forward(self, sF, cF, si):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
@@ -133,7 +134,8 @@ class SingleTransDecoder(nn.Module):
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
         position_embeddings = self.pos_embedding(self.position_ids.detach())
-        transformer = self.transformer(transformer + position_embeddings)
+        style_rearranged = self.rearrange(si)
+        transformer = self.transformer(transformer + position_embeddings, context = style_rearranged + position_embeddings)
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
