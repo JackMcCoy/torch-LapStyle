@@ -134,34 +134,48 @@ if args.train_model=='drafting':
     set_requires_grad(enc_, False)
     enc_.train(False)
     dec_ = net.SingleTransDecoder()
+    disc_ = net.Discriminator(depth=9)
     init_weights(dec_)
+    init_weights(disc_)
     dec_.train()
+    disc_.train()
     enc_.to(device)
     dec_.to(device)
+    disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
 
+        warmup_lr_adjust(opt_D, i)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
         cF = enc_(ci)
         sF = enc_(si)
         stylized = dec_(sF, cF, si, ci)
 
+        opt_D.zero_grad()
+        set_requires_grad(disc_, True)
+        loss_D = disc_.losses(si.detach(),stylized.detach())
+
+        loss_D.backward()
+        opt_D.step()
+        set_requires_grad(disc_,False)
+
         dec_.zero_grad()
         optimizer.zero_grad()
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=True, disc_loss=False, mdog_losses=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, loss_Gp_GAN = losses
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3 + l_identity4,mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
-                    l_identity1 * 50 + l_identity2 * 1 +\
-                    loss_r * 18 + 18*loss_ss + mdog * .1
+                    l_identity1 * 50 + l_identity2 * 1 + l_identity3 * 50 + l_identity4 * 1 +\
+                    loss_r * 18 + 18*loss_ss + mdog * 1 + loss_Gp_GAN * 2
         loss.backward()
         optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item():.3f}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
             id1: {l_identity1.item():.3f} id2: {l_identity2.item():.3f} mdog_loss: {mdog.item():.3f}')
 
