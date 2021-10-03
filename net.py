@@ -91,7 +91,7 @@ class SingleTransDecoder(nn.Module):
                                             local_attn_window_size = 128)
         self.ctx_transformer = Transformer(dim=192,
                                        heads=32,
-                                       depth=24,
+                                       depth=16,
                                        max_seq_len=256,
                                        shift_tokens=True,
                                        reversible=True,
