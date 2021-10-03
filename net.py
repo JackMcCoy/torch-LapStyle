@@ -105,27 +105,10 @@ class SingleTransDecoder(nn.Module):
                                     )
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
-        self.decoder_1 = nn.Sequential(
-            ResBlock(512),
-            ConvBlock(512,256))
-
-        self.decoder_2 = nn.Sequential(
-            ResBlock(256),
-            ConvBlock(256,128)
-            )
-        self.decoder_3 = nn.Sequential(
-            ConvBlock(128, 128),
-            ConvBlock(128, 64)
-            )
-        self.decoder_4 = nn.Sequential(
-            ConvBlock(64, 64),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 3, kernel_size=3)
-        )
-        self.transformer_res = ResBlock(3)
-        self.transformer_conv = ConvBlock(3, 3)
-        self.transformer_relu = nn.ReLU()
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.transformer_conv = nn.Sequential(ResBlock(3),
+                                              ConvBlock(3, 3),
+                                              ResBlock(3),
+                                              ConvBlock(3, 3)
 
     def set_embeddings(self, b, n, d):
         ones = torch.ones((b, n)).int().to(device)
@@ -135,17 +118,7 @@ class SingleTransDecoder(nn.Module):
         self.pos_embedding = nn.Embedding(n, d).to(device)
         self.embeddings_set = True
 
-    def forward(self, sF, cF, si, ci):
-        t = adain(cF['r4_1'], sF['r4_1'])
-        t = self.decoder_1(t)
-        t = self.upsample(t)
-        t = t + adain(cF['r3_1'], sF['r3_1'])
-        t = self.decoder_2(t)
-        t = self.upsample(t)
-        t = t + adain(cF['r2_1'], sF['r2_1'])
-        t = self.decoder_3(t)
-        t = self.upsample(t)
-        t = self.decoder_4(t)
+    def forward(self, si, ci):
         transformer = self.rearrange(t)
         b, n, _ = transformer.shape
         if not self.embeddings_set:
@@ -157,12 +130,7 @@ class SingleTransDecoder(nn.Module):
         context = self.ctx_transformer(content_rearranged + ctx_position_embeddings, context = style_rearranged + ctx_position_embeddings)
         transformer = self.transformer(transformer + position_embeddings, context = context + position_embeddings)
         transformer = self.decompose_axis(transformer)
-        t = t + transformer.data
-        t = self.transformer_res(t)
-        t = self.transformer_conv(t)
-        t = self.transformer_relu(t)
-
-
+        t = self.transformer_conv(transformer)
         return t
 
 class VQGANTrain(nn.Module):
@@ -323,7 +291,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc = decoder(F, F, i, i)
+    Icc = decoder(i, i)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
