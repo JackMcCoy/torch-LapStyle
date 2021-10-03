@@ -86,7 +86,23 @@ class SingleTransDecoder(nn.Module):
                                             ff_dropout = 0.05,
                                             attn_layer_dropout = .05,
                                             attn_dropout = .05,
-                                            receives_context = True)
+                                            receives_context = True,
+                                            n_local_attn_heads = 32,
+                                            local_attn_window_size = 128)
+        self.ctx_transformer = Transformer(dim=192,
+                                       heads=32,
+                                       depth=16,
+                                       max_seq_len=256,
+                                       shift_tokens=True,
+                                       reversible=True,
+                                       attend_axially=True,
+                                       ff_dropout=0.05,
+                                       attn_layer_dropout=.05,
+                                       attn_dropout=.05,
+                                       receives_context=True,
+                                       n_local_attn_heads=32,
+                                       local_attn_window_size=128
+                                    )
         self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
         self.decoder_1 = nn.Sequential(
@@ -115,10 +131,11 @@ class SingleTransDecoder(nn.Module):
         ones = torch.ones((b, n)).int().to(device)
         seq_length = torch.cumsum(ones, axis=1).to(device)
         self.position_ids = (seq_length - ones).to(device)
+        self.ctx_pos_embedding = nn.Embedding(n, d).to(device)
         self.pos_embedding = nn.Embedding(n, d).to(device)
         self.embeddings_set = True
 
-    def forward(self, sF, cF, si):
+    def forward(self, sF, cF, si, ci):
         t = adain(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
@@ -134,8 +151,11 @@ class SingleTransDecoder(nn.Module):
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
         position_embeddings = self.pos_embedding(self.position_ids.detach())
+        ctx_position_embeddings = self.ctx_pos_embedding(self.position_ids.detach())
         style_rearranged = self.rearrange(si)
-        transformer = self.transformer(transformer + position_embeddings, context = style_rearranged + position_embeddings)
+        content_rearranged = self.rearrange(ci)
+        context = self.ctx_transformer(content_rearranged + ctx_position_embeddings, context = style_rearranged + ctx_position_embeddings)
+        transformer = self.transformer(transformer + position_embeddings, context = context + position_embeddings)
         transformer = self.decompose_axis(transformer)
         t = t + transformer.data
         t = self.transformer_res(t)
@@ -303,7 +323,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc = decoder(F, F, i)
+    Icc = decoder(F, F, i, i)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
