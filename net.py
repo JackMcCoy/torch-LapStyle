@@ -174,7 +174,12 @@ class DecoderVQGAN(nn.Module):
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
 
-        self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True)
+        self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
+                               reversible = True,
+                               n_local_attn_heads = 8,
+                               local_attn_window_size=256,
+                               attend_axially=True,
+                               ff_chunks = 2)
 
         patch_height, patch_width = (8,8)
         self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width)
