@@ -83,7 +83,7 @@ class SingleTransDecoder(nn.Module):
                                             heads = 32,
                                             depth = 12,
                                             dim_head = 64,
-                                            max_seq_len = 256,
+                                            max_seq_len = 49152,
                                             block_size = 128,
                                             shift_tokens = True,
                                             reversible = True)
