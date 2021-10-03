@@ -129,7 +129,6 @@ class SingleTransDecoder(nn.Module):
         t = self.upsample(t)
         t = self.decoder_4(t)
         transformer = self.rearrange(t)
-        print(transformer.shape)
         b, n, _ = transformer.shape
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
