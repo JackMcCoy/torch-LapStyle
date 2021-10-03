@@ -104,18 +104,16 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, input, context=None):
-        target = adain(input, context)
+    def forward(self, input):
         dtype = input.dtype
-        inputs = []
-        for input in [input,context]:
-            quantize = self.rearrange(input)
-            b, n, _ = quantize.shape
-            if not self.embeddings_set:
-                self.set_embeddings(b,n,_)
-            position_embeddings = self.pos_embedding(self.position_ids.detach())
-            inputs.append(quantize + position_embeddings)
-        quantize = self.transformer(inputs[0],context=inputs[1])
+
+        quantize = self.rearrange(input)
+        b, n, _ = quantize.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b,n,_)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
+        quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
@@ -139,7 +137,7 @@ class VectorQuantize(nn.Module):
 
         loss = self.perceptual_loss(quantize.detach(), input) * self.commitment
 
-        quantize = target + (quantize.detach() - target)
+        quantize = input + (quantize.detach() - input)
 
         return quantize, embed_ind, loss
 
