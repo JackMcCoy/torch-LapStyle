@@ -83,9 +83,6 @@ class SingleTransDecoder(nn.Module):
                                             shift_tokens = True,
                                             reversible = True,
                                             attend_axially = True,
-                                            ff_dropout = 0.05,
-                                            attn_layer_dropout = .05,
-                                            attn_dropout = .05,
                                             receives_context = True,
                                             n_local_attn_heads = 32,
                                             local_attn_window_size = 128)
@@ -96,9 +93,6 @@ class SingleTransDecoder(nn.Module):
                                        shift_tokens=True,
                                        reversible=True,
                                        attend_axially=True,
-                                       ff_dropout=0.05,
-                                       attn_layer_dropout=.05,
-                                       attn_dropout=.05,
                                        receives_context=True,
                                        n_local_attn_heads=32,
                                        local_attn_window_size=128
