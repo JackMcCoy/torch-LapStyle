@@ -169,7 +169,7 @@ if args.train_model=='drafting':
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight +\
                     l_identity1 * 50 + l_identity2 * 1 +\
-                    loss_r * 18 + 18*loss_ss + mdog * .1 + loss_Gp_GAN * 1.5
+                    loss_r * 18 + 18*loss_ss + mdog * .1 + loss_Gp_GAN * 2
         loss.backward()
         optimizer.step()
 
