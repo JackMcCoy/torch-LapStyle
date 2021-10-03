@@ -133,7 +133,7 @@ if args.train_model=='drafting':
     enc_ = net.Encoder(vgg)
     set_requires_grad(enc_, False)
     enc_.train(False)
-    dec_ = net.SingleTransDecoder()
+    dec_ = net.DecoderVQGAN()
     disc_ = net.Discriminator(depth=9)
     init_weights(dec_)
     init_weights(disc_)
@@ -153,7 +153,7 @@ if args.train_model=='drafting':
         si = next(style_iter).to(device)
         cF = enc_(ci)
         sF = enc_(si)
-        stylized = dec_(sF, cF, si, ci)
+        stylized, i = dec_(sF, cF)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -168,7 +168,7 @@ if args.train_model=='drafting':
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=True)
         loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4,mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + loss_s * args.style_weight+\
-                    loss_r * 18 + 18*loss_ss + mdog * 1 + loss_Gp_GAN * 5
+                    loss_r * 18 + 18*loss_ss + mdog * 1 + loss_Gp_GAN * 5 + i
         loss.backward()
         optimizer.step()
 
