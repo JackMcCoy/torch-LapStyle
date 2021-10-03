@@ -154,7 +154,7 @@ class SingleTransDecoder(nn.Module):
         ctx_position_embeddings = self.ctx_pos_embedding(self.position_ids.detach())
         style_rearranged = self.rearrange(si)
         content_rearranged = self.rearrange(ci)
-        context = self.ctx_transformer(style_rearranged + ctx_position_embeddings, context = content_rearranged + ctx_position_embeddings)
+        context = self.ctx_transformer(content_rearranged + ctx_position_embeddings, context = style_rearranged + ctx_position_embeddings)
         transformer = self.transformer(transformer + position_embeddings, context = context + position_embeddings)
         transformer = self.decompose_axis(transformer)
         t = t + transformer.data
