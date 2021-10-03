@@ -327,7 +327,7 @@ def identity_loss(i, F, encoder, decoder):
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     else:
         l_identity1 = None
@@ -366,5 +366,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
 
