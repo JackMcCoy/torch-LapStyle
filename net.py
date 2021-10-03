@@ -84,7 +84,7 @@ class SingleTransDecoder(nn.Module):
                                             depth = 12,
                                             dim_head = 64,
                                             max_seq_len = 49152,
-                                            block_size = 128,
+                                            block_size = 192,
                                             shift_tokens = True,
                                             reversible = True)
         self.rearrange = Rearrange('b c h w -> b (h w c)')
