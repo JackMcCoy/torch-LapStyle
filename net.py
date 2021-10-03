@@ -106,7 +106,7 @@ class SingleTransDecoder(nn.Module):
             nn.Conv2d(64, 3, kernel_size=3)
         )
         self.to_patch_embedding = nn.Linear(256, 192)
-        self.transformer_res = ResnetBlock(3)
+        self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
         self.transformer_relu = nn.ReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
