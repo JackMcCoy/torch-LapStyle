@@ -119,7 +119,7 @@ class SingleTransDecoder(nn.Module):
         self.embeddings_set = True
 
     def forward(self, si, ci):
-        transformer = self.rearrange(t)
+        transformer = self.rearrange(ci)
         b, n, _ = transformer.shape
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
