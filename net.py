@@ -137,7 +137,7 @@ class SingleTransDecoder(nn.Module):
         style_rearranged = self.rearrange(si)
         transformer = self.transformer(transformer + position_embeddings, context = style_rearranged + position_embeddings)
         transformer = self.decompose_axis(transformer)
-        t = t + (transformer.data - t)
+        t = t + transformer.data
         t = self.transformer_res(t)
         t = self.transformer_conv(t)
         t = self.transformer_relu(t)
