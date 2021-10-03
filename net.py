@@ -130,7 +130,6 @@ class SingleTransDecoder(nn.Module):
         t = self.upsample(t)
         t = self.decoder_4(t)
         transformer = self.rearrange(t)
-        b, n, _ = transformer.shape
         transformer = self.transformer(transformer)
         transformer = self.decompose_axis(transformer)
         t = t + transformer.data
