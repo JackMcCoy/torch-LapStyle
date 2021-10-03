@@ -87,8 +87,8 @@ class SingleTransDecoder(nn.Module):
                                             block_size = 128,
                                             shift_tokens = True,
                                             reversible = True)
-        self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=8,p2=8)
-        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=8,d=8)
+        self.rearrange = Rearrange('b c h w -> b (h w c)')
+        self.decompose_axis = Rearrange('b (h w c) -> b c h w',h=128,w=128, c=3)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512,256))
