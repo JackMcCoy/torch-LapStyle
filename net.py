@@ -105,7 +105,6 @@ class SingleTransDecoder(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, kernel_size=3)
         )
-        self.to_patch_embedding = nn.Linear(256, 192)
         self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
         self.transformer_relu = nn.ReLU()
@@ -135,7 +134,6 @@ class SingleTransDecoder(nn.Module):
         if not self.embeddings_set:
             self.set_embeddings(b,n,_)
         position_embeddings = self.pos_embedding(self.position_ids.detach())
-        transformer = self.to_patch_embedding(transformer)
         transformer = self.transformer(transformer + position_embeddings)
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
