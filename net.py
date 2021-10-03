@@ -119,11 +119,11 @@ class SingleTransDecoder(nn.Module):
         self.embeddings_set = True
 
     def forward(self, si, ci):
-        b, n, _ = transformer.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b,n,_)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
         style_rearranged = self.rearrange(si)
+        b, n, _ = style_rearranged.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b, n, _)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
         content_rearranged = self.rearrange(ci)
         transformed = self.ctx_transformer(content_rearranged + position_embeddings, context = style_rearranged + position_embeddings)
         transformed = self.decompose_axis(transformed)
