@@ -324,6 +324,8 @@ def identity_loss(i, F, encoder, decoder):
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
     return l_identity1, l_identity2
 
+style_layers = {'r1_1','r2_1','r3_1','r4_1'}
+
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
@@ -338,7 +340,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     for key in cF.keys():
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data
     loss_s = 0
-    for key in sF.keys():
+    for key in style_layers:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
     loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
