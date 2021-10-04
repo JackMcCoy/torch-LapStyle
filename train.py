@@ -84,6 +84,7 @@ parser.add_argument('--style_dir', type=str, required=True,
                     help='Directory path to a batch of style images')
 parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
 parser.add_argument('--load_size', type=int, default=128)
+parser.add_argument('--style_load_size', type=int, default=128)
 parser.add_argument('--crop_size', type=int, default=128)
 
 # training options
@@ -114,7 +115,7 @@ vgg.load_state_dict(torch.load(args.vgg))
 vgg = nn.Sequential(*list(vgg.children()))
 
 content_tf = train_transform(args.load_size, args.crop_size)
-style_tf = train_transform(args.load_size, args.crop_size)
+style_tf = train_transform(args.style_load_size, args.crop_size)
 
 content_dataset = FlatFolderDataset(args.content_dir, content_tf)
 style_dataset = FlatFolderDataset(args.style_dir, style_tf)
