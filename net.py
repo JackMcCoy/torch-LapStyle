@@ -257,8 +257,7 @@ class DecoderVQGAN(nn.Module):
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
-        t = t+transformer.data
-        return t, codebook_loss
+        return transformer, codebook_loss
 
 
 class Discriminator(nn.Module):
