@@ -5,7 +5,7 @@ from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from losses import CalcContentLoss, CalcStyleLoss, CalcContentReltLoss, CalcStyleEmdLoss
-from function import normalized_feat
+from function import adaptive_instance_normalization as adain
 
 device = torch.device('cuda')
 '''
@@ -106,7 +106,7 @@ class VectorQuantize(nn.Module):
         return self.embed.transpose(0, 1)
 
     def forward(self, cF, sF):
-
+        target = adain(cF,sF)
         inputs = []
         for i in [cF,sF]:
             quantize = self.normalize(i)
@@ -128,7 +128,7 @@ class VectorQuantize(nn.Module):
         )
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).float()
-        embed_ind = embed_ind.view(*input.shape[:-1])
+        embed_ind = embed_ind.view(*cF.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
         if self.training:
@@ -139,9 +139,9 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), input) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
-        quantize = input + (quantize.detach() - input)
+        #quantize = input + (quantize.detach() - input)
 
         return quantize, embed_ind, loss
 
