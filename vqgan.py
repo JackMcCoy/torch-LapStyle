@@ -106,7 +106,6 @@ class VectorQuantize(nn.Module):
         return self.embed.transpose(0, 1)
 
     def forward(self, cF, sF):
-        dtype = input.dtype
 
         inputs = []
         for i in [cF,sF]:
@@ -128,7 +127,7 @@ class VectorQuantize(nn.Module):
             + self.embed.pow(2).sum(0, keepdim=True)
         )
         _, embed_ind = (-dist).max(1)
-        embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
+        embed_onehot = F.one_hot(embed_ind, self.n_embed).float()
         embed_ind = embed_ind.view(*input.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
