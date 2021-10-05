@@ -5,7 +5,7 @@ from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from losses import CalcContentLoss, CalcStyleLoss, CalcContentReltLoss, CalcStyleEmdLoss
-from function import adaptive_instance_normalization as adain
+from function import normalized_feat
 
 device = torch.device('cuda')
 '''
@@ -61,9 +61,10 @@ class VectorQuantize(nn.Module):
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True,
-                                            **rc)
+                                            receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
+            self.normalize = nn.InstanceNorm2d(512)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
@@ -104,16 +105,20 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, input):
+    def forward(self, cF, sF):
         dtype = input.dtype
 
-        quantize = self.rearrange(input)
-        b, n, _ = quantize.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b,n,_)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        quantize = quantize + position_embeddings
-        quantize = self.transformer(quantize)
+        inputs = []
+        for i in [cF,sF]:
+            quantize = self.normalize(i)
+            quantize = self.rearrange(quantize)
+            b, n, _ = quantize.shape
+            if not self.embeddings_set:
+                self.set_embeddings(b,n,_)
+            position_embeddings = self.pos_embedding(self.position_ids.detach())
+            quantize = quantize + position_embeddings
+            inputs.append(quantize)
+        quantize = self.transformer(inputs[0],context=inputs[1])
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
