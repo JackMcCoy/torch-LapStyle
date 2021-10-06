@@ -143,7 +143,7 @@ class VectorQuantize(nn.Module):
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
-        #quantize = input + (quantize.detach() - input)
+        quantize = target + (quantize.detach() - target)
 
         return quantize, embed_ind, loss
 
