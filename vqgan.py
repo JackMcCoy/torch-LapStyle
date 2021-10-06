@@ -117,7 +117,6 @@ class VectorQuantize(nn.Module):
         return self.embed.transpose(0, 1)
 
     def forward(self, cF, sF):
-        target = adain(cF,sF)
         inputs = []
         for i in [cF,sF]:
             quantize = self.normalize(i)
@@ -150,9 +149,9 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), cF) * self.commitment
 
-        quantize = target + (quantize.detach() - target)
+        quantize = cF + (quantize.detach() - cF)
 
         return quantize, embed_ind, loss
 
