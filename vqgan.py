@@ -60,6 +60,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 64,
                                             shift_tokens = True,
+                                            attend_axially = True,
                                             reversible = True,
                                             receives_context=True)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
@@ -71,6 +72,7 @@ class VectorQuantize(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
+                                            attend_axially=True,
                                             reversible = True,
                                             receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
