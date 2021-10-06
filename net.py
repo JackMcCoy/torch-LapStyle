@@ -199,6 +199,7 @@ class DecoderVQGAN(nn.Module):
         self.decoder_0 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 512),
+            ResBlock(512),
             ConvBlock(512, 512)
         )
 
