@@ -45,7 +45,6 @@ class VectorQuantize(nn.Module):
         self.decay = decay
         self.eps = eps
         self.commitment = commitment
-        self.perceptual_loss = CalcContentLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
@@ -150,7 +149,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss = F.mse_loss(quantize.detach(), target)
 
         #quantize = input + (quantize.detach() - input)
 
