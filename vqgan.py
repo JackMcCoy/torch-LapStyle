@@ -74,7 +74,6 @@ class VectorQuantize(nn.Module):
                                             reversible = True, **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
-            self.normalize = nn.InstanceNorm2d(256, affine=True)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
                                             heads = 16,
@@ -84,7 +83,6 @@ class VectorQuantize(nn.Module):
                                             reversible = True, **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
-            self.normalize = nn.InstanceNorm2d(128, affine=True)
         elif transformer_size==4:
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
@@ -143,7 +141,7 @@ class VectorQuantize(nn.Module):
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
-        quantize = target + (quantize.detach() - target)
+        #quantize = input + (quantize.detach() - input)
 
         return quantize, embed_ind, loss
 
