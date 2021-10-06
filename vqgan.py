@@ -45,6 +45,7 @@ class VectorQuantize(nn.Module):
         self.decay = decay
         self.eps = eps
         self.commitment = commitment
+        self.perceptual_loss = CalcContentLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
@@ -115,19 +116,15 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, cF, sF):
-        target = adain(cF,sF)
-        inputs = []
-        for i in [cF,sF]:
-            quantize = self.normalize(i)
-            quantize = self.rearrange(quantize)
-            b, n, _ = quantize.shape
-            if not self.embeddings_set:
-                self.set_embeddings(b,n,_)
-            position_embeddings = self.pos_embedding(self.position_ids.detach())
-            quantize = quantize + position_embeddings
-            inputs.append(quantize)
-        quantize = self.transformer(inputs[0],context=inputs[1])
+    def forward(self, input):
+        quantize = self.normalize(input)
+        quantize = self.rearrange(quantize)
+        b, n, _ = quantize.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b,n,_)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
+        quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
@@ -149,9 +146,9 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = F.mse_loss(quantize.detach(), target)
+        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
-        #quantize = input + (quantize.detach() - input)
+        quantize = input + (quantize.detach() - input)
 
         return quantize, embed_ind, loss
 
