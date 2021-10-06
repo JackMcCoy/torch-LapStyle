@@ -135,7 +135,7 @@ class VectorQuantize(nn.Module):
         )
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).float()
-        embed_ind = embed_ind.view(*cF.shape[:-1])
+        embed_ind = embed_ind.view(*input.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
         if self.training:
@@ -146,7 +146,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), input) * self.commitment
 
         quantize = input + (quantize.detach() - input)
 
