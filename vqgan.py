@@ -55,15 +55,15 @@ class VectorQuantize(nn.Module):
         rc = dict(receives_context=receives_ctx)
 
         if transformer_size==0:
-            self.transformer = Transformer(dim = 512,
+            self.transformer = Transformer(dim = 64,
                                             heads = 16,
                                             depth = 8,
-                                            max_seq_len = 256,
+                                            max_seq_len = 512,
                                             shift_tokens = True,
                                             reversible = True,
                                             receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=8,w=8, e=1,d=1)
             self.normalize = nn.InstanceNorm2d(512, affine = True)
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
@@ -123,6 +123,7 @@ class VectorQuantize(nn.Module):
         for i in [cF,sF]:
             quantize = self.normalize(i)
             quantize = self.rearrange(quantize)
+            print(quantize.shape)
             b, n, _ = quantize.shape
             if not self.embeddings_set:
                 self.set_embeddings(b,n,_)
