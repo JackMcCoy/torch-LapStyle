@@ -55,10 +55,10 @@ class VectorQuantize(nn.Module):
         rc = dict(receives_context=receives_ctx)
 
         if transformer_size==0:
-            self.transformer = Transformer(dim = 64,
+            self.transformer = Transformer(dim = 512,
                                             heads = 16,
                                             depth = 8,
-                                            max_seq_len = 512,
+                                            max_seq_len = 64,
                                             shift_tokens = True,
                                             reversible = True,
                                             receives_context=True)
