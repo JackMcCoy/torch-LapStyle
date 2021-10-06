@@ -62,7 +62,7 @@ class VectorQuantize(nn.Module):
                                             shift_tokens = True,
                                             reversible = True,
                                             receives_context=True)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) c')
+            self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=8,w=8)
             self.normalize = nn.InstanceNorm2d(512, affine = True)
         if transformer_size==1:
