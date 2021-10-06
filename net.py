@@ -168,7 +168,7 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
-        rc = dict(receives_ctx=False)
+        rc = dict(receives_ctx=True)
         self.quantize_5 = VectorQuantize(8, 2560, transformer_size=0, **rc)
         self.quantize_4 = VectorQuantize(16, 2560, transformer_size=1, **rc)
         #self.quantize_3 = VectorQuantize(32, 640, transformer_size=2, **rc)
@@ -240,10 +240,10 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        quantized, idx, codebook_loss = self.quantize_5(adain(cF['r5_1'], sF['r5_1']))
+        quantized, idx, codebook_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
         t = self.decoder_0(quantized)
         t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_4(adain(cF['r4_1'], sF['r4_1']))
+        quantized, idx, cbloss = self.quantize_4(cF['r4_1'], sF['r4_1'])
         codebook_loss += cbloss.data
         t += quantized.data
         t = self.decoder_1(quantized)
