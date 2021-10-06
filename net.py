@@ -268,7 +268,7 @@ class DecoderVQGAN(nn.Module):
         transformer = self.decompose_axis(transformer)
         transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
-        transformer = self.transformer_relu(transformer)
+        #transformer = self.transformer_relu(transformer)
         t = t+transformer.data
         return t, codebook_loss
 
