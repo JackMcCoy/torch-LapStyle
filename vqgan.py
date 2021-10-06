@@ -122,6 +122,7 @@ class VectorQuantize(nn.Module):
         target = adain(cF, sF)
         inputs = []
         for i in [cF,sF]:
+            print(i.shape)
             quantize = self.normalize(i)
             quantize = self.rearrange(quantize)
             b, n, _ = quantize.shape
