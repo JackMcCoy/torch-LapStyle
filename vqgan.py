@@ -59,6 +59,7 @@ class VectorQuantize(nn.Module):
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 64,
+                                            causal = True,
                                             shift_tokens = True,
                                             reversible = True,
                                             receives_context=True)
@@ -70,6 +71,7 @@ class VectorQuantize(nn.Module):
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 256,
+                                            causal = True,
                                             shift_tokens = True,
                                             reversible = True,
                                             receives_context=True)
