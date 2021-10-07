@@ -128,7 +128,7 @@ class VectorQuantize(nn.Module):
             position_embeddings = self.pos_embedding(self.position_ids.detach())
             quantize = quantize + position_embeddings
             inputs.append(quantize)
-        quantize = self.transformer(inputs[0],context=inputs[1])
+        quantize = self.transformer(inputs[0],context=target)
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
