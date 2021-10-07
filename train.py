@@ -177,7 +177,7 @@ if args.train_model=='drafting':
             print(f'{loss.item():.2f}')
             print(f'disc: {loss_D.item():.4f} gan_loss: {loss_Gp_GAN.item():.3f}, c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
             r: {loss_r.item():.3f} ss: {loss_ss.item():.3f} \
-            mdog_loss: {mdog.item():.3f} cb: {cb.item()}')
+            mdog_loss: {mdog.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
