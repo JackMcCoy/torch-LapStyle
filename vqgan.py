@@ -123,7 +123,7 @@ class VectorQuantize(nn.Module):
         quantize = self.normalize(cF)
         inputs = []
         for i in [quantize, sF]:
-            quantize = self.rearrange(quantize)
+            quantize = self.rearrange(i)
             b, n, _ = quantize.shape
             if not self.embeddings_set:
                 self.set_embeddings(b, n, _)
