@@ -237,7 +237,6 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = adain(cF['r4_1'], sF['r4_1'])
-        t += quantized.data
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1']).data
@@ -261,6 +260,7 @@ class DecoderVQGAN(nn.Module):
         transformer = self.transformer_conv(transformer)
         #transformer = self.transformer_relu(transformer)
         t = t+transformer.data
+        codebook_loss=0
         return t, codebook_loss
 
 
