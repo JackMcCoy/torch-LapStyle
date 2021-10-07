@@ -335,15 +335,16 @@ def identity_loss(i, F, encoder, decoder):
     l_identity2 = 0
     for key in F.keys():
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
-    return l_identity1, l_identity2
+    return l_identity1, l_identity2, cb
 
-style_layers = {'r1_1','r2_1','r3_1','r4_1'}
+style_layers = {'r1_1','r2_1','r3_1','r4_1','r5_1'}
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+        l_identity1, l_identity2, cb = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4, cb2 = identity_loss(si, sF, encoder, decoder)
+        cb += cb2.data
     else:
         l_identity1 = None
         l_identity2 = None
@@ -381,5 +382,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, cb
 
