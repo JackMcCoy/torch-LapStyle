@@ -192,17 +192,10 @@ class DecoderVQGAN(nn.Module):
         self.position_ids = seq_length - ones
 
         self.pos_embedding = nn.Embedding(256, 192)
-        self.transformer_relu = nn.ReLU()
-        self.transformer_res = ResBlock(3)
+
         self.transformer_conv = nn.Sequential(
             ResBlock(3),ConvBlock(3, 3),
             ResBlock(3), ConvBlock(3, 3),
-        )
-            self.decoder_0 = nn.Sequential(
-            ResBlock(512),
-            ConvBlock(512, 512),
-            ResBlock(512),
-            ConvBlock(512, 512)
         )
 
         self.decoder_1 = nn.Sequential(
