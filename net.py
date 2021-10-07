@@ -200,15 +200,12 @@ class DecoderVQGAN(nn.Module):
 
         self.decoder_0 = nn.Sequential(
             ResBlock(512),
-            ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
 
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
-            ConvBlock(512, 256),
-            ConvBlock(256, 256),
-            ConvBlock(256, 256)
+            ConvBlock(512, 256)
         )
 
         self.decoder_2 = nn.Sequential(
@@ -219,14 +216,10 @@ class DecoderVQGAN(nn.Module):
             )
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
-            ConvBlock(128, 128),
             ConvBlock(128, 64),
-            ConvBlock(64, 64),
             ConvBlock(64, 64)
             )
         self.decoder_4 = nn.Sequential(
-            ResBlock(64),
-            ConvBlock(64, 64),
             ResBlock(64),
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
