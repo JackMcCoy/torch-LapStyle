@@ -175,9 +175,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     loss_s = 0
     for key in sF.keys():
         loss_s += style_loss(stylized_feats[key], sF[key])
-    loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+    content_emd = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-    remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
     if mdog_losses:
@@ -195,5 +195,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, calc_identity=True, 
     else:
         mxdog_losses = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses
+    return loss_c, loss_s, style_remd, content_emd , l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses
 
