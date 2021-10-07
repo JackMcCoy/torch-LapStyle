@@ -194,11 +194,13 @@ class DecoderVQGAN(nn.Module):
         self.pos_embedding = nn.Embedding(256, 192)
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
-        self.transformer_conv = nn.Sequential(
-                                ResBlock(3),
-                                ConvBlock(3, 3),
-                                ResBlock(3),
-                                ConvBlock(3,3)
+        self.transformer_conv = ConvBlock(3, 3)
+
+        self.decoder_0 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512, 512),
+            ResBlock(512),
+            ConvBlock(512, 512)
         )
 
         self.decoder_1 = nn.Sequential(
@@ -239,8 +241,12 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-
-        t = adain(cF['r4_1'], sF['r4_1'])
+        quantized, idx, codebook_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
+        t = self.decoder_0(quantized)
+        t = self.upsample(t)
+        quantized, idx, cbloss = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        codebook_loss += cbloss.data
+        t += quantized.data
         t = self.decoder_1(t)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1']).data
@@ -248,7 +254,7 @@ class DecoderVQGAN(nn.Module):
         #t += quantized.data
         t = self.decoder_2(t)
         t = self.upsample(t)
-        t += adain(cF['r2_1'], sF['r2_1']).data
+        t += adain(cF['r2_1'], sF['r2_1'])
         #codebook_loss += cbloss.data
         #t += quantized.data
         t = self.decoder_3(t)
@@ -264,7 +270,6 @@ class DecoderVQGAN(nn.Module):
         transformer = self.transformer_conv(transformer)
         #transformer = self.transformer_relu(transformer)
         t = t+transformer.data
-        codebook_loss = 0
         return t, codebook_loss
 
 
