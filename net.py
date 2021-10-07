@@ -169,13 +169,9 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=False)
-<<<<<<< HEAD
-        #self.quantize_5 = VectorQuantize(8, 640, transformer_size=0, **rc)
-        #self.quantize_4 = VectorQuantize(16, 800, transformer_size=1, **rc)
-=======
+
         self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
         self.quantize_4 = VectorQuantize(16, 640, transformer_size=1, **rc)
->>>>>>> parent of 15d03cf... layernorm
         #self.quantize_3 = VectorQuantize(32, 640, transformer_size=2, **rc)
         #self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
@@ -241,10 +237,10 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        t = adain(cF['r4_1'], sF['r4_1'])
+        t = self.quantize_5(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
         t = self.upsample(t)
-        t += adain(cF['r3_1'], sF['r3_1']).data
+        t += self.quantize_4(cF['r3_1'], sF['r3_1']).data
         #codebook_loss += cbloss.data
         #t += quantized.data
         t = self.decoder_2(t)
