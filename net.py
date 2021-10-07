@@ -169,8 +169,8 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=False)
-        self.quantize_5 = VectorQuantize(8, 640, transformer_size=0, **rc)
-        self.quantize_4 = VectorQuantize(16, 800, transformer_size=1, **rc)
+        #self.quantize_5 = VectorQuantize(8, 640, transformer_size=0, **rc)
+        #self.quantize_4 = VectorQuantize(16, 800, transformer_size=1, **rc)
         #self.quantize_3 = VectorQuantize(32, 640, transformer_size=2, **rc)
         #self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
@@ -194,9 +194,11 @@ class DecoderVQGAN(nn.Module):
         self.pos_embedding = nn.Embedding(256, 192)
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
-        self.transformer_conv = ConvBlock(3, 3)
-
-        self.decoder_0 = nn.Sequential(
+        self.transformer_conv = nn.Sequential(
+            ResBlock(3),ConvBlock(3, 3),
+            ResBlock(3), ConvBlock(3, 3),
+        )
+            self.decoder_0 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 512),
             ResBlock(512),
@@ -241,11 +243,7 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        quantized, idx, codebook_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
-        t = self.decoder_0(quantized)
-        t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_4(cF['r4_1'], sF['r4_1'])
-        codebook_loss += cbloss.data
+        t = adain(cF['r4_1'], sF['r4_1'])
         t += quantized.data
         t = self.decoder_1(t)
         t = self.upsample(t)
@@ -266,7 +264,7 @@ class DecoderVQGAN(nn.Module):
         transformer = transformer + position_embeddings
         transformer = self.vit(transformer)
         transformer = self.decompose_axis(transformer)
-        transformer = self.transformer_res(transformer)
+        #transformer = self.transformer_res(transformer)
         transformer = self.transformer_conv(transformer)
         #transformer = self.transformer_relu(transformer)
         t = t+transformer.data
