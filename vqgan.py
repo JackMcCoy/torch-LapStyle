@@ -120,8 +120,8 @@ class VectorQuantize(nn.Module):
         target = adain(cF, sF)
         inputs = []
         for i in [cF,sF]:
-            quantize = self.normalize(i)
-            quantize = self.rearrange(quantize)
+            #quantize = self.normalize(i)
+            quantize = self.rearrange(i)
             b, n, _ = quantize.shape
             if not self.embeddings_set:
                 self.set_embeddings(b,n,_)
