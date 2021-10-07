@@ -60,7 +60,8 @@ class VectorQuantize(nn.Module):
                                            depth=8,
                                            max_seq_len=64,
                                            shift_tokens=True,
-                                           reversible=True)
+                                           reversible=True,
+                                           **rc)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
             self.normalize = nn.InstanceNorm2d(512)
@@ -70,7 +71,8 @@ class VectorQuantize(nn.Module):
                                            depth=8,
                                            max_seq_len=256,
                                            shift_tokens=True,
-                                           reversible=True)
+                                           reversible=True,
+                                           **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
             self.normalize = nn.InstanceNorm2d(512)
@@ -118,7 +120,8 @@ class VectorQuantize(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        quantize = self.rearrange(target)
+        quantize = self.rearrange(cF)
+        quantize = self.normalize(quantize)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
@@ -147,7 +150,7 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = F.mse_loss(quantize.detach(), target) * self.commitment
+        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
 
         quantize = target + (quantize.detach() - target)
 
