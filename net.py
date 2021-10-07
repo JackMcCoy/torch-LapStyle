@@ -168,7 +168,7 @@ class VQGANTrain(nn.Module):
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
-        rc = dict(receives_ctx=False)
+        rc = dict(receives_ctx=True)
 
         self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
         self.quantize_4 = VectorQuantize(16, 640, transformer_size=1, **rc)

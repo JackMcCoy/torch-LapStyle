@@ -121,14 +121,17 @@ class VectorQuantize(nn.Module):
     def forward(self, cF, sF):
         target = adain(cF, sF)
         quantize = self.normalize(cF)
-        quantize = self.rearrange(quantize)
-        b, n, _ = quantize.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b, n, _)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        quantize = quantize + position_embeddings
+        inputs = []
+        for i in [quantize, sF]:
+            quantize = self.rearrange(quantize)
+            b, n, _ = quantize.shape
+            if not self.embeddings_set:
+                self.set_embeddings(b, n, _)
+            position_embeddings = self.pos_embedding(self.position_ids.detach())
+            quantize = quantize + position_embeddings
+            inputs.append(quantize)
 
-        quantize = self.transformer(quantize)
+        quantize = self.transformer(inputs[0],context=inputs[1])
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
