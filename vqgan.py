@@ -64,7 +64,7 @@ class VectorQuantize(nn.Module):
                                             receives_context=True)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=8,w=8)
-            self.normalize = nn.InstanceNorm2d(512)
+            self.normalize = nn.InstanceNorm2d(512, affine = True)
         if transformer_size==1:
             self.transformer = Transformer(dim = 512,
                                             heads = 16,
@@ -75,7 +75,7 @@ class VectorQuantize(nn.Module):
                                             receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=1,p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=1,d=1)
-            self.normalize = nn.InstanceNorm2d(512)
+            self.normalize = nn.InstanceNorm2d(512, affine = True)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
@@ -118,14 +118,17 @@ class VectorQuantize(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        # quantize = self.normalize(i)
-        quantize = self.rearrange(target)
-        b, n, _ = quantize.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b, n, _)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        quantize = quantize + position_embeddings
-        quantize = self.transformer(quantize)
+        inputs = []
+        for i in [cF, sF]:
+            quantize = self.normalize(i)
+            quantize = self.rearrange(quantize)
+            b, n, _ = quantize.shape
+            if not self.embeddings_set:
+                self.set_embeddings(b, n, _)
+            position_embeddings = self.pos_embedding(self.position_ids.detach())
+            quantize = quantize + position_embeddings
+            inputs.append(quantize)
+        quantize = self.transformer(inputs[0], context=inputs[1])
         quantize = self.decompose_axis(quantize)
 
         flatten = quantize.reshape(-1, self.dim)
