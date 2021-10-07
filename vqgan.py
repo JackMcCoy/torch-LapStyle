@@ -60,8 +60,7 @@ class VectorQuantize(nn.Module):
                                            depth=8,
                                            max_seq_len=64,
                                            shift_tokens=True,
-                                           reversible=True,
-                                           receives_context=True)
+                                           reversible=True)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
             self.normalize = nn.InstanceNorm2d(512)
@@ -71,8 +70,7 @@ class VectorQuantize(nn.Module):
                                            depth=8,
                                            max_seq_len=256,
                                            shift_tokens=True,
-                                           reversible=True,
-                                           receives_context=True)
+                                           reversible=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
             self.normalize = nn.InstanceNorm2d(512)
