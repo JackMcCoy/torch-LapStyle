@@ -171,7 +171,7 @@ class DecoderVQGAN(nn.Module):
         rc = dict(receives_ctx=True)
 
         #self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
-        self.quantize_4 = VectorQuantize(16, 128, transformer_size=1, **rc)
+        self.quantize_4 = VectorQuantize(16, 64, transformer_size=1, **rc)
         #self.quantize_3 = VectorQuantize(32, 640, transformer_size=2, **rc)
         #self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
@@ -312,8 +312,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2, cb = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4, cb2 = identity_loss(si, sF, encoder, decoder)
-        cb += cb2.data
+        #l_identity3, l_identity4, cb2 = identity_loss(si, sF, encoder, decoder)
+        #cb += cb2.data
     else:
         l_identity1 = None
         l_identity2 = None
