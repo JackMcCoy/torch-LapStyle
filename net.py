@@ -227,6 +227,8 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
+        for i in self.proj_updaters:
+            i.redraw_projections()
         quantized, idx, codebook_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(quantized)
         t = self.upsample(t)

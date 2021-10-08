@@ -291,11 +291,10 @@ class Quantize_No_Transformer(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        b, n, *_ = cF.shape
         quantize = self.normalize(cF)
-        quantize = self.rearrange(quantize)
         quantize = generalized_kernel(quantize, kernel_fn=nn.ReLU(),
                                       projection_matrix=self.projection_matrix, device=device)
+        quantize = self.rearrange(quantize)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
