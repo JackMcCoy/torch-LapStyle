@@ -27,7 +27,7 @@ def laplace_smoothing(x, n_categories, eps=1e-5):
 
 def orthogonal_matrix_chunk(cols, device = None):
     unstructured_block = torch.randn((cols, cols), device = device)
-    q, r = torch.qr(unstructured_block.cpu(), some = True)
+    q, r = torch.linalg.qr(unstructured_block.cpu(), 'reduced')
     q, r = map(lambda t: t.to(device), (q, r))
     return q.t()
 
@@ -293,7 +293,7 @@ class Quantize_No_Transformer(nn.Module):
         b, n, *_ = cF.shape
         quantize = self.normalize(cF)
         quantize = self.rearrange(quantize)
-        quantize = generalized_kernel(quantize, kernel_fn=self.kernel_fn,
+        quantize = generalized_kernel(quantize, kernel_fn=nn.ReLU(),
                                       projection_matrix=self.projection_matrix, device=device)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
