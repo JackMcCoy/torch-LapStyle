@@ -298,8 +298,6 @@ class Quantize_No_Transformer(nn.Module):
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        quantize = quantize + position_embeddings
 
         quantize = self.linear_transform(quantize)
         quantize = self.decompose_axis(quantize)
