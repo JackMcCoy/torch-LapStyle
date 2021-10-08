@@ -154,7 +154,7 @@ if args.train_model=='drafting':
         si = next(style_iter).to(device)
         cF = enc_(ci)
         sF = enc_(si)
-        stylized, cb = dec_(sF, cF)
+        stylized = dec_(sF, cF)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -167,8 +167,8 @@ if args.train_model=='drafting':
         dec_.zero_grad()
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
-        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, loss_Gp_GAN, cb_i = losses
-        loss = cb + loss_c * args.content_weight + loss_s * args.style_weight+\
+        loss_c, loss_s, loss_r, loss_ss, l_identity1, l_identity2, mdog, loss_Gp_GAN = losses
+        loss = loss_c * args.content_weight + loss_s * args.style_weight+\
                     loss_r * 16 + 16*loss_ss + l_identity1*50 + l_identity2 * 1 + mdog + loss_Gp_GAN * 5
         loss.backward()
         optimizer.step()
