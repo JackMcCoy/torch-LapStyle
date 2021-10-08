@@ -23,6 +23,20 @@ def ema_inplace(moving_avg, new, decay):
 def laplace_smoothing(x, n_categories, eps=1e-5):
     return (x + eps) / (x.sum() + n_categories * eps)
 
+def orthonormal(inp: typing.Union[torch.Tensor, torch.nn.Parameter, typing.List[int]], gain: float):
+    original_input = inp
+    if isinstance(inp, list):
+        inp = torch.zeros(inp)
+    if isinstance(inp, torch.nn.Parameter):
+        inp = inp.data
+    flat_shape = (inp.shape[0], np.prod(inp.shape[1:]))
+    a = torch.rand(flat_shape)
+    u, _, v = torch.linalg.svd(a, full_matrices=False)
+    inp.copy_((u if u.shape == flat_shape else v).reshape(inp.shape).mul(gain).to(device=inp.device, dtype=inp.dtype))
+    if isinstance(original_input, list):
+        return torch.nn.Parameter(inp)
+    return original_input
+
 device = torch.device('cuda')
 
 class VectorQuantize(nn.Module):
@@ -229,8 +243,12 @@ class Quantize_No_Transformer(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
+        feat_var = cF.view(N, C, -1).var(dim=2) + eps
+        feat_std = feat_var.sqrt().view(N, C, 1, 1)
         quantize = self.normalize(cF)
         quantize = self.rearrange(quantize)
+        feat_std = self.rearrange(feat_std)
+        quantize = orthonormal(quantize, feat_std)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
