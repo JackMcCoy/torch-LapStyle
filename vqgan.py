@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+import numpy as np
 from vgg import vgg
 from einops.layers.torch import Rearrange
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
