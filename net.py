@@ -175,7 +175,7 @@ class DecoderVQGAN(nn.Module):
         #self.quantize_3 = VectorQuantize(32, 640, transformer_size=2, **rc)
         #self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
-
+        '''
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
                                reversible=True,
                                n_local_attn_heads=8,
@@ -197,7 +197,7 @@ class DecoderVQGAN(nn.Module):
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
-
+        '''
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256)
@@ -244,16 +244,6 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        transformer = self.rearrange(t)
-        transformer = transformer + position_embeddings
-        transformer = self.vit(transformer)
-        transformer = self.decompose_axis(transformer)
-        #transformer = self.transformer_res(transformer)
-        transformer = self.transformer_conv(transformer)
-        #transformer = self.transformer_relu(transformer)
-        t = t+transformer.data
         return t, codebook_loss
 
 
