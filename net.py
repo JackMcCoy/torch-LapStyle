@@ -6,7 +6,7 @@ from function import adaptive_instance_normalization as adain
 from modules import ResBlock, ConvBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
-from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer
+from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer, ProjectionUpdater
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
@@ -169,11 +169,12 @@ class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=True)
-
+        feature_redraw_interval = 1000
         #self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
         self.quantize_4 = Quantize_No_Transformer(16, 64, transformer_size=1, **rc)
         self.quantize_3 = Quantize_No_Transformer(32, 128, transformer_size=2, **rc)
         self.quantize_2 = Quantize_No_Transformer(64, 256, transformer_size=3, **rc)
+        self.proj_updaters = [ProjectionUpdater(x, feature_redraw_interval) for x in [self.quantize_4,self.quantize_3,self.quantize_2]]
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
         '''
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
