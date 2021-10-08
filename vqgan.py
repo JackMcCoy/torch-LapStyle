@@ -230,8 +230,7 @@ class Quantize_No_Transformer(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        quantize = self.normalize(cF)
-        quantize = self.rearrange(quantize)
+        quantize = self.rearrange(target)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
