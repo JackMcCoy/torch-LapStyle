@@ -216,3 +216,99 @@ class VQGANLayers(nn.Module):
         logits = logits.reshape((logits.shape[0], 1024, 16, 16))
         logits = self.post_quant_conv(logits)
         return logits, loss, loss1, loss2
+
+class LinearAttentionTransformer(nn.Module):
+    def __init__(
+        self,
+        dim,
+        depth,
+        max_seq_len,
+        heads = 8,
+        dim_head = None,
+        bucket_size = 64,
+        causal = False,
+        ff_chunks = 1,
+        ff_glu = False,
+        ff_dropout = 0.,
+        attn_layer_dropout = 0.,
+        attn_dropout = 0.,
+        reversible = False,
+        blindspot_size = 1,
+        n_local_attn_heads = 0,
+        local_attn_window_size = 128,
+        receives_context = False,
+        attend_axially = False,
+        pkm_layers = tuple(),
+        pkm_num_keys = 128,
+        linformer_settings = None,
+        context_linformer_settings = None,
+        shift_tokens = False
+    ):
+        super().__init__()
+        assert not (causal and exists(linformer_settings)), 'Linformer self attention layer can only be used for non-causal networks'
+        assert not exists(linformer_settings) or isinstance(linformer_settings, LinformerSettings), 'Linformer self-attention settings must be a LinformerSettings namedtuple'
+        assert not exists(context_linformer_settings) or isinstance(context_linformer_settings, LinformerContextSettings), 'Linformer contextual self-attention settings must be a LinformerSettings namedtuple'
+
+        if type(n_local_attn_heads) is not tuple:
+            n_local_attn_heads = tuple([n_local_attn_heads] * depth)
+
+        assert len(n_local_attn_heads) == depth, 'local attention heads tuple must have the same length as the depth'
+        assert all([(local_heads <= heads) for local_heads in n_local_attn_heads]), 'number of local attn heads must be less than the maximum number of heads'
+
+        layers = nn.ModuleList([])
+
+        for ind, local_heads in zip(range(depth), n_local_attn_heads):
+            layer_num = ind + 1
+            use_pkm = layer_num in cast_tuple(pkm_layers)
+
+            parallel_net = Chunk(ff_chunks, FeedForward(dim), along_dim = 1) if not use_pkm else PKM(dim)
+
+            if not exists(linformer_settings):
+                attn = SelfAttention(dim, heads, causal, dim_head = dim_head, blindspot_size = blindspot_size, n_local_attn_heads = local_heads, local_attn_window_size = local_attn_window_size, dropout = attn_layer_dropout, attn_dropout= attn_dropout)
+            else:
+                attn = LinformerSelfAttention(dim, max_seq_len, heads = heads, dim_head = dim_head, dropout = attn_dropout, **linformer_settings._asdict())
+
+            if shift_tokens:
+                shifts = (1, 0, -1) if not causal else (1, 0)
+                attn, parallel_net = map(partial(PreShiftTokens, shifts), (attn, parallel_net))
+
+            layers.append(nn.ModuleList([
+                PreNorm(dim, attn),
+                PreNorm(dim, parallel_net)
+            ]))
+
+            if attend_axially:
+                layers.append(nn.ModuleList([
+                    PreNorm(dim, FoldAxially(local_attn_window_size, SelfAttention(dim, heads, causal, dropout = attn_layer_dropout, attn_dropout= attn_dropout))),
+                    PreNorm(dim, Chunk(ff_chunks, FeedForward(dim, glu = ff_glu, dropout= ff_dropout), along_dim = 1))
+                ]))
+
+            if receives_context:
+                if not exists(context_linformer_settings):
+                    attn = SelfAttention(dim, heads, dim_head = dim_head, dropout = attn_layer_dropout, attn_dropout= attn_dropout, receives_context = True)
+                else:
+                    attn = LinformerSelfAttention(dim, heads = heads, dim_head = dim_head, dropout = attn_dropout, **context_linformer_settings._asdict())
+
+                layers.append(nn.ModuleList([
+                    PreNorm(dim, attn),
+                    PreNorm(dim, Chunk(ff_chunks, FeedForward(dim, glu = ff_glu, dropout= ff_dropout), along_dim = 1))
+                ]))
+
+        execute_type = ReversibleSequence if reversible else SequentialSequence
+
+        axial_layer = ((True, False),) if attend_axially else tuple()
+        attn_context_layer = ((True, False),) if receives_context else tuple()
+        route_attn = ((True, False), *axial_layer, *attn_context_layer) * depth
+        route_context = ((False, False), *axial_layer, *attn_context_layer) * depth
+
+        context_route_map = {'context': route_context, 'context_mask': route_context} if receives_context else {}
+        attn_route_map = {'input_mask': route_attn, 'pos_emb': route_attn}
+        self.layers = execute_type(layers, args_route = {**attn_route_map, **context_route_map})
+
+        self.pad_to_multiple = lcm(
+            1 if not causal else blindspot_size,
+            1 if all([(h == 0) for h in n_local_attn_heads]) else local_attn_window_size
+        )
+
+    def forward(self, x, **kwargs):
+        return self.layers(x, **kwargs)
