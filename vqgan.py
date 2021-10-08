@@ -46,6 +46,7 @@ class VectorQuantize(nn.Module):
         self.eps = eps
         self.commitment = commitment
         self.perceptual_loss = CalcContentLoss()
+        self.style_loss = CalcStyleLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
@@ -154,6 +155,7 @@ class VectorQuantize(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss += (self.style_loss(quantize.detach(), target) * 5).data
 
         quantize = target + (quantize.detach() - target)
 
