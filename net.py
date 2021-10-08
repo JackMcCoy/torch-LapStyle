@@ -198,11 +198,6 @@ class DecoderVQGAN(nn.Module):
         self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
 
-        self.decoder_0 = nn.Sequential(
-            ResBlock(512),
-            ConvBlock(512, 512)
-        )
-
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256)
@@ -235,13 +230,8 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        quantized, idx, codebook_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
-        t = self.decoder_0(quantized)
-        t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_4(cF['r4_1'], sF['r4_1'])
-        codebook_loss += cbloss.data
-        t += quantized.data
-        t = self.decoder_1(t)
+        quantized, idx, codebook_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        t = self.decoder_1(quantized)
         t = self.upsample(t)
         t += adain(cF['r3_1'], sF['r3_1']).data
         #codebook_loss += cbloss.data
