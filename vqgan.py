@@ -220,11 +220,8 @@ class Quantize_No_Transformer(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        quantize = self.rearrange(target)
-        b, n, _ = quantize.shape
 
-        quantize = self.linear_transform(quantize)
-        quantize = self.decompose_axis(quantize)
+        quantize = self.linear_transform(self.normalize(cF))
 
         flatten = quantize.reshape(-1, self.dim)
         dist = (
