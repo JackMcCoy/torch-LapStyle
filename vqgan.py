@@ -161,6 +161,111 @@ class VectorQuantize(nn.Module):
 
         return quantize, embed_ind, loss
 
+class Quantize_No_Transformer(nn.Module):
+    def __init__(
+        self,
+        dim,
+        codebook_size,
+        decay = .8,
+        commitment = 1.,
+        eps = 1e-5,
+        n_embed = None,
+        transformer_size = 1,
+        receives_ctx = False
+    ):
+        super().__init__()
+        n_embed = default(n_embed, codebook_size)
+
+        self.dim = dim
+        self.n_embed = n_embed
+        self.decay = decay
+        self.eps = eps
+        self.commitment = commitment
+        self.perceptual_loss = CalcContentLoss()
+        self.style_loss = CalcStyleLoss()
+
+        embed = torch.randn(dim, n_embed)
+        self.register_buffer('embed', embed)
+        self.register_buffer('cluster_size', torch.zeros(n_embed))
+        self.register_buffer('embed_avg', embed.clone())
+        self.embeddings_set = False
+        rc = dict(receives_context=receives_ctx)
+
+        if transformer_size == 0:
+            self.linear_transform = nn.Linear(512,512)
+            self.rearrange = Rearrange('b c h w -> b (h w) c')
+            self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
+            self.normalize = nn.InstanceNorm2d(512)
+        if transformer_size == 1:
+            self.linear_transform = nn.Linear(512,512)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
+            self.normalize = nn.InstanceNorm2d(512)
+        elif transformer_size==2:
+            self.linear_transform = nn.Linear(256,256)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
+            self.normalize = nn.InstanceNorm2d(256, affine=False)
+        elif transformer_size==3:
+            self.linear_transform = nn.Linear(128,128)
+            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
+            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
+            self.normalize = nn.InstanceNorm2d(128, affine=False)
+        elif transformer_size==4:
+            self.linear_transform = nn.Linear(128,128)
+            self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
+            self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
+
+    def set_embeddings(self, b, n, d):
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1).to(device)
+        self.position_ids = (seq_length - ones).to(device)
+        self.pos_embedding = nn.Embedding(n, d).to(device)
+        self.embeddings_set = True
+
+    @property
+    def codebook(self):
+        return self.embed.transpose(0, 1)
+
+    def forward(self, cF, sF):
+        target = adain(cF, sF)
+        quantize = self.normalize(cF)
+        quantize = self.rearrange(quantize)
+        b, n, _ = quantize.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b, n, _)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
+
+        quantize = self.linear_transform(quantize)
+        quantize = self.decompose_axis(quantize)
+
+        flatten = quantize.reshape(-1, self.dim)
+        dist = (
+            flatten.pow(2).sum(1, keepdim=True)
+            - 2 * flatten @ self.embed
+            + self.embed.pow(2).sum(0, keepdim=True)
+        )
+        _, embed_ind = (-dist).max(1)
+        embed_onehot = F.one_hot(embed_ind, self.n_embed).float()
+        embed_ind = embed_ind.view(*cF.shape[:-1])
+        quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
+
+        if self.training:
+            ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
+            embed_sum = flatten.transpose(0, 1) @ embed_onehot
+            ema_inplace(self.embed_avg, embed_sum, self.decay)
+            cluster_size = laplace_smoothing(self.cluster_size, self.n_embed, self.eps) * self.cluster_size.sum()
+            embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
+            self.embed.data.copy_(embed_normalized)
+
+        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+        loss += (self.style_loss(quantize.detach(), target) * 5).data
+
+        quantize = target + (quantize.detach() - target)
+
+        return quantize, embed_ind, loss
+
 class VQGANLayers(nn.Module):
     def __init__(self, vgg_state_dict):
         super(VQGANLayers, self).__init__()
