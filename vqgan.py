@@ -23,7 +23,7 @@ def ema_inplace(moving_avg, new, decay):
 def laplace_smoothing(x, n_categories, eps=1e-5):
     return (x + eps) / (x.sum() + n_categories * eps)
 
-def orthonormal(inp: typing.Union[torch.Tensor, torch.nn.Parameter, typing.List[int]], gain: float):
+def orthonormal(inp, gain):
     original_input = inp
     if isinstance(inp, list):
         inp = torch.zeros(inp)
