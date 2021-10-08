@@ -252,7 +252,7 @@ class Quantize_No_Transformer(nn.Module):
         quantize = self.normalize(cF)
         quantize = self.rearrange(quantize)
         feat_std = self.rearrange(feat_std)
-        quantize = orthonormal(quantize, feat_std)
+        quantize = orthonormal(quantize, 1/feat_std)
         print("orthonormal")
         b, n, _ = quantize.shape
         if not self.embeddings_set:
