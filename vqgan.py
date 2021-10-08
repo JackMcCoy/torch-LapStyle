@@ -198,7 +198,7 @@ class Quantize_No_Transformer(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        flatten = quantize.reshape(-1, self.dim)
+        flatten = target.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
             - 2 * flatten @ self.embed
