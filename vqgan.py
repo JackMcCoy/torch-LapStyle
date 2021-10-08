@@ -192,43 +192,12 @@ class Quantize_No_Transformer(nn.Module):
         self.embeddings_set = False
         rc = dict(receives_context=receives_ctx)
 
-        if transformer_size == 0:
-            self.linear_transform = nn.Linear(512,512)
-            self.rearrange = Rearrange('b c h w -> b (h w) c')
-            self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
-            self.normalize = nn.InstanceNorm2d(512)
-        if transformer_size == 1:
-            self.linear_transform = nn.Linear(512,512)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
-            self.normalize = nn.InstanceNorm2d(512)
-        elif transformer_size==2:
-            self.linear_transform = nn.Linear(1024,1024)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
-            self.normalize = nn.InstanceNorm2d(256, affine=False)
-        elif transformer_size==3:
-            self.linear_transform = nn.Linear(2048,2048)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
-            self.normalize = nn.InstanceNorm2d(128, affine=False)
-        elif transformer_size==4:
-            self.linear_transform = nn.Linear(128,128)
-            self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
-            self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
-
     @property
     def codebook(self):
         return self.embed.transpose(0, 1)
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        quantize = self.rearrange(target)
-        b, n, _ = quantize.shape
-
-        quantize = self.linear_transform(quantize)
-        quantize = self.decompose_axis(quantize)
-
         flatten = quantize.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
