@@ -8,7 +8,7 @@ class ResBlock(nn.Module):
                                         nn.Conv2d(dim, dim, kernel_size=3),
                                         nn.ReLU(),
                                         nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        nn.Conv2d(dim, dim, kernel_size=3))
+                                        nn.Conv2d(dim, dim, kernel_size=1))
 
     def forward(self, x):
         out = x + self.conv_block(x)
