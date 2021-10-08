@@ -3,7 +3,7 @@ import torch
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
-from modules import ResBlock, ConvBlock
+from modules import ResBlock, ConvBlock, SAFIN
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer
@@ -171,9 +171,11 @@ class DecoderVQGAN(nn.Module):
         rc = dict(receives_ctx=True)
 
         #self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
-        self.quantize_4 = Quantize_No_Transformer(16, 64, transformer_size=1, **rc)
-        self.quantize_3 = Quantize_No_Transformer(32, 256, transformer_size=2, **rc)
-        self.quantize_2 = Quantize_No_Transformer(64, 512, transformer_size=3, **rc)
+        #self.quantize_4 = Quantize_No_Transformer(16, 64, transformer_size=1, **rc)
+        #self.quantize_3 = Quantize_No_Transformer(32, 256, transformer_size=2, **rc)
+        #self.quantize_2 = Quantize_No_Transformer(64, 512, transformer_size=3, **rc)
+        self.safin_4 = SAFIN(512)
+        self.safin_3 = SAFIN(256)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
         '''
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
@@ -226,17 +228,12 @@ class DecoderVQGAN(nn.Module):
             yield p
 
     def forward(self, sF, cF):
-        quantized, idx, codebook_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
-        t = self.decoder_1(quantized)
+        t = self.safin_4(cF['r4_1'], sF['r4_1'])
         t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_3(cF['r3_1'], sF['r3_1'])
-        codebook_loss += cbloss.data
-        t += quantized.data
+        t += self.safin_3(cF['r3_1'], sF['r3_1'])
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized, idx, cbloss = self.quantize_2(cF['r2_1'], sF['r2_1'])
-        codebook_loss += cbloss.data
-        t += quantized.data
+        t += adain(cF['r2_1'], sF['r2_1'])
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
