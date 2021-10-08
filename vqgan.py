@@ -191,7 +191,7 @@ class Quantize_No_Transformer(nn.Module):
         self.register_buffer('embed_avg', embed.clone())
         self.embeddings_set = False
         rc = dict(receives_context=receives_ctx)
-        ch_size = 512/((transformer_size-1)**2)
+        ch_size = 512/(2**(transformer_size-1))
         self.linear_transform = nn.Conv2d(ch_size, ch_size,kernel_size=1)
 
         if transformer_size == 0:
