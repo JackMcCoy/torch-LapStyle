@@ -1,11 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-import math
 from vgg import vgg
-from functools import partial
 from einops.layers.torch import Rearrange
-from einops import repeat
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from losses import CalcContentLoss, CalcStyleLoss, CalcContentReltLoss, CalcStyleEmdLoss
 from function import adaptive_instance_normalization as adain
@@ -26,52 +23,6 @@ def ema_inplace(moving_avg, new, decay):
 def laplace_smoothing(x, n_categories, eps=1e-5):
     return (x + eps) / (x.sum() + n_categories * eps)
 
-def orthogonal_matrix_chunk(cols, device = None):
-    unstructured_block = torch.randn((cols, cols), device = device)
-    q, r = torch.linalg.qr(unstructured_block.cpu(), 'reduced')
-    q, r = map(lambda t: t.to(device), (q, r))
-    return q.t()
-
-def gaussian_orthogonal_random_matrix(nb_rows, nb_columns, scaling = 0, device = None):
-    nb_full_blocks = int(nb_rows / nb_columns)
-
-    block_list = []
-
-    for _ in range(nb_full_blocks):
-        q = orthogonal_matrix_chunk(nb_columns, device = device)
-        block_list.append(q)
-
-    remaining_rows = nb_rows - nb_full_blocks * nb_columns
-    if remaining_rows > 0:
-        q = orthogonal_matrix_chunk(nb_columns, device = device)
-        block_list.append(q[:remaining_rows])
-
-    final_matrix = torch.cat(block_list)
-
-    if scaling == 0:
-        multiplier = torch.randn((nb_rows, nb_columns), device = device).norm(dim = 1)
-    elif scaling == 1:
-        multiplier = math.sqrt((float(nb_columns))) * torch.ones((nb_rows,), device = device)
-    else:
-        raise ValueError(f'Invalid scaling {scaling}')
-
-    return torch.diag(multiplier) @ final_matrix
-
-def generalized_kernel(data, *, projection_matrix, kernel_fn = nn.ReLU(), kernel_epsilon = 0.001, normalize_data = True, device = None):
-    b, h, *_ = data.shape
-
-    data_normalizer = (data.shape[-1] ** -0.25) if normalize_data else 1.
-
-    if projection_matrix is None:
-        return kernel_fn(data_normalizer * data) + kernel_epsilon
-
-    projection = repeat(projection_matrix, 'j d -> b h j d', b = b, h = h)
-    projection = projection.type_as(data)
-
-    data_dash = torch.einsum('...id,...jd->...ij', (data_normalizer * data), projection)
-
-    data_prime = kernel_fn(data_dash) + kernel_epsilon
-    return data_prime.type_as(data)
 
 device = torch.device('cuda')
 
@@ -241,12 +192,6 @@ class Quantize_No_Transformer(nn.Module):
         self.embeddings_set = False
         rc = dict(receives_context=receives_ctx)
 
-        self.create_projection = partial(gaussian_orthogonal_random_matrix,
-                                         nb_rows=dim, nb_columns=dim,
-                                         scaling=0)
-        projection_matrix = self.create_projection()
-        self.register_buffer('projection_matrix', projection_matrix)
-
         if transformer_size == 0:
             self.linear_transform = nn.Linear(512,512)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
@@ -279,12 +224,6 @@ class Quantize_No_Transformer(nn.Module):
         self.pos_embedding = nn.Embedding(n, d).to(device)
         self.embeddings_set = True
 
-    @torch.no_grad()
-    def redraw_projection_matrix(self, device):
-        projections = self.create_projection(device=device)
-        self.projection_matrix.copy_(projections)
-        del projections
-
     @property
     def codebook(self):
         return self.embed.transpose(0, 1)
@@ -292,12 +231,12 @@ class Quantize_No_Transformer(nn.Module):
     def forward(self, cF, sF):
         target = adain(cF, sF)
         quantize = self.normalize(cF)
-        quantize = generalized_kernel(quantize, kernel_fn=nn.ReLU(),
-                                      projection_matrix=self.projection_matrix, device=device)
         quantize = self.rearrange(quantize)
         b, n, _ = quantize.shape
         if not self.embeddings_set:
             self.set_embeddings(b, n, _)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
 
         quantize = self.linear_transform(quantize)
         quantize = self.decompose_axis(quantize)
@@ -327,33 +266,6 @@ class Quantize_No_Transformer(nn.Module):
         quantize = target + (quantize.detach() - target)
 
         return quantize, embed_ind, loss
-
-class ProjectionUpdater(nn.Module):
-    def __init__(self, instance, feature_redraw_interval):
-        super().__init__()
-        self.instance = instance
-        self.feature_redraw_interval = feature_redraw_interval
-        self.register_buffer('calls_since_last_redraw', torch.tensor(0))
-
-    def fix_projections_(self):
-        self.feature_redraw_interval = None
-
-    def redraw_projections(self):
-        model = self.instance
-
-        if not self.training:
-            return
-
-        if exists(self.feature_redraw_interval) and self.calls_since_last_redraw >= self.feature_redraw_interval:
-            model.redraw_projection_matrix(device)
-
-            self.calls_since_last_redraw.zero_()
-            return
-
-        self.calls_since_last_redraw += 1
-
-    def forward(self, x):
-        raise NotImplemented
 
 class VQGANLayers(nn.Module):
     def __init__(self, vgg_state_dict):
