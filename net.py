@@ -172,7 +172,7 @@ class DecoderVQGAN(nn.Module):
 
         #self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
         self.quantize_4 = Quantize_No_Transformer(16, 128, transformer_size=1, **rc)
-        self.quantize_3 = Quantize_No_Transformer(32, 256, transformer_size=2, **rc)
+        self.quantize_3 = Quantize_No_Transformer(32, 128, transformer_size=2, **rc)
         self.quantize_2 = Quantize_No_Transformer(64, 512, transformer_size=3, **rc)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
         '''
