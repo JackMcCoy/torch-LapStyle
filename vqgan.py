@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from torch import nn
 import torch.nn.functional as F
 from vgg import vgg
@@ -33,7 +32,7 @@ def orthonormal(inp, gain):
     flat_shape = (inp.shape[0], np.prod(inp.shape[1:]))
     a = torch.rand(flat_shape)
     u, _, v = torch.linalg.svd(a, full_matrices=False)
-    inp.copy_((u if u.shape == flat_shape else v).reshape(inp.shape).mul(gain).to(device=inp.device, dtype=inp.dtype))
+    inp.copy_((u if u.shape == flat_shape else v).reshape(inp.shape).mul(gain).float().to(device))
     if isinstance(original_input, list):
         return torch.nn.Parameter(inp)
     return original_input
