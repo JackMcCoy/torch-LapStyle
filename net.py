@@ -229,7 +229,7 @@ class DecoderVQGAN(nn.Module):
 
     def forward(self, sF, cF):
         t = self.safin_4(cF['r4_1'], sF['r4_1'])
-        t = self.decoder_4(t)
+        t = self.decoder_1(t)
         t = self.upsample(t)
         t += self.safin_3(cF['r3_1'], sF['r3_1'])
         t = self.decoder_2(t)
