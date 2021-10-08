@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import math
 from vgg import vgg
 from functools import partial
-from einops.layers.torch import Rearrange
+from einops.layers.torch import Rearrange, repeat
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from losses import CalcContentLoss, CalcStyleLoss, CalcContentReltLoss, CalcStyleEmdLoss
 from function import adaptive_instance_normalization as adain
