@@ -240,9 +240,8 @@ class Quantize_No_Transformer(nn.Module):
         self.register_buffer('embed_avg', embed.clone())
         self.embeddings_set = False
         rc = dict(receives_context=receives_ctx)
-        print(int(dim* math.log(dim)))
         self.create_projection = partial(gaussian_orthogonal_random_matrix,
-                                         nb_rows=int(dim* math.log(dim)), nb_columns=dim,
+                                         nb_rows=512*transformer_size, nb_columns=dim,
                                          scaling=1)
         projection_matrix = self.create_projection()
         self.register_buffer('projection_matrix', projection_matrix)
