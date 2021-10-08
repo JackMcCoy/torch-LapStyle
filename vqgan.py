@@ -242,7 +242,7 @@ class Quantize_No_Transformer(nn.Module):
         rc = dict(receives_context=receives_ctx)
 
         self.create_projection = partial(gaussian_orthogonal_random_matrix,
-                                         nb_rows=512*transformer_size, nb_columns=1,
+                                         nb_rows=8*2**transformer_size, nb_columns=512,
                                          scaling=1)
         projection_matrix = self.create_projection()
         self.register_buffer('projection_matrix', projection_matrix)
