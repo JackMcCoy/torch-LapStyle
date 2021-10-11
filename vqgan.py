@@ -28,6 +28,7 @@ device = torch.device('cuda')
 
 class TransformerOnly(nn.Module):
     def __init__(self, transformer_size = 1):
+        super().__init__()
         if transformer_size == 0:
             self.transformer = Transformer(dim=512,
                                            heads=16,
