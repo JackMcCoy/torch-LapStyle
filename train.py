@@ -6,9 +6,9 @@ import torch.nn as nn
 import torch.utils.data as data
 from PIL import Image, ImageFile
 from tensorboardX import SummaryWriter
-from torchvision import transforms, make_grid
+from torchvision import transforms
 from tqdm import tqdm
-from torchvision.utils import save_image
+from torchvision.utils import save_image, make_grid
 import re, os
 import math
 import vgg
