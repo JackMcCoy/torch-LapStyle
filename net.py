@@ -313,11 +313,11 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
     else:
-        l_identity1 = None
-        l_identity2 = None
-        l_identity3 = None
-        l_identity4 = None
-        cb_loss = None
+        l_identity1 = 0
+        l_identity2 = 0
+        l_identity3 = 0
+        l_identity4 = 0
+        cb_loss = 0
     loss_c = 0
     for key in style_layers:
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data

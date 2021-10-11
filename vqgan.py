@@ -94,6 +94,7 @@ class TransformerOnly(nn.Module):
         self.embeddings_set = True
 
     def forward(self, cF, sF):
+        target = adain(cF, sF)
         quantize = self.normalize(cF)
         inputs = []
         for i in [quantize, sF]:
@@ -105,8 +106,9 @@ class TransformerOnly(nn.Module):
             quantize = quantize + position_embeddings
             inputs.append(quantize)
 
-        quantize = self.transformer(inputs[1],context=inputs[0])
+        quantize = self.transformer(inputs[0],context=inputs[1])
         quantize = self.decompose_axis(quantize)
+        quantize = target + (quantize - target)
         return quantize, None, 0
 
 class VectorQuantize(nn.Module):
