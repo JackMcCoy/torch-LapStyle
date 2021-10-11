@@ -231,12 +231,10 @@ class DecoderVQGAN(nn.Module):
         t = self.upsample(t)
         quantized, idx, cb = self.quantize_3(cF['r3_1'], sF['r3_1'])
         t += quantized.data
-        cb_loss += cb.data
         t = self.decoder_2(t)
         t = self.upsample(t)
         quantized, idx, cb = self.quantize_2(cF['r2_1'], sF['r2_1'])
         t += quantized.data
-        cb_loss += cb.data
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
