@@ -37,6 +37,7 @@ class TransformerOnly(nn.Module):
                                            max_seq_len=64,
                                            shift_tokens=True,
                                            reversible=True,
+                                           ff_chunks=2,
                                            receives_context=True)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
@@ -48,6 +49,7 @@ class TransformerOnly(nn.Module):
                                            max_seq_len=256,
                                            shift_tokens=True,
                                            reversible=True,
+                                           ff_chunks=2,
                                            receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
@@ -58,7 +60,9 @@ class TransformerOnly(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True, receives_context=True)
+                                            reversible=True,
+                                            ff_chunks=2,
+                                            receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
             self.normalize = nn.InstanceNorm2d(256, affine=False)
@@ -68,7 +72,9 @@ class TransformerOnly(nn.Module):
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True, receives_context=True)
+                                            reversible = True,
+                                            ff_chunks = 2,
+                                            receives_context=True)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
             self.normalize = nn.InstanceNorm2d(128, affine=False)
@@ -78,7 +84,10 @@ class TransformerOnly(nn.Module):
                                             depth = 8,
                                             max_seq_len = 1024,
                                             reversible = True,
-                                            shift_tokens = True, receives_context=True)
+                                            shift_tokens = True,
+                                            reversible=True,
+                                            ff_chunks=2,
+                                            receives_context=True)
 
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
