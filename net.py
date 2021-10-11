@@ -285,13 +285,6 @@ class Discriminator(nn.Module):
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
-    @torch.no_grad()
-    def gradients(self):
-        for p in self.parameters():
-            if p.grad is None:
-                continue
-            yield p
-
     def forward(self, x):
         x = self.head(x)
         x = self.body(x)
