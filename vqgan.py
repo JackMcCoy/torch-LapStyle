@@ -101,7 +101,6 @@ class TransformerOnly(nn.Module):
 
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
-        quantize = target + (quantize - target)
         return quantize, None, 0
 
 class VectorQuantize(nn.Module):
