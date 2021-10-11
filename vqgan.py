@@ -30,10 +30,11 @@ class TransformerOnly(nn.Module):
     def __init__(self, transformer_size = 1):
         super().__init__()
         self.embeddings_set = False
+        depth = 2
         if transformer_size == 0:
             self.transformer = Transformer(dim=512,
                                            heads=16,
-                                           depth=4,
+                                           depth=depth,
                                            max_seq_len=64,
                                            shift_tokens=True,
                                            reversible=True,
@@ -43,7 +44,7 @@ class TransformerOnly(nn.Module):
         if transformer_size == 1:
             self.transformer = Transformer(dim=512,
                                            heads=16,
-                                           depth=4,
+                                           depth=depth,
                                            max_seq_len=256,
                                            shift_tokens=True,
                                            reversible=True,
@@ -53,7 +54,7 @@ class TransformerOnly(nn.Module):
         elif transformer_size==2:
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
-                                            depth = 4,
+                                            depth = depth,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible=True,
@@ -63,7 +64,7 @@ class TransformerOnly(nn.Module):
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
                                             heads = 16,
-                                            depth = 4,
+                                            depth = depth,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True,
@@ -73,7 +74,7 @@ class TransformerOnly(nn.Module):
         elif transformer_size==4:
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
-                                            depth = 4,
+                                            depth = depth,
                                             max_seq_len = 1024,
                                             reversible = True,
                                             shift_tokens = True,
