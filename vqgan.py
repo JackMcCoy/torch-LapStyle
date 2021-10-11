@@ -85,7 +85,6 @@ class TransformerOnly(nn.Module):
                                             max_seq_len = 1024,
                                             reversible = True,
                                             shift_tokens = True,
-                                            reversible=True,
                                             ff_chunks=2,
                                             receives_context=True)
 
