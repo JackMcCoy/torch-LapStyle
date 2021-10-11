@@ -187,9 +187,9 @@ if args.train_model=='drafting':
                 stylized = stylized.float().to('cpu')
                 styled_img_grid = make_grid(stylized, nrow=3, scale_each=True)
                 content_img_grid = make_grid(ci, nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
                 save_image(content_img_grid.detach(),
-                           args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
+                           args.save_dir + '/drafting_training_iter_ci' + str(
                                i + 1) + '.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
