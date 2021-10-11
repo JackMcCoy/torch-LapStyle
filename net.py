@@ -3,7 +3,7 @@ import torch
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
-from modules import ResBlock, ConvBlock, SAFIN
+from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer

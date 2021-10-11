@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.utils.data as data
 from PIL import Image, ImageFile
 from tensorboardX import SummaryWriter
-from torchvision import transforms
+from torchvision import transforms, makegrid
 from tqdm import tqdm
 from torchvision.utils import save_image
 import re, os
@@ -185,11 +185,12 @@ if args.train_model=='drafting':
         with torch.no_grad():
             if (i + 1) % 100 == 0:
                 stylized = stylized.float().to('cpu')
-                for j in range(1):
-                    save_image(stylized[j].detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
-                    save_image(ci[j].float().detach(),
-                               args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
-                                   i + 1) + '.jpg')
+                styled_img_grid = make_grid(stylized, nrow=3, scale_each=True)
+                content_img_grid = make_grid(ci, nrow=4, scale_each=True)
+                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_training_'+str(j)+'_iter'+str(i+1)+'.jpg')
+                save_image(content_img_grid.detach(),
+                           args.save_dir + '/drafting_training_' + str(j) + '_iter_ci' + str(
+                               i + 1) + '.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
                 print(loss)
