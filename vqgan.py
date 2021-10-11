@@ -82,6 +82,13 @@ class TransformerOnly(nn.Module):
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
 
+    def set_embeddings(self, b, n, d):
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1).to(device)
+        self.position_ids = (seq_length - ones).to(device)
+        self.pos_embedding = nn.Embedding(n, d).to(device)
+        self.embeddings_set = True
+
     def forward(self, cF, sF):
         quantize = self.normalize(cF)
         inputs = []
