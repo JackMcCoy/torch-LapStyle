@@ -299,7 +299,7 @@ def identity_loss(i, F, encoder, decoder):
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
     return l_identity1, l_identity2, cb
 
-content_layers = {'r1_1','r2_1','r3_1','r4_1'}
+content_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 style_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
