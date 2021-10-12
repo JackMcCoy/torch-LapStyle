@@ -84,4 +84,5 @@ def make_gaussians(device):
                                            padding_mode='reflect', bias=False,
                                            ).to(device)
     torch.nn.init.constant_(morph_conv.weight,1)
+    morph_conv.weight.requires_grad = False
     return gaussian_filter, gaussian_filter2, morph_conv
