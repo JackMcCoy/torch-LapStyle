@@ -38,6 +38,7 @@ class TransformerOnly(nn.Module):
                                            max_seq_len=64,
                                            shift_tokens=True,
                                            reversible=True,
+                                           attend_axially=True,
                                            receives_context=False)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
