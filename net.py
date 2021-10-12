@@ -238,6 +238,7 @@ class DecoderVQGAN(nn.Module):
         quantized = self.decompose_axis(quantized)
         quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
+        quantized = self.transformer_relu(quantized)
         t += quantized.data
 
         return t, cb_loss
