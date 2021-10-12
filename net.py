@@ -196,7 +196,10 @@ class DecoderVQGAN(nn.Module):
 
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
-        self.transformer_conv = ConvBlock(3, 3)
+        self.transformer_conv = nn.Sequential(
+                                ConvBlock(3, 3),
+                                ConvBlock(3, 3)
+        )
 
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
