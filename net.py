@@ -175,7 +175,7 @@ class DecoderVQGAN(nn.Module):
         self.quantize_3 = VectorQuantize(32, 640, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
         #self.quantize_1 = VectorQuantize(128, 640, transformer_size=4, **rc)
-        '''
+
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
                                reversible=True,
                                n_local_attn_heads=8,
@@ -197,7 +197,7 @@ class DecoderVQGAN(nn.Module):
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
         self.transformer_conv = ConvBlock(3, 3)
-        '''
+
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256)
@@ -218,13 +218,6 @@ class DecoderVQGAN(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
-    @torch.no_grad()
-    def gradients(self):
-        for p in self.parameters():
-            if p.grad is None:
-                continue
-            yield p
-
     def forward(self, sF, cF):
         t, idx, cb_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
         t = self.decoder_1(t)
@@ -238,14 +231,15 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_3(t)
         t = self.upsample(t)
         t = self.decoder_4(t)
-        '''
+
         quantized = self.rearrange(t)
-        position_embedding = self.pos_embedding(self.position_ids)
+        position_embedding = self.pos_embedding(self.position_ids.detach())
         quantized = self.vit(quantized + position_embedding)
         quantized = self.decompose_axis(quantized)
+        quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
         t += quantized.data
-        '''
+
         return t, cb_loss
 
 
