@@ -126,14 +126,13 @@ class VectorQuantize(nn.Module):
         self.eps = eps
         self.commitment = commitment
         self.perceptual_loss = CalcContentLoss()
-        self.style_loss = CalcStyleLoss()
 
         embed = torch.randn(dim, n_embed)
         self.register_buffer('embed', embed)
         self.register_buffer('cluster_size', torch.zeros(n_embed))
         self.register_buffer('embed_avg', embed.clone())
         self.embeddings_set = False
-        rc = dict(receives_context=receives_ctx)
+        rc = dict(receives_context=False)
 
         if transformer_size == 0:
             self.transformer = Transformer(dim=512,
@@ -156,17 +155,15 @@ class VectorQuantize(nn.Module):
                                            **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
-            self.normalize = nn.InstanceNorm2d(512)
         elif transformer_size==2:
-            self.transformer = Transformer(dim = 1024,
+            self.transformer = Transformer(dim = 256,
                                             heads = 16,
                                             depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True, **rc)
-            self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=2,p2=2)
-            self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=2,d=2)
-            self.normalize = nn.InstanceNorm2d(256, affine=False)
+            self.rearrange = Rearrange('b c h w -> b (h w) c')
+            self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=32)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
                                             heads = 16,
@@ -201,19 +198,16 @@ class VectorQuantize(nn.Module):
 
     def forward(self, cF, sF):
         target = adain(cF, sF)
-        quantize = self.normalize(cF)
-        inputs = []
-        for i in [quantize, sF]:
-            quantize = self.rearrange(i)
-            b, n, _ = quantize.shape
-            if not self.embeddings_set:
-                self.set_embeddings(b, n, _)
-            position_embeddings = self.pos_embedding(self.position_ids.detach())
-            quantize = quantize + position_embeddings
-            inputs.append(quantize)
+        quantize = self.rearrange(target)
+        b, n, _ = quantize.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b, n, _)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
 
-        quantize = self.transformer(inputs[1],context=inputs[0])
+        quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
+        quantize = target + (quantize - target).detach()
 
         flatten = quantize.reshape(-1, self.dim)
         dist = (
@@ -235,7 +229,6 @@ class VectorQuantize(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
-        loss += (self.style_loss(quantize.detach(), target) * 5).data
 
         quantize = target + (quantize.detach() - target)
 
