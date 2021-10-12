@@ -85,4 +85,7 @@ def make_gaussians(device):
                                            ).to(device)
     torch.nn.init.constant_(morph_conv.weight,1)
     morph_conv.weight.requires_grad = False
+    gaussian_filter.requires_grad = False
+    gaussian_filter2.requires_grad = False
+    morph_conv.requires_grad = False
     return gaussian_filter, gaussian_filter2, morph_conv
