@@ -319,9 +319,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     loss_s = 0
     for key in style_layers:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
-    loss_ss = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-    remd_loss = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
     if mdog_losses:
@@ -335,7 +335,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_content = content_loss(stylized_feats['r3_1'], cXF['r3_1'])+content_loss(stylized_feats['r4_1'], cXF['r4_1'])
         mxdog_content_contraint = content_loss(cdogF['r3_1'], cXF['r3_1'])+content_loss(cdogF['r4_1'], cXF['r4_1'])
         mxdog_style = mse_loss(cdogF['r3_1'],sXF['r3_1']) + mse_loss(cdogF['r4_1'],sXF['r4_1'])
-        mxdog_losses = mxdog_content * .1 + mxdog_content_contraint *100 + mxdog_style * 1000
+        mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
     else:
         mxdog_losses = 0
 
@@ -345,5 +345,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, remd_loss, loss_ss, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, cb_loss
+    return loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, cb_loss
 
