@@ -48,6 +48,7 @@ class TransformerOnly(nn.Module):
                                            depth=depth,
                                            max_seq_len=256,
                                            shift_tokens=True,
+                                           attend_axially=True,
                                            reversible=True,
                                            receives_context=False)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
@@ -69,6 +70,7 @@ class TransformerOnly(nn.Module):
                                             depth = depth,
                                             max_seq_len = 256,
                                             shift_tokens = True,
+                                            attend_axially=True,
                                             reversible = True,
                                             receives_context=False)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
@@ -79,6 +81,7 @@ class TransformerOnly(nn.Module):
                                             depth = depth,
                                             max_seq_len = 1024,
                                             reversible = True,
+                                            attend_axially=True,
                                             shift_tokens = True,
                                             receives_context=False)
 
@@ -97,10 +100,6 @@ class TransformerOnly(nn.Module):
 
         quantize = self.rearrange(target)
         b, n, _ = quantize.shape
-        if not self.embeddings_set:
-            self.set_embeddings(b, n, _)
-        position_embeddings = self.pos_embedding(self.position_ids.detach())
-        quantize = quantize + position_embeddings
 
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
