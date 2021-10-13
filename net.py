@@ -216,6 +216,7 @@ class DecoderVQGAN(nn.Module):
             )
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
+            ConvBlock(64, 64),
             ConvBlock(64, 3)
         )
         self.combined_input_conv = nn.Sequential(
