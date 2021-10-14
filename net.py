@@ -170,7 +170,7 @@ class DecoderVQGAN(nn.Module):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=True)
 
-        #self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
+        self.quantize_5 = VectorQuantize(8, 320, transformer_size=0, **rc)
         self.quantize_4 = VectorQuantize(16, 860, transformer_size=1)
         self.quantize_3 = VectorQuantize(32, 860, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
@@ -200,7 +200,10 @@ class DecoderVQGAN(nn.Module):
                                 ConvBlock(3, 3),
                                 ConvBlock(3, 3)
         )
-
+        self.decoder_0 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512, 256)
+        )
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256)
@@ -229,7 +232,11 @@ class DecoderVQGAN(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
-        t, idx, cb_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        t, idx, cb_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
+        t = self.decoder_0(t)
+        quantized, idx, cb = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        t += quantized.data
+        cb_loss += cb.data
         t = self.decoder_1(t)
         t = self.upsample(t)
         quantized, idx, cb = self.quantize_3(cF['r3_1'], sF['r3_1'])
