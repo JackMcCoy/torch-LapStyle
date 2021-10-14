@@ -215,7 +215,7 @@ class DecoderVQGAN(nn.Module):
         self.combined_input_conv = nn.Sequential(
             ConvBlock(3, 3),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 3, kernel_size=3)
+            nn.Conv2d(3, 3, kernel_size=3)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
