@@ -212,11 +212,6 @@ class DecoderVQGAN(nn.Module):
             ConvBlock(64, 64),
             ConvBlock(64, 3)
         )
-        self.combined_input_conv = nn.Sequential(
-            ConvBlock(3, 3),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(3, 3, kernel_size=3)
-        )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
@@ -243,7 +238,7 @@ class DecoderVQGAN(nn.Module):
         quantized = self.decompose_axis(quantized)
         quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
-        t = self.combined_input_conv(t + quantized.data)
+        t +=quantized.data
 
         return t, cb_loss
 
