@@ -138,7 +138,6 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim=512,
                                            heads=16,
                                            depth=8,
-                                           ff_chunks=2,
                                            max_seq_len=64,
                                            shift_tokens=True,
                                            reversible=True,
@@ -150,9 +149,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim=512,
                                            heads=16,
                                            depth=8,
-                                           ff_chunks=2,
                                            max_seq_len=256,
-                                           attend_axially=True,
                                            shift_tokens=True,
                                            reversible=True,
                                            **rc)
@@ -162,9 +159,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 256,
                                             heads = 16,
                                             depth = 8,
-                                            ff_chunks=2,
                                             max_seq_len = 256,
-                                            attend_axially = True,
                                             shift_tokens = True,
                                             reversible = True, **rc)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
@@ -173,9 +168,7 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 2048,
                                             heads = 16,
                                             depth = 8,
-                                            ff_chunks=2,
                                             max_seq_len = 256,
-                                            attend_axially=True,
                                             shift_tokens = True,
                                             reversible = True, **rc)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
@@ -185,14 +178,19 @@ class VectorQuantize(nn.Module):
             self.transformer = Transformer(dim = 1024,
                                             heads = 16,
                                             depth = 8,
-                                            ff_chunks = 2,
-                                            attend_axially=True,
                                             max_seq_len = 1024,
                                             reversible = True,
                                             shift_tokens = True, **rc)
 
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
+
+    def set_embeddings(self, b, n, d):
+        ones = torch.ones((b, n)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1).to(device)
+        self.position_ids = (seq_length - ones).to(device)
+        self.pos_embedding = nn.Embedding(n, d).to(device)
+        self.embeddings_set = True
 
     @property
     def codebook(self):
@@ -202,6 +200,11 @@ class VectorQuantize(nn.Module):
         target = adain(cF, sF)
         quantize = self.rearrange(target)
         b, n, _ = quantize.shape
+        if not self.embeddings_set:
+            self.set_embeddings(b, n, _)
+        position_embeddings = self.pos_embedding(self.position_ids.detach())
+        quantize = quantize + position_embeddings
+
         quantize = self.transformer(quantize)
         quantize = self.decompose_axis(quantize)
         quantize = target + (quantize - target).detach()

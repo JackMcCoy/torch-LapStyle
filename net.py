@@ -186,6 +186,13 @@ class DecoderVQGAN(nn.Module):
         patch_height, patch_width = (8,8)
         self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width)
         self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,d=8,e=8)
+        self.to_patch_embedding = nn.Linear(256, 192)
+
+        ones = torch.ones((1, 256)).int().to(device)
+        seq_length = torch.cumsum(ones, axis=1)
+        self.position_ids = seq_length - ones
+
+        self.pos_embedding = nn.Embedding(256, 192)
 
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
@@ -212,6 +219,11 @@ class DecoderVQGAN(nn.Module):
             ConvBlock(64, 64),
             ConvBlock(64, 3)
         )
+        self.combined_input_conv = nn.Sequential(
+            ConvBlock(3, 3),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(3, 3, kernel_size=3)
+        )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
@@ -234,11 +246,12 @@ class DecoderVQGAN(nn.Module):
         t = self.decoder_4(t)
 
         quantized = self.rearrange(t)
-        quantized = self.vit(quantized)
+        position_embedding = self.pos_embedding(self.position_ids.detach())
+        quantized = self.vit(quantized + position_embedding)
         quantized = self.decompose_axis(quantized)
         quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
-        t +=quantized.data
+        t = self.combined_input_conv(t + quantized.data)
 
         return t, cb_loss
 
