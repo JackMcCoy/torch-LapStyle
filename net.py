@@ -234,7 +234,7 @@ class DecoderVQGAN(nn.Module):
     def forward(self, sF, cF):
         t, idx, cb_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
         t = self.decoder_0(t)
-        t = self.upsample(t)
+        #t = self.upsample(t)
         quantized, idx, cb = self.quantize_4(cF['r4_1'], sF['r4_1'])
         t += quantized.data
         cb_loss += cb.data
