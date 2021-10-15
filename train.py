@@ -135,7 +135,7 @@ if args.train_model=='drafting':
     set_requires_grad(enc_, False)
     enc_.train(False)
     dec_ = net.DecoderVQGAN()
-    disc_ = net.Discriminator(depth=5, num_channels=32)
+    disc_ = net.Discriminator(depth=5, num_channels=64)
     init_weights(dec_)
     init_weights(disc_)
     dec_.train()
