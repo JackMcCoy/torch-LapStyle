@@ -193,7 +193,8 @@ class DecoderVQGAN(nn.Module):
         self.position_ids = seq_length - ones
 
         self.pos_embedding = nn.Embedding(256, 192)
-
+        self.transformer_relu = nn.ReLU()
+        self.transformer_res = ResBlock(3)
         self.transformer_conv = nn.Sequential(
                                 ConvBlock(3, 3),
                                 ConvBlock(3, 3),
@@ -260,6 +261,7 @@ class DecoderVQGAN(nn.Module):
         position_embedding = self.pos_embedding(self.position_ids.detach())
         quantized = self.vit(quantized + position_embedding)
         quantized = self.decompose_axis(quantized)
+        quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
         t += quantized.data
 
