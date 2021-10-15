@@ -260,7 +260,6 @@ class DecoderVQGAN(nn.Module):
         position_embedding = self.pos_embedding(self.position_ids.detach())
         quantized = self.vit(quantized + position_embedding)
         quantized = self.decompose_axis(quantized)
-        quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
         t += quantized.data
 
