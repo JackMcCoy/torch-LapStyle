@@ -221,9 +221,6 @@ class DecoderVQGAN(nn.Module):
             ConvBlock(64, 64),
             ConvBlock(64, 64),
             ConvBlock(64, 3),
-        )
-
-        self.combined_input_conv = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(3, 3, kernel_size=3)
         )
@@ -261,7 +258,6 @@ class DecoderVQGAN(nn.Module):
         quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
         t += quantized.data
-        t = self.combined_input_conv(t)
         return t, cb_loss
 
 
