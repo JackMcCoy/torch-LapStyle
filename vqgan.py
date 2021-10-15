@@ -133,54 +133,55 @@ class VectorQuantize(nn.Module):
         self.register_buffer('embed_avg', embed.clone())
         self.embeddings_set = False
         rc = dict(receives_context=False)
+        dropout = dict(attn_layer_dropout = 0.1, attn_dropout = 0.1)
 
         if transformer_size == 0:
             self.transformer = Transformer(dim=512,
-                                           heads=16,
-                                           depth=8,
+                                           heads=32,
+                                           depth=4,
                                            max_seq_len=64,
                                            shift_tokens=True,
                                            reversible=True,
-                                           **rc)
+                                           **dropout)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w', h=8, w=8)
             self.normalize = nn.InstanceNorm2d(512)
         if transformer_size == 1:
             self.transformer = Transformer(dim=512,
-                                           heads=16,
-                                           depth=8,
+                                           heads=32,
+                                           depth=4,
                                            max_seq_len=256,
                                            shift_tokens=True,
                                            reversible=True,
-                                           **rc)
+                                           **dropout)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=1, p2=1)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
-                                            heads = 16,
-                                            depth = 8,
+                                            heads = 32,
+                                            depth = 4,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True, **rc)
+                                            reversible = True, **dropout)
             self.rearrange = Rearrange('b c h w -> b (h w) c')
             self.decompose_axis = Rearrange('b (h w) c -> b c h w',h=32)
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
-                                            heads = 16,
-                                            depth = 8,
+                                            heads = 32,
+                                            depth = 4,
                                             max_seq_len = 256,
                                             shift_tokens = True,
-                                            reversible = True, **rc)
+                                            reversible = True, **dropout)
             self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)',p1=4,p2=4)
             self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=16,w=16, e=4,d=4)
             self.normalize = nn.InstanceNorm2d(128, affine=False)
         elif transformer_size==4:
             self.transformer = Transformer(dim = 1024,
-                                            heads = 16,
-                                            depth = 8,
+                                            heads = 32,
+                                            depth = 4,
                                             max_seq_len = 1024,
                                             reversible = True,
-                                            shift_tokens = True, **rc)
+                                            shift_tokens = True, **dropout)
 
             self.rearrange=Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = 4, p2 = 4)
             self.decompose_axis=Rearrange('b (h w) (c e d) -> b c (h e) (w d)',h=32,w=32,d=4,e=4)
