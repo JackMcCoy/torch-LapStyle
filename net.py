@@ -194,9 +194,8 @@ class DecoderVQGAN(nn.Module):
 
         self.pos_embedding = nn.Embedding(256, 192)
 
-        self.transformer_relu = nn.ReLU()
-        self.transformer_res = ResBlock(3)
         self.transformer_conv = nn.Sequential(
+                                ConvBlock(3, 3),
                                 ConvBlock(3, 3),
                                 ConvBlock(3, 3)
         )
@@ -220,7 +219,9 @@ class DecoderVQGAN(nn.Module):
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             ConvBlock(64, 64),
-            ConvBlock(64, 3)
+            ConvBlock(64, 3),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(3, 3, kernel_size=3)
         )
         '''
         self.combined_input_conv = nn.Sequential(
