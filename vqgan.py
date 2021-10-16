@@ -234,7 +234,7 @@ class VectorQuantize(nn.Module):
             loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
             loss += (self.style_loss(quantize.detach(), target) * 10).data
         else:
-            loss = 0
+            loss = torch.Tensor([0])
 
         quantize = target + (quantize.detach() - target)
 
