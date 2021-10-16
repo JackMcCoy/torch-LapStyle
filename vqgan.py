@@ -149,7 +149,7 @@ class VectorQuantize(nn.Module):
         if transformer_size == 1:
             self.transformer = Transformer(dim=512,
                                            heads=32,
-                                           depth=4,
+                                           depth=8,
                                            max_seq_len=256,
                                            shift_tokens=True,
                                            reversible=True,
@@ -159,7 +159,7 @@ class VectorQuantize(nn.Module):
         elif transformer_size==2:
             self.transformer = Transformer(dim = 256,
                                             heads = 32,
-                                            depth = 4,
+                                            depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True, **dropout)
@@ -168,7 +168,7 @@ class VectorQuantize(nn.Module):
         elif transformer_size==3:
             self.transformer = Transformer(dim = 2048,
                                             heads = 32,
-                                            depth = 4,
+                                            depth = 8,
                                             max_seq_len = 256,
                                             shift_tokens = True,
                                             reversible = True, **dropout)
