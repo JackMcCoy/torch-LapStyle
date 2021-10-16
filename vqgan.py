@@ -232,6 +232,7 @@ class VectorQuantize(nn.Module):
 
         if train_loop:
             loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+            loss += (self.style_loss(quantize.detach(), target) * 10)
         else:
             loss = torch.Tensor([0])
 
