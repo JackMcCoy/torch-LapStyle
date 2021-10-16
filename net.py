@@ -262,7 +262,7 @@ class DecoderVQGAN(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64):
+    def __init__(self, depth=5, num_channels=64, relgan=True):
         super(Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1),
@@ -286,13 +286,22 @@ class Discriminator(nn.Module):
                               stride=1,
                               padding=1)
         self.ganloss = GANLoss('lsgan')
+        self.relgan = relgan
 
     def losses(self, real, fake):
         pred_real = self(real)
-        loss_D_real = self.ganloss(pred_real, True)
         pred_fake = self(fake)
-        loss_D_fake = self.ganloss(pred_fake, False)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
+            loss_D = (
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+            )
+        else:
+            loss_D_real = self.ganloss(pred_real, True)
+            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
     def forward(self, x):
