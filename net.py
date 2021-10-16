@@ -170,15 +170,15 @@ class DecoderVQGAN(nn.Module):
         super(DecoderVQGAN, self).__init__()
         rc = dict(receives_ctx=True)
 
-        #self.quantize_5 = VectorQuantize(8, 640, transformer_size=0, **rc)
+        self.quantize_5 = VectorQuantize(8, 860, transformer_size=0, **rc)
         self.quantize_4 = VectorQuantize(16, 860, transformer_size=1)
         self.quantize_3 = VectorQuantize(32, 860, transformer_size=2)
         self.quantize_2 = VectorQuantize(64, 1280, transformer_size=3)
-        #self.quantize_1 = VectorQuantize(128, 860, transformer_size=4, **rc)
+        self.quantize_1 = VectorQuantize(128, 860, transformer_size=4, **rc)
 
         self.vit = Transformer(192, 4, 256, 16, 192, shift_tokens=True,
                                reversible=True,
-                               n_local_attn_heads=16,
+                               n_local_attn_heads=8,
                                local_attn_window_size=256,
                                attend_axially=True,
                                ff_chunks=2)
@@ -196,6 +196,7 @@ class DecoderVQGAN(nn.Module):
         self.transformer_relu = nn.ReLU()
         self.transformer_res = ResBlock(3)
         self.transformer_conv = nn.Sequential(
+                                ConvBlock(3, 3),
                                 ConvBlock(3, 3),
                                 ConvBlock(3, 3)
         )
@@ -227,7 +228,12 @@ class DecoderVQGAN(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
-        t, idx, cb_loss = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        t, idx, cb_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
+        t = self.decoder_0(t)
+        t = self.upsample(t)
+        quantized, idx, cb = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        t += quantized.data
+        cb_loss += cb.data
         t = self.decoder_1(t)
         t = self.upsample(t)
         quantized, idx, cb = self.quantize_3(cF['r3_1'], sF['r3_1'])
@@ -240,6 +246,9 @@ class DecoderVQGAN(nn.Module):
         cb_loss += cb.data
         t = self.decoder_3(t)
         t = self.upsample(t)
+        quantized, idx, cb = self.quantize_1(cF['r1_1'], sF['r1_1'])
+        t += quantized.data
+        cb_loss += cb.data
         t = self.decoder_4(t)
 
         quantized = self.rearrange(t)
