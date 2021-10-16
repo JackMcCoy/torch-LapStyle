@@ -180,6 +180,7 @@ class DecoderVQGAN(nn.Module):
                                reversible=True,
                                n_local_attn_heads=16,
                                local_attn_window_size=256,
+                               attend_axially=True,
                                ff_chunks=2)
 
         patch_height, patch_width = (8,8)
