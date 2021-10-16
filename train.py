@@ -154,7 +154,7 @@ if args.train_model=='drafting':
         si = next(style_iter).to(device)
         cF = enc_(ci)
         sF = enc_(si)
-        stylized, cb_loss = dec_(sF, cF)
+        stylized, cb_loss = dec_(sF, cF, train_loop = True)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)

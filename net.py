@@ -227,26 +227,26 @@ class DecoderVQGAN(nn.Module):
 
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
-    def forward(self, sF, cF):
-        t, idx, cb_loss = self.quantize_5(cF['r5_1'], sF['r5_1'])
+    def forward(self, sF, cF, train_loop = False):
+        t, idx, cb_loss = self.quantize_5(cF['r5_1'], sF['r5_1'], train_loop)
         t = self.decoder_0(t)
         t = self.upsample(t)
-        quantized, idx, cb = self.quantize_4(cF['r4_1'], sF['r4_1'])
+        quantized, idx, cb = self.quantize_4(cF['r4_1'], sF['r4_1'], train_loop)
         t += quantized.data
         cb_loss += cb.data
         t = self.decoder_1(t)
         t = self.upsample(t)
-        quantized, idx, cb = self.quantize_3(cF['r3_1'], sF['r3_1'])
+        quantized, idx, cb = self.quantize_3(cF['r3_1'], sF['r3_1'], train_loop)
         t += quantized.data
         cb_loss += cb.data
         t = self.decoder_2(t)
         t = self.upsample(t)
-        quantized, idx, cb = self.quantize_2(cF['r2_1'], sF['r2_1'])
+        quantized, idx, cb = self.quantize_2(cF['r2_1'], sF['r2_1'], train_loop)
         t += quantized.data
         cb_loss += cb.data
         t = self.decoder_3(t)
         t = self.upsample(t)
-        quantized, idx, cb = self.quantize_1(cF['r1_1'], sF['r1_1'])
+        quantized, idx, cb = self.quantize_1(cF['r1_1'], sF['r1_1'], train_loop)
         t += quantized.data
         cb_loss += cb.data
         t = self.decoder_4(t)

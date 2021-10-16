@@ -200,7 +200,7 @@ class VectorQuantize(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, cF, sF):
+    def forward(self, cF, sF, train_loop=False):
         target = adain(cF, sF)
         quantize = self.rearrange(target)
         b, n, _ = quantize.shape
@@ -224,7 +224,7 @@ class VectorQuantize(nn.Module):
         embed_ind = embed_ind.view(*cF.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
-        if self.training:
+        if self.training and train_loop:
             ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
             embed_sum = flatten.transpose(0, 1) @ embed_onehot
             ema_inplace(self.embed_avg, embed_sum, self.decay)
@@ -232,10 +232,13 @@ class VectorQuantize(nn.Module):
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
-        loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
-        loss += (self.style_loss(quantize.detach(), target) * 10).data
-        loss += (self.content_relt(quantize.detach(), target) * 18).data
-        loss += (self.style_emd(quantize.detach(), target) * 18).data
+        if train_loop:
+            loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
+            loss += (self.style_loss(quantize.detach(), target) * 10).data
+            loss += (self.content_relt(quantize.detach(), target) * 18).data
+            loss += (self.style_emd(quantize.detach(), target) * 18).data
+        else:
+            loss = 0
 
         quantize = target + (quantize.detach() - target)
 
