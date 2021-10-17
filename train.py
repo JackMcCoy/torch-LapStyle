@@ -24,6 +24,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 disc_scaler = GradScaler(init_scale=1024)
 scaler = GradScaler(init_scale=1024)
+ac_enabled = True
 
 def train_transform(load_size, crop_size):
     transform_list = [
@@ -66,7 +67,7 @@ def adjust_learning_rate(optimizer, iteration_count,args):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-8, warmup_iters=1000, max_lr = 1e-3, decay=5e-5):
+def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-5, warmup_iters=1000, max_lr = 1e-3, decay=5e-5):
     """Imitating the original implementation"""
     warmup_step = (max_lr - warmup_start) / warmup_iters
     if iteration_count < warmup_iters:
@@ -112,7 +113,7 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(log_dir=str(log_dir))
 
-with autocast(enabled=False):
+with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
 
     vgg.load_state_dict(torch.load(args.vgg))
@@ -135,7 +136,7 @@ style_iter = iter(data.DataLoader(
 
 if args.train_model=='drafting':
 
-    with autocast(enabled=False):
+    with autocast(enabled=ac_enabled):
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
@@ -152,7 +153,7 @@ if args.train_model=='drafting':
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
         opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
-        with autocast(enabled=False):
+        with autocast(enabled=ac_enabled):
             warmup_lr_adjust(optimizer, i)
 
             warmup_lr_adjust(opt_D, i)
@@ -171,7 +172,7 @@ if args.train_model=='drafting':
         disc_scaler.update()
         set_requires_grad(disc_,False)
 
-        with autocast(enabled=False):
+        with autocast(enabled=ac_enabled):
             dec_.zero_grad()
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
