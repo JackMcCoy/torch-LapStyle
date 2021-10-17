@@ -22,8 +22,8 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-disc_scaler = GradScaler()
-scaler = GradScaler()
+disc_scaler = GradScaler(init_scale=1024)
+scaler = GradScaler(init_scale=1024)
 
 def train_transform(load_size, crop_size):
     transform_list = [
