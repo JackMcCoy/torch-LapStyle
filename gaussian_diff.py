@@ -26,7 +26,7 @@ def gaussian(kernel_size, sigma,channels=3):
     # Reshape to 2d depthwise convolutional weight
     gaussian_kernel = gaussian_kernel.reshape((1,1, kernel_size, kernel_size))
 
-    return gaussian_kernel
+    return gaussian_kernel.float()
 
 def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morphs=1,minmax=False):
     # Source : https://github.com/CemalUnal/XDoG-Filter
@@ -34,12 +34,10 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     # Link : http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.365.151&rep=rep1&type=pdf
     #imf1 = paddle.concat(x=[g(paddle.unsqueeze(im[:,0,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,1,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,2,:,:].detach(),axis=1))],axis=1)
 
-    imf2=torch.zeros_like(im)
-    imf1=torch.zeros_like(im)
-    imf1.stop_gradient=True
-    imf2.stop_gradient=True
     imf2=g2(im)
     imf1=g(im)
+    imf1.stop_gradient = True
+    imf2.stop_gradient = True
     #imf2 = g2(im.detach())
     imdiff = imf1 - gamma * imf2
     imdiff = (imdiff < eps).float() * 1.0  + (imdiff >= eps).float() * (1.0 + torch.tanh(phi * imdiff))
