@@ -112,16 +112,17 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(log_dir=str(log_dir))
 
-vgg = vgg.vgg
+with autocast():
+    vgg = vgg.vgg
 
-vgg.load_state_dict(torch.load(args.vgg))
-vgg = nn.Sequential(*list(vgg.children()))
+    vgg.load_state_dict(torch.load(args.vgg))
+    vgg = nn.Sequential(*list(vgg.children()))
 
-content_tf = train_transform(args.load_size, args.crop_size)
-style_tf = train_transform(args.style_load_size, args.crop_size)
+    content_tf = train_transform(args.load_size, args.crop_size)
+    style_tf = train_transform(args.style_load_size, args.crop_size)
 
-content_dataset = FlatFolderDataset(args.content_dir, content_tf)
-style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    content_dataset = FlatFolderDataset(args.content_dir, content_tf)
+    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
@@ -134,21 +135,22 @@ style_iter = iter(data.DataLoader(
 
 if args.train_model=='drafting':
 
-    enc_ = net.Encoder(vgg)
-    set_requires_grad(enc_, False)
-    enc_.train(False)
-    dec_ = net.DecoderVQGAN()
-    disc_ = net.Discriminator(depth=5, num_channels=64)
-    init_weights(dec_)
-    init_weights(disc_)
-    dec_.train()
-    disc_.train()
-    enc_.to(device)
-    dec_.to(device)
-    disc_.to(device)
+    with autocast():
+        enc_ = net.Encoder(vgg)
+        set_requires_grad(enc_, False)
+        enc_.train(False)
+        dec_ = net.DecoderVQGAN()
+        disc_ = net.Discriminator(depth=5, num_channels=64)
+        init_weights(dec_)
+        init_weights(disc_)
+        dec_.train()
+        disc_.train()
+        enc_.to(device)
+        dec_.to(device)
+        disc_.to(device)
 
-    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+        optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+        opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
         with autocast():
             warmup_lr_adjust(optimizer, i)
