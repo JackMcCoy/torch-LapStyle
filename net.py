@@ -9,7 +9,8 @@ from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 
-gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
+with torch.cuda.amp.autocast():
+    gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 device = torch.device('cuda')
 
