@@ -112,7 +112,7 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(log_dir=str(log_dir))
 
-with autocast():
+with autocast(enabled=False):
     vgg = vgg.vgg
 
     vgg.load_state_dict(torch.load(args.vgg))
@@ -135,7 +135,7 @@ style_iter = iter(data.DataLoader(
 
 if args.train_model=='drafting':
 
-    with autocast():
+    with autocast(enabled=False):
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
@@ -152,7 +152,7 @@ if args.train_model=='drafting':
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
         opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
-        with autocast():
+        with autocast(enabled=False):
             warmup_lr_adjust(optimizer, i)
 
             warmup_lr_adjust(opt_D, i)
@@ -171,7 +171,7 @@ if args.train_model=='drafting':
         disc_scaler.update()
         set_requires_grad(disc_,False)
 
-        with autocast():
+        with autocast(enabled=False):
             dec_.zero_grad()
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
