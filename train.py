@@ -22,7 +22,6 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-disc_scaler = GradScaler()
 scaler = GradScaler()
 
 def train_transform(load_size, crop_size):
@@ -164,8 +163,9 @@ if args.train_model=='drafting':
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
 
-        disc_scaler.scale(loss_D).backward()
-        disc_scaler.step(opt_D)
+        scaler.scale(loss_D).backward()
+        scaler.step(opt_D)
+        scaler.update()
         set_requires_grad(disc_,False)
 
         with autocast():
@@ -178,6 +178,7 @@ if args.train_model=='drafting':
                         l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5 + cb
         scaler.scale(loss).backward()
         scaler.step(optimizer)
+        scaler.update()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
