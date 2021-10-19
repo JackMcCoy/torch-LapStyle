@@ -165,6 +165,33 @@ class VQGANTrain(nn.Module):
         t, l = self.vqgan(ci, si)
         return t, l
 
+def style_encoder_block(ch):
+    return [
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(ch, ch, kernel_size=3),
+        nn.LeakyReLU(),
+        nn.AvgPool2d(3, padding=1, stride=2)
+    ]
+
+class DecoderAdaConv(nn.Module):
+    def __init__(self, n_kernels):
+        super(DecoderAdaConv, self).__init__()
+        self.style_encoding = nn.Sequential(
+            *style_encoder_block(32),
+            *style_encoder_block(16),
+            *style_encoder_block(8)
+        )
+        self.style_projection = nn.Linear(8192, 8192)
+        kernels = nn.ModuleList([])
+        for i in range(n_kernels):
+            kernels.append()
+
+    def forward(self, sF, cF):
+        b, n, h, w = sF['r4_1'].shape
+        style = self.style_encoding(sF['r4_1']).flatten(1)
+        style = self.style_projection(style).reshape(b, 512, 4, 4)
+        return x
+
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
