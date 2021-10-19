@@ -289,7 +289,7 @@ class DecoderVQGAN(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64):
+    def __init__(self, depth=5, num_channels=64, relgan=True):
         super(Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1),
@@ -313,13 +313,22 @@ class Discriminator(nn.Module):
                               stride=1,
                               padding=1)
         self.ganloss = GANLoss('lsgan')
+        self.relgan = relgan
 
     def losses(self, real, fake):
         pred_real = self(real)
-        loss_D_real = self.ganloss(pred_real, True)
         pred_fake = self(fake)
-        loss_D_fake = self.ganloss(pred_fake, False)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
+            loss_D = (
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+            )
+        else:
+            loss_D_real = self.ganloss(pred_real, True)
+            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
     def forward(self, x):
@@ -336,7 +345,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc, cb = decoder(F, F)
+    Icc, cb = decoder(F, F, train_loop = True)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
@@ -352,6 +361,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     if calc_identity==True:
         l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+        cb_loss += cb.data
     else:
         l_identity1 = 0
         l_identity2 = 0
