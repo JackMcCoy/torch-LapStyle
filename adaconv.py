@@ -32,20 +32,25 @@ class KernelPredictor(nn.Module):
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
-        self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(512, self.c_in//self.n_groups, 2),
-            nn.Sigmoid())
+        self.depthwise_kernel_conv = nn.Conv2d(512, self.c_in*self.n_groups, 2, groups = 512)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(512, self.c_out//self.pointwise_groups, 1),
-            nn.Sigmoid())
-        self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(512, c_out, 1),
-            nn.Sigmoid())
+        self.pw_cn_kn = nn.Conv2d(512, self.c_out//self.pointwise_groups, 1)
+        self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
-        depthwise = self.depthwise_kernel_conv(style_encoding).unsqueeze(1).expand(N,self.c_out, self.c_in//self.n_groups, 3, 3)
+
+        depthwise = self.depthwise_kernel_conv(style_encoding).resize(N,self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_1_kn = self.pw_cn_kn(s_d).unsqueeze(1).expand(N, self.c_out, self.c_out//self.pointwise_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).squeeze()
