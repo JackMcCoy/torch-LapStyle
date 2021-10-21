@@ -22,8 +22,8 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
-scaler = GradScaler(init_scale=1024,growth_interval=1000)
+#disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
+#scaler = GradScaler(init_scale=1024,growth_interval=1000)
 ac_enabled = True
 
 def train_transform(load_size, crop_size):
@@ -153,14 +153,14 @@ if args.train_model=='drafting':
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
         #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
-        with autocast(enabled=ac_enabled):
-            adjust_learning_rate(optimizer, i, args)
-            #warmup_lr_adjust(opt_D, i)
-            ci = next(content_iter).to(device)
-            si = next(style_iter).to(device)
-            cF = enc_(ci)
-            sF = enc_(si)
-            stylized = dec_(sF, cF)
+
+        adjust_learning_rate(optimizer, i, args)
+        #warmup_lr_adjust(opt_D, i)
+        ci = next(content_iter).to(device)
+        si = next(style_iter).to(device)
+        cF = enc_(ci)
+        sF = enc_(si)
+        stylized = dec_(sF, cF)
             '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
@@ -173,16 +173,15 @@ if args.train_model=='drafting':
 
         with autocast(enabled=ac_enabled):
             '''
-            dec_.zero_grad()
-            optimizer.zero_grad()
-            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
-            loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*3) +\
-                        content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
-                        l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        dec_.zero_grad()
+        optimizer.zero_grad()
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+        loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
+        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*3) +\
+                    content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
+                    l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
+        loss.backward()
+        optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
