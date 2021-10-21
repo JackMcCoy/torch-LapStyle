@@ -19,7 +19,7 @@ class AdaConv(nn.Module):
         predicted = self.pad(normalized_feat)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
-                                         weight=depthwise[i] *,
+                                         weight=depthwise[i],
                                          groups=self.kernel_predictor.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight=pointwise_kn[i],
