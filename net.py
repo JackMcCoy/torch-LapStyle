@@ -400,8 +400,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity3 = 0
         l_identity4 = 0
         cb_loss = 0
-    loss_c = 0
-    for key in content_layers:
+    loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'],norm=True)
+    for key in content_layers[1:]:
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data
     loss_s = 0
     for key in style_layers:
