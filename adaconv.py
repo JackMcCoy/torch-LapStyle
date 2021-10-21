@@ -7,21 +7,18 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
+        self.relu = nn.ReLU()
 
     def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        size = content_in.size()
-        content_mean, content_std = calc_mean_std(content_in)
-        normalized_feat = (content_in - content_mean.expand(
-            size)) / content_std.expand(size)
-        predicted = self.pad(normalized_feat)
+        predicted = self.pad(content_in)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
                                          groups=self.kernel_predictor.n_groups)
-            spatial_conv_out.append(nn.functional.conv2d(depth,
+            spatial_conv_out.append(self.relu(nn.functional.conv2d(depth,
                                                          weight=pointwise_kn[i],
                                                          bias=pointwise_bias[i],
                                                          groups=self.kernel_predictor.pointwise_groups))
@@ -35,20 +32,17 @@ class KernelPredictor(nn.Module):
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
-        self.depthwise_kernel_conv = nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2, groups = self.n_groups)
+        self.depthwise_kernel_conv = nn.Sequential(
+            nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2, groups = self.n_groups),
+            nn.ReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1)
-        self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
+        self.pw_cn_kn = nn.Sequential(
+            nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1),
+            nn.ReLU())
+        self.pw_cn_bias = nn.Sequential(
+            nn.Conv2d(512, c_out, 1),
+            nn.ReLU())
         self.apply(self._init_weights)
-
-    @staticmethod
-    def _init_weights(m):
-        if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
-        elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
