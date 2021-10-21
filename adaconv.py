@@ -25,12 +25,12 @@ class AdaConv(nn.Module):
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
         super(KernelPredictor, self).__init__()
-        self.n_groups = c_in//(c_in//p)
-        self.pointwise_groups = c_out//(c_in//p)
+        self.n_groups = c_in//p
+        self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.depthwise_kernel_conv = nn.Conv2d(512, self.n_groups, 2)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Conv2d(512, self.n_groups, 1)
+        self.pw_cn_kn = nn.Conv2d(512, self.pointwise_groups, 1)
         self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
 
     def forward(self, style_encoding):
