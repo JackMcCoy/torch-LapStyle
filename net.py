@@ -403,8 +403,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'],norm=True)
     for key in content_layers[1:]:
         loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data
-    loss_s = 0
-    for key in style_layers:
+    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
+    for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
     content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
         content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
