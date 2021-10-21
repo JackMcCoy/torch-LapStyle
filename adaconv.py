@@ -12,7 +12,11 @@ class AdaConv(nn.Module):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        predicted = self.pad(content_in)
+        size = content_in.size()
+        content_mean, content_std = calc_mean_std(content_in)
+        normalized_feat = (content_in - content_mean.expand(
+            size)) / content_std.expand(size)
+        predicted = self.pad(normalized_feat)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i,:,:,:].unsqueeze(0),
                                        weight = depthwise[i],
@@ -22,12 +26,7 @@ class AdaConv(nn.Module):
                                                          bias = pointwise_bias[i],
                                                          groups = self.kernel_predictor.pointwise_groups))
         predicted = torch.cat(spatial_conv_out,0)
-        size = content_in.size()
-        style_mean, style_std = calc_mean_std(content_in)
-        content_mean, content_std = calc_mean_std(content_in)
-        normalized_feat = (content_in - content_mean.expand(
-            size)) / content_std.expand(size)
-        return normalized_feat + predicted
+        return predicted
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
