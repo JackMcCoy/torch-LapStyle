@@ -196,8 +196,7 @@ if args.train_model=='drafting':
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
-            style_remd: {style_remd.item():.3f} content_relt: {content_relt.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
