@@ -150,7 +150,7 @@ if args.train_model=='drafting':
         enc_.to(device)
         dec_.to(device)
         #disc_.to(device)
-        set_requires_grad(dec_, True)
+
         base_optimizer = torch.optim.Adam
         optimizer = SAM(dec_.parameters(), base_optimizer, lr=args.lr)
         #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
@@ -174,27 +174,30 @@ if args.train_model=='drafting':
 
         with autocast(enabled=ac_enabled):
         '''
-        set_requires_grad(dec_, True)
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+        losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s
+        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*1.5) +\
+                    content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
+                    l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         loss.backward()
         optimizer.first_step(zero_grad=True)
 
         cF = enc_(ci)
         sF = enc_(si)
         stylized = dec_(sF, cF)
-        set_requires_grad(dec_, True)
-        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False,
+        losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False,
                              mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s
+        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd * 1.5) + \
+               content_relt * 16 + l_identity1 * 50 + l_identity2 * 1 + \
+               l_identity3 * 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         loss.backward()
         optimizer.second_step(zero_grad=True)
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+            style_remd: {style_remd.item():.3f} content_relt: {content_relt.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
