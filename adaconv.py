@@ -42,7 +42,6 @@ class KernelPredictor(nn.Module):
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(512, c_out, 1),
             nn.ReLU())
-        self.apply(self._init_weights)
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
