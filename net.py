@@ -191,12 +191,12 @@ class DecoderAdaConv(nn.Module):
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 3)
+        self.kernel_3 = AdaConv(128, 4)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 4)
+        self.kernel_4 = AdaConv(64, 8)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
