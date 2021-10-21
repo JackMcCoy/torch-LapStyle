@@ -178,9 +178,9 @@ class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
         self.style_encoding = nn.Sequential(
-            *style_encoder_block(32),
-            *style_encoder_block(16),
-            *style_encoder_block(8)
+            *style_encoder_block(512),
+            *style_encoder_block(512),
+            *style_encoder_block(512)
         )
         self.style_projection = nn.Linear(8192, 8192)
         self.kernel_1 = AdaConv(512, 1)
