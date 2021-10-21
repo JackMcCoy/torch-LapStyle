@@ -5,7 +5,7 @@ class AdaConv(nn.Module):
     def __init__(self, ch_in, p):
         super(AdaConv, self).__init__()
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p)
-        self.pad = nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
 
     def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
