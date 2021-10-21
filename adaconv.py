@@ -42,7 +42,7 @@ class AdaConv(nn.Module):
                                                                        groups=self.kernel_predictor.pointwise_groups)))
             feat_pred = torch.cat(feat_conv,0)
             predicted = (predicted+feat_pred) * .5
-        return predicted + normalized_feat
+        return predicted + content_in
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
