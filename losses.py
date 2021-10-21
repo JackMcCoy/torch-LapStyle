@@ -76,10 +76,14 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return self.mse_loss(pred, target)
+            l = self.mse_loss(pred, target)
+            l.requires_grad=True
+            return l
         else:
-            return self.mse_loss(mean_variance_norm(pred),
+            l = self.mse_loss(mean_variance_norm(pred),
                                  mean_variance_norm(target))
+            l.requires_grad=True
+            return l
 
 
 class CalcStyleLoss():
@@ -97,8 +101,10 @@ class CalcStyleLoss():
         """
         pred_mean, pred_std = calc_mean_std(pred)
         target_mean, target_std = calc_mean_std(target)
-        return self.mse_loss(pred_mean, target_mean) + self.mse_loss(
+        l = self.mse_loss(pred_mean, target_mean) + self.mse_loss(
             pred_std, target_std)
+        l.requires_grad = True
+        return l
 
 
 class GANLoss(nn.Module):
