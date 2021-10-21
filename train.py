@@ -177,7 +177,7 @@ if args.train_model=='drafting':
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s
-        loss = torch.Variable(loss, requires_grad=True)
+        loss.requires_grad=True
         loss.backward()
         optimizer.first_step(zero_grad=True)
 
@@ -188,7 +188,7 @@ if args.train_model=='drafting':
                              mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s
-        loss = torch.Variable(loss, requires_grad=True)
+        loss.requires_grad=True
         loss.backward()
         optimizer.second_step(zero_grad=True)
 
