@@ -42,6 +42,16 @@ class KernelPredictor(nn.Module):
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(512, c_out, 1),
             nn.ReLU())
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
