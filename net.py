@@ -182,7 +182,7 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512),
             *style_encoder_block(512)
         )
-        self.style_projection = nn.Linear(8192, 8192)
+        self.style_projection = nn.Linear(2048, 2048)
         self.kernel_1 = AdaConv(512, 1)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
@@ -207,7 +207,9 @@ class DecoderAdaConv(nn.Module):
 
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
-        style = self.style_encoding(sF['r4_1']).flatten(1)
+        style = self.style_encoding(sF['r4_1'])
+        print(style.shape)
+        style = style.flatten(1)
         print(style.shape)
         style = self.style_projection(style).reshape(b, 512, 4, 4)
         x = self.kernel_1(style, cF['r4_1'])
