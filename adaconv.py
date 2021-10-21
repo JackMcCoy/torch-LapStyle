@@ -28,9 +28,9 @@ class KernelPredictor(nn.Module):
         self.n_groups = c_in//p
         self.pointwise_groups = c_out//p
         self.c_out = c_out
-        self.depthwise_kernel_conv = nn.Conv2d(512, self.n_groups, 2)
+        self.depthwise_kernel_conv = nn.Conv2d(512, c_in//self.n_groups, 2)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Conv2d(512, self.pointwise_groups, 1)
+        self.pw_cn_kn = nn.Conv2d(512, c_out//self.pointwise_groups, 1)
         self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
 
     def forward(self, style_encoding):
