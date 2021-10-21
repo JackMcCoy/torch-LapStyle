@@ -7,7 +7,7 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
 
     def forward(self, style_encoding, content_in, feats=False):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
