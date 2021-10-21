@@ -182,6 +182,8 @@ if args.train_model=='drafting':
         loss.backward()
         optimizer.first_step(zero_grad=True)
 
+        cF = enc_(ci)
+        sF = enc_(si)
         stylized = dec_(sF, cF)
         losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False,
                              mdog_losses=False)
