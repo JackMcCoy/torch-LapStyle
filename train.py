@@ -11,6 +11,7 @@ from tqdm import tqdm
 from torchvision.utils import save_image, make_grid
 import re, os
 import math
+from sam import SAM
 import vgg
 import net
 from function import init_weights
@@ -150,7 +151,8 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
-        optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+        base_optimizer = torch.optim.Adam
+        optimizer = SAM(dec_.parameters(), base_optimizer, lr=args.lr)
         #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
         #adjust_learning_rate(optimizer, i, args)
@@ -172,15 +174,23 @@ if args.train_model=='drafting':
 
         with autocast(enabled=ac_enabled):
         '''
-        dec_.zero_grad()
-        optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
         loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*3) +\
                     content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
                     l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         loss.backward()
-        optimizer.step()
+        optimizer.first_step(zero_grad=True)
+
+        stylized = dec_(sF, cF)
+        losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False,
+                             mdog_losses=False)
+        loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
+        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd * 3) + \
+               content_relt * 16 + l_identity1 * 50 + l_identity2 * 1 + \
+               l_identity3 * 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
+        loss.backward()
+        optimizer.second_step(zero_grad=True)
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
