@@ -206,7 +206,11 @@ class DecoderAdaConv(nn.Module):
 
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
-        style = self.style_encoding(sF['r4_1']).flatten(1)
+        style = self.style_encoding(sF['r4_1'])
+        print(sF['r4_1'].shape)
+        print(style.shape)
+        style = style.flatten(1)
+        print(style.shape)
         style = self.style_projection(style).reshape(b, 512, 4, 4)
         x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
