@@ -18,14 +18,15 @@ class AdaConv(nn.Module):
                                        groups = self.kernel_predictor.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight = pointwise_kn[i],
-                                                         bias = pointwise_bias[i]))
+                                                         bias = pointwise_bias[i],
+                                                         groups = self.kernel_predictor.pointwise_groups))
         return torch.cat(spatial_conv_out,0)
 
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
         super(KernelPredictor, self).__init__()
-        self.n_groups = c_in//(c_in//p)
+        self.n_groups = c_in//p
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
