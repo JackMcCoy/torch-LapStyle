@@ -25,7 +25,7 @@ class AdaConv(nn.Module):
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
         super(KernelPredictor, self).__init__()
-        self.n_groups = c_in//p
+        self.n_groups = c_in//(c_in//p)
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
