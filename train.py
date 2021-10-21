@@ -150,7 +150,7 @@ if args.train_model=='drafting':
         enc_.to(device)
         dec_.to(device)
         #disc_.to(device)
-
+        set_requires_grad(dec_, True)
         base_optimizer = torch.optim.Adam
         optimizer = SAM(dec_.parameters(), base_optimizer, lr=args.lr)
         #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
