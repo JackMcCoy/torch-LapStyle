@@ -9,7 +9,7 @@ class AdaConv(nn.Module):
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
 
-    def forward(self, style_encoding, content_in):
+    def forward(self, style_encoding, style_in, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
@@ -24,10 +24,11 @@ class AdaConv(nn.Module):
                                                          groups = self.kernel_predictor.pointwise_groups)))
         predicted = torch.cat(spatial_conv_out,0)
         size = content_in.size()
+        style_mean, style_std = calc_mean_std(content_in)
         content_mean, content_std = calc_mean_std(content_in)
         normalized_feat = (content_in - content_mean.expand(
             size)) / content_std.expand(size)
-        return normalized_feat * predicted
+        return normalized_feat * predicted + style_std
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
