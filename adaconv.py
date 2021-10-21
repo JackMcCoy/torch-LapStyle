@@ -23,8 +23,9 @@ class AdaConv(nn.Module):
                                                          bias = pointwise_bias[i],
                                                          groups = self.kernel_predictor.pointwise_groups)))
         predicted = torch.cat(spatial_conv_out,0)
+        size = content_in.size()
         content_mean, content_std = calc_mean_std(content_in)
-        normalized_feat = (content_feat - content_mean.expand(
+        normalized_feat = (content_in - content_mean.expand(
             size)) / content_std.expand(size)
         return normalized_feat * predicted
 
