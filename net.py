@@ -180,6 +180,7 @@ class DecoderAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
+            ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
         self.style_projection = nn.Linear(8192, 8192)
@@ -386,7 +387,7 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 style_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True, calc_remd=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -403,14 +404,10 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     loss_s = 0
     for key in style_layers:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
-    if calc_remd:
-        content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
-            content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
-            style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
-    else:
-        content_relt = 0
-        style_remd = 0
+    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+        content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+        style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
 
     if mdog_losses:
         cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
