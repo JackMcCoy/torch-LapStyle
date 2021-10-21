@@ -176,9 +176,7 @@ if args.train_model=='drafting':
         '''
         losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*1.5) +\
-                    content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
-                    l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
+        loss = loss_c * args.content_weight + args.style_weight * loss_s
         loss.backward()
         optimizer.first_step(zero_grad=True)
 
@@ -188,9 +186,7 @@ if args.train_model=='drafting':
         losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False,
                              mdog_losses=False)
         loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-        loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd * 3) + \
-               content_relt * 16 + l_identity1 * 50 + l_identity2 * 1 + \
-               l_identity3 * 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
+        loss = loss_c * args.content_weight + args.style_weight * loss_s
         loss.backward()
         optimizer.second_step(zero_grad=True)
 
