@@ -18,10 +18,10 @@ class AdaConv(nn.Module):
             size)) / content_std.expand(size)
         predicted = self.pad(normalized_feat)
         for i in range(N):
-            depth = nn.functional.conv2d(predicted[i,:,:,:].unsqueeze(0),
+            spatial_conv_out.append(nn.functional.conv2d(predicted[i,:,:,:].unsqueeze(0),
                                        weight = depthwise[i]*pointwise_kn[i],
                                        bias = pointwise_bias[i],
-                                       groups = self.kernel_predictor.n_groups)
+                                       groups = self.kernel_predictor.n_groups))
         predicted = torch.cat(spatial_conv_out,0)
         return normalized_feat * predicted
 
