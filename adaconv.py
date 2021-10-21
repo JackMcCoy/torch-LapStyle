@@ -34,14 +34,14 @@ class KernelPredictor(nn.Module):
         self.c_in = c_in
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(512, self.c_in//self.n_groups, 2),
-            nn.ReLU())
+            nn.Sigmoid())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(512, self.c_out//self.pointwise_groups, 1),
-            nn.ReLU())
+            nn.Sigmoid())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(512, c_out, 1),
-            nn.ReLU())
+            nn.Sigmoid())
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
