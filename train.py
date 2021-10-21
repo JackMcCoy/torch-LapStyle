@@ -161,7 +161,7 @@ if args.train_model=='drafting':
         cF = enc_(ci)
         sF = enc_(si)
         stylized = dec_(sF, cF)
-         '''
+        '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
