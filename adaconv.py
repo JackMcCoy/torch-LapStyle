@@ -7,6 +7,7 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
+        self.relu = nn.LeakyReLU()
 
     def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
@@ -21,10 +22,10 @@ class AdaConv(nn.Module):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
                                          groups=self.kernel_predictor.n_groups)
-            spatial_conv_out.append(nn.functional.conv2d(depth,
+            spatial_conv_out.append(self.relu(nn.functional.conv2d(depth,
                                                          weight=pointwise_kn[i],
                                                          bias=pointwise_bias[i],
-                                                         groups=self.kernel_predictor.pointwise_groups))
+                                                         groups=self.kernel_predictor.pointwise_groups)))
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
 
