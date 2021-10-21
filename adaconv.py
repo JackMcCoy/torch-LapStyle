@@ -27,7 +27,7 @@ class AdaConv(nn.Module):
         content_mean, content_std = calc_mean_std(content_in)
         normalized_feat = (content_in - content_mean.expand(
             size)) / content_std.expand(size)
-        return normalized_feat + predicted
+        return normalized_feat * predicted
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
