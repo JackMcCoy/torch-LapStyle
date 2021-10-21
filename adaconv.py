@@ -26,7 +26,7 @@ class AdaConv(nn.Module):
                                                          bias = pointwise_bias[i],
                                                          groups = self.kernel_predictor.pointwise_groups))
         predicted = torch.cat(spatial_conv_out,0)
-        return predicted
+        return normalized_feat * predicted
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
