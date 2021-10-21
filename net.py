@@ -8,6 +8,7 @@ from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLo
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
+from adaconv import AdaConv
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -182,14 +183,43 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(8)
         )
         self.style_projection = nn.Linear(8192, 8192)
-        kernels = nn.ModuleList([])
-        for i in range(n_kernels):
-            kernels.append()
+        self.kernel_1 = AdaConv(512, 1)
+        self.decoder_1 = nn.Sequential(
+            ResBlock(512),
+            ConvBlock(512, 256))
+        self.kernel_2 = AdaConv(256, 2)
+        self.decoder_2 = nn.Sequential(
+            ResBlock(256),
+            ConvBlock(256, 128)
+        )
+        self.kernel_3 = AdaConv(128, 3)
+        self.decoder_3 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 64)
+        )
+        self.kernel_4 = AdaConv(64, 4)
+        self.decoder_4 = nn.Sequential(
+            ConvBlock(64, 64),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 3, kernel_size=3)
+        )
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1']).flatten(1)
         style = self.style_projection(style).reshape(b, 512, 4, 4)
+        x = self.kernel_1(style, cF['r4_1'])
+        x = self.decoder_1(x)
+        x = self.upsample(x)
+        x = self.kernel_2(style, x)
+        x = self.decoder_2(x)
+        x = self.upsample(x)
+        x = self.kernel_3(style, x)
+        x = self.decoder_3(x)
+        x = self.upsample(x)
+        x = self.kernel_4(style, x)
+        x = self.decoder_4(x)
         return x
 
 class DecoderVQGAN(nn.Module):
@@ -345,13 +375,13 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc, cb = decoder(F, F, train_loop = True)
+    Icc = decoder(F, F, train_loop = True)
     l_identity1 = content_loss(Icc, i)
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
-    return l_identity1, l_identity2, cb
+    return l_identity1, l_identity2
 
 content_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 style_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
@@ -359,9 +389,8 @@ style_layers = {'r1_1','r2_1','r3_1','r4_1', 'r5_1'}
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
-        cb_loss += cb.data
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     else:
         l_identity1 = 0
         l_identity2 = 0

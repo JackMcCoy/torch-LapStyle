@@ -140,18 +140,18 @@ if args.train_model=='drafting':
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
-        dec_ = net.DecoderVQGAN()
-        disc_ = net.Discriminator(depth=5, num_channels=64)
+        dec_ = net.DecoderAdaConv()
+        #disc_ = net.Discriminator(depth=5, num_channels=64)
         init_weights(dec_)
-        init_weights(disc_)
+        #init_weights(disc_)
         dec_.train()
-        disc_.train()
+        #disc_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.to(device)
+        #disc_.to(device)
 
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-        opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+        #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
         with autocast(enabled=ac_enabled):
             warmup_lr_adjust(optimizer, i)
@@ -162,7 +162,7 @@ if args.train_model=='drafting':
             cF = enc_(ci)
             sF = enc_(si)
             stylized, cb_loss = dec_(sF, cF, train_loop = True)
-
+            '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -173,13 +173,14 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
+            '''
             dec_.zero_grad()
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, disc_, calc_identity=True, disc_loss=True, mdog_losses=True)
-            loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, cb = losses
-            loss = cb_loss + loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*3) +\
+            losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
+            loss = loss_c * args.content_weight + args.style_weight * (loss_s + style_remd*3) +\
                         content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
-                        l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5 + cb
+                        l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
