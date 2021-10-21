@@ -11,7 +11,6 @@ from tqdm import tqdm
 from torchvision.utils import save_image, make_grid
 import re, os
 import math
-from sam import SAM
 import vgg
 import net
 from function import init_weights
@@ -151,7 +150,7 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
-        base_optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+        optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
         #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
         #adjust_learning_rate(optimizer, i, args)
