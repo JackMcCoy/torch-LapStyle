@@ -210,16 +210,16 @@ class DecoderAdaConv(nn.Module):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1'].detach()).flatten(1)
         style = self.style_projection(style).reshape(b, 512, 4, 4)
-        x = self.kernel_1(style, cF['r4_1'], first=True)
+        x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
         x = self.upsample(x)
-        x = self.kernel_2(style, x)
+        x += self.kernel_2(style, cF['r3_1']).data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        x = self.kernel_3(style, x)
+        x += self.kernel_3(style, cF['r2_1']).data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x = self.kernel_4(style, x)
+        x += self.kernel_4(style, cF['r1_1']).data
         x = self.decoder_4(x)
         return x
 
