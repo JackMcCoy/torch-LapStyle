@@ -161,7 +161,7 @@ if args.train_model=='drafting':
         cF = enc_(ci)
         sF = enc_(si)
         stylized = dec_(sF, cF)
-            '''
+         '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -172,7 +172,7 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
-            '''
+        '''
         dec_.zero_grad()
         optimizer.zero_grad()
         losses = calc_losses(stylized, ci, si, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
