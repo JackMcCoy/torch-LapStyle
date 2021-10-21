@@ -220,7 +220,7 @@ class DecoderAdaConv(nn.Module):
         x = self.kernel_3(style, x).data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x += self.kernel_4(style, x).data
+        x = self.kernel_4(style, x).data
         x = self.decoder_4(x)
         return x
 
