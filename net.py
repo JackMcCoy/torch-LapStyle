@@ -175,7 +175,7 @@ def style_encoder_block(ch):
     ]
 
 class DecoderAdaConv(nn.Module):
-    def __init__(self, n_kernels):
+    def __init__(self):
         super(DecoderAdaConv, self).__init__()
         self.style_encoding = nn.Sequential(
             *style_encoder_block(32),
