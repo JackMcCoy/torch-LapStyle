@@ -180,7 +180,6 @@ class DecoderAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
-            ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
         self.style_projection = nn.Linear(8192, 8192)
