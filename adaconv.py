@@ -15,11 +15,11 @@ class AdaConv(nn.Module):
         for i in range(N):
             depth = nn.functional.conv2d(content_in[i,:,:,:].unsqueeze(0),
                                        weight = depthwise[i],
-                                       groups = self.kernel_predictor.n_groups)
+                                       groups = self.kernel_predictor.c_in//self.kernel_predictor.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight = pointwise_kn[i],
                                                          bias = pointwise_bias[i],
-                                                         groups = self.kernel_predictor.pointwise_groups))
+                                                         groups = self.kernel_predictor.c_out//self.kernel_predictor.pointwise_groups))
         return torch.cat(spatial_conv_out,0)
 
 
@@ -31,9 +31,9 @@ class KernelPredictor(nn.Module):
         self.c_out = c_out
         self.c_in = c_in
         print(self.n_groups)
-        self.depthwise_kernel_conv = nn.Conv2d(512, self.n_groups, 2)
+        self.depthwise_kernel_conv = nn.Conv2d(512, self.c_in//self.n_groups, 2)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Conv2d(512, self.pointwise_groups, 1)
+        self.pw_cn_kn = nn.Conv2d(512, self.c_out//self.pointwise_groups, 1)
         self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
 
     def forward(self, style_encoding):
