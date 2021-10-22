@@ -13,12 +13,6 @@ class AdaConv(nn.Module):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        if self.kernel_predictor.c_in==512:
-            size = content_in.size()
-            content_mean, content_std = calc_mean_std(content_in)
-
-            content_in = (content_in - content_mean.expand(
-                size)) / content_std.expand(size)
         predicted = self.pad(content_in)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
@@ -42,7 +36,7 @@ class AdaConv(nn.Module):
                                                                        groups=self.kernel_predictor.pointwise_groups)))
             feat_pred = torch.cat(feat_conv,0)
             predicted = (predicted+feat_pred) * .5
-        return predicted + content_in
+        return predicted
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p):
@@ -52,15 +46,13 @@ class KernelPredictor(nn.Module):
         self.c_out = c_out
         self.c_in = c_in
         self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2, groups = self.n_groups),
+            nn.Conv2d(64, self.c_in*(self.c_in//self.n_groups), 2, groups = self.n_groups),
             nn.ReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1),
+            nn.Conv2d(64, self.c_out*(self.c_out//self.pointwise_groups), 1),
             nn.ReLU())
-        self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(512, c_out, 1),
-            nn.ReLU())
+        self.pw_cn_bias = nn.Conv2d(64, c_out, 1)
         self.apply(self._init_weights)
 
     @staticmethod

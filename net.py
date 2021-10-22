@@ -180,27 +180,26 @@ class DecoderAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
-            ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, 8192),
+            nn.Linear(8192, 1024),
             nn.LeakyReLU())
-        self.kernel_1 = AdaConv(512, 8)
+        self.kernel_1 = AdaConv(512, 1)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4)
+        self.kernel_2 = AdaConv(256, 2)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 2)
+        self.kernel_3 = AdaConv(128, 4)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1)
+        self.kernel_4 = AdaConv(64, 8)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -211,17 +210,17 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1'].detach()).flatten(1)
-        style = self.style_projection(style).reshape(b, 512, 4, 4)
+        style = self.style_projection(style).reshape(b, 64, 4, 4)
         x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
         x = self.upsample(x)
-        x = self.kernel_2(style, x, feats=cF['r3_1']).data
+        x += self.kernel_2(style, cF['r3_1']).data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        x = self.kernel_3(style, x, feats=cF['r2_1']).data
+        x += self.kernel_3(style, cF['r2_1']).data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x = self.kernel_4(style, x, feats=cF['r1_1']).data
+        x += self.kernel_4(style, cF['r1_1']).data
         x = self.decoder_4(x)
         return x
 
