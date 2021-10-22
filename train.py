@@ -22,7 +22,7 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-#disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
+disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
 scaler = GradScaler(init_scale=1024,growth_interval=1000)
 ac_enabled = True
 
@@ -67,7 +67,7 @@ def adjust_learning_rate(optimizer, iteration_count,args):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-5, warmup_iters=1000, max_lr = 1e-3, decay=5e-5):
+def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-5, warmup_iters=1000, max_lr = 1e-4, decay=5e-5):
     """Imitating the original implementation"""
     warmup_step = (max_lr - warmup_start) / warmup_iters
     if iteration_count < warmup_iters:
@@ -141,28 +141,27 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        #disc_ = net.Discriminator(depth=9, num_channels=64)
+        disc_ = net.Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        #init_weights(disc_)
+        init_weights(disc_)
         dec_.train()
-        #disc_.train()
+        disc_.train()
         enc_.to(device)
         dec_.to(device)
-        #disc_.to(device)
+        disc_.to(device)
 
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-        #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+        opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
-        #warmup_lr_adjust(opt_D, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
             stylized, cb_loss = dec_(sF, cF)
-        '''
-        with autocast():
+
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -171,7 +170,7 @@ if args.train_model=='drafting':
         disc_scaler.step(opt_D)
         disc_scaler.update()
         set_requires_grad(disc_,False)
-        '''
+
         with autocast(enabled=ac_enabled):
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=True, mdog_losses=False)
