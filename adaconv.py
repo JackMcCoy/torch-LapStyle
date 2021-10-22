@@ -51,16 +51,10 @@ class KernelPredictor(nn.Module):
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
-        self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2),
-            nn.ReLU())
+        self.depthwise_kernel_conv = nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2, groups = self.n_groups)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1),
-            nn.ReLU())
-        self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(512, c_out, 1),
-            nn.ReLU())
+        self.pw_cn_kn = nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.n_groups)
+        self.pw_cn_bias = nn.Conv2d(512, c_out, 1)
         self.apply(self._init_weights)
 
     @staticmethod
