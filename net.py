@@ -177,11 +177,13 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-        self.vq = Quantize_No_Transformer(
+        self.vq = VectorQuantize(
             dim = 16,
             codebook_size = 860,     # codebook size
-            decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
-            commitment = 1.
+            kmeans_init=True,
+            kmeans_iters=10,
+            use_cosine_sim=True,
+            threshold_ema_dead_code=2
         )
         '''
         self.style_encoding = nn.Sequential(
