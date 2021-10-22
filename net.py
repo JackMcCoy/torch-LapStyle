@@ -6,10 +6,9 @@ from function import adaptive_instance_normalization as adain
 from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
-from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
+from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from adaconv import AdaConv
-from vector_quantize_pytorch import VectorQuantize
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -182,11 +181,7 @@ class DecoderAdaConv(nn.Module):
             dim = 16,
             codebook_size = 860,     # codebook size
             decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
-            commitment = 1.,          # the weight on the commitment loss
-            kmeans_init=True,
-            kmeans_iters=10,
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2
+            commitment = 1.
         )
         '''
         self.style_encoding = nn.Sequential(
