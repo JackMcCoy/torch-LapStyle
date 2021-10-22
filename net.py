@@ -6,9 +6,10 @@ from function import adaptive_instance_normalization as adain
 from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
-from vqgan import VQGANLayers, VectorQuantize, Quantize_No_Transformer, TransformerOnly
+from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from adaconv import AdaConv
+from vector_quantize_pytorch import VectorQuantize
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -177,12 +178,24 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
+        self.vq = VectorQuantize(
+            dim = 16,
+            codebook_size = 860,     # codebook size
+            decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
+            commitment = 1.,          # the weight on the commitment loss
+            kmeans_init=True,
+            kmeans_iters=10,
+            use_cosine_sim=True,
+            threshold_ema_dead_code=2
+        )
+        '''
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
             ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
+        '''
         self.style_projection = nn.Sequential(
             nn.Linear(8192, 8192),
             nn.ReLU()
@@ -211,7 +224,7 @@ class DecoderAdaConv(nn.Module):
 
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
-        style = self.style_encoding(sF['r4_1'].detach()).flatten(1)
+        style, indices, commit_loss = self.vq(sF['r4_1'].detach()).flatten(1)
         style = self.style_projection(style).reshape(b, 512, 4, 4)
         x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
@@ -224,7 +237,7 @@ class DecoderAdaConv(nn.Module):
         x = self.upsample(x)
         x += self.kernel_4(style, cF['r1_1']).data
         x = self.decoder_4(x)
-        return x
+        return x, commit_loss
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
