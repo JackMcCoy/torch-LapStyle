@@ -182,7 +182,9 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512),
             ConvBlock(512, 512)
         )
-        self.style_projection = nn.Linear(8192, 1024)
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, 1024),
+            nn.LeakyReLU())
         self.kernel_1 = AdaConv(512, 1)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
