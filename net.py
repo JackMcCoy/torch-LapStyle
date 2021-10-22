@@ -177,7 +177,7 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-        self.vq = VectorQuantize(
+        self.vq = Quantize_No_Transformer(
             dim = 16,
             codebook_size = 860,     # codebook size
             decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
