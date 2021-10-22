@@ -284,7 +284,7 @@ class Quantize_No_Transformer(nn.Module):
         )
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).float()
-        embed_ind = embed_ind.view(*cF.shape[:-1])
+        embed_ind = embed_ind.view(*sF.shape[:-1])
         quantize = F.embedding(embed_ind, self.embed.transpose(0, 1))
 
         if self.training:
