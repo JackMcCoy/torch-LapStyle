@@ -274,8 +274,8 @@ class Quantize_No_Transformer(nn.Module):
     def codebook(self):
         return self.embed.transpose(0, 1)
 
-    def forward(self, cF, sF):
-        target = adain(cF, sF)
+    def forward(self, sF):
+        target = sF
         flatten = target.reshape(-1, self.dim)
         dist = (
             flatten.pow(2).sum(1, keepdim=True)
@@ -296,7 +296,6 @@ class Quantize_No_Transformer(nn.Module):
             self.embed.data.copy_(embed_normalized)
 
         loss = self.perceptual_loss(quantize.detach(), target) * self.commitment
-        loss += (self.style_loss(quantize.detach(), target) * 5).data
 
         quantize = target + (quantize.detach() - target)
 
