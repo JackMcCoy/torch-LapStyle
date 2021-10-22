@@ -19,7 +19,7 @@ class AdaConv(nn.Module):
 
             content_in = (content_in - content_mean.expand(
                 size)) / content_std.expand(size)
-        predicted = self.pad(normalized_feat)
+        predicted = self.pad(content_in)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
