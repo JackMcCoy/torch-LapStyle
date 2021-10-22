@@ -53,9 +53,9 @@ class CalcContentReltLoss():
         """
         dM = 1.
         Mx = calc_emd_loss(pred, pred)
-        Mx = Mx / (Mx.sum(1, keepdim=True))
+        Mx = torch.clip(Mx / (Mx.sum(1, keepdim=True)), -1e5, 1e5)
         My = calc_emd_loss(target, target)
-        My = My / (My.sum(1, keepdim=True))
+        My = torch.clip(My / (My.sum(1, keepdim=True)), -1e5, 1e5)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
@@ -224,9 +224,9 @@ class GramErrors():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        gram_pred = torch.clip(self.gram_matrix(pred), min = 0, max = 1)
-        gram_target = torch.clip(self.gram_matrix(target), min = 0, max = 1)
-        return torch.clip(self.mse_loss(gram_pred, gram_target), min = 0, max = 1)
+        gram_pred = torch.clip(self.gram_matrix(pred), min = -1, max = 1)
+        gram_target = torch.clip(self.gram_matrix(target), min = -1, max = 1)
+        return torch.clip(self.mse_loss(gram_pred, gram_target), min = -1, max = 1)
 
 def mean_variance_norm(feat):
     """mean_variance_norm.
