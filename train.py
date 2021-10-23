@@ -147,14 +147,14 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        disc_ = net.Discriminator(depth=9, num_channels=64)
+        #disc_ = net.Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        init_weights(disc_)
+        #init_weights(disc_)
         dec_.train()
-        disc_.train()
+        #disc_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.to(device)
+        #disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
@@ -180,7 +180,7 @@ if args.train_model=='drafting':
             cF = enc_(ci)
             sF = enc_(si)
             stylized, cb_loss = dec_(sF, cF)
-
+            '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -191,8 +191,9 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
+            '''
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=True)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=True)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * (loss_s + 3*style_remd) +\
                         content_relt*16 + l_identity1*50 + l_identity2 * 1 +\

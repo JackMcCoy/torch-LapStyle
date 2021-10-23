@@ -102,6 +102,11 @@ class LatentClustering(nn.Module):
         self.loss = nn.MSELoss()
 
     def project_down(self, x):
+        size = x.size()
+        content_mean, content_std = calc_mean_std(x)
+
+        x = (x - content_mean.expand(
+            size)) / content_std.expand(size)
         x = self.latent_compress(x).flatten(1)
         x = self.project_in(x)
         return x
