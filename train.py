@@ -120,10 +120,11 @@ with autocast(enabled=ac_enabled):
     vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
+    style_tf_small = train_transform(128 args.crop_size)
     style_tf = train_transform(args.style_load_size, args.crop_size)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
-    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    style_dataset = FlatFolderDataset(args.style_dir, style_tf_small)
 
 tmp_dataset = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
@@ -163,6 +164,11 @@ if args.train_model=='drafting':
         num_workers=1))
     del(tmp_dataset)
     del(tmp_dataset_2)
+    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    style_iter = iter(data.DataLoader(
+        style_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(style_dataset),
+        num_workers=args.n_threads))
     for i in tqdm(range(args.max_iter)):
         #warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
