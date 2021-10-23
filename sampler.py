@@ -76,12 +76,14 @@ class LatentClustering(nn.Module):
             nn.LeakyReLU(),
         )
         self.project_in = nn.Sequential(
-            nn.Linear(128, 128),
+            nn.utils.parametrizations.spectral_norm(
+                nn.Linear(128, 128)),
             nn.LeakyReLU(),
-            nn.Linear(128, 128),
-            nn.LeakyReLU()
+            nn.utils.parametrizations.spectral_norm(
+                nn.Linear(128, 128))
         )
         self.latent_decompress = nn.Sequential(
+            nn.LeakyReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(32, 64, 3),
             nn.LeakyReLU(),
