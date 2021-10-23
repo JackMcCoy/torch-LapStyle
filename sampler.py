@@ -165,7 +165,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
             c_latent = latent_model.project_down(x['r4_1'])
             self.similarity.append(cosine_sim(c_latent,style_latent).detach().cpu().numpy())
         self.similarity = np.concatenate(self.similarity,axis=0)
-        top_similar = self.similarity.argsort()[-120:][::-1]
+        top_similar = self.similarity.argsort()[-500:][::-1]
         top_similar = np.hstack(top_similar)
         self.i=0
         self.current_subset = top_similar
@@ -181,20 +181,15 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         if self.counter >= len(self.current_subset):
             self.counter = 0
         if self.i == 1000:
-            self.expand_subset(500)
+            self.expand_subset(1600)
             self.counter = 0
         if self.i == 2500:
-            self.expand_subset(750)
+            self.expand_subset(3200)
             self.counter = 0
         if self.i == 7500:
-            self.expand_subset(2000)
+            self.expand_subset(4800)
             self.counter = 0
         if self.i == 10000:
-            self.expand_subset(3500)
-        if self.i == 20000:
-            self.counter = 0
-            self.expand_subset(5000)
-        if self.i -- 30000:
             self.current_subset = np.arange(self.num_samples)
             self.counter = 0
         return self.current_subset[self.counter]

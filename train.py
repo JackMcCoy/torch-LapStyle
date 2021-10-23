@@ -130,12 +130,12 @@ content_iter = iter(data.DataLoader(
     content_dataset, batch_size=8,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
-'''
+
 tmp_dataset_2 = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=SequentialSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
-'''
+
 style_iter = iter(data.DataLoader(
     style_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(style_dataset),
@@ -160,7 +160,7 @@ if args.train_model=='drafting':
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
-    '''
+
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
         sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
@@ -173,7 +173,7 @@ if args.train_model=='drafting':
         style_dataset, batch_size=args.batch_size,
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
-    '''
+
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
         warmup_lr_adjust(opt_D, i)
