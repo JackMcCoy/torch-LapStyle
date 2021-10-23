@@ -162,17 +162,17 @@ class SimilarityRankedSampler(data.sampler.Sampler):
 
     def __iter__(self):
         self.i += 1
-        if i == 1000:
+        if self.i == 1000:
             expand_subset(1000)
-        if i == 2500:
+        if self.i == 2500:
             expand_subset(2000)
-        if i == 7500:
+        if self.i == 7500:
             expand_subset(5000)
-        if i == 10000:
+        if self.i == 10000:
             expand_subset(10000)
-        if i == 20000:
+        if self.i == 20000:
             expand_subset(20000)
-        if i <= 30000:
+        if self.i <= 30000:
             return iter(SubsetSampler(self.current_subset))
         else:
             return iter(InfiniteSampler(self.num_samples))
