@@ -159,7 +159,7 @@ if args.train_model=='drafting':
         opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
-        sampler=SequentialSamplerWrapper(content_dataset, next(style_iter), tmp_dataset, tmp_dataset_2, enc_, r=20000),
+        sampler=SequentialSamplerWrapper(content_dataset, next(style_iter), tmp_dataset, tmp_dataset_2, enc_),
         num_workers=1))
     for i in tqdm(range(args.max_iter)):
         #warmup_lr_adjust(optimizer, i)
