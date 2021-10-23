@@ -171,7 +171,6 @@ def style_encoder_block(ch):
     return [
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
-        nn.LeakyReLU(),
         nn.AvgPool2d(3, padding=1, stride=2)
     ]
 
@@ -189,13 +188,13 @@ class DecoderAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
-            ConvBlock(512, 512),
-            ConvBlock(512, 512)
+            *style_encoder_block(512),
         )
         self.s_d = 64
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d*16),
-            nn.ReLU()
+            nn.Linear(4096, self.s_d*16),
+            nn.Tanh(),
+            nn.Linear(self.s_d * 16, self.s_d * 16),
         )
         self.kernel_1 = AdaConv(512, 1, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
@@ -222,8 +221,8 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1'].detach())
-        style, indices, commit_loss = self.vq(style)
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
+        style, indices, commit_loss = self.vq(style)
         x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
         x = self.upsample(x)
