@@ -176,14 +176,14 @@ if args.train_model=='drafting':
     '''
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
-        '''
-        warmup_lr_adjust(opt_D, i)
+        #warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
             stylized, cb_loss = dec_(sF, cF)
+        '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
