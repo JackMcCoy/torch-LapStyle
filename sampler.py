@@ -150,7 +150,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         for i in tqdm.tqdm(tmp_dataset2):
             x = encoder(i.to(device))
             c_latent = latent_model.project_down(x['r4_1'])
-            self.similarity.append(torch.abs(style_latent-c_latent).cpu().numpy())
+            self.similarity.append(torch.abs(style_latent-c_latent).detach().cpu().numpy())
         self.similarity = np.concatenate(self.similarity,axis=0)
         top_similar = []
         for i in range(self.similarity.shape[1]):
