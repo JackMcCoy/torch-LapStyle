@@ -161,6 +161,8 @@ if args.train_model=='drafting':
         content_dataset, batch_size=args.batch_size,
         sampler=SequentialSamplerWrapper(content_dataset, next(style_iter), tmp_dataset, tmp_dataset_2, enc_),
         num_workers=1))
+    del(tmp_dataset)
+    del(tmp_dataset_2)
     for i in tqdm(range(args.max_iter)):
         #warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
