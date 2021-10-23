@@ -104,7 +104,11 @@ class LatentClustering(nn.Module):
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=2, mode='nearest'),  # 16,16
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(256, 512, 3)
+            nn.Conv2d(256, 512, 3),
+            nn.LeakyReLU(),
+            nn.Upsample(scale_factor=2, mode='nearest'),  # 16,16
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(512, 512, 3)
         )
         self.loss = nn.MSELoss()
 
