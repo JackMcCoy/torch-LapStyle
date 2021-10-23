@@ -104,11 +104,7 @@ class LatentClustering(nn.Module):
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=2, mode='nearest'),  # 16,16
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(256, 512, 3),
-            nn.LeakyReLU(),
-            nn.Upsample(scale_factor=2, mode='nearest'),  # 16,16
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 512, 3)
+            nn.Conv2d(256, 512, 3)
         )
         self.loss = nn.MSELoss()
 
@@ -121,7 +117,7 @@ class LatentClustering(nn.Module):
         b,c,h,w = x.shape
         x = self.latent_compress(x).flatten(1)
         x = self.project_in(x)
-        out = self.project_out(x).reshape(b, 32, 1, 1)
+        out = self.project_out(x).reshape(b, 16, 1, 1)
         out = self.latent_decompress(out)
         loss = self.loss(out, x)
         return loss
