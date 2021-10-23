@@ -53,9 +53,17 @@ def SequentialSampler(n):
 class SequentialSamplerWrapper(data.sampler.Sampler):
     def __init__(self, data_source):
         self.num_samples = len(data_source)
+        self.order = np.arange(self.num_samples)
 
     def __iter__(self):
-        return iter(SequentialSampler(self.num_samples))
+        self.i = 0
+        return self
+
+    def __next__(self):
+        self.i += 1
+        if self.i >= self.num_samples:
+            self.i = 0
+        return self.order[self.i]
 
     def __len__(self):
         return self.num_samples
@@ -163,21 +171,33 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         self.current_subset = top_similar
 
     def __iter__(self):
+        self.i = 0
+        self.counter = 0
+        return self
+
+    def __next__(self):
+        self.counter += 1
         self.i += 1
+        if self.counter >= len(self.current_subset):
+            self.counter = 0
         if self.i == 1000:
             self.expand_subset(500)
+            self.counter = 0
         if self.i == 2500:
             self.expand_subset(750)
+            self.counter = 0
         if self.i == 7500:
             self.expand_subset(2000)
+            self.counter = 0
         if self.i == 10000:
             self.expand_subset(3500)
         if self.i == 20000:
+            self.counter = 0
             self.expand_subset(5000)
-        if self.i <= 30000:
-            return iter(SubsetSampler(self.current_subset))
-        else:
-            return iter(InfiniteSampler(self.num_samples))
+        if self.i -- 30000:
+            self.current_subset = np.arange(self.num_samples)
+            self.counter = 0
+        return self.current_subset[self.counter]
 
     def expand_subset(self, n):
         top = n//8
