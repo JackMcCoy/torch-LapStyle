@@ -52,6 +52,8 @@ class KernelPredictor(nn.Module):
         self.c_out = c_out
         self.c_in = c_in
         self.style_groups = s_d//p
+        print((self.c_in//self.n_groups))
+        print(self.style_groups)
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), 2, groups = self.style_groups),
             nn.ReLU())
