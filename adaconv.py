@@ -3,9 +3,10 @@ from torch import nn
 from function import calc_mean_std
 
 class AdaConv(nn.Module):
-    def __init__(self, ch_in, p):
+    def __init__(self, ch_in, p, s_d = 512):
         super(AdaConv, self).__init__()
-        self.kernel_predictor = KernelPredictor(ch_in, ch_in, p)
+        self.s_d = s_d
+        self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d = s_d)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
 
@@ -44,22 +45,22 @@ class AdaConv(nn.Module):
         return predicted + content_in
 
 class KernelPredictor(nn.Module):
-    def __init__(self, c_in, c_out, p):
+    def __init__(self, c_in, c_out, p, s_d):
         super(KernelPredictor, self).__init__()
         self.n_groups = c_in//p
         self.pointwise_groups = c_out//p
         self.c_out = c_out
         self.c_in = c_in
-        self.style_groups = 512//self.n_groups
+        self.style_groups = s_d//self.n_groups
         self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(512, self.c_in*(self.c_in//self.n_groups), 2, groups = self.style_groups),
+            nn.Conv2d(s_d, self.c_in*(self.c_in//self.n_groups), 2, groups = self.style_groups),
             nn.ReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.style_groups),
+            nn.Conv2d(s_d, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.style_groups),
             nn.ReLU())
         self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(512, c_out, 1),
+            nn.Conv2d(s_d, c_out, 1),
             nn.ReLU())
         self.apply(self._init_weights)
 

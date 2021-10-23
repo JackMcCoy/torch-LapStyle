@@ -127,10 +127,10 @@ with autocast(enabled=ac_enabled):
     style_dataset = FlatFolderDataset(args.style_dir, style_tf_small)
 
 tmp_dataset = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
+    content_dataset, batch_size=16,
     sampler=SequentialSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
-content_iter = iter(data.DataLoader(
+tmp_dataset_2 = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=SequentialSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
@@ -156,14 +156,14 @@ if args.train_model=='drafting':
         dec_.to(device)
         disc_.to(device)
 
-        optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-        opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
-        '''
-        content_iter = iter(data.DataLoader(
-            content_dataset, batch_size=args.batch_size,
-            sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
-            num_workers=1))
-        '''
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
+
+    content_iter = iter(data.DataLoader(
+        content_dataset, batch_size=args.batch_size,
+        sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
+        num_workers=1))
+
     del(tmp_dataset)
     #del(tmp_dataset_2)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
