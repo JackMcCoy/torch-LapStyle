@@ -3,7 +3,7 @@ from torch.utils import data
 from torch import nn
 import torch
 import tqdm
-from function import init_weights
+from function import init_weights, calc_mean_std
 
 def InfiniteSampler(n):
     # i = 0
@@ -107,6 +107,11 @@ class LatentClustering(nn.Module):
     def forward(self, x):
         b,c,h,w = x.shape
         out = x.clone()
+        size = out.size()
+        content_mean, content_std = calc_mean_std(out)
+
+        out = (out - content_mean.expand(
+            size)) / content_std.expand(size)
         out = self.latent_compress(out).flatten(1)
         out = self.project_in(out).reshape(b, 32, 2, 2)
         out = self.latent_decompress(out)
@@ -144,7 +149,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
             c_latent = latent_model.project_down(x['r4_1'])
             self.similarity.append(cosine_sim(c_latent,style_latent).detach().cpu().numpy())
         self.similarity = np.concatenate(self.similarity,axis=0)
-        top_similar = self.similarity.argsort()[-80:][::-1]
+        top_similar = self.similarity.argsort()[-120:][::-1]
         top_similar = np.hstack(top_similar)
         self.i=0
         self.current_subset = top_similar
@@ -152,15 +157,15 @@ class SimilarityRankedSampler(data.sampler.Sampler):
     def __iter__(self):
         self.i += 1
         if self.i == 1000:
-            expand_subset(800)
+            self.expand_subset(500)
         if self.i == 2500:
-            expand_subset(1000)
+            self.expand_subset(750)
         if self.i == 7500:
-            expand_subset(1600)
+            self.expand_subset(2000)
         if self.i == 10000:
-            expand_subset(2400)
+            self.expand_subset(3500)
         if self.i == 20000:
-            expand_subset(3600)
+            self.expand_subset(5000)
         if self.i <= 30000:
             return iter(SubsetSampler(self.current_subset))
         else:
