@@ -72,25 +72,16 @@ class LatentClustering(nn.Module):
             nn.LeakyReLU(),
             nn.Conv2d(64, 32, 3),
             nn.LeakyReLU(),
-            nn.Conv2d(32, 32, 8),
+            nn.Conv2d(32, 32, 5,stride=3),
             nn.LeakyReLU(),
         )
         self.project_in = nn.Sequential(
-            nn.Linear(32, 128),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(128, 8),
+            nn.Linear(128, 128),
             nn.LeakyReLU()
         )
-        self.project_out = nn.Sequential(
-            nn.Linear(8, 128),
-            nn.LeakyReLU(),
-            nn.Linear(128, 32),
-            nn.LeakyReLU(),
-        )
         self.latent_decompress = nn.Sequential(
-            nn.Conv2d(32, 32, 1),
-            nn.LeakyReLU(),
-            nn.Upsample(scale_factor=2, mode='nearest'),  # 2,2
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(32, 64, 3),
             nn.LeakyReLU(),
@@ -117,15 +108,15 @@ class LatentClustering(nn.Module):
         b,c,h,w = x.shape
         out = x.clone()
         out = self.latent_compress(x).flatten(1)
-        out = self.project_in(out)
-        out = self.project_out(out).reshape(b, 32, 1, 1)
+        out = self.project_in(out).reshape(b, 32, 2, 2)
+        out = self.project_out(out)
         out = self.latent_decompress(out)
         loss = self.loss(out, x)
         return loss
 
 
 class SimilarityRankedSampler(data.sampler.Sampler):
-    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=6000):
+    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=50):
         self.num_samples = len(data_source)
         style_feats = encoder(style_batch)['r4_1']
         device = torch.device('cuda')
@@ -147,15 +138,14 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         style_latent = latent_model.project_down(style_feats)
         self.similarity=[]
         print('measuring similarity')
-        for i in tqdm.tqdm(range(self.num_samples//8)):
+        cosine_sim = nn.CosineSimilarity()
+        for i in tqdm.tqdm(range(32//8)):
             x = next(tmp_dataset2).to(device)
             x = encoder(x)
             c_latent = latent_model.project_down(x['r4_1'])
-            self.similarity.append(torch.abs(style_latent-c_latent).detach().cpu().numpy())
+            self.similarity.append(cosine_sim(c_latent,style_latent).detach().cpu().numpy())
         self.similarity = np.concatenate(self.similarity,axis=0)
-        top_similar = []
-        for i in range(self.similarity.shape[1]):
-            top_similar.append(self.similarity[:,i].argsort()[-10:][::-1])
+        top_similar = self.similarity[:,0].argsort()[-80:][::-1]
         top_similar = np.hstack(top_similar)
         self.i=0
         self.current_subset = top_similar
