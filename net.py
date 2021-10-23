@@ -193,7 +193,7 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(512, 512)
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, 1024),
+            nn.Linear(8192, 8192),
             nn.ReLU()
         )
         self.kernel_1 = AdaConv(512, 8)
