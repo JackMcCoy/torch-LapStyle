@@ -139,6 +139,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
             x = next(tmp_dataset).to(device)
             x = encoder(x)
             loss = latent_model(x['r4_1'])
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             if i%10 == 0 and i !=0:
