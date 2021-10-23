@@ -119,10 +119,11 @@ class LatentClustering(nn.Module):
 
         out = (out - content_mean.expand(
             size)) / content_std.expand(size)
+        normalized=out.clone()
         out = self.latent_compress(out).flatten(1)
         out = self.project_in(out).reshape(b, 32, 2, 2)
         out = self.latent_decompress(out)
-        loss = self.loss(out, x)
+        loss = self.loss(out, normalized)
         return loss
 
 
