@@ -120,7 +120,7 @@ class LatentClustering(nn.Module):
 
 
 class SimilarityRankedSampler(data.sampler.Sampler):
-    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=10000):
+    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=5000):
         self.num_samples = len(data_source)
         style_feats = encoder(style_batch)['r4_1']
         device = torch.device('cuda')

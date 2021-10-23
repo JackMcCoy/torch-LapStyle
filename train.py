@@ -127,7 +127,7 @@ with autocast(enabled=ac_enabled):
     style_dataset = FlatFolderDataset(args.style_dir, style_tf_small)
 
 tmp_dataset = iter(data.DataLoader(
-    content_dataset, batch_size=16,
+    content_dataset, batch_size=8,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
 tmp_dataset_2 = iter(data.DataLoader(
@@ -192,9 +192,9 @@ if args.train_model=='drafting':
 
         with autocast(enabled=ac_enabled):
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=True)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * (loss_s + 2*style_remd) +\
+            loss = loss_c * args.content_weight + args.style_weight * (loss_s + 2.5*style_remd) +\
                         content_relt*16 + l_identity1*50 + l_identity2 * 1 +\
                         l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5 + cb_loss
         scaler.scale(loss).backward()
