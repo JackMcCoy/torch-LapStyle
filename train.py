@@ -172,8 +172,8 @@ if args.train_model=='drafting':
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
     for i in tqdm(range(args.max_iter)):
-        #warmup_lr_adjust(optimizer, i)
-        #warmup_lr_adjust(opt_D, i)
+        warmup_lr_adjust(optimizer, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
