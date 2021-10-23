@@ -180,7 +180,7 @@ class DecoderAdaConv(nn.Module):
         super(DecoderAdaConv, self).__init__()
         self.vq = VectorQuantize(
             dim = 4,
-            codebook_size = 860,
+            codebook_size = 3200,
             kmeans_init=True,
             kmeans_iters=10,
             use_cosine_sim=True,
@@ -192,7 +192,7 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(512, 512),
             ConvBlock(512, 512)
         )
-        self.s_d = 512
+        self.s_d = 64
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16),
             nn.ReLU()
