@@ -125,7 +125,7 @@ class LatentClustering(nn.Module):
 
 
 class SimilarityRankedSampler(data.sampler.Sampler):
-    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=6000):
+    def __init__(self, data_source, style_batch, tmp_dataset, tmp_dataset2,encoder,r=60):
         self.num_samples = len(data_source)
         style_feats = encoder(style_batch)['r4_1']
         device = torch.device('cuda')
@@ -148,7 +148,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         self.similarity=[]
         print('measuring similarity')
         for i in tqdm.tqdm(range(self.num_samples//8)):
-            x = next(tmp_dataset).to(device)
+            x = next(tmp_dataset2).to(device)
             x = encoder(x)
             c_latent = latent_model.project_down(x['r4_1'])
             self.similarity.append(torch.abs(style_latent-c_latent).detach().cpu().numpy())

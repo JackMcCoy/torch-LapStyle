@@ -165,7 +165,7 @@ if args.train_model=='drafting':
         num_workers=1))
 
     del(tmp_dataset)
-    #del(tmp_dataset_2)
+    del(tmp_dataset_2)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
     style_iter = iter(data.DataLoader(
         style_dataset, batch_size=args.batch_size,
