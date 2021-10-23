@@ -157,7 +157,7 @@ if args.train_model=='drafting':
         #disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
+    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
 
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
