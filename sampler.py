@@ -156,7 +156,6 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         top_similar = []
         for i in range(self.similarity.shape[1]):
             top_similar.append(self.similarity[:,i].argsort()[-10:][::-1])
-            top_similar[-1].reverse()
         top_similar = np.hstack(top_similar)
         self.i=0
         self.current_subset = top_similar
