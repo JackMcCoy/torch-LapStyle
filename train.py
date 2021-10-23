@@ -149,17 +149,17 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        disc_ = net.Discriminator(depth=9, num_channels=64)
+        #disc_ = net.Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        init_weights(disc_)
+        #init_weights(disc_)
         dec_.train()
-        disc_.train()
+        #disc_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.to(device)
+        #disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
+    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
     '''
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
@@ -176,6 +176,7 @@ if args.train_model=='drafting':
     '''
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
+        '''
         warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
@@ -191,10 +192,10 @@ if args.train_model=='drafting':
         disc_scaler.step(opt_D)
         disc_scaler.update()
         set_requires_grad(disc_,False)
-
+        '''
         with autocast(enabled=ac_enabled):
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_,calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s +\
                         l_identity1*50 + l_identity2 * 1 +\
@@ -206,7 +207,6 @@ if args.train_model=='drafting':
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
-            gan loss: {loss_D.item():.3f} loss_gp: {loss_Gp_GAN.item():.3f}\
             cb_loss: {cb_loss.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
