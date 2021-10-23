@@ -126,14 +126,16 @@ with autocast(enabled=ac_enabled):
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf_small)
 
-tmp_dataset = iter(data.DataLoader(
+content_iter = iter(data.DataLoader(
     content_dataset, batch_size=8,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
+'''
 tmp_dataset_2 = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=SequentialSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
+'''
 style_iter = iter(data.DataLoader(
     style_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(style_dataset),
@@ -147,18 +149,18 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        #disc_ = net.Discriminator(depth=9, num_channels=64)
+        disc_ = net.Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        #init_weights(disc_)
+        init_weights(disc_)
         dec_.train()
-        #disc_.train()
+        disc_.train()
         enc_.to(device)
         dec_.to(device)
-        #disc_.to(device)
+        disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
-
+    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
+    '''
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
         sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
@@ -171,16 +173,16 @@ if args.train_model=='drafting':
         style_dataset, batch_size=args.batch_size,
         sampler=InfiniteSamplerWrapper(style_dataset),
         num_workers=args.n_threads))
+    '''
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
-        #warmup_lr_adjust(opt_D, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
             stylized, cb_loss = dec_(sF, cF)
-            '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -191,9 +193,8 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
-            '''
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * (loss_s + 3*style_remd) +\
                         content_relt*16 + l_identity1*50 + l_identity2 * 1 +\
