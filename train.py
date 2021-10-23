@@ -158,10 +158,10 @@ if args.train_model=='drafting':
 
         optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
         opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr)
-    content_iter = iter(data.DataLoader(
-        content_dataset, batch_size=args.batch_size,
-        sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
-        num_workers=1))
+        content_iter = iter(data.DataLoader(
+            content_dataset, batch_size=args.batch_size,
+            sampler=SimilarityRankedSampler(content_dataset, next(style_iter).to(device), tmp_dataset, tmp_dataset_2, enc_),
+            num_workers=1))
     del(tmp_dataset)
     del(tmp_dataset_2)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)

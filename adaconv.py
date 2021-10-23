@@ -59,7 +59,7 @@ class KernelPredictor(nn.Module):
             nn.Conv2d(512, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.style_groups),
             nn.ReLU())
         self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(64, c_out, 1),
+            nn.Conv2d(512, c_out, 1),
             nn.ReLU())
         self.apply(self._init_weights)
 
