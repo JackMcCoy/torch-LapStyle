@@ -142,7 +142,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            if i%10 == 0 and i !=0:
+            if i%100 == 0 and i !=0:
                 print(loss.item())
         style_latent = latent_model.project_down(style_feats)
         self.similarity=[]
