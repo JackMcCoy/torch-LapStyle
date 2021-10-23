@@ -195,10 +195,8 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         return self.current_subset[self.counter]
 
     def expand_subset(self, n):
-        top = n//8
-        top_similar = []
-        for i in range(self.similarity.shape[1]):
-            top_similar.append(self.similarity[:,i].argsort()[-top:][::-1])
+        top = n
+        top_similar = self.similarity.argsort()[-top:][::-1]
         self.current_subset = np.hstack(top_similar)
 
     def __len__(self):
