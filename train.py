@@ -128,7 +128,7 @@ with autocast(enabled=ac_enabled):
 
 tmp_dataset = iter(data.DataLoader(
     content_dataset, batch_size=16,
-    sampler=SequentialSamplerWrapper(content_dataset),
+    sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
 tmp_dataset_2 = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
