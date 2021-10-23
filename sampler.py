@@ -115,9 +115,10 @@ class LatentClustering(nn.Module):
 
     def forward(self, x):
         b,c,h,w = x.shape
-        x = self.latent_compress(x).flatten(1)
-        x = self.project_in(x)
-        out = self.project_out(x).reshape(b, 16, 1, 1)
+        out = x.clone()
+        out = self.latent_compress(x).flatten(1)
+        out = self.project_in(out)
+        out = self.project_out(out).reshape(b, 32, 1, 1)
         out = self.latent_decompress(out)
         loss = self.loss(out, x)
         return loss
