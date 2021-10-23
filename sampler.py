@@ -158,14 +158,13 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         style_latent = latent_model.project_down(style_feats)
         self.similarity=[]
         print('measuring similarity')
-        cosine_sim = nn.CosineSimilarity()
         for i in tqdm.tqdm(range(self.num_samples//8)):
             x = next(tmp_dataset2).to(device)
             x = encoder(x)
             c_latent = latent_model.project_down(x['r4_1'])
-            self.similarity.append(cosine_sim(c_latent,style_latent).detach().cpu().numpy())
+            self.similarity.append(torch.cdist(c_latent,style_latent).detach().cpu().numpy())
         self.similarity = np.concatenate(self.similarity,axis=0)
-        top_similar = self.similarity.argsort()[-500:][::-1]
+        top_similar = self.similarity.argsort()[:2000]
         top_similar = np.hstack(top_similar)
         self.i=0
         self.current_subset = top_similar
@@ -180,23 +179,23 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         self.i += 1
         if self.counter >= len(self.current_subset):
             self.counter = 0
+        if self.i == 500:
+            self.expand_subset(4000)
+            self.counter = 0
         if self.i == 1000:
-            self.expand_subset(1600)
+            self.expand_subset(8000)
             self.counter = 0
-        if self.i == 2500:
-            self.expand_subset(3200)
+        if self.i == 1500:
+            self.expand_subset(16000)
             self.counter = 0
-        if self.i == 7500:
-            self.expand_subset(4800)
-            self.counter = 0
-        if self.i == 10000:
+        if self.i == 2000:
             self.current_subset = np.arange(self.num_samples)
             self.counter = 0
         return self.current_subset[self.counter]
 
     def expand_subset(self, n):
         top = n
-        top_similar = self.similarity.argsort()[-top:][::-1]
+        top_similar = self.similarity.argsort()[:top]
         self.current_subset = np.hstack(top_similar)
 
     def __len__(self):
