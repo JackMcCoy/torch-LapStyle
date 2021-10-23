@@ -52,12 +52,12 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         dM = 1.
-        Mx = calc_emd_loss(pred, pred)
-        Mx = torch.clip(Mx / (Mx.sum(1, keepdim=True)), -1e5, 1e5)
-        My = calc_emd_loss(target, target)
-        My = torch.clip(My / (My.sum(1, keepdim=True)), -1e5, 1e5)
-        loss_content = torch.clip(torch.abs(
-            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3], -1e5, 1e5)
+        Mx = torch.clip(calc_emd_loss(pred, pred), 0, 1)
+        Mx = torch.clip(Mx / (Mx.sum(1, keepdim=True)), 0, 1)
+        My = torch.clip(calc_emd_loss(target, target), 0, 1)
+        My = torch.clip(My / (My.sum(1, keepdim=True)), 0,1)
+        loss_content = torch.abs(
+            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
 
 
