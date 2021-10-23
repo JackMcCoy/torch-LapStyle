@@ -134,7 +134,7 @@ class SimilarityRankedSampler(data.sampler.Sampler):
         loss = latent_model(style_feats)
         loss.backward()
         optimizer.step()
-        for i in range(r):
+        for i in tqdm.tqdm(range(r)):
             x = next(tmp_dataset).to(device)
             x = encoder(x)
             loss = latent_model(x)
