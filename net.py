@@ -178,7 +178,7 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-
+        '''
         self.vq = VectorQuantize(
             dim = 16,
             codebook_size = 512,
@@ -187,7 +187,7 @@ class DecoderAdaConv(nn.Module):
             use_cosine_sim=True,
             threshold_ema_dead_code=2
         )
-
+        '''
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3, groups = 512),
