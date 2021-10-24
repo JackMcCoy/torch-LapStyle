@@ -187,8 +187,14 @@ class DecoderAdaConv(nn.Module):
             threshold_ema_dead_code=2
         )
         self.style_encoding = nn.Sequential(
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(ch, ch, kernel_size=3, groups = 512),
+            nn.ReLU(),
             *style_encoder_block(512),
-            *style_encoder_block(512)
+            *style_encoder_block(512),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(ch, ch, kernel_size=3, groups=512),
+            nn.ReLU(),
         )
         self.s_d = 64
         self.style_projection = nn.Sequential(
