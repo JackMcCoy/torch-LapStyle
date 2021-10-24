@@ -180,7 +180,7 @@ class DecoderAdaConv(nn.Module):
         super(DecoderAdaConv, self).__init__()
         self.vq = VectorQuantize(
             dim = 16,
-            codebook_size = 3600,
+            codebook_size = 512,
             kmeans_init=True,
             kmeans_iters=5,
             use_cosine_sim=True,
