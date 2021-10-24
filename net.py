@@ -178,7 +178,7 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-        '''
+
         self.vq = VectorQuantize(
             dim = 16,
             codebook_size = 512,
@@ -187,7 +187,7 @@ class DecoderAdaConv(nn.Module):
             use_cosine_sim=True,
             threshold_ema_dead_code=2
         )
-        '''
+
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3, groups = 512),
@@ -233,18 +233,18 @@ class DecoderAdaConv(nn.Module):
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4,4)
         #style, indices, commit_loss = self.vq(style)
         #style = style.reshape(b, self.s_d, 4, 4)
-        x = self.kernel_1(style, cF['r4_1'])
-        x = self.decoder_1(x)
+        adaconv_out = self.kernel_1(style, cF['r4_1'], normalize=True)
+        x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
-        x += self.kernel_2(style, cF['r3_1']).data
+        x = self.kernel_2(style, x).data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        x += self.kernel_3(style, cF['r2_1']).data
+        x = self.kernel_3(style, x).data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x += self.kernel_4(style, cF['r1_1']).data
+        x = self.kernel_4(style, x).data
         x = self.decoder_4(x)
-        return x
+        return x, adaconv_out
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
@@ -410,7 +410,7 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1', 'r5_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1', 'r5_1']
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
+def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -421,9 +421,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity3 = 0
         l_identity4 = 0
         cb_loss = 0
-    loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'],norm=True)
-    for key in content_layers[1:]:
-        loss_c += content_loss(stylized_feats[key], cF[key],norm=True).data
+    loss_c = content_loss(stylized_feats['r4_1'], adaconv_out)
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
