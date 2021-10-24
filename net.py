@@ -179,11 +179,11 @@ class DecoderAdaConv(nn.Module):
         super(DecoderAdaConv, self).__init__()
         self.vq = VectorQuantize(
             dim = 4,
-            codebook_size = 3200,
+            codebook_size = 1024,
             kmeans_init=True,
-            kmeans_iters=10,
+            kmeans_iters=5,
             use_cosine_sim=True,
-            threshold_ema_dead_code=5
+            threshold_ema_dead_code=2
         )
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
