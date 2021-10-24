@@ -15,12 +15,11 @@ class AdaConv(nn.Module):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        if normalize:
-            size = content_in.size()
-            content_mean, content_std = calc_mean_std(content_in)
+        size = content_in.size()
+        content_mean, content_std = calc_mean_std(content_in)
 
-            content_in = (content_in - content_mean.expand(
-                    size)) / content_std.expand(size)
+        content_in = (content_in - content_mean.expand(
+                size)) / content_std.expand(size)
         predicted = self.pad(content_in)
         for i in range(N):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
