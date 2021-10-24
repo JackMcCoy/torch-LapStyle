@@ -196,6 +196,7 @@ class DecoderAdaConv(nn.Module):
             nn.Linear(2048, self.s_d*16),
             nn.ReLU(),
             nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.ReLU(),
         )
         self.kernel_1 = AdaConv(512, 1, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
