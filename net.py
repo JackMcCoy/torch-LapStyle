@@ -233,16 +233,20 @@ class DecoderAdaConv(nn.Module):
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4,4)
         #style, indices, commit_loss = self.vq(style)
         #style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out = self.kernel_1(style, cF['r4_1'], normalize=True)
-        x = self.decoder_1(adaconv_out)
+        adaconv_out = {}
+        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'])
+        x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
-        x = self.kernel_2(style, x).data
+        adaconv_out['r3_1'] = self.kernel_2(style, cF['r3_1'])
+        x += adaconv_out['r3_1'].data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        x = self.kernel_3(style, x).data
+        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1']).data
+        x += adaconv_out['r2_1'].data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x = self.kernel_4(style, x).data
+        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1']).data
+        x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
         return x, adaconv_out
 
@@ -407,8 +411,8 @@ def identity_loss(i, F, encoder, decoder):
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
     return l_identity1, l_identity2
 
-content_layers = ['r1_1','r2_1','r3_1','r4_1', 'r5_1']
-style_layers = ['r1_1','r2_1','r3_1','r4_1', 'r5_1']
+content_layers = ['r1_1','r2_1','r3_1','r4_1',]
+style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
 def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
@@ -421,7 +425,9 @@ def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= 
         l_identity3 = 0
         l_identity4 = 0
         cb_loss = 0
-    loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'])
+    loss_c = content_loss(stylized_feats['r1_1'], adaconv_out['r1_1'])
+    for key in content_layers[1:]:
+        loss_c += content_loss(stylized_feats[key], adaconv_out[key]).data
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data

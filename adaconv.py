@@ -11,7 +11,7 @@ class AdaConv(nn.Module):
         self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
 
-    def forward(self, style_encoding, content_in, normalize=False):
+    def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
@@ -30,7 +30,7 @@ class AdaConv(nn.Module):
                                                          bias=pointwise_bias[i],
                                                          groups=self.kernel_predictor.pointwise_groups)))
         predicted = torch.cat(spatial_conv_out,0)
-        return predicted + content_in
+        return predicted
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p, s_d):
