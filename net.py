@@ -189,19 +189,19 @@ class DecoderAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3, groups = 512),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             *style_encoder_block(512),
             *style_encoder_block(512),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3),
-            nn.ReLU(),
+            nn.LeakyReLU(),
         )
         self.s_d = 64
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.ReLU(),
+            nn.LeakyReLU(),
         )
         self.kernel_1 = AdaConv(512, 1, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
