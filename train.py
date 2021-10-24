@@ -182,7 +182,7 @@ if args.train_model=='drafting':
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            stylized, cb_loss = dec_(sF, cF)
+            stylized = dec_(sF, cF)
         '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
@@ -199,15 +199,14 @@ if args.train_model=='drafting':
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s +\
                         l_identity1*50 + l_identity2 * 1 +\
-                        l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5 + cb_loss
+                        l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
-            cb_loss: {cb_loss.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
