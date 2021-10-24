@@ -228,8 +228,8 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF, cF):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1'].detach())
-        style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
-        style, indices, commit_loss = self.vq(style)
+        style = self.style_projection(style.flatten(1))
+        style, indices, commit_loss = self.vq(style).reshape(b, self.s_d, 4, 4)
         x = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(x)
         x = self.upsample(x)
