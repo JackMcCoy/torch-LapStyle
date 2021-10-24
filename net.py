@@ -188,12 +188,11 @@ class DecoderAdaConv(nn.Module):
         )
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
-            *style_encoder_block(512),
-            *style_encoder_block(512),
+            *style_encoder_block(512)
         )
         self.s_d = 64
         self.style_projection = nn.Sequential(
-            nn.Linear(2048, self.s_d*16),
+            nn.Linear(8192, self.s_d*16),
             nn.ReLU(),
             nn.Linear(self.s_d * 16, self.s_d * 16),
             nn.ReLU(),
