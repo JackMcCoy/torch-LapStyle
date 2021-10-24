@@ -24,24 +24,11 @@ class AdaConv(nn.Module):
             depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
                                          groups=self.kernel_predictor.n_groups)
-            spatial_conv_out.append(self.relu(nn.functional.conv2d(depth,
+            spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight=pointwise_kn[i],
                                                          bias=pointwise_bias[i],
-                                                         groups=self.kernel_predictor.pointwise_groups)))
+                                                         groups=self.kernel_predictor.pointwise_groups))
         predicted = torch.cat(spatial_conv_out,0)
-        if type(feats) != bool:
-            feat_conv = []
-            feats = self.pad(feats)
-            for i in range(N):
-                depth = nn.functional.conv2d(feats[i, :, :, :].unsqueeze(0),
-                                             weight=depthwise[i],
-                                             groups=self.kernel_predictor.n_groups)
-                feat_conv.append(self.relu(nn.functional.conv2d(depth,
-                                                                       weight=pointwise_kn[i],
-                                                                       bias=pointwise_bias[i],
-                                                                       groups=self.kernel_predictor.pointwise_groups)))
-            feat_pred = torch.cat(feat_conv,0)
-            predicted = (predicted+feat_pred) * .5
         return predicted
 
 class KernelPredictor(nn.Module):
