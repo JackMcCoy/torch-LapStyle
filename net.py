@@ -171,6 +171,7 @@ def style_encoder_block(ch):
     return [
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
+        nn.ReLU(),
         nn.AvgPool2d(3, padding=1, stride=2)
     ]
 
