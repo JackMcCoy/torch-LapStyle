@@ -188,12 +188,12 @@ class DecoderAdaConv(nn.Module):
         )
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(ch, ch, kernel_size=3, groups = 512),
+            nn.Conv2d(512, 512, kernel_size=3, groups = 512),
             nn.ReLU(),
             *style_encoder_block(512),
             *style_encoder_block(512),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(ch, ch, kernel_size=3, groups=512),
+            nn.Conv2d(512, 512, kernel_size=3, groups=64),
             nn.ReLU(),
         )
         self.s_d = 64
