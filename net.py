@@ -425,9 +425,9 @@ def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= 
         l_identity3 = 0
         l_identity4 = 0
         cb_loss = 0
-    loss_c = content_loss(stylized_feats['r1_1'], adaconv_out['r1_1'], norm=True)
+    loss_c = content_loss(stylized_feats['r1_1'], adaconv_out['r1_1'])
     for key in content_layers[1:]:
-        loss_c += content_loss(stylized_feats[key], adaconv_out[key], norm=True).data
+        loss_c += content_loss(stylized_feats[key], adaconv_out[key]).data
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
