@@ -236,13 +236,13 @@ class DecoderAdaConv(nn.Module):
         adaconv_out = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
-        x += self.kernel_2(style, cF['r3_1']).data
+        x += self.kernel_2(style, x).data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        x += self.kernel_3(style, cF['r2_1']).data
+        x += self.kernel_3(style, x).data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        x += self.kernel_4(style, cF['r1_1']).data
+        x += self.kernel_4(style, x).data
         x = self.decoder_4(x)
         return x, adaconv_out
 
