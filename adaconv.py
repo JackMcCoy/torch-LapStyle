@@ -22,15 +22,14 @@ class AdaConv(nn.Module):
                 size)) / content_std.expand(size)
         predicted = self.pad(content_in)
         for i in range(N):
-            '''
-            depth = self.relu(nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
+
+            depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
-                                         groups=self.kernel_predictor.n_groups))
-            '''
-            spatial_conv_out.append(self.relu(nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
-                                                         weight=depthwise[i]*pointwise_kn[i],
+                                         groups=self.kernel_predictor.n_groups)
+            spatial_conv_out.append(nn.functional.conv2d(depth,
+                                                         weight=pointwise_kn[i],
                                                          bias=pointwise_bias[i],
-                                                         groups=self.kernel_predictor.pointwise_groups)))
+                                                         groups=self.kernel_predictor.pointwise_groups))
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
 
@@ -38,20 +37,14 @@ class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p, s_d):
         super(KernelPredictor, self).__init__()
         self.n_groups = c_in//p
-        self.pointwise_groups = c_out//p
+        self.pointwise_groups = s_d//p
         self.c_out = c_out
         self.c_in = c_in
         self.style_groups = (s_d//p)
-        self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), 2, groups = self.style_groups),
-            nn.ReLU())
+        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), 2)
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(s_d, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.style_groups),
-            nn.ReLU())
-        self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(s_d, c_out, 1),
-            nn.ReLU())
+        self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), 1)
+        self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
         self.apply(self._init_weights)
 
     @staticmethod
