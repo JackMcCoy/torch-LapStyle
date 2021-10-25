@@ -45,7 +45,7 @@ class KernelPredictor(nn.Module):
             nn.LeakyReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(s_d, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = self.pointwise_groups),
+            nn.Conv2d(s_d, self.c_out*(self.c_out//self.pointwise_groups), 1, groups = s_d//self.pointwise_groups),
             nn.LeakyReLU())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(s_d, self.c_out, 1),
