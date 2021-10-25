@@ -44,7 +44,7 @@ class KernelPredictor(nn.Module):
             nn.ReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(s_d, self.c_out*(self.c_out//self.pointwise_groups), 1),
+            nn.Conv2d(s_d, self.c_out//self.pointwise_groups, 1),
             nn.ReLU())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(s_d, 1, 1),
