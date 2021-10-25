@@ -22,13 +22,13 @@ class AdaConv(nn.Module):
                 size)) / content_std.expand(size)
         predicted = self.pad(content_in)
         for i in range(N):
-            '''
-            depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
+
+            depth = self.relu(nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
                                          weight=depthwise[i],
-                                         groups=self.kernel_predictor.n_groups)
-            '''
-            spatial_conv_out.append(self.relu(nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
-                                                         weight=pointwise_kn[i]*depthwise[i],
+                                         groups=self.kernel_predictor.n_groups))
+
+            spatial_conv_out.append(self.relu(nn.functional.conv2d(depth,
+                                                         weight=pointwise_kn[i],
                                                          bias=pointwise_bias[i],
                                                          groups=self.kernel_predictor.pointwise_groups)))
         predicted = torch.cat(spatial_conv_out,0)
