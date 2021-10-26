@@ -175,7 +175,7 @@ if args.train_model=='drafting':
         num_workers=args.n_threads))
     '''
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i, args)
+        #adjust_learning_rate(optimizer, i, args)
         #warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
@@ -197,8 +197,8 @@ if args.train_model=='drafting':
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci.detach(), si.detach(), adaconv_out, cF, sF, enc_, dec_,calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s +\
-                        l_identity1*50 + l_identity2 * 1 +\
+            loss = loss_c * args.content_weight + args.style_weight * (loss_s + 3 * style_remd) +\
+                        content_relt * 16 + l_identity1*50 + l_identity2 * 1 +\
                         l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -206,7 +206,8 @@ if args.train_model=='drafting':
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
+              style_relt: {style_remt.item():.3f} content_relt: {content_relt.item():.3f')
 
         writer.add_scalar('loss_content', loss_c.item(), i + 1)
         writer.add_scalar('loss_style', loss_s.item(), i + 1)
