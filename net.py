@@ -245,7 +245,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x, adaconv_out
+        return x, adaconv_out, commit_loss
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
