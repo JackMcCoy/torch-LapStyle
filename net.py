@@ -228,6 +228,7 @@ class DecoderAdaConv(nn.Module):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
+        print(style.shape)
         style, indices, commit_loss = self.vq(style)
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
