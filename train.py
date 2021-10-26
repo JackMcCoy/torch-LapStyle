@@ -197,8 +197,8 @@ if args.train_model=='drafting':
             optimizer.zero_grad()
             losses = calc_losses(stylized, ci.detach(), si.detach(), adaconv_out, cF, sF, enc_, dec_,calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * (loss_s + 2.8 * style_remd) +\
-                        content_relt * 20 + l_identity1*50 + l_identity2 * 1 +\
+            loss = loss_c * args.content_weight + args.style_weight * (loss_s + 3 * style_remd) +\
+                        content_relt * 18 + l_identity1*50 + l_identity2 * 1 +\
                         l_identity3* 25 + l_identity4 * .5 + mdog * .65 + loss_Gp_GAN * 5 + cb_loss
         scaler.scale(loss).backward()
         scaler.step(optimizer)
