@@ -67,7 +67,7 @@ def adjust_learning_rate(optimizer, iteration_count,args):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-6, warmup_iters=250, max_lr = 1e-4, decay=5e-5):
+def warmup_lr_adjust(optimizer, iteration_count, warmup_start=1e-7, warmup_iters=500, max_lr = 1e-4, decay=5e-5):
     """Imitating the original implementation"""
     warmup_step = (max_lr - warmup_start) / warmup_iters
     if iteration_count < warmup_iters:
@@ -158,7 +158,7 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
-    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr, weight_decay = .1)
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
@@ -175,7 +175,7 @@ if args.train_model=='drafting':
         num_workers=args.n_threads))
     '''
     for i in tqdm(range(args.max_iter)):
-        #warmup_lr_adjust(optimizer, i)
+        warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
@@ -196,7 +196,7 @@ if args.train_model=='drafting':
         with autocast(enabled=ac_enabled):
             '''
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), adaconv_out, cF, sF, enc_, dec_, calc_identity=True, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), adaconv_out, cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * (loss_s + 3 * style_remd) +\
                         content_relt * 22 + l_identity1*50 + l_identity2 * 1 +\
