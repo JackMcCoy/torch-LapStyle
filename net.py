@@ -417,7 +417,7 @@ def identity_loss(i, F, encoder, decoder):
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
-style_layers = ['r1_1','r2_1','r3_1','r4_1']
+style_layers = ['r1_1','r1_2','r2_1','r3_1','r4_1']
 
 def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
