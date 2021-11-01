@@ -127,7 +127,7 @@ with autocast(enabled=ac_enabled):
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
 content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=8,
+    content_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads))
 '''
