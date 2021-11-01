@@ -58,17 +58,9 @@ class KernelPredictor(nn.Module):
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
-        depthwise = []
-        pointwise_1_kn = []
-        pointwise_bias = []
-        for i in range(N):
-            depthwise.append(self.depthwise_kernel_conv(style_encoding[i].unsqueeze(0)).resize(1,self.c_out, self.c_in//self.n_groups, 3, 3))
+
+        depthwise = self.depthwise_kernel_conv(style_encoding).resize(N,self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
-        for i in range(N):
-            pointwise_1_kn.append(self.pw_cn_kn(s_d[i].unsqueeze(0)).resize(1, self.c_out, self.c_out//self.n_groups, 1, 1))
-        for i in range(N):
-            pointwise_bias.append(self.pw_cn_bias(s_d[i].unsqueeze(0)))
-        depthwise = torch.cat(depthwise, 0)
-        pointwise_1_kn = torch.cat(pointwise_1_kn, 0)
-        pointwise_bias = torch.cat(pointwise_bias, 0).squeeze()
+        pointwise_1_kn = self.pw_cn_kn(s_d).resize(N, self.c_out, self.c_out//self.n_groups, 1, 1)
+        pointwise_bias = self.pw_cn_bias(s_d).squeeze()
         return depthwise, pointwise_1_kn, pointwise_bias
