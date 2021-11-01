@@ -184,7 +184,7 @@ class DecoderAdaConv(nn.Module):
 
         self.vq = VectorQuantize(
             dim = 16,
-            codebook_size = 3200,
+            codebook_size = 32000,
             kmeans_init=True,
             kmeans_iters=10,
             use_cosine_sim=True,
