@@ -201,7 +201,7 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(512, 512, kernel_size=3),
             nn.LeakyReLU(),
         )
-        self.s_d = 128
+        self.s_d = 256
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
