@@ -149,17 +149,17 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        #disc_ = net.Discriminator(depth=9, num_channels=64)
+        disc_ = net.Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        #init_weights(disc_)
+        init_weights(disc_)
         dec_.train()
-        #disc_.train()
+        disc_.train()
         enc_.to(device)
         dec_.to(device)
-        #disc_.to(device)
+        disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
@@ -176,14 +176,14 @@ if args.train_model=='drafting':
     '''
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
-        #warmup_lr_adjust(opt_D, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
             stylized = dec_(sF, cF)
-            '''
+
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si.detach(),stylized.detach())
@@ -194,11 +194,11 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
-            '''
+
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=True, mdog_losses=False)
             loss_c, loss_s, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + 3# +\
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + loss_Gp_GAN# +\
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
             #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
         scaler.scale(loss).backward()
