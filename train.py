@@ -205,7 +205,7 @@ if args.train_model=='drafting':
         scaler.step(optimizer)
         scaler.update()
 
-        if (i + 1) % 25 == 0:
+        if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
