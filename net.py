@@ -234,7 +234,6 @@ class DecoderAdaConv(nn.Module):
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
         #style, indices, commit_loss = self.vq(style.flatten(2).float())
-        commit_loss = torch.Tensor([0]).to(device)
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'])
@@ -254,7 +253,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x, adaconv_out, commit_loss
+        return x
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
@@ -435,10 +434,10 @@ def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= 
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
-    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
-        content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
-        style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+    #content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+    #    content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+    #style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+    #    style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
     #content_relt = 0
     #style_remd = 0
     if mdog_losses:
@@ -462,5 +461,5 @@ def calc_losses(stylized, ci, si, adaconv_out, cF, sF, encoder, decoder, disc_= 
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, style_remd, content_relt, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    return loss_c, loss_s, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
 
