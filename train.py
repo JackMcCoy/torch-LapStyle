@@ -205,14 +205,12 @@ if args.train_model=='drafting':
         scaler.step(optimizer)
         scaler.update()
 
-        if (i + 1) % 10 == 0:
+        if (i + 1) % 25 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} \
-              style_relt: {style_remd.item():.3f} content_relt: {content_relt.item():.3f}\
-              cb_loss: {cb_loss.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
-        writer.add_scalar('loss_content', loss_c.item(), i + 1)
-        writer.add_scalar('loss_style', loss_s.item(), i + 1)
+            writer.add_scalar('loss_content', loss_c.item(), i + 1)
+            writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
         with torch.no_grad():
             if (i + 1) % 100 == 0:
