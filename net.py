@@ -186,7 +186,7 @@ class DecoderAdaConv(nn.Module):
             dim = 16,
             codebook_size = 6400,
             kmeans_init=True,
-            kmeans_iters=10,
+            kmeans_iters=500,
             use_cosine_sim=False,
             threshold_ema_dead_code=2
         )
