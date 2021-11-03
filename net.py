@@ -180,7 +180,7 @@ class DecoderAdaConv(nn.Module):
         super(DecoderAdaConv, self).__init__()
         self.vq = VectorQuantize(
             dim = 16,
-            codebook_size = 3600,
+            codebook_size = 4800,
             kmeans_init=True,
             kmeans_iters=10,
             use_cosine_sim=True,
@@ -494,10 +494,10 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
-    #content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
-    #    content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-    #style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
-    #    style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1']) +\
+        content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+        style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
     #content_relt = 0
     #style_remd = 0
     if mdog_losses:
@@ -521,5 +521,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
 
