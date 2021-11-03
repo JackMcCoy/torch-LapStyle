@@ -253,7 +253,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x, style
+        return x
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
@@ -361,6 +361,21 @@ class Style_Guided_Discriminator(nn.Module):
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
+        self.style_encoding = nn.Sequential(
+            *style_encoder_block(512),
+            *style_encoder_block(512),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(512, 512, kernel_size=3, groups=512),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(512, 512, kernel_size=3),
+            nn.LeakyReLU(),
+        )
+        self.s_d = 256
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, self.s_d * 16)
+        )
+
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = 256))
             self.norms.append(nn.Sequential(
@@ -375,9 +390,14 @@ class Style_Guided_Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
 
-    def losses(self, real, fake, style, norm=True):
-        pred_real = self(real, style, norm=norm)
-        pred_fake = self(fake, style, norm=norm)
+    def losses(self, real, fake, style, calculated_style_feat=None):
+        if not calculated_style_feat is None:
+            style = calculated_style_feat
+        else:
+            style = self.style_encoding(style.detach())
+            style = self.style_projection(style.flatten(1))
+        pred_real = self(real, style)
+        pred_fake = self(fake, style)
         if self.relgan:
             pred_real = pred_real.view(-1)
             pred_fake = pred_fake.view(-1)
@@ -389,7 +409,7 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.ganloss(pred_real, True)
             loss_D_fake = self.ganloss(pred_fake, False)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return loss_D
+        return loss_D, style
 
     def forward(self, x, style):
         x = self.head(x)
@@ -505,7 +525,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, style, disc_= None, 
         mxdog_losses = 0
 
     if disc_loss:
-        pred_fake_p = disc_(stylized, style)
+        pred_fake_p = disc_(stylized, cF['r1_1'], calculated_style_feat=style)
         loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
     else:
         loss_Gp_GAN = 0

@@ -182,11 +182,11 @@ if args.train_model=='drafting':
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            stylized, style = dec_(sF, cF)
+            stylized = dec_(sF, cF)
 
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
-            loss_D = disc_.losses(si.detach(),stylized.detach(), style.detach())
+            loss_D, style = disc_.losses(si.detach(),stylized.detach(), sF['r1_1'])
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
