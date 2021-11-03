@@ -468,7 +468,7 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r1_2','r2_1','r3_1','r4_1']
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, style, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -505,7 +505,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_losses = 0
 
     if disc_loss:
-        pred_fake_p = disc_(stylized)
+        pred_fake_p = disc_(stylized, style)
         loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
     else:
         loss_Gp_GAN = 0

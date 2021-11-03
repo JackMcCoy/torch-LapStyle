@@ -196,7 +196,7 @@ if args.train_model=='drafting':
         with autocast(enabled=ac_enabled):
 
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, disc_, style, calc_identity=False, disc_loss=True, mdog_losses=False)
             loss_c, loss_s, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + loss_Gp_GAN * 2.5
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
