@@ -178,16 +178,14 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-        '''
         self.vq = VectorQuantize(
             dim = 16,
-            codebook_size = 12000,
+            codebook_size = 3600,
             kmeans_init=True,
-            kmeans_iters=500,
+            kmeans_iters=10,
             use_cosine_sim=False,
             threshold_ema_dead_code=2
         )
-        '''
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
@@ -228,7 +226,7 @@ class DecoderAdaConv(nn.Module):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
-        #style, indices, commit_loss = self.vq(style.flatten(2).float())
+        style, indices, commit_loss = self.vq(style.flatten(2).float())
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'])
@@ -245,7 +243,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x
+        return x, commit_loss
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
