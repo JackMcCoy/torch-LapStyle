@@ -359,8 +359,8 @@ class Style_Guided_Discriminator(nn.Module):
             nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(0.2)
             )
-        self.body = []
-        self.norms = []
+        self.body = nn.ModuleList([])
+        self.norms = nn.ModuleList([])
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = 256))
             self.norms.append(nn.Sequential(
@@ -376,8 +376,8 @@ class Style_Guided_Discriminator(nn.Module):
         self.relgan = relgan
 
     def losses(self, real, fake, style):
-        pred_real = self(real, style.float())
-        pred_fake = self(fake, style.float())
+        pred_real = self(real, style)
+        pred_fake = self(fake, style)
         if self.relgan:
             pred_real = pred_real.view(-1)
             pred_fake = pred_fake.view(-1)
