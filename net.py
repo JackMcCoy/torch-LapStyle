@@ -195,7 +195,7 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512),
             *style_encoder_block(512),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 512, kernel_size=3, groups=512),
+            nn.Conv2d(512, 512, kernel_size=3),
             nn.LeakyReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3),
@@ -362,11 +362,11 @@ class Style_Guided_Discriminator(nn.Module):
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
         self.style_encoding = nn.Sequential(
-            *style_encoder_block(512),
-            *style_encoder_block(512),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 512, kernel_size=3, groups=512),
+            nn.Conv2d(3, 512, kernel_size=3),
             nn.LeakyReLU(),
+            *style_encoder_block(512),
+            *style_encoder_block(512),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 512, kernel_size=3),
             nn.LeakyReLU(),
