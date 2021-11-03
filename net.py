@@ -373,7 +373,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 64)
+            nn.Linear(8192, self.s_d * 16)
         )
 
         for i in range(depth - 2):
@@ -395,7 +395,7 @@ class Style_Guided_Discriminator(nn.Module):
             style = calculated_style_feat
         else:
             style = self.style_encoding(style.detach())
-            style = self.style_projection(style.flatten(1))
+            style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
         if self.relgan:
