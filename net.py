@@ -29,8 +29,6 @@ class Encoder(nn.Module):
         encodings = {}
         x = self.enc_1(x)
         encodings['r1_1'] = x
-        x = self.enc_1_2(x)
-        encodings['r1_2'] = x
         x = self.enc_2(x)
         encodings['r2_1'] = x
         x = self.enc_3(x)
