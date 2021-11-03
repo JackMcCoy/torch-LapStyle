@@ -183,7 +183,7 @@ class DecoderAdaConv(nn.Module):
             codebook_size = 3600,
             kmeans_init=True,
             kmeans_iters=10,
-            use_cosine_sim=False,
+            use_cosine_sim=True,
             threshold_ema_dead_code=2
         )
         self.style_encoding = nn.Sequential(
