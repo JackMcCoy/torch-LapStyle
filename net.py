@@ -394,6 +394,7 @@ class Style_Guided_Discriminator(nn.Module):
         if not calculated_style_feat is None:
             style = calculated_style_feat
         else:
+            b, n, h, w = style.shape
             style = self.style_encoding(style.detach())
             style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
