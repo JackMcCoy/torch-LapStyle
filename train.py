@@ -149,7 +149,7 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        disc_ = net.Discriminator(depth=9, num_channels=64)
+        disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
         init_weights(disc_)
         dec_.train()
@@ -182,11 +182,11 @@ if args.train_model=='drafting':
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            stylized = dec_(sF, cF)
+            stylized, style = dec_(sF, cF)
 
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
-            loss_D = disc_.losses(si.detach(),stylized.detach())
+            loss_D = disc_.losses(si.detach(),stylized.detach(), style)
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
