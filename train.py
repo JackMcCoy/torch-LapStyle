@@ -149,17 +149,17 @@ if args.train_model=='drafting':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
+        #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         init_weights(dec_)
-        init_weights(disc_)
+        #init_weights(disc_)
         dec_.train()
-        disc_.train()
+        #disc_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.to(device)
+        #disc_.to(device)
 
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
         content_dataset, batch_size=args.batch_size,
@@ -183,7 +183,7 @@ if args.train_model=='drafting':
             cF = enc_(ci)
             sF = enc_(si)
             stylized = dec_(sF, cF)
-
+            '''
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D, style = disc_.losses(si.detach(),stylized.detach(), sF['r1_1'])
@@ -194,11 +194,11 @@ if args.train_model=='drafting':
         set_requires_grad(disc_,False)
 
         with autocast(enabled=ac_enabled):
-
+            '''
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, style, disc_, calc_identity=False, disc_loss=True, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, style, disc_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + loss_Gp_GAN * 2.5
+            loss = loss_c * args.content_weight + args.style_weight * loss_s
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
             #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
         scaler.scale(loss).backward()
@@ -207,7 +207,7 @@ if args.train_model=='drafting':
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} gan:{loss_D.item():.3f} gp_gan:{loss_Gp_GAN.item():.3f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
             writer.add_scalar('loss_content', loss_c.item(), i + 1)
             writer.add_scalar('loss_style', loss_s.item(), i + 1)
