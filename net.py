@@ -353,7 +353,7 @@ class DecoderVQGAN(nn.Module):
 
 class Style_Guided_Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True):
-        super(Discriminator, self).__init__()
+        super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1),
             nn.BatchNorm2d(num_channels),
