@@ -376,8 +376,8 @@ class Style_Guided_Discriminator(nn.Module):
         self.relgan = relgan
 
     def losses(self, real, fake, style):
-        pred_real = self(real, style)
-        pred_fake = self(fake, style)
+        pred_real = self(real, style.float())
+        pred_fake = self(fake, style.float())
         if self.relgan:
             pred_real = pred_real.view(-1)
             pred_fake = pred_fake.view(-1)
