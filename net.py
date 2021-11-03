@@ -20,12 +20,10 @@ class Encoder(nn.Module):
         super(Encoder,(self)).__init__()
         enc_layers = list(vggs.children())
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
-        self.enc_1_2 = nn.Sequential(*enc_layers[4:7])
-        self.enc_2 = nn.Sequential(*enc_layers[7:11])  # relu1_1 -> relu2_1
-        self.enc_2_2 = nn.Sequential(*enc_layers[11:14])
-        self.enc_3 = nn.Sequential(*enc_layers[14:18])  # relu2_1 -> relu3_1
+        self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
+        self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        self.enc_5 = nn.Sequential(*enc_layers[31:44])
+        #self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
     def forward(self, x, detach_all=False):
         encodings = {}
@@ -35,14 +33,12 @@ class Encoder(nn.Module):
         encodings['r1_2'] = x
         x = self.enc_2(x)
         encodings['r2_1'] = x
-        x = self.enc_2_2(x)
-        encodings['r2_2'] = x
         x = self.enc_3(x)
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        x = self.enc_5(x)
-        encodings['r5_1'] = x
+        #x = self.enc_5(x)
+        #encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -217,13 +213,12 @@ class DecoderAdaConv(nn.Module):
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3_2 = AdaConv(128, 2, s_d = self.s_d)
-        self.decoder_3_2 = ConvBlock(128, 128)
-        self.kernel_3 = AdaConv(128, 2, s_d=self.s_d)
-        self.decoder_3 = ConvBlock(128,64)
+        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d)
+        self.decoder_3 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 64)
+        )
         self.kernel_4 = AdaConv(64, 1, s_d = self.s_d)
-        self.kernel_4_2 = AdaConv(64, 1, s_d=self.s_d)
-        self.decoder_4_2 = ConvBlock(64, 64)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -245,16 +240,10 @@ class DecoderAdaConv(nn.Module):
         x += adaconv_out['r3_1'].data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out['r2_2'] = self.kernel_3_2(style, cF['r2_2'])
-        x += adaconv_out['r2_2'].data
-        x = self.decoder_3_2(x)
         adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'])
         x += adaconv_out['r2_1'].data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out['r1_2'] = self.kernel_4_2(style, cF['r1_2'])
-        x += adaconv_out['r1_2'].data
-        x = self.decoder_4_2(x)
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
@@ -378,7 +367,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(4096, self.s_d * 16)
+            nn.Linear(4086, self.s_d * 16)
         )
 
         for i in range(depth - 2):
@@ -492,9 +481,9 @@ def identity_loss(i, F, encoder, decoder):
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
-style_layers = ['r1_1','r1_2','r2_1','r2_2', 'r3_1','r4_1']
+style_layers = ['r1_1','r1_2','r2_1','r3_1','r4_1']
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, style, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
