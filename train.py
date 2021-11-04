@@ -104,6 +104,7 @@ parser.add_argument('--style_weight', type=float, default=10.0)
 parser.add_argument('--content_weight', type=float, default=1.0)
 parser.add_argument('--n_threads', type=int, default=16)
 parser.add_argument('--save_model_interval', type=int, default=10000)
+parser.add_argument('--load_model', type=str, default='none')
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -150,7 +151,10 @@ if args.train_model=='drafting':
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
         #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
-        init_weights(dec_)
+        if args.load_model == 'none':
+            init_weights(dec_)
+        else:
+            dec_.load_state_dict(torch.load(args.load_model))
         #init_weights(disc_)
         dec_.train()
         #disc_.train()
@@ -175,7 +179,7 @@ if args.train_model=='drafting':
         num_workers=args.n_threads))
     '''
     for i in tqdm(range(args.max_iter)):
-        warmup_lr_adjust(optimizer, i)
+        #warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
