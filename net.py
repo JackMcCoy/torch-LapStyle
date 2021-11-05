@@ -74,6 +74,81 @@ class Decoder(nn.Module):
         t = self.decoder_4(t)
         return t
 
+
+class RevisionNet(nn.Module):
+    def __init__(self, input_nc=6):
+        super(RevisionNet, self).__init__()
+        DownBlock = []
+        DownBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(input_nc, 128, kernel_size=3),
+            nn.ReLU()
+        ]
+        DownBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1),
+            nn.ReLU()
+        ]
+        DownBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
+            nn.ReLU(),
+        ]
+
+        self.resblock = ResBlock(64)
+
+        UpBlock = []
+
+        UpBlock += [
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),,
+            nn.Conv2d(128, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 3, kernel_size=3)
+        ]
+
+        self.DownBlock = nn.Sequential(*DownBlock)
+        self.UpBlock = nn.Sequential(*UpBlock)
+
+    def forward(self, input):
+        """
+        Args:
+            input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
+
+        Returns:
+            Tensor: (b, 3, 256, 256).
+        """
+        out = self.DownBlock(input)
+        out = self.resblock(out)
+        res_block = out.clone()
+        out = self.UpBlock(out)
+        return out, res_block
+
+
+class Revisors(nn.Module):
+    def __init__(self, levels= 1):
+        super(Revisors, self).__init__()
+        self.layers = nn.ModuleList([])
+        for i in range(levels):
+            self.layers.append(RevisionNet)
+
+    def load_states(self, state_string):
+        states = state_string.split(',')
+        for idx, i in enumerate(states):
+            self.layers[idx].load_state_dict(torch.load(i))
+            for param in layer.parameters():
+                param.requires_grad = False
+
+    def forward(self):
+        pass
+
 class SingleTransDecoder(nn.Module):
     def __init__(self):
         super(SingleTransDecoder, self).__init__()

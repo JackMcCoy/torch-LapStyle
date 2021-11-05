@@ -236,6 +236,15 @@ if args.train_model=='drafting':
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
+elif args.train_model=='revision':
+    with autocast(enabled=ac_enabled):
+        enc_ = net.Encoder(vgg)
+        set_requires_grad(enc_, False)
+        enc_.train(False)
+        dec_ = net.DecoderAdaConv()
+        disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
+        dec_.load_state_dict(torch.load(args.load_model))
+        enc_.train(False)
 elif args.train_model=='vqgan_pretrain':
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)
