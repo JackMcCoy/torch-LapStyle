@@ -111,6 +111,57 @@ class DecoderVQGAN(nn.Module):
         return t, l
 
 
+class RevisionNet(nn.Module):
+    """RevisionNet of Revision module.
+    Paper:
+        Drafting and Revision: Laplacian Pyramid Network for Fast High-Quality
+        Artistic Style Transfer.
+    """
+    def __init__(self, input_nc=6):
+        super(RevisionNet, self).__init__()
+        DownBlock = []
+        DownBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(input_nc, 64, kernel_size=3),
+            nn.ReLU()
+        ]
+        DownBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
+            nn.ReLU()
+        ]
+
+        self.resblock = ResBlock(64)
+
+        UpBlock = []
+        UpBlock += [
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.ReLU()
+        ]
+        UpBlock += [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 3, kernel_size=3)
+        ]
+
+        self.DownBlock = nn.Sequential(*DownBlock)
+        self.UpBlock = nn.Sequential(*UpBlock)
+
+    def forward(self, input):
+        """
+        Args:
+            input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
+
+        Returns:
+            Tensor: (b, 3, 256, 256).
+        """
+        out = self.DownBlock(input)
+        out = self.resblock(out)
+        res_block = out.clone()
+        out = self.UpBlock(out)
+        return out, res_block
+
 class Discriminator(nn.Module):
     def __init__(self, depth, num_channels):
         super(Discriminator, self).__init__()
