@@ -146,6 +146,7 @@ class Revisors(nn.Module):
             self.layers[idx].load_state_dict(torch.load(i))
             for param in self.layers[idx].parameters():
                 param.requires_grad = False
+            self.layers[idx].to(device)
 
     def forward(self, input, lap_pyr, position=None):
         assert len(lap_pyr) == len(self.layers)
