@@ -257,7 +257,7 @@ elif args.train_model=='revision':
         dec_.train(False)
         init_weights(disc_)
         init_weights(rev_)
-        rev_.load_states('')
+        rev_.train()
         disc_.train()
         enc_.to(device)
         dec_.to(device)
