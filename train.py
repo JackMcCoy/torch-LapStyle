@@ -252,7 +252,7 @@ elif args.train_model=='revision':
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
-        rev_ = net.Reviors(levels = args.revision_depth)
+        rev_ = net.Revisors(levels = args.revision_depth)
         disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         dec_.train(False)
         enc_.train(False)
