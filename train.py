@@ -273,9 +273,12 @@ elif args.train_model=='revision':
             lap_pyr = []
             size = 256
             while size <= args.crop_size:
-                lap_pyr.append(F.conv2d(F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3).unsqueeze(0))
+                if size == args.crop_size:
+                    x = F.pad(ci(1,1,1,1), mode='reflect')
+                else:
+                    x = F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect')
+                lap_pyr.append(F.conv2d(x, weight = lap_weight, groups = 3).to(device))
                 size *= 2
-            lap_pyr = torch.cat(lap_pyr, axis=0).to(device)
             ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
             si = [F.interpolate(si, size=128, mode='bicubic'), si]
             cF = enc_(ci[0])
