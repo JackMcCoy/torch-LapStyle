@@ -260,7 +260,7 @@ elif args.train_model=='revision':
         enc_.to(device)
         dec_.to(device)
         disc_.to(device)
-        enc_.to(device)
+        rev_.to(device)
     optimizer = torch.optim.Adam(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
