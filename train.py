@@ -26,7 +26,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
 scaler = GradScaler(init_scale=1024,growth_interval=1000)
-ac_enabled = True
+ac_enabled = False
 
 def train_transform(load_size, crop_size):
     transform_list = [
@@ -269,7 +269,7 @@ elif args.train_model=='revision':
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i)
         warmup_lr_adjust(opt_D, i)
-        with autocast():
+        with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             lap_pyr = []
@@ -289,9 +289,8 @@ elif args.train_model=='revision':
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
 
-        disc_scaler.scale(loss_D).backward()
-        disc_scaler.step(opt_D)
-        disc_scaler.update()
+        loss_D.backward()
+        opt_D.step()
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
@@ -301,11 +300,8 @@ elif args.train_model=='revision':
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24
-            #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
-            #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        loss.backward()
+        optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
