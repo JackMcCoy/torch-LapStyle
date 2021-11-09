@@ -274,7 +274,7 @@ elif args.train_model=='revision':
             size = 256
             while size <= args.crop_size:
                 if size == args.crop_size:
-                    x = F.pad(ci(1,1,1,1), mode='reflect')
+                    x = F.pad(ci, (1,1,1,1), mode='reflect')
                 else:
                     x = F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect')
                 lap_pyr.append(F.conv2d(x, weight = lap_weight, groups = 3).to(device))
