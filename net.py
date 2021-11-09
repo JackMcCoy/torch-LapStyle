@@ -602,7 +602,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_losses = 0
 
     if disc_loss:
-        pred_fake_p = disc_(stylized, cF['r1_1'], calculated_style_feat=style)
+        pred_fake_p = disc_(stylized)
         loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
     else:
         loss_Gp_GAN = 0
