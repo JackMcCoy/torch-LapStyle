@@ -136,11 +136,10 @@ class RevisionNet(nn.Module):
 class Revisors(nn.Module):
     def __init__(self, levels= 1):
         super(Revisors, self).__init__()
-        with autocast():
-            self.layers = nn.ModuleList([])
-            self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-            for i in range(levels):
-                self.layers.append(RevisionNet())
+        self.layers = nn.ModuleList([])
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        for i in range(levels):
+            self.layers.append(RevisionNet())
 
     def load_states(self, state_string):
         states = state_string.split(',')
