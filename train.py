@@ -278,11 +278,11 @@ elif args.train_model=='revision':
             cF = enc_(ci[0])
             sF = enc_(si[0])
             stylized, cb_loss = dec_(sF, cF)
-            stylized = rev_(stylized, lap_pyr)
+            rev_stylized = rev_(stylized, lap_pyr)
 
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
-            loss_D, style = disc_.losses(si[-1].detach(), stylized.detach())
+            loss_D, style = disc_.losses(si[-1].detach(), rev_stylized.detach())
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
@@ -293,7 +293,7 @@ elif args.train_model=='revision':
             optimizer.zero_grad()
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
-            losses = calc_losses(stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
