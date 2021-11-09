@@ -273,8 +273,8 @@ elif args.train_model=='revision':
                 lap_pyr.append(F.conv2d(F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3).unsqueeze(0))
                 size *= 2
             lap_pyr = torch.cat(lap_pyr, axis=0).to(device)
-            ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
-            si = [F.interpolate(si, size=128, mode='bicubic'), si]
+            ci = torch.cat([F.interpolate(ci, size=128, mode='bicubic').unsqueeze(0), ci.unsqueeze(0)], axis=0).to(device)
+            si = torch.cat([F.interpolate(si, size=128, mode='bicubic').unsqueeze(0), si.unsqueeze(0)], axis=0).to(device)
             cF = enc_(ci[0])
             sF = enc_(si[0])
             stylized, cb_loss = dec_(sF, cF)
