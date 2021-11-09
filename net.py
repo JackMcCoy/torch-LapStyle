@@ -145,9 +145,13 @@ class Revisors(nn.Module):
     def load_states(self, state_string):
         states = state_string.split(',')
         for idx, i in enumerate(states):
-            self.layers[idx].load_state_dict(torch.load(i))
-            for param in self.layers[idx].parameters():
-                param.requires_grad = False
+            if idx < len(states):
+                self.layers[idx].load_state_dict(torch.load(i))
+                for param in self.layers[idx].parameters():
+                    param.requires_grad = False
+            else:
+                for param in self.layers[idx].parameters():
+                    param.requires_grad = True
             self.layers[idx].to(device)
 
     def forward(self, input, lap_pyr, position=None):

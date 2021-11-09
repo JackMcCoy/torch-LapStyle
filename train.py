@@ -256,7 +256,7 @@ elif args.train_model=='revision':
         disc_ = net.Discriminator(depth=9, num_channels=64, relgan=False)
         dec_.train(False)
         enc_.train(False)
-        rev_.train()
+        rev_.load_states('')
         disc_.train()
         enc_.to(device)
         dec_.to(device)
