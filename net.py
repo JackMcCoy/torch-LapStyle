@@ -158,7 +158,7 @@ class Revisors(nn.Module):
             input = self.upsample(input.detach())
             x = torch.cat([input, lap_pyr[idx].detach()], axis = 1)
             x, res_block = layer(x)
-            input = input + x[:,:3,:,:].data
+            input = input + x
         return input
 
 class SingleTransDecoder(nn.Module):
