@@ -310,8 +310,8 @@ elif args.train_model=='revision':
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
-                stylized = stylized.float().to('cpu')
-                styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                rev_stylized = rev_stylized.float().to('cpu')
+                styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
                 save_image(styled_img_grid.detach(), args.save_dir+'/drafting_revision_iter'+str(i+1)+'.jpg')
