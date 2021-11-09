@@ -264,6 +264,8 @@ elif args.train_model=='revision':
     optimizer = torch.optim.Adam(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
+        warmup_lr_adjust(optimizer, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast():
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -283,6 +285,7 @@ elif args.train_model=='revision':
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
+            loss_D = torch.nan_to_num(loss_D)
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
@@ -298,6 +301,7 @@ elif args.train_model=='revision':
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
             #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
+            loss = torch.nan_to_num(loss)
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
