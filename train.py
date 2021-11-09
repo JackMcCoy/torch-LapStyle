@@ -265,7 +265,7 @@ elif args.train_model=='revision':
             lap_pyr = []
             size = 256
             while size <= args.crop_size:
-                lap_pyr.append(F.conv2d(F.interpolate(ci, size = size, mode='bicubic'), weight = lap_weight))
+                lap_pyr.append(F.conv2d(F.interpolate(ci, size = size, mode='bicubic'), weight = lap_weight, groups = 3))
                 size *= 2
             ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
             si = [F.interpolate(si, size=128, mode='bicubic'), si]
