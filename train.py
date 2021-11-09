@@ -286,8 +286,9 @@ elif args.train_model=='revision':
             stylized, cb_loss = dec_(sF, cF)
             rev_stylized = rev_(stylized, lap_pyr)
 
-            opt_D.zero_grad()
-            set_requires_grad(disc_, True)
+        opt_D.zero_grad()
+        set_requires_grad(disc_, True)
+        with autocast(enabled=ac_enabled):
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
         if ac_enabled:
             scaler.scale(loss_D).backward()
@@ -297,8 +298,8 @@ elif args.train_model=='revision':
             opt_D.step()
         set_requires_grad(disc_, False)
 
+        optimizer.zero_grad()
         with autocast(enabled=ac_enabled):
-            optimizer.zero_grad()
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=True)
