@@ -292,7 +292,6 @@ elif args.train_model=='revision':
         if ac_enabled:
             disc_scaler.scale(loss_D).backward()
             disc_scaler.step(opt_D)
-            disc_scaler.update()
         else:
             loss_D.backward()
             opt_D.step()
@@ -309,6 +308,7 @@ elif args.train_model=='revision':
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
+            disc_scaler.update()
         else:
             loss.backward()
             optimizer.step()
