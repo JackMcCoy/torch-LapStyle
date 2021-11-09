@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.utils.data as data
+import numpy as np
 from PIL import Image, ImageFile
 from tensorboardX import SummaryWriter
 from torchvision import transforms
@@ -237,7 +238,9 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
+    lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
     with autocast(enabled=ac_enabled):
+        lap_weight = torch.Tensor(lap_weight)
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
