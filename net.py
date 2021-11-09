@@ -152,7 +152,8 @@ class Revisors(nn.Module):
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input)
             x = torch.cat([input, lap_pyr[idx]], axis = 1)
-            input, res_block = input + x[:,:3,:,:].data
+            x, res_block = layer(x)
+            input = input + x[:,:3,:,:].data
         return input
 
 class SingleTransDecoder(nn.Module):
