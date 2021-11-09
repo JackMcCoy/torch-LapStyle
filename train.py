@@ -273,16 +273,18 @@ elif args.train_model=='revision':
                 lap_pyr.append(F.conv2d(F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3).unsqueeze(0))
                 size *= 2
             lap_pyr = torch.cat(lap_pyr, axis=0).to(device)
-            ci_small = F.interpolate(ci, size=128, mode='bicubic')
-            si_small = F.interpolate(si, size=128, mode='bicubic')
-            cF = enc_(ci_small)
-            sF = enc_(si_small)
+            ci = [F.interpolate(ci, size=128, mode='bicubic').unsqueeze(0), ci.unsqueeze(0)]
+            si = [F.interpolate(si, size=128, mode='bicubic').unsqueeze(0), si.unsqueeze(0)]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
             stylized, cb_loss = dec_(sF, cF)
             rev_stylized = rev_(stylized, lap_pyr)
 
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
-            loss_D, style = disc_.losses(si.detach(), rev_stylized.detach())
+            print(si[-1].shape)
+            print(rev_stylized.shape)
+            loss_D, style = disc_.losses(si[-1].detach(), rev_stylized.detach())
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
@@ -293,7 +295,7 @@ elif args.train_model=='revision':
             optimizer.zero_grad()
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
-            losses = calc_losses(rev_stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
