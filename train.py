@@ -24,8 +24,6 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
-scaler = GradScaler(init_scale=1024,growth_interval=1000)
 ac_enabled = True
 
 def train_transform(load_size, crop_size):
@@ -170,6 +168,7 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
+    scaler = GradScaler(init_scale=1024, growth_interval=1000)
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
@@ -264,6 +263,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
+    scaler = GradScaler(init_scale=1024, growth_interval=1000)
     optimizer = torch.optim.Adam(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
@@ -290,8 +290,8 @@ elif args.train_model=='revision':
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
         if ac_enabled:
-            disc_scaler.scale(loss_D).backward()
-            disc_scaler.step(opt_D)
+            scaler.scale(loss_D).backward()
+            scaler.step(opt_D)
         else:
             loss_D.backward()
             opt_D.step()
@@ -308,7 +308,6 @@ elif args.train_model=='revision':
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-            disc_scaler.update()
         else:
             loss.backward()
             optimizer.step()
