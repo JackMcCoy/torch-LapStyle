@@ -144,6 +144,7 @@ class Revisors(nn.Module):
 
     def load_states(self, state_string):
         states = state_string.split(',')
+        print(len(states))
         for idx, i in enumerate(states):
             if idx < len(states):
                 self.layers[idx].load_state_dict(torch.load(i))
