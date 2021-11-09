@@ -303,6 +303,7 @@ elif args.train_model=='revision':
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
             #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
             loss = torch.nan_to_num(loss)
+            print(loss)
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
