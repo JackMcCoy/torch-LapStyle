@@ -154,7 +154,6 @@ class Revisors(nn.Module):
             self.layers[idx].to(device)
 
     def forward(self, input, lap_pyr, position=None):
-        assert len(lap_pyr) == len(self.layers)
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input)
             x = torch.cat([input, lap_pyr[idx]], axis = 1)
