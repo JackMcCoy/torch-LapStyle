@@ -286,7 +286,6 @@ elif args.train_model=='revision':
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
-            loss_D = torch.nan_to_num(loss_D)
 
         disc_scaler.scale(loss_D).backward()
         disc_scaler.step(opt_D)
@@ -294,7 +293,7 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
-
+            optimizer.zero_grad()
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
@@ -302,11 +301,9 @@ elif args.train_model=='revision':
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
             #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
-            print(loss)
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-        optimizer.zero_grad()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
