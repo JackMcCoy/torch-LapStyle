@@ -274,7 +274,7 @@ elif args.train_model=='revision':
                 size *= 2
             lap_pyr = torch.cat(lap_pyr, axis=0).to(device)
             ci_small = F.interpolate(ci, size=128, mode='bicubic')
-            si_small = [F.interpolate(si, size=128, mode='bicubic')
+            si_small = F.interpolate(si, size=128, mode='bicubic')
             cF = enc_(ci_small)
             sF = enc_(si_small)
             stylized, cb_loss = dec_(sF, cF)
