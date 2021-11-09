@@ -281,6 +281,7 @@ elif args.train_model=='revision':
 
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
+            print(si)
             loss_D, style = disc_.losses(si[-1].detach(), stylized.detach())
 
         disc_scaler.scale(loss_D).backward()
