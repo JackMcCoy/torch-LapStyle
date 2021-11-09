@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.utils.data as data
+import torch.nn.functional as F
 import numpy as np
 from PIL import Image, ImageFile
 from tensorboardX import SummaryWriter
@@ -106,6 +107,11 @@ parser.add_argument('--content_weight', type=float, default=1.0)
 parser.add_argument('--n_threads', type=int, default=16)
 parser.add_argument('--save_model_interval', type=int, default=10000)
 parser.add_argument('--load_model', type=str, default='none')
+
+# Revision model options
+parser.add_argument('--revision_depth', type=int, default=1)
+parser.add_argument('--revision_full_size_depth', type=int, default=1)
+
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -245,9 +251,79 @@ elif args.train_model=='revision':
         set_requires_grad(enc_, False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         dec_.load_state_dict(torch.load(args.load_model))
+        rev_ = net.Reviors(levels = args.revision_depth)
+        disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
+        dec_.train(False)
         enc_.train(False)
+    optimizer = torch.optim.Adam(rev_.parameters(), lr=args.lr)
+    opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
+    for i in tqdm(range(args.max_iter)):
+        with autocast():
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            lap_pyr = []
+            size = 256
+            while size <= args.crop_size:
+                lap_pyr.append(F.conv2d(F.interpolate(ci, size = size, mode='bicubic'), weight = lap_weight))
+                size *= 2
+            ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
+            si = [F.interpolate(si, size=128, mode='bicubic'), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+            stylized, cb_loss = dec_(sF, cF)
+            stylized = rev_(stylized, lap_pyr)
+
+            opt_D.zero_grad()
+            set_requires_grad(disc_, True)
+            loss_D, style = disc_.losses(si[-1].detach(), stylized.detach(), sF['r1_1'])
+
+        disc_scaler.scale(loss_D).backward()
+        disc_scaler.step(opt_D)
+        disc_scaler.update()
+        set_requires_grad(disc_, False)
+
+        with autocast(enabled=ac_enabled):
+            optimizer.zero_grad()
+            cF = enc_(ci[-1])
+            sF = enc_(si[=1])
+            losses = calc_losses(stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
+            #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
+            #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+        if (i + 1) % 10 == 0:
+            print(f'{loss.item():.2f}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
+
+            writer.add_scalar('loss_content', loss_c.item(), i + 1)
+            writer.add_scalar('loss_style', loss_s.item(), i + 1)
+
+        with torch.no_grad():
+            if (i + 1) % 100 == 0:
+                stylized = stylized.float().to('cpu')
+                styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                style_source_grid = make_grid(si, nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci, nrow=4, scale_each=True)
+                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_revision_iter'+str(i+1)+'.jpg')
+                save_image(content_img_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_ci' + str(
+                               i + 1) + '.jpg')
+                save_image(style_source_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_si' + str(
+                               i + 1) + '.jpg')
+
+            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+                print(loss)
+                state_dict = rev_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'revisor_iter_{:d}.pth.tar'.format(i + 1))
+    writer.close()
+
 elif args.train_model=='vqgan_pretrain':
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)

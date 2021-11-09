@@ -136,18 +136,24 @@ class Revisors(nn.Module):
     def __init__(self, levels= 1):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         for i in range(levels):
-            self.layers.append(RevisionNet)
+            self.layers.append(RevisionNet())
 
     def load_states(self, state_string):
         states = state_string.split(',')
         for idx, i in enumerate(states):
             self.layers[idx].load_state_dict(torch.load(i))
-            for param in layer.parameters():
+            for param in self.layers[idx].parameters():
                 param.requires_grad = False
 
-    def forward(self):
-        pass
+    def forward(self, input, lap_pyr, position=None):
+        assert len(lap_pyr) == len(self.layers)
+        for idx, layer in enumerate(self.layers):
+            input = self.upsample(input)
+            x = torch.cat([input, lap_pyr[idx]], axis = 1)
+            input = input + x
+        return input
 
 class SingleTransDecoder(nn.Module):
     def __init__(self):
