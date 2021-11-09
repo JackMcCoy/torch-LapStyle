@@ -295,9 +295,9 @@ elif args.train_model=='revision':
             optimizer.zero_grad()
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
-            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=True, mdog_losses=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 + loss_Gp_GAN
         loss.backward()
         optimizer.step()
 
