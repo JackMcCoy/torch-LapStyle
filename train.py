@@ -269,8 +269,8 @@ elif args.train_model=='revision':
                 size *= 2
             ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
             si = [F.interpolate(si, size=128, mode='bicubic'), si]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+            cF = enc_(ci[0].float())
+            sF = enc_(si[0].float())
             stylized, cb_loss = dec_(sF, cF)
             stylized = rev_(stylized, lap_pyr)
 
@@ -285,8 +285,8 @@ elif args.train_model=='revision':
 
         with autocast(enabled=ac_enabled):
             optimizer.zero_grad()
-            cF = enc_(ci[-1])
-            sF = enc_(si[-1])
+            cF = enc_(ci[-1].float())
+            sF = enc_(si[-1].float())
             losses = calc_losses(stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
