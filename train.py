@@ -312,8 +312,8 @@ elif args.train_model=='revision':
             if (i + 1) % 100 == 0:
                 stylized = stylized.float().to('cpu')
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                style_source_grid = make_grid(si, nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci, nrow=4, scale_each=True)
+                style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
                 save_image(styled_img_grid.detach(), args.save_dir+'/drafting_revision_iter'+str(i+1)+'.jpg')
                 save_image(content_img_grid.detach(),
                            args.save_dir + '/drafting_training_iter_ci' + str(
