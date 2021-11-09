@@ -26,7 +26,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 disc_scaler = GradScaler(init_scale=1024,growth_interval=1000)
 scaler = GradScaler(init_scale=1024,growth_interval=1000)
-ac_enabled = False
+ac_enabled = True
 
 def train_transform(load_size, crop_size):
     transform_list = [
@@ -289,9 +289,13 @@ elif args.train_model=='revision':
             opt_D.zero_grad()
             set_requires_grad(disc_, True)
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
-
-        loss_D.backward()
-        opt_D.step()
+        if ac_enabled:
+            disc_scaler.scale(loss_D).backward()
+            disc_scaler.step(opt_D)
+            disc_scaler.update()
+        else:
+            loss_D.backward()
+            opt_D.step()
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
@@ -301,8 +305,13 @@ elif args.train_model=='revision':
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=True)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 + loss_Gp_GAN * 2.5
-        loss.backward()
-        optimizer.step()
+        if ac_enabled:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
