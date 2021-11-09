@@ -24,7 +24,7 @@ class Encoder(nn.Module):
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        self.enc_5 = nn.Sequential(*enc_layers[31:44])
+        #self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
     def forward(self, x, detach_all=False):
         encodings = {}
@@ -36,8 +36,8 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        x = self.enc_5(x)
-        encodings['r5_1'] = x
+        #x = self.enc_5(x)
+        #encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -578,8 +578,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         l_identity4 = 0
         cb_loss = 0
     if content_all_layers:
-        content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-        style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
+        #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
+        #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
         loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'])
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key]).data
