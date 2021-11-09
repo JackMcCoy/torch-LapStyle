@@ -107,7 +107,7 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 128, kernel_size=3),
             nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),,
+            nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
