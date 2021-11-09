@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from torch.cuda.amp import autocast
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -137,8 +138,9 @@ class Revisors(nn.Module):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        for i in range(levels):
-            self.layers.append(RevisionNet())
+        with autocast():
+            for i in range(levels):
+                self.layers.append(RevisionNet())
 
     def load_states(self, state_string):
         states = state_string.split(',')
