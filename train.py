@@ -246,7 +246,7 @@ if args.train_model=='drafting':
 elif args.train_model=='revision':
     lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
     with autocast(enabled=ac_enabled):
-        lap_weight = torch.Tensor(lap_weight)
+        lap_weight = torch.Tensor(lap_weight).to(device)
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
