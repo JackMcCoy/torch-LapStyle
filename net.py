@@ -176,7 +176,7 @@ class Revisors(nn.Module):
 
     def forward(self, input, lap_pyr, position=None):
         for idx, layer in enumerate(self.layers):
-            input = self.upsample(input)
+            input = self.upsample(input.detach())
             x = torch.cat([input, lap_pyr[idx].detach()], axis = 1)
             x, res_block = layer(x)
             x += input.data
