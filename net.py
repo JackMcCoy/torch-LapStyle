@@ -613,7 +613,7 @@ class SpectralDiscriminator(nn.Module):
         self.relu = nn.LeakyReLU(0.1)
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
-        self.fc=spectral_norm(nn.Linear(16386, 1))
+        self.fc=spectral_norm(nn.Linear(16384, 1))
 
     def losses(self, real, fake):
         pred_real = self(real)
