@@ -562,7 +562,7 @@ class SNLinear(nn.Linear):
         return self.weight / sigma
 
     def forward(self, input):
-        return F.linear(input, self.W_, self.bias)
+        return nn.functional.linear(input, self.W_, self.bias)
 
 
 class OptimizedBlock(nn.Module):
