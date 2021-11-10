@@ -569,7 +569,7 @@ class SpectralDiscriminator(nn.Module):
         self.head = OptimizedBlock(3,num_channels,kernel,padding)
         self.body = nn.Sequential()
         ndf = num_channels
-        for i in range(num_layer - 1):
+        for i in range(depth - 1):
             self.body.add_sublayer(
                 'conv%d' % (i + 1),
                 ResBlock(ndf,kernel,padding))
