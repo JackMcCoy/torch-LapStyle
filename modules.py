@@ -25,7 +25,7 @@ class SpectralResBlock(nn.Module):
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size = kernel,padding=padding,padding_mode='reflect')),
                                         nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = kernel,padding=padding,padding_mode='reflect')),)
-        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv21(dim, dim*2, kernel_size = 1)))
+        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = 1)))
     def forward(self, x):
         out = self.residual_connection(x) + self.conv_block(x)
         return out
