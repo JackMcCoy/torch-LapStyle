@@ -304,7 +304,7 @@ elif args.train_model=='revision':
             sF = enc_(si[-1])
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 22 + style_remd * 22 + loss_Gp_GAN * 2.5 + cb_loss
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 22 + style_remd * 22 + loss_Gp_GAN * 5 + cb_loss
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
