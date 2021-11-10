@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 from torch.cuda.amp import autocast
+from torch.nn.utils import spectral_norm
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -547,6 +548,60 @@ class Discriminator(nn.Module):
         x = self.tail(x)
         return x
 
+class OptimizedBlock(nn.Module):
+    def __init__(self, in_channels, dim,kernel,padding):
+        super(OptimizedBlock, self).__init__()
+        out_size=(1,dim,256,256)
+        self.conv_block = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
+                                        nn.ReLU(),
+                                        spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
+        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1)))
+
+    def forward(self, x):
+        out = self.residual_connection(x) + self.conv_block(x)
+        return out
+
+class SpectralDiscriminator(nn.Module):
+    def __init__(self, num_channels=64, num_layer=3, padding=1, kernel=3, relgan=True):
+        super(SpectralDiscriminator, self).__init__()
+        self.num_layer=num_layer
+        self.num_channels = num_channels
+        self.head = OptimizedBlock(3,num_channels,kernel,padding)
+        self.body = nn.Sequential()
+        ndf = num_channels
+        for i in range(num_layer - 1):
+            self.body.add_sublayer(
+                'conv%d' % (i + 1),
+                ResBlock(ndf,kernel,padding))
+            ndf=ndf*2
+        self.relu = nn.LeakyReLU(0.1)
+        self.ganloss = GANLoss('lsgan')
+        self.relgan = relgan
+        #self.fc=nn.Sequential(SNLinear(1024, 1),nn.Sigmoid())
+
+    def losses(self, real, fake):
+        pred_real = self(real)
+        pred_fake = self(fake)
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
+            loss_D = (
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+            )
+        else:
+            loss_D_real = self.ganloss(pred_real, True)
+            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D = (loss_D_real + loss_D_fake) * 0.5
+        return loss_D
+
+    def forward(self, x):
+        x = self.head(x)
+        x = self.body(x)
+        x = self.relu(x)
+        x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
+        x = x.reshape(x.shape[0],1,256,256)
+        return x
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
