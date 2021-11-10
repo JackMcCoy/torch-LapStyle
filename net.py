@@ -5,7 +5,7 @@ from torch.nn.utils import spectral_norm
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
-from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool
+from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool, SpectralResBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -570,7 +570,7 @@ class SpectralDiscriminator(nn.Module):
         ndf = num_channels
         for i in range(depth - 1):
             self.body.append(
-                ResBlock(ndf,kernel,padding))
+                SpectralResBlock(ndf,kernel,padding))
             ndf=ndf*2
         self.body = nn.Sequential(*self.body)
         self.relu = nn.LeakyReLU(0.1)

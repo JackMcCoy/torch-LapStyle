@@ -15,6 +15,21 @@ class ResBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
+
+class SpectralResBlock(nn.Module):
+    def __init__(self, dim,kernel,padding):
+        super(SpectralResBlock, self).__init__()
+        out_size=(1,dim,128,128)
+        self.conv_block = nn.Sequential(nn.ReLU(),
+                                        spectral_norm(nn.Conv2d(dim, dim, kernel_size = kernel,padding=padding,padding_mode='reflect')),
+                                        nn.ReLU(),
+                                        spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = kernel,padding=padding,padding_mode='reflect')),)
+        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv21(dim, dim*2, kernel_size = 1)))
+    def forward(self, x):
+        out = self.residual_connection(x) + self.conv_block(x)
+        return out
+
+
 class ConvBlock(nn.Module):
 
     def __init__(self, dim1, dim2,noise=0):
