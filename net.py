@@ -564,7 +564,6 @@ class OptimizedBlock(nn.Module):
 class SpectralDiscriminator(nn.Module):
     def __init__(self, num_channels=64, depth=3, padding=1, kernel=3, relgan=True):
         super(SpectralDiscriminator, self).__init__()
-        self.num_layer=num_layer
         self.num_channels = num_channels
         self.head = OptimizedBlock(3,num_channels,kernel,padding)
         self.body = nn.Sequential()
