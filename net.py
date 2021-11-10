@@ -698,7 +698,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
     if disc_loss:
         pred_fake_p = disc_(stylized)
         #loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
-        loss_Gp_GAN = nn.BCEWithLogitsLoss()(pred_fake_p, torch.zeros(N, 1).to(device))
+        loss_Gp_GAN = nn.BCEWithLogitsLoss()(pred_fake_p, torch.zeros(pred_fake_p.shape[0], 1).to(device))
     else:
         loss_Gp_GAN = 0
 
