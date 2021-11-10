@@ -628,8 +628,11 @@ class SpectralDiscriminator(nn.Module):
         x = self.body(x)
         x = self.relu(x)
         x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
-        x = x.reshape(x.shape[0],1,256,256)
-        return self.fc(x)
+        print(x.shape)
+        x = self.fc(x)
+        print(x.shape)
+        #x = x.reshape(x.shape[0],1,256,256)
+        return x
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
