@@ -629,7 +629,7 @@ class SpectralDiscriminator(nn.Module):
         x = self.relu(x)
         x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
         print(x.shape)
-        x = self.fc(x)
+        x = self.fc(x.reshape(x.shape[0],1,-1))
         print(x.shape)
         #x = x.reshape(x.shape[0],1,256,256)
         return x
