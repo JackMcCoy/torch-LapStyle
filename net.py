@@ -613,7 +613,7 @@ class SpectralDiscriminator(nn.Module):
         self.relu = nn.LeakyReLU(0.1)
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
-        self.fc=spectral_norm(nn.Linear(65536, 1))
+        self.fc=spectral_norm(nn.Linear(16386, 1))
 
     def losses(self, real, fake):
         pred_real = self(real)
@@ -628,7 +628,6 @@ class SpectralDiscriminator(nn.Module):
         x = self.body(x)
         x = self.relu(x)
         x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
-        print(x.shape)
         x = self.fc(x.reshape(x.shape[0],1,-1)).squeeze(dim=2)
         #x = x.reshape(x.shape[0],1,256,256)
         return x
