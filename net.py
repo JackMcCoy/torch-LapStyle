@@ -17,6 +17,9 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 device = torch.device('cuda')
 
+def _l2normalize(v, eps=1e-12):
+    return v / (v.norm() + eps)
+
 def max_singular_value(W, u=None, Ip=1):
     """
     power iteration for weight parameter
