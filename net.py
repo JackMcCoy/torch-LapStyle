@@ -552,7 +552,7 @@ class Discriminator(nn.Module):
 class SNLinear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super(SNLinear, self).__init__(in_features, out_features, bias)
-        self.register_buffer('u', torch.normal(mean=0.0,std=1.0,shape=(1, 1), generator=None).to(device))
+        self.register_buffer('u', torch.normal(mean=0.0,std=1.0).to(device))
 
     @property
     def W_(self):
