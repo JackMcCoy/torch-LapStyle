@@ -562,7 +562,7 @@ class OptimizedBlock(nn.Module):
         return out
 
 class SpectralDiscriminator(nn.Module):
-    def __init__(self, num_channels=64, num_layer=3, padding=1, kernel=3, relgan=True):
+    def __init__(self, num_channels=64, depth=3, padding=1, kernel=3, relgan=True):
         super(SpectralDiscriminator, self).__init__()
         self.num_layer=num_layer
         self.num_channels = num_channels
