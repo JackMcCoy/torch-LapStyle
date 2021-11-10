@@ -590,7 +590,7 @@ class OptimizedBlock(nn.Module):
         super(OptimizedBlock, self).__init__()
         out_size=(1,dim,256,256)
         self.conv_block = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(.1),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
         self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1)))
 
@@ -613,22 +613,14 @@ class SpectralDiscriminator(nn.Module):
         self.relu = nn.LeakyReLU(0.1)
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
-        self.fc=nn.Sequential(nn.Linear(65536, 1),nn.Sigmoid())
+        self.fc=nn.Sequential(spectral_norm(nn.Linear(65536, 1)),nn.Sigmoid())
 
     def losses(self, real, fake):
         pred_real = self(real)
         pred_fake = self(fake)
-        if self.relgan:
-            pred_real = pred_real.view(-1)
-            pred_fake = pred_fake.view(-1)
-            loss_D = (
-                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-            )
-        else:
-            loss_D_real = self.ganloss(pred_real, True)
-            loss_D_fake = self.ganloss(pred_fake, False)
-            loss_D = (loss_D_real + loss_D_fake) * 0.5
+        N, *_ = pred_real.shape
+        loss_D = nn.BCEWithLogitsLoss()(pred_real, torch.ones(N, 1).to(device)) + \
+        nn.BCEWithLogitsLoss()(pred_fake, torch.zeros(N, 1).to(device))
         return loss_D
 
     def forward(self, x):
@@ -704,7 +696,8 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
 
     if disc_loss:
         pred_fake_p = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
+        #loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
+        loss_Gp_GAN = nn.BCEWithLogitsLoss()(pred_fake_p, torch.zeros(N, 1).to(device))
     else:
         loss_Gp_GAN = 0
 

@@ -21,9 +21,9 @@ class SpectralResBlock(nn.Module):
     def __init__(self, dim,kernel,padding):
         super(SpectralResBlock, self).__init__()
         out_size=(1,dim,128,128)
-        self.conv_block = nn.Sequential(nn.ReLU(),
+        self.conv_block = nn.Sequential(nn.LeakyReLU(.1),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size = kernel,padding=padding,padding_mode='reflect')),
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(.1),
                                         spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = kernel,padding=padding,padding_mode='reflect')),)
         self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = 1)))
     def forward(self, x):
