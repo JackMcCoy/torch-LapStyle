@@ -548,6 +548,23 @@ class Discriminator(nn.Module):
         x = self.tail(x)
         return x
 
+
+class SNLinear(nn.Linear):
+    def __init__(self, in_features, out_features, bias=True):
+        super(SNLinear, self).__init__(in_features, out_features, bias)
+        self.register_buffer('u', torch.normal(mean=0,std=1,shape=(1, 1)))
+
+    @property
+    def W_(self):
+        w_mat = self.weight.reshape((self.weight.shape[0], -1))
+        sigma, _u = max_singular_value(w_mat, self.u)
+        self.u=_u
+        return self.weight / sigma
+
+    def forward(self, input):
+        return F.linear(input, self.W_, self.bias)
+
+
 class OptimizedBlock(nn.Module):
     def __init__(self, in_channels, dim,kernel,padding):
         super(OptimizedBlock, self).__init__()
@@ -576,7 +593,7 @@ class SpectralDiscriminator(nn.Module):
         self.relu = nn.LeakyReLU(0.1)
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
-        #self.fc=nn.Sequential(SNLinear(1024, 1),nn.Sigmoid())
+        self.fc=nn.Sequential(SNLinear(65536, 1),nn.Sigmoid())
 
     def losses(self, real, fake):
         pred_real = self(real)
@@ -600,7 +617,7 @@ class SpectralDiscriminator(nn.Module):
         x = self.relu(x)
         x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
         x = x.reshape(x.shape[0],1,256,256)
-        return x
+        return self.fc(x)
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
