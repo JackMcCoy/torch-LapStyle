@@ -566,13 +566,13 @@ class SpectralDiscriminator(nn.Module):
         super(SpectralDiscriminator, self).__init__()
         self.num_channels = num_channels
         self.head = OptimizedBlock(3,num_channels,kernel,padding)
-        self.body = nn.Sequential()
+        self.body = []
         ndf = num_channels
         for i in range(depth - 1):
-            self.body.add_sublayer(
-                'conv%d' % (i + 1),
+            self.body.append(
                 ResBlock(ndf,kernel,padding))
             ndf=ndf*2
+        self.body = nn.Sequential(*self.body)
         self.relu = nn.LeakyReLU(0.1)
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
