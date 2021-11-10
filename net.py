@@ -599,37 +599,50 @@ class OptimizedBlock(nn.Module):
         return out
 
 class SpectralDiscriminator(nn.Module):
-    def __init__(self, num_channels=64, depth=3, padding=1, kernel=3, relgan=True):
+    def __init__(self, depth=5, num_channels=64, relgan=True):
         super(SpectralDiscriminator, self).__init__()
-        self.num_channels = num_channels
-        self.head = OptimizedBlock(3,num_channels,kernel,padding)
+        self.head = nn.Sequential(
+            spectral_norm(nn.Conv2d(3,num_channels,3,stride=1,padding=1)),
+            nn.LeakyReLU(0.2)
+            )
         self.body = []
-        ndf = num_channels
-        for i in range(depth - 1):
+        for i in range(depth - 2):
             self.body.append(
-                SpectralResBlock(ndf,kernel,padding))
-            ndf=ndf*2
+                spectral_norm(nn.Conv2d(num_channels,
+                          num_channels,
+                          kernel_size=3,
+                          stride=1,
+                          padding=1)))
+            self.body.append(nn.LeakyReLU(0.2))
         self.body = nn.Sequential(*self.body)
-        self.relu = nn.LeakyReLU(0.1)
+        self.tail = spectral_norm(nn.Conv2d(num_channels,
+                              1,
+                              kernel_size=3,
+                              stride=1,
+                              padding=1))
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
-        self.fc=spectral_norm(nn.Linear(16384, 1))
 
     def losses(self, real, fake):
         pred_real = self(real)
         pred_fake = self(fake)
-        N, *_ = pred_real.shape
-        loss_D = nn.BCEWithLogitsLoss()(pred_real, torch.ones(N, 1).to(device)) + \
-        nn.BCEWithLogitsLoss()(pred_fake, torch.zeros(N, 1).to(device))
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
+            loss_D = (
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+            )
+        else:
+            loss_D_real = self.ganloss(pred_real, True)
+            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
     def forward(self, x):
         x = self.head(x)
         x = self.body(x)
-        x = self.relu(x)
-        x = nn.functional.avg_pool2d(x, (x.shape[3],1), stride=1)
-        x = self.fc(x.reshape(x.shape[0],1,-1)).squeeze(dim=2)
-        #x = x.reshape(x.shape[0],1,256,256)
+        x = self.tail(x)
         return x
 
 mse_loss = GramErrors()
@@ -697,8 +710,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
 
     if disc_loss:
         pred_fake_p = disc_(stylized)
-        #loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
-        loss_Gp_GAN = nn.BCEWithLogitsLoss()(pred_fake_p, torch.zeros(pred_fake_p.shape[0], 1).to(device))
+        loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
     else:
         loss_Gp_GAN = 0
 
