@@ -109,6 +109,7 @@ parser.add_argument('--load_model', type=str, default='none')
 # Revision model options
 parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
+parser.add_argument('--disc_channels', type=int, default=64)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 
 args = parser.parse_args()
@@ -253,7 +254,7 @@ elif args.train_model=='revision':
         dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
         rev_ = net.Revisors(levels = args.revision_depth)
-        disc_ = net.SpectralDiscriminator(depth=args.disc_depth, num_channels=64, relgan=True)
+        disc_ = net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=True)
         dec_.train(False)
         set_requires_grad(dec_, False)
         init_weights(disc_)
