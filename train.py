@@ -269,6 +269,8 @@ elif args.train_model=='revision':
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
+        warmup_lr_adjust(optimizer, i)
+        warmup_lr_adjust(opt_D, i)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -306,7 +308,7 @@ elif args.train_model=='revision':
             sF = enc_(si[-1])
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 20 + style_remd * 22 + loss_Gp_GAN * 5
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 20 + style_remd * 22 + loss_Gp_GAN * 2.5
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
