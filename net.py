@@ -586,64 +586,64 @@ class SNLinear(nn.Linear):
 
 
 class OptimizedBlock(nn.Module):
-    def __init__(self, in_channels, dim,kernel,padding):
+    def __init__(self, in_channels, dim,kernel,padding, downsample=False):
         super(OptimizedBlock, self).__init__()
         out_size=(1,dim,256,256)
         self.conv_block = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
-                                        nn.LeakyReLU(.1),
+                                        nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
-        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1)))
+        self.residual_connection = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
+        self.downsample = downsample
 
-    def forward(self, x):
-        out = self.residual_connection(x) + self.conv_block(x)
-        return out
+    def forward(self, in_feat):
+        x = in_feat
+        x = self.conv_block(x)
+        if self.downsample:
+            x = nn.functional.avg_pool2d(x, 2)
+        return x + self.shortcut(in_feat)
+
+    def shortcut(self, x):
+        if self.downsample:
+            x = nn.functional.avg_pool2d(x, 2)
+        return self.c_sc(x)
 
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True):
         super(SpectralDiscriminator, self).__init__()
-        self.head = nn.Sequential(
-            spectral_norm(nn.Conv2d(3,num_channels,3,stride=1,padding=1)),
-            nn.LeakyReLU(0.2)
-            )
+        self.head = OptimizedBlock(3, num_channels, 3, 1, downsample=True)
         self.body = []
+        ch = num_channels
         for i in range(depth - 2):
-            self.body.append(
-                spectral_norm(nn.Conv2d(num_channels,
-                          num_channels,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1)))
-            self.body.append(nn.LeakyReLU(0.2))
+            self.body.append(SpectralResBlock(ch, ch * 2, 3, 1, downsample=True))
+            ch = ch*2
         self.body = nn.Sequential(*self.body)
-        self.tail = spectral_norm(nn.Conv2d(num_channels,
-                              1,
-                              kernel_size=3,
-                              stride=1,
-                              padding=1))
-        self.ganloss = GANLoss('lsgan')
+        self.tail = SpectralResBlock(ch, ch, 3, 1, downsample=True)
+        self.relu = nn.ReLU()
+        self.linear = spectral_norm(nn.Linear(ch, 1))
+        self.ganloss = nn.ReLU()
         self.relgan = relgan
 
     def losses(self, real, fake):
         pred_real = self(real)
         pred_fake = self(fake)
         if self.relgan:
-            pred_real = pred_real.view(-1)
-            pred_fake = pred_fake.view(-1)
             loss_D = (
-                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                    ((pred_real - pred_fake - 1) ** 2) +
+                    ((pred_fake - pred_real + 1) ** 2)
             )
         else:
-            loss_D_real = self.ganloss(pred_real, True)
-            loss_D_fake = self.ganloss(pred_fake, False)
-            loss_D = (loss_D_real + loss_D_fake) * 0.5
+            loss_D_real = self.ganloss(1 - pred_real).mean()
+            loss_D_fake = self.ganloss(1 - pred_fake).mean()
+            loss_D = (loss_D_real + loss_D_fake)
         return loss_D
 
     def forward(self, x):
         x = self.head(x)
         x = self.body(x)
-        x = self.tail(x)
-        return x
+        x = self.relu(self.tail(x))
+        x = torch.sum(x, dim=(2, 3))
+        x = self.linear(x)
+        return self.ganloss(1 - x).mean()
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
@@ -709,8 +709,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_losses = 0
 
     if disc_loss:
-        pred_fake_p = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(pred_fake_p, True).data
+        loss_Gp_GAN = disc_(stylized)
     else:
         loss_Gp_GAN = 0
 

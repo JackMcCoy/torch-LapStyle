@@ -18,17 +18,31 @@ class ResBlock(nn.Module):
 
 
 class SpectralResBlock(nn.Module):
-    def __init__(self, dim,kernel,padding):
+    def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()
-        out_size=(1,dim,128,128)
-        self.conv_block = nn.Sequential(nn.LeakyReLU(.1),
-                                        spectral_norm(nn.Conv2d(dim, dim, kernel_size = kernel,padding=padding,padding_mode='reflect')),
-                                        nn.LeakyReLU(.1),
-                                        spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = kernel,padding=padding,padding_mode='reflect')),)
-        self.residual_connection = nn.Sequential(spectral_norm(nn.Conv2d(dim, dim*2, kernel_size = 1)))
-    def forward(self, x):
-        out = self.residual_connection(x) + self.conv_block(x)
-        return out
+        self.conv_block = nn.Sequential(spectral_norm(nn.ReLU(),nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')),
+                                        spectral_norm(nn.ReLU(),
+                                        nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')))
+        self.downsample = downsample
+        self.learnable_sc = (in_ch != out_ch) or downsample
+        if self.learnable_sc:
+            self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
+    def residual(self, in_feat):
+        x = in_feat
+        x = self.conv_block(x)
+        if self.downsample:
+            x = nn.functional.avg_pool2d(x, 2)
+        return x
+
+    def shortcut(self, x):
+        if self.learnable_sc:
+            x = self.c_sc(x)
+            if self.downsample:
+                x = nn.functional.avg_pool2d(x, 2)
+        return x
+
+    def forward(self, in_feat):
+        return self.residual(in_feat) + self.shortcut(in_feat)
 
 
 class ConvBlock(nn.Module):
