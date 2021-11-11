@@ -592,7 +592,7 @@ class OptimizedBlock(nn.Module):
         self.conv_block = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
                                         nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
-        self.residual_connection = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
+        self.c_sc = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
         self.downsample = downsample
 
     def forward(self, in_feat):
