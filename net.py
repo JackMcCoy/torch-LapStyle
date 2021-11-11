@@ -619,31 +619,30 @@ class SpectralDiscriminator(nn.Module):
         self.body = nn.Sequential(*self.body)
         self.tail = SpectralResBlock(ch, ch, 3, 1, downsample=True)
         self.relu = nn.ReLU()
-        self.linear = spectral_norm(nn.Linear(ch, 1))
-        self.ganloss = nn.ReLU()
+        self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
 
     def losses(self, real, fake):
         pred_real = self(real)
         pred_fake = self(fake)
         if self.relgan:
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
             loss_D = (
-                    ((pred_real - pred_fake - 1) ** 2) +
-                    ((pred_fake - pred_real + 1) ** 2)
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
             )
         else:
-            loss_D_real = self.ganloss(1 - pred_real).mean()
-            loss_D_fake = self.ganloss(1 - pred_fake).mean()
-            loss_D = (loss_D_real + loss_D_fake)
+            loss_D_real = self.ganloss(pred_real, True)
+            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
     def forward(self, x):
         x = self.head(x)
         x = self.body(x)
         x = self.relu(self.tail(x))
-        x = torch.sum(x, dim=(2, 3))
-        x = self.linear(x)
-        return self.ganloss(1 - x).mean()
+        return x
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
