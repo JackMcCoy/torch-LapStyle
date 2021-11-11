@@ -111,6 +111,8 @@ parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
+parser.add_argument('--content_relt', type=float, default=18.5)
+parser.add_argument('--style_remd', type=float, default=22.0)
 
 args = parser.parse_args()
 
@@ -308,7 +310,7 @@ elif args.train_model=='revision':
             sF = enc_(si[-1])
             losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 20 + style_remd * 22 + loss_Gp_GAN * 2.5
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
