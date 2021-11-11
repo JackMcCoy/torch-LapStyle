@@ -627,8 +627,12 @@ class SpectralDiscriminator(nn.Module):
         pred_real = self(real)
         pred_fake = self(fake)
         if self.relgan:
-            loss_D = (((pred_real - pred_fake - 1) ** 2) +
-                    (pred_fake - pred_real + 1) ** 2)
+            pred_real = pred_real.view(-1)
+            pred_fake = pred_fake.view(-1)
+            loss_D = (
+                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+            )
         else:
             loss_D_real = self.ganloss(pred_real, True)
             loss_D_fake = self.ganloss(pred_fake, False)
