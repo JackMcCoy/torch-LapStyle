@@ -610,7 +610,7 @@ class OptimizedBlock(nn.Module):
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True):
         super(SpectralDiscriminator, self).__init__()
-        self.head = OptimizedBlock(3, num_channels, 5, 2, downsample=True)
+        self.head = OptimizedBlock(3, num_channels, 3, 1, downsample=True)
         self.body = []
         ch = num_channels
         for i in range(depth - 2):
