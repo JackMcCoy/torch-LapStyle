@@ -179,7 +179,7 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
-    scaler = GradScaler(init_scale=1024, growth_interval=1000)
+    scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
@@ -275,7 +275,8 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
-    scaler = GradScaler(init_scale=1024, growth_interval=1000)
+    scaler = GradScaler()
+    d_scaler = GradScaler()
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
@@ -305,8 +306,9 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             loss_D = disc_.losses(si[-1].detach(), rev_stylized.detach())
         if ac_enabled:
-            scaler.scale(loss_D).backward()
-            scaler.step(opt_D)
+            d_scaler.scale(loss_D).backward()
+            d_scaler.step(opt_D)
+            d_scaler.update()
         else:
             loss_D.backward()
             opt_D.step()
