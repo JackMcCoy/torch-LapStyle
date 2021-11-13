@@ -280,8 +280,8 @@ elif args.train_model=='revision':
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
-        warmup_lr_adjust(optimizer, i)
-        warmup_lr_adjust(opt_D, i)
+        adjust_learning_rate(optimizer, i, args)
+        adjust_learning_rate(opt_D, i, args)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
