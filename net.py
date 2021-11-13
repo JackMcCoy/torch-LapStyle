@@ -529,12 +529,18 @@ class Discriminator(nn.Module):
             )
         self.body = []
         for i in range(depth - 2):
+            if i % 2 == 0:
+                k = 5
+                p = 2
+            else:
+                k = 3
+                p - 1
             self.body.append(
                 nn.Conv2d(num_channels,
                           num_channels,
-                          kernel_size=3,
+                          kernel_size=k,
                           stride=1,
-                          padding=1))
+                          padding=p))
             self.body.append(nn.BatchNorm2d(num_channels))
             self.body.append(nn.LeakyReLU(0.2))
         self.body = nn.Sequential(*self.body)
