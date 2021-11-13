@@ -264,7 +264,7 @@ elif args.train_model=='revision':
         dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
         rev_ = net.Revisors(levels = args.revision_depth)
-        disc_ = net.Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=True)
+        disc_ = net.Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False)
         dec_.train(False)
         set_requires_grad(dec_, False)
         init_weights(disc_)
