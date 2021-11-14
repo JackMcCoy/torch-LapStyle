@@ -112,6 +112,7 @@ class RevisionNet(nn.Module):
             nn.ReLU()
         ]
         DownBlock += [
+            ResBlock(128),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 64, kernel_size=3, stride=1),
             nn.ReLU(),
@@ -125,14 +126,17 @@ class RevisionNet(nn.Module):
         UpBlock = []
 
         UpBlock += [
-            ResBlock(64),
             nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 128, kernel_size=3),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(),
+            ResBlock(128),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 3, kernel_size=3)
         ]
