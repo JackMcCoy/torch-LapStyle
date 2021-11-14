@@ -104,13 +104,11 @@ class RevisionNet(nn.Module):
         DownBlock += [
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(input_nc, 128, kernel_size=3),
-            nn.BatchNorm2d(128),
             nn.ReLU()
         ]
         DownBlock += [
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.BatchNorm2d(128),
             nn.ReLU()
         ]
         DownBlock += [
