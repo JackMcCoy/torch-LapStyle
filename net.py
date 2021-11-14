@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.BatchNorm2d(64)
+            nn.BatchNorm2d(64),
             nn.ReLU(),
         ]
 
