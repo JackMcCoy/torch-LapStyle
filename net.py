@@ -122,7 +122,8 @@ class RevisionNet(nn.Module):
         ]
 
         self.resblock = ResBlock(64)
-
+        self.adaconv_pre_res = AdaConv(64, 1, s_d = 256)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=256)
         UpBlock = []
 
         UpBlock += [
@@ -143,7 +144,7 @@ class RevisionNet(nn.Module):
         self.DownBlock = nn.Sequential(*DownBlock)
         self.UpBlock = nn.Sequential(*UpBlock)
 
-    def forward(self, input):
+    def forward(self, input, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -152,7 +153,9 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.DownBlock(input)
+        out = self.adaconv_pre_res(out, style, norm=False)
         out = self.resblock(out)
+        out = self.adaconv_post_res(out, style, norm=False)
         res_block = out.clone()
         out = self.UpBlock(out)
         return out, res_block
@@ -178,11 +181,11 @@ class Revisors(nn.Module):
                     param.requires_grad = True
             self.layers[idx].to(device)
 
-    def forward(self, input, lap_pyr, position=None):
+    def forward(self, input, lap_pyr, style, position=None):
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input.detach())
             x = torch.cat([input, lap_pyr[idx].detach()], axis = 1)
-            x, res_block = layer(x)
+            x, res_block = layer(x, style)
             x += input.data
         return x
 
@@ -355,7 +358,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x, commit_loss
+        return x, commit_loss, style
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):

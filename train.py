@@ -289,8 +289,8 @@ elif args.train_model=='revision':
             si = [F.interpolate(si, size=128, mode='bicubic'), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-            stylized, cb_loss = dec_(sF, cF)
-            rev_stylized = rev_(stylized, lap_pyr)
+            stylized, cb_loss, style = dec_(sF, cF)
+            rev_stylized = rev_(stylized, lap_pyr, style)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
