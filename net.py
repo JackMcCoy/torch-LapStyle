@@ -122,8 +122,8 @@ class RevisionNet(nn.Module):
         ]
 
         self.resblock = ResBlock(64)
-        self.adaconv_pre_res = AdaConv(64, 1, s_d = 320)
-        self.adaconv_post_res = AdaConv(64, 1, s_d=320)
+        self.adaconv_pre_res = AdaConv(64, 1, s_d = 64)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=64)
         self.relu = nn.ReLU()
         UpBlock = []
 
