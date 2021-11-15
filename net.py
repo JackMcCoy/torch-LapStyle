@@ -122,7 +122,6 @@ class RevisionNet(nn.Module):
         ]
 
         self.resblock = ResBlock(64)
-        self.adaconv_pre_res = AdaConv(64, 1, s_d = 320)
         self.adaconv_post_res = AdaConv(64, 1, s_d=320)
         self.relu = nn.ReLU()
         UpBlock = []
@@ -154,7 +153,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.DownBlock(input)
-        out = out + self.relu(self.adaconv_pre_res(style, out, norm=False)).data
         out = self.resblock(out)
         out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
         res_block = out.clone()
