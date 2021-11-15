@@ -467,11 +467,15 @@ class Style_Guided_Discriminator(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU(),
+            nn.functional.avg_pool2d(x, 2),
             *style_encoder_block(64),
+            nn.functional.avg_pool2d(x, 2),
             *style_encoder_block(64),
+            nn.functional.avg_pool2d(x, 2),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU(),
+            nn.functional.avg_pool2d(x, 2)
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
