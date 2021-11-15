@@ -256,7 +256,7 @@ elif args.train_model=='revision':
         dec_.load_state_dict(torch.load(args.load_model))
         rev_ = net.Revisors(levels = args.revision_depth)
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False)
-        dec_.train(False)
+        dec_.train()
         set_requires_grad(dec_, False)
         init_weights(disc_)
         init_weights(rev_)
