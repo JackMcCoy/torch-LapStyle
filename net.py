@@ -154,9 +154,9 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.DownBlock(input)
-        out = self.relu(self.adaconv_pre_res(style, out, norm=False))
+        out += self.relu(self.adaconv_pre_res(style, out, norm=False)).data
         out = self.resblock(out)
-        out = self.relu(self.adaconv_post_res(style, out, norm=False))
+        out += self.relu(self.adaconv_post_res(style, out, norm=False)).data
         res_block = out.clone()
         out = self.UpBlock(out)
         return out, res_block
