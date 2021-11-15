@@ -480,9 +480,10 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
         for i in range(depth - 2):
-            self.body.append(nn.Sequential(spectral_norm(AdaConv(64, 1, s_d = 256)),
-                                           nn.LeakyReLU(0.2)))
-
+            self.body.append(spectral_norm(AdaConv(64, 1, s_d = 256)),
+                                           )
+            self.norms.append(
+                nn.LeakyReLU(0.2))
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=3,
@@ -517,6 +518,7 @@ class Style_Guided_Discriminator(nn.Module):
         x = self.head(x)
         for idx, i in enumerate(self.body):
             x = i(style, x, norm=False)
+            x = self.norms[idx](x)
         x = self.tail(x)
         return x
 
