@@ -457,7 +457,7 @@ class Style_Guided_Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
-            nn.Conv2d(3,num_channels,3,stride=1,padding=1),
+            nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
             nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(0.2)
             )
@@ -488,7 +488,7 @@ class Style_Guided_Discriminator(nn.Module):
                               1,
                               kernel_size=3,
                               stride=1,
-                              padding=1)
+                              padding=1, padding_mode='reflect')
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
 
@@ -666,7 +666,7 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -712,7 +712,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, calc_id
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized)
+        fake_loss = disc_(stylized, disc_style)
         loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
