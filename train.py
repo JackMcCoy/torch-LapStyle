@@ -290,7 +290,7 @@ elif args.train_model=='revision':
             cF = enc_(ci[0])
             sF = enc_(si[0])
             stylized, cb_loss, style = dec_(sF, cF)
-            rev_stylized = rev_(stylized, lap_pyr, style)
+            rev_stylized = rev_(stylized, lap_pyr, style.detach())
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
