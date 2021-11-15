@@ -154,8 +154,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.DownBlock(input)
-        print(out.shape)
-        print(style.shape)
         out = self.relu(self.adaconv_pre_res(style, out, norm=False))
         out = self.resblock(out)
         out = self.relu(self.adaconv_post_res(style, out, norm=False))
