@@ -461,7 +461,8 @@ class Style_Guided_Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
-            spectral_norm(nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect')),
+            nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
+            nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(0.2)
             )
         self.body = nn.ModuleList([])
