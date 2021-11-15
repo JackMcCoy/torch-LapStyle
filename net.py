@@ -156,9 +156,9 @@ class RevisionNet(nn.Module):
         out = self.DownBlock(input)
         print(out.shape)
         print(style.shape)
-        out = self.relu(self.adaconv_pre_res(out, style, norm=False))
+        out = self.relu(self.adaconv_pre_res(style, out, norm=False))
         out = self.resblock(out)
-        out = self.relu(self.adaconv_post_res(out, style, norm=False))
+        out = self.relu(self.adaconv_post_res(style, out, norm=False))
         res_block = out.clone()
         out = self.UpBlock(out)
         return out, res_block
