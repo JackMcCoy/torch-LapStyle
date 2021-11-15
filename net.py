@@ -475,7 +475,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(4086, self.s_d * 16)
+            nn.Linear(4096, self.s_d * 16)
         )
 
         for i in range(depth - 2):
