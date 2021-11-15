@@ -469,6 +469,7 @@ class Style_Guided_Discriminator(nn.Module):
             nn.LeakyReLU(),
             nn.AvgPool2d(3, stride=2),
             *style_encoder_block(64),
+            nn.AvgPool2d(3, stride=2),
             *style_encoder_block(64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
