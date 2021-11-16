@@ -263,8 +263,8 @@ elif args.train_model=='revision':
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
             new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
-            disc_.load_state_dict(torch.load(new_path_func('disc_')))
-            rev_.load_state_dict(torch.load(new_path_func('rev_')))
+            disc_.load_state_dict(torch.load(new_path_func('discriminator_')))
+            rev_.load_state_dict(torch.load(new_path_func('revisor_')))
         else:
             init_weights(disc_)
             init_weights(rev_)
