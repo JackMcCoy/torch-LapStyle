@@ -113,6 +113,7 @@ parser.add_argument('--disc_channels', type=int, default=64)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
+parser.add_argument('--load_rev_and_disc', type=int, default=0)
 
 args = parser.parse_args()
 
@@ -258,8 +259,15 @@ elif args.train_model=='revision':
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False)
         dec_.train()
         set_requires_grad(dec_, False)
-        init_weights(disc_)
-        init_weights(rev_)
+        if args.load_rev_and_disc == 1:
+            path = args.load_model.split('/')
+            path_tokens = args.load_model.split('_')
+            new_path_func = lambda x: '/'.join(path_tokens[:-1])+'/'+x+"_".join(path_tokens[-2:])
+            disc_.load_state_dict(torch.load(new_path_func('disc_')))
+            rev_.load_state_dict(torch.load(new_path_func('rev_')))
+        else:
+            init_weights(disc_)
+            init_weights(rev_)
         rev_.train()
         disc_.train()
         enc_.to(device)
