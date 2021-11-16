@@ -262,7 +262,7 @@ elif args.train_model=='revision':
         if args.load_rev_and_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
-            new_path_func = lambda x: '/'.join(path_tokens[:-1])+'/'+x+"_".join(path_tokens[-2:])
+            new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
             disc_.load_state_dict(torch.load(new_path_func('disc_')))
             rev_.load_state_dict(torch.load(new_path_func('rev_')))
         else:
