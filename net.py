@@ -456,7 +456,7 @@ class DecoderVQGAN(nn.Module):
 
 
 class Style_Guided_Discriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64, relgan=True):
+    def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
@@ -495,6 +495,16 @@ class Style_Guided_Discriminator(nn.Module):
                               padding=1, padding_mode='reflect')
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
+        self.quantize = quantize
+        if quantizer:
+            self.quantizer = VectorQuantize(
+            dim = 64,
+            codebook_size = 6400,
+            kmeans_init=True,
+            kmeans_iters=10,
+            use_cosine_sim=True,
+            threshold_ema_dead_code=2
+        )
 
     def losses(self, real, fake, style, calculated_style_feat=None):
         if not calculated_style_feat is None:
@@ -502,6 +512,10 @@ class Style_Guided_Discriminator(nn.Module):
         else:
             b, n, h, w = style.shape
             style = self.style_encoding(style.detach())
+            if self.quantize:
+                style, indices, commit_loss = self.quantizer(style.flatten(2).float())
+            else:
+                commit_loss = 0
             style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
@@ -516,7 +530,7 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.ganloss(pred_real, True)
             loss_D_fake = self.ganloss(pred_fake, False)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return loss_D, style
+        return loss_D, style, commit_loss
 
     def forward(self, x, style):
         x = self.head(x)

@@ -114,6 +114,7 @@ parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
 parser.add_argument('--load_rev_and_disc', type=int, default=0)
+parser.add_argument('--disc_quantization', type=int, default=0)
 
 args = parser.parse_args()
 
@@ -256,7 +257,8 @@ elif args.train_model=='revision':
         dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
         rev_ = net.Revisors(levels = args.revision_depth)
-        disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False)
+        disc_quant = True if args.disc_quantization == 1 else False
+        disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
         dec_.train()
         set_requires_grad(dec_, False)
         if args.load_rev_and_disc == 1:
@@ -303,7 +305,8 @@ elif args.train_model=='revision':
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D, disc_style = disc_.losses(si[-1].detach(), rev_stylized.detach(), sF['r1_1'].detach())
+            loss_D, disc_style, quant_loss = disc_.losses(si[-1].detach(), rev_stylized.detach(), sF['r1_1'].detach())
+            loss_D = loss_D + quant_loss
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
