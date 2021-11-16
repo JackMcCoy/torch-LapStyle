@@ -350,6 +350,12 @@ elif args.train_model=='revision':
                 state_dict = rev_.state_dict()
                 torch.save(state_dict, save_dir /
                            'revisor_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = dec_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = disc_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'discriminator_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 
 elif args.train_model=='vqgan_pretrain':
