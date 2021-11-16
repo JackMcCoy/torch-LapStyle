@@ -496,7 +496,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
         self.quantize = quantize
-        if quantizer:
+        if quantize:
             self.quantizer = VectorQuantize(
             dim = 64,
             codebook_size = 6400,
