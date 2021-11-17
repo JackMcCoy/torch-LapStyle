@@ -684,7 +684,7 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -706,14 +706,16 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_st
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
-    if content_all_layers:
-        content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+    if remd_loss:
+        if content_all_layers:
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+        else:
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
+            style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
     else:
-        content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
-        style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
-    #content_relt = 0
-    #style_remd = 0
+        content_relt = 0
+        style_remd = 0
     if mdog_losses:
         cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)

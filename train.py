@@ -115,6 +115,7 @@ parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
 parser.add_argument('--load_rev_and_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
+parser.add_argument('--remd_loss', type=int, default=1)
 
 args = parser.parse_args()
 
@@ -260,7 +261,7 @@ elif args.train_model=='revision':
         disc_quant = True if args.disc_quantization == 1 else False
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
         dec_.train()
-        set_requires_grad(dec_, False)
+        #set_requires_grad(dec_, False)
         if args.load_rev_and_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -276,6 +277,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
+    remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
     d_scaler = GradScaler()
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
@@ -320,7 +322,7 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
-            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False)
+            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5
         if ac_enabled:
