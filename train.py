@@ -116,6 +116,7 @@ parser.add_argument('--style_remd', type=float, default=22.0)
 parser.add_argument('--load_rev_and_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
 parser.add_argument('--remd_loss', type=int, default=1)
+parser.add_argument('--mdog_loss', type=int, default=0)
 
 args = parser.parse_args()
 
@@ -153,6 +154,8 @@ style_iter = iter(data.DataLoader(
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads))
 
+remd_loss = True if args.remd_loss==1 else 0
+mdog_loss = True if args.mdog_loss==1 else 0
 
 if args.train_model=='drafting':
 
@@ -212,7 +215,7 @@ if args.train_model=='drafting':
         with autocast(enabled=ac_enabled):
             '''
             optimizer.zero_grad()
-            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=False)
+            losses = calc_losses(stylized, ci.detach(), si.detach(), cF, sF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 27 + style_remd * 24 +cb_loss
             #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
