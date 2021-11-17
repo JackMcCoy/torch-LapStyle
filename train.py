@@ -264,7 +264,7 @@ elif args.train_model=='revision':
         disc_quant = True if args.disc_quantization == 1 else False
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
         dec_.train()
-        #set_requires_grad(dec_, False)
+        set_requires_grad(dec_, False)
         if args.load_rev_and_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -286,6 +286,8 @@ elif args.train_model=='revision':
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
+        if i == 2000:
+            set_requires_grad(dec_, True)
         adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
         with autocast(enabled=ac_enabled):
