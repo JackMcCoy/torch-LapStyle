@@ -707,13 +707,12 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_st
     for key in style_layers[1:]:
         loss_s += style_loss(stylized_feats[key], sF[key]).data
     if remd_loss:
-        #if content_all_layers:
-        #    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-        #else:
-        #    content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+        if content_all_layers:
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+        else:
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
         style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
             style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
-        content_relt = 0
     else:
         content_relt = 0
         style_remd = 0
