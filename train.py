@@ -286,8 +286,6 @@ elif args.train_model=='revision':
     optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
-        if i == 2000:
-            set_requires_grad(dec_, True)
         adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
         with autocast(enabled=ac_enabled):
