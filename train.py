@@ -302,11 +302,12 @@ elif args.train_model=='revision':
             sF = enc_(si[0])
             stylized, cb_loss, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1], style)
+            si_cropped = random_crop(si[-1])
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D, disc_style, quant_loss = disc_.losses(si[-1].detach(), rev_stylized.detach(), sF['r1_1'].detach())
+            loss_D, disc_style, quant_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r1_1'].detach())
             loss_D = loss_D + quant_loss
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
@@ -319,7 +320,6 @@ elif args.train_model=='revision':
 
         optimizer.zero_grad()
         with autocast(enabled=ac_enabled):
-            si_cropped = random_crop(si[-1])
             cF = enc_(ci_patch)
             sF = enc_(si_cropped)
             losses = calc_losses(rev_stylized, ci_patch.detach(), si_cropped.detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
