@@ -322,7 +322,7 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch)
             sF = enc_(si_cropped)
-            losses = calc_losses(rev_stylized, ci_patch.detach(), si_cropped.detach(), cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
+            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5 + patch_loss
         if ac_enabled:
