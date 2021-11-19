@@ -303,6 +303,7 @@ elif args.train_model=='revision':
             stylized, cb_loss, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1], style)
             si_cropped = random_crop(si[-1])
+            patch_feats = enc_(stylized_patch)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -324,7 +325,7 @@ elif args.train_model=='revision':
             sF = enc_(si_cropped)
             losses = calc_losses(rev_stylized, ci_patch.detach(), si_cropped.detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
             if len(rev_.layers) > 1:
-                patch_loss = calc_patch_loss(rev_stylized, stylized_patch, enc_)
+                patch_loss = calc_patch_loss(rev_stylized, patch_feats)
             else:
                 patch_loss = 0
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
