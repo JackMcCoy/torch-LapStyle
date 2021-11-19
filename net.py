@@ -709,6 +709,8 @@ content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
 def calc_patch_loss(stylized_feats, patch_feats):
+    print(type(patch_feats))
+    print(patch_feats['r4_1'])
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
 
