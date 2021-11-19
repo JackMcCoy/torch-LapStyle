@@ -100,7 +100,7 @@ class Decoder(nn.Module):
 
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, input_nc=6):
+    def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
         DownBlock = []
         DownBlock += [
@@ -124,7 +124,9 @@ class RevisionNet(nn.Module):
         ]
 
         self.resblock = ResBlock(64)
-        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
+        self.first_layer = first_layer
+        if first_layer:
+            self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         self.relu = nn.ReLU()
         UpBlock = []
 
@@ -156,7 +158,10 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
+        if self.first_layer:
+            out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
+        else:
+            out = adaptive_instance_normalization(out, style)
         res_block = out.clone()
         out = self.UpBlock(out)
         return out, res_block
@@ -171,7 +176,7 @@ class Revisors(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64))
+            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
     def load_states(self, state_string):
         states = state_string.split(',')
