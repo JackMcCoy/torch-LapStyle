@@ -278,6 +278,7 @@ elif args.train_model=='revision':
         else:
             init_weights(disc_)
             init_weights(rev_)
+        init_weights(rev_.layers[-1])
         rev_.train()
         disc_.train()
         enc_.to(device)
