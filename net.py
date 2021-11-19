@@ -191,7 +191,7 @@ class Revisors(nn.Module):
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input.detach())
             if idx == 0:
-                x = ci
+                x = F.interpolate(ci, size = size, mode='bicubic')
                 patch = input
             else:
                 size *= 2
