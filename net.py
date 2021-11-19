@@ -183,6 +183,7 @@ class Revisors(nn.Module):
             else:
                 for param in self.layers[idx].parameters():
                     param.requires_grad = True
+                self.layers[idx].train()
             self.layers[idx].to(device)
 
     def forward(self, input, ci, style, position=None):
