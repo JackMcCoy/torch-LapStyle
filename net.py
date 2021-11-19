@@ -183,13 +183,6 @@ class Revisors(nn.Module):
         for idx, i in enumerate(states):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
-                for param in self.layers[idx].parameters():
-                    param.requires_grad = False
-            else:
-                for param in self.layers[idx].parameters():
-                    param.requires_grad = True
-                self.layers[idx].train()
-            self.layers[idx].to(device)
 
     def forward(self, input, ci, style, position=None):
         size = 256
