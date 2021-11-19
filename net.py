@@ -709,12 +709,10 @@ content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
 def calc_patch_loss(stylized_feats, patch_feats):
-    print(type(patch_feats))
-    print(patch_feats['r4_1'])
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
 
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True):
+def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -767,5 +765,10 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_st
     else:
         loss_Gp_GAN = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN
+    if patch_loss:
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
+    else:
+        patch_loss = 0
+
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
 
