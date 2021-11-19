@@ -190,6 +190,7 @@ class Revisors(nn.Module):
             input = self.upsample(input.detach())
             if idx == 0:
                 x = ci
+                patch = input
             else:
                 size *= 2
                 scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
@@ -198,6 +199,8 @@ class Revisors(nn.Module):
                 patch = cropped[:,:3,:,:]
                 x = cropped[:,3:,:,:]
                 style = res_block
+                if idx != len(self.layers) - 1:
+                    x = x.detach()
             lap_pyr = F.conv2d(F.pad(x, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, res_block = layer(x2, style)
