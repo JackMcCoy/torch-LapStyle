@@ -200,7 +200,7 @@ class Revisors(nn.Module):
                 x = cropped[:,3:,:,:]
                 style = res_block
             lap_pyr = F.conv2d(F.pad(x, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
+            x2 = torch.cat([patch, lap_pyr], axis = 1)
             x2, res_block = layer(x2, style)
             input = patch + x2.data
         return input, x, patch
