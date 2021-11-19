@@ -16,7 +16,7 @@ import math
 import vgg
 import net
 from function import init_weights
-from net import calc_losses
+from net import calc_losses, calc_patch_loss
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
 
@@ -252,9 +252,8 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
-    lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+    random_crop = transforms.RandomCrop(256)
     with autocast(enabled=ac_enabled):
-        lap_weight = torch.Tensor(lap_weight).to(device)
         enc_ = net.Encoder(vgg)
         set_requires_grad(enc_, False)
         enc_.train(False)
@@ -291,21 +290,12 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
-            lap_pyr = []
-            size = 256
-            while size <= args.crop_size:
-                if size == args.crop_size:
-                    x = F.pad(ci, (1,1,1,1), mode='reflect')
-                else:
-                    x = F.pad(F.interpolate(ci, size = size, mode='bicubic'),(1,1,1,1), mode='reflect')
-                lap_pyr.append(F.conv2d(x, weight = lap_weight, groups = 3).to(device))
-                size *= 2
             ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
             si = [F.interpolate(si, size=128, mode='bicubic'), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
             stylized, cb_loss, style = dec_(sF, cF)
-            rev_stylized = rev_(stylized, lap_pyr, style)
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, style)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -323,11 +313,16 @@ elif args.train_model=='revision':
 
         optimizer.zero_grad()
         with autocast(enabled=ac_enabled):
-            cF = enc_(ci[-1])
-            sF = enc_(si[-1])
-            losses = calc_losses(rev_stylized, ci[-1].detach(), si[-1].detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
+            si_cropped = random_crop(si[-1])
+            cF = enc_(ci_patch)
+            sF = enc_(si_cropped)
+            losses = calc_losses(rev_stylized, ci_patch.detach(), si_cropped.detach(), cF, sF, enc_, dec_, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
+            if len(rev_.layers) > 1:
+                patch_loss = calc_patch_loss(rev_stylized, stylized_patch, enc_)
+            else:
+                patch_loss = 0
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5 + patch_loss
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)

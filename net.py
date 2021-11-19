@@ -1,7 +1,8 @@
 import torch.nn as nn
 import torch
-from torch.cuda.amp import autocast
+from torchvision.transforms import RandomCrop
 from torch.nn.utils import spectral_norm
+import torch.nn.functional as F
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -98,7 +99,7 @@ class Decoder(nn.Module):
 
 
 class RevisionNet(nn.Module):
-    def __init__(self, input_nc=6):
+    def __init__(self, s_d = 320, input_nc=6):
         super(RevisionNet, self).__init__()
         DownBlock = []
         DownBlock += [
@@ -122,7 +123,7 @@ class RevisionNet(nn.Module):
         ]
 
         self.resblock = ResBlock(64)
-        self.adaconv_post_res = AdaConv(64, 1, s_d=320)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         self.relu = nn.ReLU()
         UpBlock = []
 
@@ -165,8 +166,11 @@ class Revisors(nn.Module):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
+        self.crop = RandomCrop(256)
         for i in range(levels):
-            self.layers.append(RevisionNet())
+            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -180,13 +184,25 @@ class Revisors(nn.Module):
                     param.requires_grad = True
             self.layers[idx].to(device)
 
-    def forward(self, input, lap_pyr, style, position=None):
+    def forward(self, input, ci, style, position=None):
+        size = 256
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input.detach())
-            x = torch.cat([input, lap_pyr[idx].detach()], axis = 1)
-            x, res_block = layer(x, style)
-            x += input.data
-        return x
+            if idx == 0:
+                x = ci
+            else:
+                size *= 2
+                scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
+                combined_output_ci = torch.cat([input,scaled_ci], axis = 1)
+                cropped = self.crop(combined_output_ci)
+                patch = cropped[:,:3,:,:]
+                x = cropped[:,3:,:,:]
+                style = res_block
+            lap_pyr = F.conv2d(F.pad(x, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
+            x2, res_block = layer(x2, style)
+            input += x2.data
+        return input, x, patch
 
 class SingleTransDecoder(nn.Module):
     def __init__(self):
@@ -683,6 +699,11 @@ def identity_loss(i, F, encoder, decoder):
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
+
+def calc_patch_loss(stylized_feats, stylized_patch, enc_):
+    patch_feats = enc_(stylized_patch)
+    patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
+    return patch_loss
 
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True):
     stylized_feats = encoder(stylized)
