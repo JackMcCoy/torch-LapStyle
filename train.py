@@ -24,7 +24,7 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-ac_enabled = True
+ac_enabled = False
 
 def train_transform(load_size, crop_size):
     transform_list = [
@@ -277,7 +277,6 @@ elif args.train_model=='revision':
         else:
             init_weights(disc_)
             init_weights(rev_)
-        init_weights(rev_.layers[-1])
         rev_.train()
         disc_.train()
         enc_.to(device)
