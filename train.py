@@ -286,7 +286,7 @@ elif args.train_model=='revision':
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
     d_scaler = GradScaler()
-    optimizer = torch.optim.Adam(list(rev_.layers[-1].parameters()), lr=args.lr)
+    optimizer = torch.optim.Adam(list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
@@ -317,8 +317,9 @@ elif args.train_model=='revision':
             opt_D.step()
         set_requires_grad(disc_, False)
 
+        optimizer.zero_grad()
+
         with autocast(enabled=ac_enabled):
-            optimizer.zero_grad()
             cF = enc_(ci_patch)
             sF = enc_(si_cropped)
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)

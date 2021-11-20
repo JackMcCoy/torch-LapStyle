@@ -194,13 +194,15 @@ class Revisors(nn.Module):
             else:
                 size *= 2
                 scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
-                combined_output_ci = torch.cat([input,scaled_ci], axis = 1)
+                if not idx == len(self.layers)-1:
+                    input = input.detach()
+                combined_output_ci = torch.cat([input,scaled_ci.detach()], axis = 1)
                 cropped = self.crop(combined_output_ci)
                 patch = cropped[:,:3,:,:]
                 x = cropped[:,3:,:,:]
                 style = res_block
             lap_pyr = F.conv2d(F.pad(x, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            x2 = torch.cat([patch, lap_pyr], axis = 1)
+            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, res_block = layer(x2, style)
             input = patch + x2.data
         return input, x, patch
@@ -753,13 +755,13 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized, disc_style)
+        fake_loss = disc_(stylized, disc_style.detach())
         loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'].detach())
     else:
         patch_loss = 0
 
