@@ -327,9 +327,6 @@ elif args.train_model=='revision':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            for i in [loss_c,loss_s,content_relt,style_remd,loss_Gp_GAN,patch_loss]:
-                print(i.grad)
-            print(loss)
             scaler.step(optimizer)
             scaler.update()
         else:
