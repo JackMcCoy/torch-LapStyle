@@ -279,7 +279,6 @@ elif args.train_model=='revision':
             init_weights(rev_)
         rev_.train()
         disc_.train()
-        dec_.train()
         enc_.to(device)
         dec_.to(device)
         disc_.to(device)
@@ -287,7 +286,7 @@ elif args.train_model=='revision':
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
     d_scaler = GradScaler()
-    optimizer = torch.optim.Adam(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
+    optimizer = torch.optim.AdamW(list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
@@ -325,7 +324,7 @@ elif args.train_model=='revision':
             sF = enc_(si_cropped)
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = cb_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5 + patch_loss
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5 + patch_loss
 
         if ac_enabled:
             scaler.scale(loss).backward()
