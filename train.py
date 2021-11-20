@@ -317,8 +317,8 @@ elif args.train_model=='revision':
             opt_D.step()
         set_requires_grad(disc_, False)
 
-        optimizer.zero_grad()
         with autocast(enabled=ac_enabled):
+            optimizer.zero_grad()
             cF = enc_(ci_patch)
             sF = enc_(si_cropped)
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
@@ -326,7 +326,7 @@ elif args.train_model=='revision':
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * 2.5 + patch_loss
             for i in [loss_c,loss_s,content_relt,style_remd,loss_Gp_GAN,patch_loss]:
                 print(i)
-            print(loss)
+            print(loss.grad)
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
