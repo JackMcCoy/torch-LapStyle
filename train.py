@@ -24,7 +24,7 @@ Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-ac_enabled = False
+ac_enabled = True
 
 def train_transform(load_size, crop_size):
     transform_list = [
