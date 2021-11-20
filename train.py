@@ -328,7 +328,6 @@ elif args.train_model=='revision':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
             scaler.step(optimizer)
             scaler.update()
         else:

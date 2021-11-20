@@ -205,6 +205,7 @@ class Revisors(nn.Module):
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, res_block = layer(x2, style)
             input = patch + x2.data
+        input = input + 0 * self.__hidden__(input)
         return input, x, patch
 
 class SingleTransDecoder(nn.Module):
