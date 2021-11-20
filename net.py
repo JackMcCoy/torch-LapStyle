@@ -204,8 +204,7 @@ class Revisors(nn.Module):
             lap_pyr = F.conv2d(F.pad(x, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, res_block = layer(x2, style)
-            input = patch + x2.data
-        input = input + 0 * self.__hidden__(input)
+            input = patch + x2
         return input, x, patch
 
 class SingleTransDecoder(nn.Module):
