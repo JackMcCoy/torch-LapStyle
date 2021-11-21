@@ -174,7 +174,7 @@ def scale_ci(ci, crop_marks, size):
         size_diff //= 2
     i = torch.randint(0, 256 + 1, size=(1,)).item()
     j = torch.randint(0, 256 + 1, size=(1,)).item()
-    print(str(i)+' ''+str(j))
+    print(str(i)+' '+str(j))
     ci = ci[:, :, i:i + 256, j:j + 256]
     return ci, [i, j]
 
