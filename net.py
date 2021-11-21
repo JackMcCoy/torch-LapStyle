@@ -205,6 +205,8 @@ class Revisors(nn.Module):
             else:
                 size *= 2
                 scaled_ci, crop_marks = scale_ci(ci, self.crop_marks, size)
+                print(scaled_ci.shape)
+                print(crop_marks)
                 self.crop_marks.append(crop_marks)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
