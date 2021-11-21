@@ -175,8 +175,6 @@ def scale_ci(ci, crop_marks, size):
         size_diff //= 2
     i = torch.randint(0, 256 + 1, size=(1,)).item()
     j = torch.randint(0, 256 + 1, size=(1,)).item()
-    print(ci.shape)
-    print(str(i)+' '+str(j))
     ci = ci[:, :, i:i + 256, j:j + 256]
     return ci, [i, j]
 
@@ -217,6 +215,7 @@ class Revisors(nn.Module):
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, res_block = layer(x2, style)
             input = patch + x2
+        self.crop_marks = []
         return input, scaled_ci, patch
 
 class SingleTransDecoder(nn.Module):
