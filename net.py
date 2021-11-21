@@ -170,7 +170,7 @@ def scale_ci(ci, crop_marks, size):
     ci = F.interpolate(ci, size=size, mode='bicubic')
     size_diff = size//512
     for i in crop_marks:
-        ci = ci[:,:,i[0]*size_diff:(i[0]+256)*size_diff,i[1]*size_diff:(i[1]+256)*size_diff]
+        ci = ci[:,:,i[0]*size_diff:i[0]*size_diff+256,i[1]*size_diff:i[1]*size_diff+256]
         size_diff //= 2
     i = torch.randint(0, 256 + 1, size=(1,)).item()
     j = torch.randint(0, 256 + 1, size=(1,)).item()
@@ -205,8 +205,6 @@ class Revisors(nn.Module):
             else:
                 size *= 2
                 scaled_ci, crop_marks = scale_ci(ci, self.crop_marks, size)
-                print(scaled_ci.shape)
-                print(crop_marks)
                 self.crop_marks.append(crop_marks)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
