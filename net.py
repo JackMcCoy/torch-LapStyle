@@ -168,12 +168,13 @@ class RevisionNet(nn.Module):
 
 def scale_ci(ci, crop_marks, size):
     ci = F.interpolate(ci, size=size, mode='bicubic')
-    size_diff = size//256
+    size_diff = size//512
     for i in crop_marks:
         ci = ci[:,:,i[0]*size_diff:i[0]*size_diff+256,i[1]*size_diff:i[1]*size_diff+256]
         size_diff //= 2
     i = torch.randint(0, 256 + 1, size=(1,)).item()
     j = torch.randint(0, 256 + 1, size=(1,)).item()
+    print(str(i)+' ''+str(j))
     ci = ci[:, :, i:i + 256, j:j + 256]
     return ci, [i, j]
 
