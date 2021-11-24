@@ -113,7 +113,8 @@ parser.add_argument('--disc_channels', type=int, default=64)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
-parser.add_argument('--load_rev_and_disc', type=int, default=0)
+parser.add_argument('--load_rev', type=int, default=0)
+parser.add_argument('--load_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
 parser.add_argument('--remd_loss', type=int, default=1)
 parser.add_argument('--mdog_loss', type=int, default=0)
@@ -265,12 +266,14 @@ elif args.train_model=='revision':
         disc_quant = True if args.disc_quantization == 1 else False
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
         set_requires_grad(dec_, False)
-        if args.load_rev_and_disc == 1:
+        if args.load_rev == 1 or args.load_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
             new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
-            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-            rev_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
+            if args.load_disc == 1:
+                disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+            if args.load_rev == 1:
+                rev_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         elif args.revision_depth>1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
