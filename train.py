@@ -352,6 +352,8 @@ elif args.train_model=='revision':
                 rev_stylized = rev_stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
+                si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
+                ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
                 save_image(styled_img_grid.detach(), args.save_dir+'/drafting_revision_iter'+str(i+1)+'.jpg')
