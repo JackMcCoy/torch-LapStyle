@@ -292,7 +292,7 @@ elif args.train_model=='revision':
     scaler = GradScaler()
     d_scaler = GradScaler()
     optimizer = torch.optim.AdamW(list(rev_.layers[-1].parameters()), lr=args.lr)
-    opt_D = torch.optim.Adam(disc_.parameters(), lr=args.lr, weight_decay=.1)
+    opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
