@@ -307,6 +307,7 @@ elif args.train_model=='revision':
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
             si_cropped = random_crop(si[-1])
             patch_feats = enc_(stylized_patch)
+            sF = enc_(si_cropped)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -326,7 +327,7 @@ elif args.train_model=='revision':
 
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch)
-            sF = enc_(si_cropped)
+
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
