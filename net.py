@@ -128,7 +128,7 @@ class RevisionNet(nn.Module):
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         if not self.first_layer:
             self.style_reprojection = nn.Sequential(
-                nn.Conv2d(320, 320, kernel_size=1),
+                nn.Conv2d(320, 320, kernel_size=1, groups=4),
                 nn.ReLU()
             )
         else:
@@ -190,7 +190,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.crop_marks = []
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
+            self.layers.append(RevisionNet(s_d=320, first_layer=i == 0))
 
     def load_states(self, state_string):
         states = state_string.split(',')
