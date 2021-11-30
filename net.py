@@ -191,7 +191,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.crop_marks = []
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i in [0,len(levels-1)] else 64, first_layer=i in [0,len(levels-1)]))
+            self.layers.append(RevisionNet(s_d=320 if i in [0,levels-1] else 64, first_layer=i in [0,levels-1]))
 
     def load_states(self, state_string):
         states = state_string.split(',')
