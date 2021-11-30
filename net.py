@@ -182,7 +182,7 @@ class Revisors(nn.Module):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.style_reprojection = nn.Sequential(
-            nn.Conv2d(1,1),
+            nn.Conv2d(5120,5120,kernel_size=1),
             nn.ReLU()
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
