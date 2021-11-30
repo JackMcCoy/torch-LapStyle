@@ -128,7 +128,7 @@ class RevisionNet(nn.Module):
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         if not self.first_layer:
             self.style_reprojection = nn.Sequential(
-                nn.Conv2d(320, 320, kernel_size=1, groups=4),
+                nn.Conv2d(320, 320, kernel_size=1),
                 nn.ReLU()
             )
         else:
