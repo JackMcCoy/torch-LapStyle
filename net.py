@@ -125,8 +125,14 @@ class RevisionNet(nn.Module):
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        if first_layer:
-            self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
+        if not self.first_layer:
+            self.style_reprojection = nn.Sequential(
+                nn.Conv2d(320, 320, kernel_size=1),
+                nn.ReLU()
+            )
+        else:
+            self.style_reprojection = nn.Identity()
         self.relu = nn.ReLU()
         UpBlock = []
 
@@ -158,13 +164,10 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        res_block = out.clone()
-        if self.first_layer:
-            out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
-        else:
-            out = adain(out, style)
+        style = self.style_reprojection(style)
+        out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
         out = self.UpBlock(out)
-        return out, res_block
+        return out
 
 def scale_ci(ci, crop_marks, size):
     ci = F.interpolate(ci, size=size, mode='bicubic')
@@ -181,17 +184,13 @@ class Revisors(nn.Module):
     def __init__(self, levels= 1):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
-        self.style_reprojection = nn.Sequential(
-            nn.Conv2d(320,320,kernel_size=1),
-            nn.ReLU()
-        )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         self.crop_marks = []
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i in [0,levels-1] else 64, first_layer=i in [0,levels-1]))
+            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -206,7 +205,6 @@ class Revisors(nn.Module):
             if idx == 0:
                 scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
                 patch = input
-                res_block = style
             else:
                 size *= 2
                 scaled_ci, crop_marks = scale_ci(ci, self.crop_marks, size)
@@ -214,11 +212,9 @@ class Revisors(nn.Module):
                 if not idx == len(self.layers)-1:
                     input = input.detach()
                 patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
-            if idx == len(self.layers)-1:
-                res_block = self.style_reprojection(style)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
-            x2, res_block = layer(x2, res_block)
+            x2 = layer(x2, style)
             input = patch + x2
         self.crop_marks = []
         return input, scaled_ci, patch
