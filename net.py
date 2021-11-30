@@ -502,7 +502,6 @@ class Style_Guided_Discriminator(nn.Module):
             *style_encoder_block(64),
             nn.AvgPool2d(3, stride=2),
             *style_encoder_block(64),
-            nn.AvgPool2d(3, stride=2),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU()
@@ -537,6 +536,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
     def losses(self, real, fake, style, calculated_style_feat=None):
+        print(style.shape)
         if not calculated_style_feat is None:
             style = calculated_style_feat
         else:
