@@ -534,7 +534,6 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
     def losses(self, real, fake, style, calculated_style_feat=None):
-        print(style.shape)
         if not calculated_style_feat is None:
             style = calculated_style_feat
         else:
