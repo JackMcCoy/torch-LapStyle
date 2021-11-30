@@ -502,13 +502,14 @@ class Style_Guided_Discriminator(nn.Module):
             *style_encoder_block(64),
             nn.AvgPool2d(3, stride=2),
             *style_encoder_block(64),
+            nn.AvgPool2d(3, stride=2),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU()
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(16384, 4096)
+            nn.Linear(4096, 4096)
         )
 
         for i in range(depth - 2):
