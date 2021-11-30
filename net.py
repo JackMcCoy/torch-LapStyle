@@ -126,13 +126,6 @@ class RevisionNet(nn.Module):
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
-        if not self.first_layer:
-            self.style_reprojection = nn.Sequential(
-                nn.Conv2d(320, 320, kernel_size=1, groups=80),
-                nn.ReLU()
-            )
-        else:
-            self.style_reprojection = nn.Identity()
         self.relu = nn.ReLU()
         UpBlock = []
 
@@ -164,10 +157,10 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        style = self.style_reprojection(style)
+        res = out.clone()
         out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
         out = self.UpBlock(out)
-        return out
+        return out, res
 
 def scale_ci(ci, crop_marks, size):
     ci = F.interpolate(ci, size=size, mode='bicubic')
@@ -190,7 +183,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.crop_marks = []
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320, first_layer=i == 0))
+            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -214,7 +207,7 @@ class Revisors(nn.Module):
                 patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
-            x2 = layer(x2, style)
+            x2, style = layer(x2, style)
             input = patch + x2
         self.crop_marks = []
         return input, scaled_ci, patch
