@@ -214,7 +214,7 @@ class Revisors(nn.Module):
                 if not idx == len(self.layers)-1:
                     input = input.detach()
                 patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
-            if idx == len(layer-1):
+            if idx == layer-1:
                 res_block = self.style_reprojection(style)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
