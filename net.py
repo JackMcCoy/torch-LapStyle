@@ -181,13 +181,17 @@ class Revisors(nn.Module):
     def __init__(self, levels= 1):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
+        self.style_reprojection = nn.Sequential(
+            nn.Linear(5120, 5120),
+            nn.ReLU()
+        )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         self.crop_marks = []
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
+            self.layers.append(RevisionNet(s_d=320 if i in [0,len(levels-1)] else 64, first_layer=i in [0,len(levels-1)]))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -202,6 +206,7 @@ class Revisors(nn.Module):
             if idx == 0:
                 scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
                 patch = input
+                res_block = style
             else:
                 size *= 2
                 scaled_ci, crop_marks = scale_ci(ci, self.crop_marks, size)
@@ -209,10 +214,11 @@ class Revisors(nn.Module):
                 if not idx == len(self.layers)-1:
                     input = input.detach()
                 patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
-                style = res_block
+            if idx == len(layer-1):
+                res_block = self.style_reprojection(style)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
-            x2, res_block = layer(x2, style)
+            x2, res_block = layer(x2, res_block)
             input = patch + x2
         self.crop_marks = []
         return input, scaled_ci, patch
