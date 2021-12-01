@@ -108,10 +108,7 @@ class GANLoss(nn.Module):
     that has the same size as the input.
     """
     def __init__(self,
-                 gan_mode,
-                 target_real_label=1.0,
-                 target_fake_label=0.0,
-                 loss_weight=1.0):
+                 gan_mode):
         """ Initialize the GANLoss class.
 
         Args:
@@ -124,6 +121,11 @@ class GANLoss(nn.Module):
         """
         super(GANLoss, self).__init__()
         # when loss weight less than zero return None
+
+        target_real_label = 1.0
+        target_fake_label = 0.0
+        loss_weight = 1.0
+
         if loss_weight <= 0:
             return None
 

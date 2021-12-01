@@ -550,8 +550,8 @@ class Style_Guided_Discriminator(nn.Module):
                     torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
             )
         else:
-            loss_D_real = self.ganloss(pred_real, self.true)
-            loss_D_fake = self.ganloss(pred_fake, self.false)
+            loss_D_real = self.get_ganloss(pred_real, self.true)
+            loss_D_fake = self.get_ganloss(pred_fake, self.false)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
         return (loss_D, style)
 
