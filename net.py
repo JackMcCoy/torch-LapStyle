@@ -100,7 +100,7 @@ class Decoder(nn.Module):
         return t
 
 
-class RevisionNet(nn.Module):
+class RevisionNet(torch.jit.ScriptModule):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
         DownBlock = []
@@ -161,6 +161,7 @@ class RevisionNet(nn.Module):
         self.DownBlock = nn.Sequential(*DownBlock)
         self.UpBlock = nn.Sequential(*UpBlock)
 
+    @torch.jit.script_method
     def forward(self, input, style):
         """
         Args:
