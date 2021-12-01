@@ -154,7 +154,7 @@ class GANLoss(nn.Module):
 
         target_tensor = torch.full(
             prediction.shape,
-            fill_value=target_is_real).float().to(device)
+            fill_value=target_is_real[0]).float().to(device)
 
         return target_tensor
 
