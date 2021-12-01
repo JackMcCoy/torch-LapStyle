@@ -268,6 +268,7 @@ elif args.train_model=='revision':
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
             init_weights(disc)
+        disc.train()
         return disc
 
     random_crop = transforms.RandomCrop(256)
