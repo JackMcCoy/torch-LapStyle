@@ -208,7 +208,7 @@ class Revisors(nn.Module):
 
     def forward(self, input, ci, style):
         size = 256
-        for idx, layer in enumerate(self.layers):
+        for idx in range(len(self.layers)):
             input = self.upsample(input.detach())
             if idx == 0:
                 scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
@@ -222,7 +222,7 @@ class Revisors(nn.Module):
                 patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
-            x2, style = layer(x2, style)
+            x2, style = self.layers[idx](x2, style)
             input = patch + x2
         self.crop_marks = []
         return input, scaled_ci, patch
