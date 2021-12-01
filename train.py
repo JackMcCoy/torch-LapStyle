@@ -255,6 +255,13 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
+    def build_rev(depth, state):
+        rev = net.Revisors(levels=args.revision_depth).to(dtype=torch.float16).to(device)\
+        if state is not None:
+            rev.load_state_dict(
+            torch.load(state_string), strict=False)
+        return rev
+
     random_crop = transforms.RandomCrop(256)
     with autocast(enabled=ac_enabled):
         enc_ = net.Encoder(vgg)
@@ -281,7 +288,7 @@ elif args.train_model=='revision':
         else:
             init_weights(disc_)
             rev_state = None
-        rev_ = torch.jit.trace(net.Revisors(levels = args.revision_depth, state_string = rev_state).to(dtype=torch.float16).to(device),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,390,4,4).to(dtype=torch.float16).to(device)))
+        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,390,4,4).to(dtype=torch.float16).to(device)))
 
         rev_.train()
         disc_.train()

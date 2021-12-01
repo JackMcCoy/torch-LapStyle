@@ -199,8 +199,6 @@ class Revisors(nn.Module):
         self.crop_marks = []
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
-        if not state_string is None:
-            self.load_state_dict(torch.load(state_string), strict=False)
 
     def load_states(self, state_string):
         states = state_string.split(',')
