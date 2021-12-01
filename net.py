@@ -156,7 +156,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        out = self.DownBlock(input)
+        out = self.DownBlock(input.detach())
         out = self.resblock(out)
         if not self.first_layer:
             style = self.style_encoding(style)
