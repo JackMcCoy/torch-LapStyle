@@ -258,8 +258,8 @@ elif args.train_model=='revision':
     def build_rev(depth, state):
         rev = net.Revisors(levels=args.revision_depth).to(dtype=torch.float16).to(device)
         if not state is None:
-            rev.load_state_dict(
-            torch.load(state), strict=False)
+            state = torch.load(state)
+            rev.load_state_dict(state, strict=False)
         return rev
 
     random_crop = transforms.RandomCrop(256)
