@@ -533,6 +533,8 @@ class Style_Guided_Discriminator(nn.Module):
             use_cosine_sim=True,
             threshold_ema_dead_code=2
         )
+        self.true = torch.Tensor([True]).to(device)
+        self.false = torch.Tensor([False]).to(device)
 
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
@@ -548,8 +550,8 @@ class Style_Guided_Discriminator(nn.Module):
                     torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
             )
         else:
-            loss_D_real = self.ganloss(pred_real, True)
-            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D_real = self.ganloss(pred_real, self.true)
+            loss_D_fake = self.ganloss(pred_fake, self.false)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
         return (loss_D, style)
 
@@ -709,6 +711,7 @@ def calc_patch_loss(stylized_feats, patch_feats):
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
 
+tensor_true = torch.Tensor([True]).to(device)
 def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
@@ -758,7 +761,7 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
 
     if disc_loss:
         fake_loss = disc_(stylized, disc_style.detach())
-        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
+        loss_Gp_GAN = disc_.ganloss(fake_loss, tensor_true)
     else:
         loss_Gp_GAN = 0
 
