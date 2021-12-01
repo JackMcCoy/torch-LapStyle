@@ -260,7 +260,7 @@ elif args.train_model=='revision':
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
-        rev.train()
+        rev.eval()
         return rev
     def build_disc(disc_state):
         disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
@@ -269,7 +269,7 @@ elif args.train_model=='revision':
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
             init_weights(disc)
-        disc.train()
+        disc.eval()
         return disc
 
     random_crop = transforms.RandomCrop(256)
@@ -303,6 +303,8 @@ elif args.train_model=='revision':
     'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
     'ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
     disc_ = torch.jit.trace_module(build_disc(disc_state), disc_inputs)
+    disc_.train()
+    rev_.train()
     enc_.to(device)
     dec_.to(device)
     disc_.to(device)
