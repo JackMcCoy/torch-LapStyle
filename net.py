@@ -171,7 +171,7 @@ class Revisors(nn.Module):
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(dtype=torch.half).to(device)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
