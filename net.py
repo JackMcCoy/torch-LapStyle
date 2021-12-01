@@ -172,7 +172,7 @@ class RevisionNet(nn.Module):
         out = self.resblock(out)
         if not self.first_layer:
             style = self.style_encoding(style)
-        out = out + self.relu(self.adaconv_post_res(style, out, norm=False)).data
+        out = out + self.relu(self.adaconv_post_res(style, out, norm=False))
         res = out.clone()
         out = self.UpBlock(out)
         return out, res
