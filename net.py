@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from torchvision.transforms import RandomCrop, CenterCrop
+from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
@@ -185,7 +185,7 @@ class Revisors(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
-        self.crop = CenterCrop(256)
+        self.crop = RandomCrop(256)
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
@@ -204,7 +204,7 @@ class Revisors(nn.Module):
                 #size_diff //= 2
             #i = r_c.get_params(ci, (256,256))
             #ci = crop(ci, *i)
-            ci = r_c
+            ci = crop(ci,0,0,256,256)
             #return ci, i
             return ci
         size = 256
@@ -221,8 +221,7 @@ class Revisors(nn.Module):
                 #crop#_marks.append(cm)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
-                #patch = crop(input,*cm)
-                patch = self.crop(input)
+                patch = crop(input,0,0,256,256)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, style = layer(x2, style)
