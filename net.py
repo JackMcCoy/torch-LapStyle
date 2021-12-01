@@ -196,13 +196,13 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style):
-        def scale_ci(ci, crop_marks, size):
+        def scale_ci(ci, crop_marks, size, r_c):
             ci = F.interpolate(ci, size=size, mode='bicubic')
             size_diff = size // 512
             for i in crop_marks:
                 ci = crop(ci, *i)
                 size_diff //= 2
-            i = RandomCrop.get_params(ci, (256,256))
+            i = r_c.get_params(ci, (256,256))
             ci = crop(ci, *i)
             return ci, i
         size = 256
@@ -215,7 +215,7 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci, cm = scale_ci(ci, crop_marks, size)
+                scaled_ci, cm = scale_ci(ci, crop_marks, size, self.crop)
                 crop_marks.append(cm)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
