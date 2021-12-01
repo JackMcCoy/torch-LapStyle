@@ -152,9 +152,7 @@ class GANLoss(nn.Module):
             A label tensor filled with ground truth label, and with the size of the input
         """
 
-        target_tensor = torch.full(
-            prediction.shape,
-            fill_value=target_is_real[0]).float().to(device)
+        target_tensor = target_is_real.expand(prediction.shape).float().to(device)
 
         return target_tensor
 
