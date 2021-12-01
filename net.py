@@ -100,16 +100,6 @@ class Decoder(nn.Module):
         return t
 
 
-class SequentialSub(nn.Sequential):
-    def __init__(self, *args):
-        super(SequentialSub, self).__init__(*args)
-
-    def forward(self, input: torch.Tensor):
-        for module in self:
-            input = module(input)
-        return input
-
-
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
@@ -120,7 +110,7 @@ class RevisionNet(nn.Module):
             nn.ReLU(),
             nn.AvgPool2d(3, padding=1, stride=2)
         ]
-        self.style_encoding = SequentialSub(
+        self.style_encoding = nn.Sequential(
             *style_encoder_block,
             *style_encoder_block,
             *style_encoder_block,
@@ -133,7 +123,7 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
 
 
-        self.DownBlock = SequentialSub(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -145,7 +135,7 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
-        self.UpBlock = SequentialSub(nn.Upsample(scale_factor=2, mode='nearest'),
+        self.UpBlock = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.ReLU(),
@@ -221,7 +211,7 @@ class Revisors(nn.Module):
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
                 with torch.no_grad():
-                    x2, style = layer(x2.detach(), style)
+                    x2, style = layer(x2.detach(), style.detach())
             else:
                 x2, style = layer(x2.detach(), style)
             input = patch + x2
