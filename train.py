@@ -279,7 +279,7 @@ elif args.train_model=='revision':
             if args.load_disc == 1:
                 disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
             if args.load_rev == 1:
-                rev_state = torch.load(new_path_func('revisor_'))
+                rev_state = new_path_func('revisor_')
         elif args.revision_depth>1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
