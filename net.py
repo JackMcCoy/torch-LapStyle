@@ -764,8 +764,6 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
 
     if disc_loss:
         fake_loss = disc_(stylized, disc_style.detach())
-        print(fake_loss.shape)
-        print(tensor_true.shape)
         loss_Gp_GAN = disc_.get_ganloss(fake_loss, tensor_true)
     else:
         loss_Gp_GAN = 0
