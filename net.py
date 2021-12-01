@@ -540,7 +540,7 @@ class Style_Guided_Discriminator(nn.Module):
         if self.quantize:
             style, indices, commit_loss = self.quantizer(style.flatten(2).float())
         else:
-            commit_loss = 0
+            commit_loss = torch.Tensor([0]).float().to(device)
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
@@ -555,9 +555,6 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.ganloss(pred_real, True)
             loss_D_fake = self.ganloss(pred_fake, False)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        print(type(loss_D))
-        print(type(style))
-        print(type(commit_loss))
         return (loss_D, style, commit_loss)
 
     def forward(self, x, style):
