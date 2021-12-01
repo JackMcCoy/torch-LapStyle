@@ -257,7 +257,7 @@ if args.train_model=='drafting':
 elif args.train_model=='revision':
     def build_rev(depth, state):
         rev = net.Revisors(levels=args.revision_depth).to(dtype=torch.float16).to(device)\
-        if state is not None:
+        if not state is None:
             rev.load_state_dict(
             torch.load(state_string), strict=False)
         return rev
