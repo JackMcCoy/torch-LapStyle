@@ -202,7 +202,7 @@ class Revisors(nn.Module):
             for i in crop_marks:
                 ci = crop(ci, *i)
                 size_diff //= 2
-            i = RandomCrop.get_params(ci, 256)
+            i = RandomCrop.get_params(ci, (256,256))
             ci = crop(ci, *i)
             return ci, i
         size = 256
