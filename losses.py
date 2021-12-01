@@ -136,8 +136,6 @@ class GANLoss(nn.Module):
             self.loss = nn.MSELoss()
         elif gan_mode == 'vanilla':
             self.loss = nn.BCEWithLogitsLoss()
-        elif gan_mode in ['wgan', 'wgangp', 'hinge', 'logistic']:
-            self.loss = None
         else:
             raise NotImplementedError('gan mode %s not implemented' % gan_mode)
 
@@ -151,8 +149,6 @@ class GANLoss(nn.Module):
         Returns:
             A label tensor filled with ground truth label, and with the size of the input
         """
-        print(target_is_real)
-        print(target_is_real.shape)
         target_tensor = target_is_real.expand(prediction.shape).float().to(device)
 
         return target_tensor
@@ -170,20 +166,8 @@ class GANLoss(nn.Module):
         Returns:
             the calculated loss.
         """
-        if self.gan_mode in ['lsgan', 'vanilla']:
-            target_tensor = self.get_target_tensor(prediction, target_is_real)
-            loss = self.loss(prediction, target_tensor)
-        elif self.gan_mode.find('wgan') != -1:
-            if target_is_real.all():
-                loss = -prediction.mean()
-            else:
-                loss = prediction.mean()
-        elif self.gan_mode == 'logistic':
-            if target_is_real.all():
-                loss = F.softplus(-prediction).mean()
-            else:
-                loss = F.softplus(prediction).mean()
-
+        target_tensor = self.get_target_tensor(prediction, target_is_real)
+        loss = self.loss(prediction, target_tensor)
         return loss
 
 class GramErrors():

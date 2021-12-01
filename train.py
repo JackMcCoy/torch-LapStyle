@@ -310,8 +310,6 @@ elif args.train_model=='revision':
     disc_.to(device)
     rev_.to(device)
     remd_loss = True if args.remd_loss==1 else False
-    scaler = GradScaler()
-    d_scaler = GradScaler()
     optimizer = torch.optim.AdamW(list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
