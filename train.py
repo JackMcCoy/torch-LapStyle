@@ -260,12 +260,16 @@ elif args.train_model=='revision':
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
+        rev.train()
         return rev
     def build_disc(disc_state):
         disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
                                        quantize=disc_quant)
         if not disc_state is None:
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+        else:
+            init_weights(disc)
+        disc.train()
         return disc
 
     random_crop = transforms.RandomCrop(256)
@@ -292,15 +296,12 @@ elif args.train_model=='revision':
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
         rev_state = new_path_func('revisor_')
     else:
-        init_weights(disc_)
         rev_state = None
     rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)))
     disc_inputs = {'forward': (
     torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device)),
     'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device))}
     disc_ = torch.jit.trace_module(build_disc(disc_state), disc_inputs)
-    rev_.train()
-    disc_.train()
     enc_.to(device)
     dec_.to(device)
     disc_.to(device)
