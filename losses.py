@@ -151,18 +151,10 @@ class GANLoss(nn.Module):
         Returns:
             A label tensor filled with ground truth label, and with the size of the input
         """
-        if target_is_real.all():
-            if not hasattr(self, 'target_real_tensor'):
-                self.target_real_tensor = torch.full(
-                    prediction.shape,
-                    fill_value=self.target_real_label).float().to(device)
-            target_tensor = self.target_real_tensor
-        else:
-            if not hasattr(self, 'target_fake_tensor'):
-                self.target_fake_tensor = torch.full(
-                    prediction.shape,
-                    fill_value=self.target_fake_label).float().to(device)
-            target_tensor = self.target_fake_tensor
+
+        target_tensor = torch.full(
+            prediction.shape,
+            fill_value=target_is_real).float().to(device)
 
         return target_tensor
 
