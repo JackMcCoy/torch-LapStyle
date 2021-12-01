@@ -123,12 +123,18 @@ class RevisionNet(nn.Module):
             nn.ReLU(),
         ]
 
+        style_encoder_block = [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.AvgPool2d(3, padding=1, stride=2)
+        ]
         self.style_encoding = nn.Sequential(
-            *style_encoder_block(64),
-            *style_encoder_block(64),
-            *style_encoder_block(64),
-            *style_encoder_block(64),
-            *style_encoder_block(64)
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block
         )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
@@ -183,7 +189,7 @@ def scale_ci(ci, crop_marks, size):
     return ci, [i, j]
 
 class Revisors(nn.Module):
-    def __init__(self, levels= 1):
+    def __init__(self, levels= 1, state_string = None):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -193,6 +199,8 @@ class Revisors(nn.Module):
         self.crop_marks = []
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
+        if not state_string is None:
+            self.load_state_dict(torch.load(state_string), strict=False)
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -200,7 +208,7 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, position=None):
+    def forward(self, input, ci, style):
         size = 256
         for idx, layer in enumerate(self.layers):
             input = self.upsample(input.detach())

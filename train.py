@@ -262,7 +262,6 @@ elif args.train_model=='revision':
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
-        rev_ = net.Revisors(levels = args.revision_depth)
         disc_quant = True if args.disc_quantization == 1 else False
         disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
         set_requires_grad(dec_, False)
@@ -273,15 +272,17 @@ elif args.train_model=='revision':
             if args.load_disc == 1:
                 disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
             if args.load_rev == 1:
-                rev_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
+                rev_state = torch.load(new_path_func('revisor_'))
         elif args.revision_depth>1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
             new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-            rev_.load_states(new_path_func('revisor_'))
+            rev_state = new_path_func('revisor_')
         else:
             init_weights(disc_)
-            init_weights(rev_)
+            rev_state = None
+        rev_ = torch.jit.trace(net.Revisors(levels = args.revision_depth, state_string = rev_state),(torch.rand(args.batch_size,3,128,128),torch.rand(args.batch_size,3,args.crop_size,args.crop_size),torch.rand(args.batch_size,390,4,4)))
+
         rev_.train()
         disc_.train()
         enc_.to(device)
