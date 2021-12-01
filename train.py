@@ -270,11 +270,13 @@ elif args.train_model=='revision':
             init_weights(disc)
         disc.train()
         return disc
-
+    def build_enc(vgg):
+        enc = net.Encoder(vgg)
+        set_requires_grad(enc, False)
+        enc.train(False)
+        return enc
     random_crop = transforms.RandomCrop(256)
-    enc_ = torch.jit.trace(net.Encoder(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
-    set_requires_grad(enc_, False)
-    enc_.train(False)
+    enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
     dec_ = net.DecoderAdaConv()
     dec_.load_state_dict(torch.load(args.load_model))
     disc_quant = True if args.disc_quantization == 1 else False
