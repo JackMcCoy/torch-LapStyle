@@ -103,26 +103,6 @@ class Decoder(nn.Module):
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
-        DownBlock = []
-        DownBlock += [
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(6, 128, kernel_size=3),
-            nn.ReLU()
-        ]
-        DownBlock += [
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.ReLU()
-        ]
-        DownBlock += [
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1),
-
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.ReLU(),
-        ]
 
         style_encoder_block = [
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -141,10 +121,21 @@ class RevisionNet(nn.Module):
         self.first_layer = first_layer
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=False)
         self.relu = nn.ReLU()
-        UpBlock = []
 
-        UpBlock += [
-            nn.Upsample(scale_factor=2, mode='nearest'),
+
+        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(6, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
+            nn.ReLU(),)
+        self.UpBlock = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.ReLU(),
@@ -155,11 +146,7 @@ class RevisionNet(nn.Module):
             nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 3, kernel_size=3),
-        ]
-
-        self.DownBlock = nn.Sequential(*DownBlock)
-        self.UpBlock = nn.Sequential(*UpBlock)
+            nn.Conv2d(128, 3, kernel_size=3),)
 
     def forward(self, input, style):
         """
