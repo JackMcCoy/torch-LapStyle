@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
             nn.ReLU(),
             nn.AvgPool2d(3, padding=1, stride=2)
         ]
-        self.style_encoding = nn.SequentialSub(
+        self.style_encoding = SequentialSub(
             *style_encoder_block,
             *style_encoder_block,
             *style_encoder_block,
@@ -133,7 +133,7 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
 
 
-        self.DownBlock = nn.SequentialSub(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.DownBlock = SequentialSub(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -145,7 +145,7 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
-        self.UpBlock = nn.SequentialSub(nn.Upsample(scale_factor=2, mode='nearest'),
+        self.UpBlock = SequentialSub(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.ReLU(),
