@@ -290,7 +290,7 @@ elif args.train_model=='revision':
         else:
             init_weights(disc_)
             rev_state = None
-    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.half).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.half).to(device),torch.rand(args.batch_size,320,4,4).to(dtype=torch.half).to(device)))
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,320,4,4).to(dtype=torch.float16).to(device)))
     with autocast(enabled=ac_enabled):
         rev_.train()
         disc_.train()
