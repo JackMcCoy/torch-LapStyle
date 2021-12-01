@@ -3,20 +3,21 @@ from torch import nn
 from function import calc_mean_std
 
 class AdaConv(torch.jit.ScriptModule):
-    def __init__(self, ch_in, p, s_d = 512):
+    def __init__(self, ch_in, p, s_d = 512, norm=True):
         super(AdaConv, self).__init__()
         self.s_d = s_d
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d = s_d)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
+        self.norm = norm
 
     @torch.jit.script_method
-    def forward(self, style_encoding, content_in, norm=True):
+    def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        if norm:
+        if self.norm:
             size = content_in.size()
             content_mean, content_std = calc_mean_std(content_in)
 

@@ -139,7 +139,7 @@ class RevisionNet(torch.jit.ScriptModule):
         )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=False)
         self.relu = nn.ReLU()
         UpBlock = []
 
@@ -174,7 +174,7 @@ class RevisionNet(torch.jit.ScriptModule):
         out = self.resblock(out)
         if not self.first_layer:
             style = self.style_encoding(style)
-        out = out + self.relu(self.adaconv_post_res(style, out, norm=False))
+        out = out + self.relu(self.adaconv_post_res(style, out))
         res = out.clone()
         out = self.UpBlock(out)
         return out, res
@@ -358,21 +358,21 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
+        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d, norm=True)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d)
+        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d, norm=True)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d)
+        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d, norm=True)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d)
+        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d, norm=True)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -525,7 +525,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
         for i in range(depth - 2):
-            self.body.append(AdaConv(64, 1, s_d = 256))
+            self.body.append(AdaConv(64, 1, s_d = 256, norm=False))
             self.norms.append(nn.Sequential(
                 nn.BatchNorm2d(num_channels),
                 nn.LeakyReLU(0.2)
@@ -577,7 +577,7 @@ class Style_Guided_Discriminator(nn.Module):
     def forward(self, x, style):
         x = self.head(x)
         for idx, i in enumerate(self.body):
-            x = i(style, x, norm=False)
+            x = i(style, x)
             x = self.norms[idx](x)
         x = self.tail(x)
         return x
