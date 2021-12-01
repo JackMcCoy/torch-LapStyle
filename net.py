@@ -555,6 +555,9 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D = (loss_D_real + loss_D_fake) * 0.5
         return (loss_D, style)
 
+    def get_ganloss(self, x, pred):
+        return self.ganloss(x, pred)
+
     def forward(self, x, style):
         x = self.head(x)
         for idx, i in enumerate(self.body):
@@ -761,7 +764,9 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
 
     if disc_loss:
         fake_loss = disc_(stylized, disc_style.detach())
-        loss_Gp_GAN = disc_.ganloss(fake_loss, tensor_true)
+        print(fake_loss.shape)
+        print(tensor_true.shape)
+        loss_Gp_GAN = disc_.get_ganloss(fake_loss, tensor_true)
     else:
         loss_Gp_GAN = 0
 
