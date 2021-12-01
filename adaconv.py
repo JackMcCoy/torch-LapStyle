@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from function import calc_mean_std
 
-class AdaConv(torch.jit.script_method):
+class AdaConv(torch.jit.ScriptModule):
     def __init__(self, ch_in, p, s_d = 512):
         super(AdaConv, self).__init__()
         self.s_d = s_d
@@ -35,7 +35,7 @@ class AdaConv(torch.jit.script_method):
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
 
-class KernelPredictor(torch.jit.script_method):
+class KernelPredictor(torch.jit.ScriptModule):
     def __init__(self, c_in, c_out, p, s_d):
         super(KernelPredictor, self).__init__()
         self.n_groups = c_in//p
