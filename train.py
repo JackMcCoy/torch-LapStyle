@@ -300,7 +300,8 @@ elif args.train_model=='revision':
     rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)))
     disc_inputs = {'forward': (
     torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
-    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device))}
+    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
+    'ganloss': (torch.rand(args.batch_size,1,256,256),True)}
     disc_ = torch.jit.trace_module(build_disc(disc_state), disc_inputs)
     enc_.to(device)
     dec_.to(device)
