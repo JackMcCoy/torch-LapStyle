@@ -527,11 +527,7 @@ class Style_Guided_Discriminator(nn.Module):
         if quantize:
             self.quantizer = VectorQuantize(
             dim = 64,
-            codebook_size = 6400,
-            kmeans_init=True,
-            kmeans_iters=10,
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2
+            codebook_size = 6400
         )
         self.true = torch.Tensor([True]).to(device)
         self.false = torch.Tensor([False]).to(device)
