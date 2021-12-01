@@ -18,7 +18,7 @@ class AdaConv(torch.jit.ScriptModule):
         N = style_encoding.shape[0]
         if norm:
             size = content_in.size()
-            content_mean, content_std = calc_mean_std(content_in, eps=torch.Tensor([1e-5]).to(device))
+            content_mean, content_std = calc_mean_std(content_in, 1e-5)
 
             content_in = (content_in - content_mean.expand(
                     size)) / content_std.expand(size)
