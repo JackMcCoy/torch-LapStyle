@@ -177,17 +177,6 @@ class RevisionNet(nn.Module):
         out = self.UpBlock(out)
         return out, res
 
-def scale_ci(ci, crop_marks, size):
-    ci = F.interpolate(ci, size=size, mode='bicubic')
-    size_diff = size//512
-    for i in crop_marks:
-        ci = ci[:,:,i[0]*size_diff:i[0]*size_diff+(256*(size_diff)),i[1]*size_diff:i[1]*size_diff+(256*(size_diff))]
-        size_diff //= 2
-    i = torch.randint(0, 256 + 1, size=(1,)).item()
-    j = torch.randint(0, 256 + 1, size=(1,)).item()
-    ci = ci[:, :, i:i + 256, j:j + 256]
-    return ci, [i, j]
-
 class Revisors(nn.Module):
     def __init__(self, levels= 1, state_string = None):
         super(Revisors, self).__init__()
@@ -196,7 +185,6 @@ class Revisors(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
-        self.crop_marks = []
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
@@ -207,8 +195,20 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style):
+        def scale_ci(ci, crop_marks, size):
+            ci = F.interpolate(ci, size=size, mode='bicubic')
+            size_diff = size // 512
+            for i in crop_marks:
+                ci = ci[:, :, i[0] * size_diff:i[0] * size_diff + (256 * (size_diff)),
+                     i[1] * size_diff:i[1] * size_diff + (256 * (size_diff))]
+                size_diff //= 2
+            i = torch.randint(0, 256 + 1, size=(1,)).item()
+            j = torch.randint(0, 256 + 1, size=(1,)).item()
+            ci = ci[:, :, i:i + 256, j:j + 256]
+            return ci, [i, j]
         size = 256
         idx = 0
+        crop_marks = []
         for layer in self.layers:
             input = self.upsample(input.detach())
             if idx == 0:
@@ -216,11 +216,11 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci, crop_marks = scale_ci(ci, self.crop_marks, size)
-                self.crop_marks.append(crop_marks)
+                scaled_ci, cm = scale_ci(ci, crop_marks, size)
+                crop_marks.append(cm)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
-                patch = input[:,:,crop_marks[0]:crop_marks[0]+256,crop_marks[1]:crop_marks[1]+256]
+                patch = input[:,:,cm[0]:cm[0]+256,cm[1]:cm[1]+256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, style = layer(x2, style)
