@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from torchvision.transforms import RandomCrop
+from torchvision.transforms import RandomCrop, CenterCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
@@ -199,12 +199,14 @@ class Revisors(nn.Module):
         def scale_ci(ci, crop_marks, size, r_c):
             ci = F.interpolate(ci, size=size, mode='bicubic')
             size_diff = size // 512
-            for i in crop_marks:
-                ci = crop(ci, *i)
-                size_diff //= 2
-            i = r_c.get_params(ci, (256,256))
-            ci = crop(ci, *i)
-            return ci, i
+            #for i in crop_marks:
+                #ci = crop(ci, *i)
+                #size_diff //= 2
+            #i = r_c.get_params(ci, (256,256))
+            #ci = crop(ci, *i)
+            ci = CenterCrop(size)(ci)
+            #return ci, i
+            return ci
         size = 256
         idx = 0
         crop_marks = []
@@ -215,11 +217,12 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci, cm = scale_ci(ci, crop_marks, size, self.crop)
-                crop_marks.append(cm)
+                scaled_ci = scale_ci(ci, crop_marks, size, self.crop)
+                #crop#_marks.append(cm)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
-                patch = crop(input,*cm)
+                #patch = crop(input,*cm)
+                patch = CenterCrop(256)(input)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, style = layer(x2, style)
