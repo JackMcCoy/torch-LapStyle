@@ -256,83 +256,99 @@ if args.train_model=='drafting':
     writer.close()
 elif args.train_model=='revision':
     def build_rev(depth, state):
-        rev = net.Revisors(levels=args.revision_depth).to(device)
-        if not state is None:
-            state = torch.load(state)
-            rev.load_state_dict(state, strict=False)
-        rev.eval()
+        with autocast(enabled=ac_enabled):
+            rev = net.Revisors(levels=args.revision_depth).to(device)
+            if not state is None:
+                state = torch.load(state)
+                rev.load_state_dict(state, strict=False)
+            rev.eval()
         return rev
 
     random_crop = transforms.RandomCrop(256)
-    enc_ = net.Encoder(vgg)
-    set_requires_grad(enc_, False)
-    enc_.train(False)
-    dec_ = net.DecoderAdaConv()
-    dec_.load_state_dict(torch.load(args.load_model))
-    disc_quant = True if args.disc_quantization == 1 else False
-    disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
-    set_requires_grad(dec_, False)
-    if args.load_rev == 1 or args.load_disc == 1:
-        path = args.load_model.split('/')
-        path_tokens = args.load_model.split('_')
-        new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
-        if args.load_disc == 1:
-            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-        if args.load_rev == 1:
+    with autocast(enabled=ac_enabled):
+        enc_ = net.Encoder(vgg)
+        set_requires_grad(enc_, False)
+        enc_.train(False)
+        dec_ = net.DecoderAdaConv()
+        dec_.load_state_dict(torch.load(args.load_model))
+        disc_quant = True if args.disc_quantization == 1 else False
+        disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
+        set_requires_grad(dec_, False)
+        if args.load_rev == 1 or args.load_disc == 1:
+            path = args.load_model.split('/')
+            path_tokens = args.load_model.split('_')
+            new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
+            if args.load_disc == 1:
+                disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+            if args.load_rev == 1:
+                rev_state = new_path_func('revisor_')
+        elif args.revision_depth>1:
+            path = args.load_model.split('/')
+            path_tokens = args.load_model.split('_')
+            new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
             rev_state = new_path_func('revisor_')
-    elif args.revision_depth>1:
-        path = args.load_model.split('/')
-        path_tokens = args.load_model.split('_')
-        new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-        rev_state = new_path_func('revisor_')
-    else:
-        init_weights(disc_)
-        rev_state = None
+        else:
+            init_weights(disc_)
+            rev_state = None
     rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,320,4,4).to(dtype=torch.float16).to(device)))
-
-    rev_.train()
-    disc_.train()
-    enc_.to(device)
-    dec_.to(device)
-    disc_.to(device)
-    rev_.to(device)
+    with autocast(enabled=ac_enabled):
+        rev_.train()
+        disc_.train()
+        enc_.to(device)
+        dec_.to(device)
+        disc_.to(device)
+        rev_.to(device)
     remd_loss = True if args.remd_loss==1 else False
+    scaler = GradScaler()
+    d_scaler = GradScaler()
     optimizer = torch.optim.AdamW(list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
-
-        ci = next(content_iter).to(device)
-        si = next(style_iter).to(device)
-        ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
-        si = [F.interpolate(si, size=128, mode='bicubic'), si]
-        cF = enc_(ci[0])
-        sF = enc_(si[0])
-        stylized, cb_loss, style = dec_(sF, cF)
-        rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
-        si_cropped = random_crop(si[-1])
-        patch_feats = enc_(stylized_patch)
-        sF = enc_(si_cropped)
+        with autocast(enabled=ac_enabled):
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=128, mode='bicubic'), ci]
+            si = [F.interpolate(si, size=128, mode='bicubic'), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+            stylized, cb_loss, style = dec_(sF, cF)
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
+            si_cropped = random_crop(si[-1])
+            patch_feats = enc_(stylized_patch)
+            sF = enc_(si_cropped)
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
-        loss_D, disc_style, quant_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r4_1'].detach())
-        loss_D = loss_D + quant_loss
-        loss_D.backward()
-        opt_D.step()
+        with autocast(enabled=ac_enabled):
+            loss_D, disc_style, quant_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r4_1'].detach())
+            loss_D = loss_D + quant_loss
+        if ac_enabled:
+            d_scaler.scale(loss_D).backward()
+            d_scaler.step(opt_D)
+            d_scaler.update()
+        else:
+            loss_D.backward()
+            opt_D.step()
         set_requires_grad(disc_, False)
 
         optimizer.zero_grad()
 
-        cF = enc_(ci_patch)
+        with autocast(enabled=ac_enabled):
+            cF = enc_(ci_patch)
 
-        losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
+            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
 
-        loss.backward()
-        optimizer.step()
+        if ac_enabled:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
