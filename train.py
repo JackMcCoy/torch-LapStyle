@@ -264,7 +264,7 @@ elif args.train_model=='revision':
         return rev
     def build_disc(disc_state):
         disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
-                                       quantize=disc_quant)
+                                       quantize=disc_quant).to(device)
         if not disc_state is None:
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
