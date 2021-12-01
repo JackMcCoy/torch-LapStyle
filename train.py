@@ -272,7 +272,7 @@ elif args.train_model=='revision':
         return disc
 
     random_crop = transforms.RandomCrop(256)
-    enc_ = net.Encoder(vgg)
+    enc_ = torch.jit.trace(net.Encoder(vgg),(torch.rand((args.batch_size,3,128,128))))
     set_requires_grad(enc_, False)
     enc_.train(False)
     dec_ = net.DecoderAdaConv()

@@ -50,7 +50,7 @@ class Encoder(nn.Module):
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
         #self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
-    def forward(self, x, detach_all=False):
+    def forward(self, x):
         encodings = {}
         x = self.enc_1(x)
         encodings['r1_1'] = x
