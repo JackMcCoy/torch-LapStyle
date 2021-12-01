@@ -100,26 +100,32 @@ class Decoder(nn.Module):
         return t
 
 
+class SequentialSub(nn.Sequential):
+    def __init__(self):
+        super(SequentialSub, self).__init__()
+
+    def forward(self, input: torch.Tensor):
+        for module in self:
+            input = module(input)
+        return input
+
+
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
-        self.style_encoding = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+        style_encoder_block = [
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
             nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1,padding_mode='reflect'),
-            nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1,padding_mode='reflect'),
-            nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1,padding_mode='reflect'),
-            nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1,padding_mode='reflect'),
-            nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
+            nn.AvgPool2d(3, padding=1, stride=2)
+        ]
+        self.style_encoding = nn.SequentialSub(
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block,
+            *style_encoder_block
         )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
@@ -127,23 +133,30 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
 
 
-        self.DownBlock = nn.Sequential(
-            nn.Conv2d(6, 128, kernel_size=3, padding=1,padding_mode='reflect'),
+        self.DownBlock = nn.SequentialSub(nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1,padding_mode='reflect'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1),
             nn.ReLU(),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1,padding_mode='reflect'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1,padding_mode='reflect'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
-        self.UpBlock = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1,padding_mode='reflect'),
+        self.UpBlock = nn.SequentialSub(nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1,padding_mode='reflect'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 128, kernel_size=3),
             nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1,padding_mode='reflect'),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(),
-            nn.Conv2d(128, 3, kernel_size=3, padding=1,padding_mode='reflect'),)
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 3, kernel_size=3),)
 
     def forward(self, input, style):
         """
