@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 from torchvision.transforms import RandomCrop
+from torchvision.transforms.functional import crop
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 import numpy as np
@@ -199,13 +200,11 @@ class Revisors(nn.Module):
             ci = F.interpolate(ci, size=size, mode='bicubic')
             size_diff = size // 512
             for i in crop_marks:
-                ci = ci[:, :, i[0] * size_diff:i[0] * size_diff + (256 * (size_diff)),
-                     i[1] * size_diff:i[1] * size_diff + (256 * (size_diff))]
+                ci = crop(ci, *i)
                 size_diff //= 2
-            i = torch.randint(0, 256 + 1, size=(1,)).item()
-            j = torch.randint(0, 256 + 1, size=(1,)).item()
-            ci = ci[:, :, i:i + 256, j:j + 256]
-            return ci, [i, j]
+            i = RandomCrop.get_params(ci, 256)
+            ci = crop(ci, *i)
+            return ci, i
         size = 256
         idx = 0
         crop_marks = []
@@ -220,7 +219,7 @@ class Revisors(nn.Module):
                 crop_marks.append(cm)
                 if not idx == len(self.layers)-1:
                     input = input.detach()
-                patch = input[:,:,cm[0]:cm[0]+256,cm[1]:cm[1]+256]
+                patch = crop(input,*cm)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             x2, style = layer(x2, style)
