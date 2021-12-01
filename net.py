@@ -207,8 +207,8 @@ class Revisors(nn.Module):
                 scaled_ci = scale_ci(ci, crop_marks, size, self.crop)
                 #crop#_marks.append(cm)
                 patch = crop(input,0,0,256,256)
-            lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(dtype=torch.float16).to(device)
-            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
+            lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1).to(dtype=torch.float16)
             if idx != len(self.layers) - 1:
                 with torch.no_grad():
                     x2, style = layer(x2.detach(), style.detach())
