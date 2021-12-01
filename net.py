@@ -226,7 +226,7 @@ class Revisors(nn.Module):
                 with torch.no_grad():
                     x2, style = layer(x2.detach(), style)
             else:
-                x2, style = layer(x2, style)
+                x2, style = layer(x2.detach(), style)
             input = patch + x2
             idx += 1
         return input, scaled_ci, patch
