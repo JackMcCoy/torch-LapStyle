@@ -540,6 +540,7 @@ class Style_Guided_Discriminator(nn.Module):
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
+        print(pred_real.shape)
         if self.relgan:
             pred_real = pred_real.view(-1)
             pred_fake = pred_fake.view(-1)
