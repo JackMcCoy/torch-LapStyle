@@ -534,17 +534,14 @@ class Style_Guided_Discriminator(nn.Module):
             threshold_ema_dead_code=2
         )
 
-    def losses(self, real, fake, style, calculated_style_feat=None):
-        if not calculated_style_feat is None:
-            style = calculated_style_feat
+    def losses(self, real, fake, style):
+        b, n, h, w = style.shape
+        style = self.style_encoding(style.detach())
+        if self.quantize:
+            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
         else:
-            b, n, h, w = style.shape
-            style = self.style_encoding(style.detach())
-            if self.quantize:
-                style, indices, commit_loss = self.quantizer(style.flatten(2).float())
-            else:
-                commit_loss = 0
-            style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
+            commit_loss = 0
+        style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
         if self.relgan:

@@ -261,6 +261,12 @@ elif args.train_model=='revision':
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
         return rev
+    def build_disc(disc_state):
+        disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
+                                       quantize=disc_quant)
+        if not disc_state is None:
+            disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+        return disc
 
     random_crop = transforms.RandomCrop(256)
     enc_ = net.Encoder(vgg)
@@ -271,12 +277,13 @@ elif args.train_model=='revision':
     disc_quant = True if args.disc_quantization == 1 else False
     disc_ = net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, quantize = disc_quant)
     set_requires_grad(dec_, False)
+    disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
         new_path_func = lambda x: '/'.join(path[:-1])+'/'+x+"_".join(path_tokens[-2:])
         if args.load_disc == 1:
-            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+            disc_state = new_path_func('discriminator_')
         if args.load_rev == 1:
             rev_state = new_path_func('revisor_')
     elif args.revision_depth>1:
@@ -288,6 +295,10 @@ elif args.train_model=='revision':
         init_weights(disc_)
         rev_state = None
     rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)))
+    disc_inputs = {'forward': (
+    torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device)),
+    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device))}
+    disc_ = torch.jit.trace_module(build_disc(disc_state))
     rev_.train()
     disc_.train()
     enc_.to(device)
@@ -316,7 +327,6 @@ elif args.train_model=='revision':
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
-        print(sF['r4_1'].shape)
         loss_D, disc_style, quant_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r4_1'].detach())
         loss_D = loss_D + quant_loss
         loss_D.backward()
