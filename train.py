@@ -281,7 +281,7 @@ elif args.train_model=='revision':
         else:
             init_weights(disc_)
             rev_state = None
-        rev_ = torch.jit.trace(net.Revisors(levels = args.revision_depth, state_string = rev_state),(torch.rand(args.batch_size,3,128,128),torch.rand(args.batch_size,3,args.crop_size,args.crop_size),torch.rand(args.batch_size,390,4,4)))
+        rev_ = torch.jit.trace(net.Revisors(levels = args.revision_depth, state_string = rev_state).to(dtype=torch.float16).to(device),(torch.rand(args.batch_size,3,128,128).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(dtype=torch.float16).to(device),torch.rand(args.batch_size,390,4,4).to(dtype=torch.float16).to(device)))
 
         rev_.train()
         disc_.train()
