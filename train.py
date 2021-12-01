@@ -260,6 +260,7 @@ elif args.train_model=='revision':
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
+        rev.eval()
         return rev
 
     random_crop = transforms.RandomCrop(256)
