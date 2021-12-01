@@ -1,6 +1,7 @@
 import torch
 
 
+@torch.jit.script
 def calc_mean_std(feat):
     # eps is a small value added to the variance to avoid divide-by-zero.
     size = feat.size()

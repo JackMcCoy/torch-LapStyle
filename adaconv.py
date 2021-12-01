@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from function import calc_mean_std
 
-class AdaConv(torch.jit.ScriptModule):
+class AdaConv(nn.Module):
     def __init__(self, ch_in, p, s_d = 512, norm=True):
         super(AdaConv, self).__init__()
         self.s_d = s_d
@@ -12,7 +12,6 @@ class AdaConv(torch.jit.ScriptModule):
         self.tanh = nn.Tanh()
         self.norm = norm
 
-    @torch.jit.script_method
     def forward(self, style_encoding, content_in):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
@@ -36,7 +35,7 @@ class AdaConv(torch.jit.ScriptModule):
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
 
-class KernelPredictor(torch.jit.ScriptModule):
+class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p, s_d):
         super(KernelPredictor, self).__init__()
         self.n_groups = c_in//p
@@ -59,7 +58,6 @@ class KernelPredictor(torch.jit.ScriptModule):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
-    @torch.jit.script_method
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
 
