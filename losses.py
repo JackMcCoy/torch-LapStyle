@@ -151,7 +151,8 @@ class GANLoss(nn.Module):
         Returns:
             A label tensor filled with ground truth label, and with the size of the input
         """
-
+        print(target_is_real)
+        print(target_is_real.shape)
         target_tensor = target_is_real.expand(prediction.shape).float().to(device)
 
         return target_tensor
