@@ -101,8 +101,8 @@ class Decoder(nn.Module):
 
 
 class SequentialSub(nn.Sequential):
-    def __init__(self):
-        super(SequentialSub, self).__init__()
+    def __init__(self, *args):
+        super(SequentialSub, self).__init__(*args)
 
     def forward(self, input: torch.Tensor):
         for module in self:
