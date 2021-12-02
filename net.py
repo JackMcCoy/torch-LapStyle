@@ -151,6 +151,7 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input.detach())
         out = self.resblock(out)
+        print(style.shape)
         out = out + self.relu(self.adaconv_post_res(style, out))
         res = out.clone()
         out = self.UpBlock(out)
