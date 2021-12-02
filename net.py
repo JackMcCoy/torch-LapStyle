@@ -172,8 +172,7 @@ class Revisors(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
-        #self.g_cuda = torch.Generator(device='cuda')
-        #self.g_cuda.manual_seed(2147483647)
+        self.crop = RandomCrop(256)
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
@@ -184,6 +183,17 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style):
+        def scale_ci(ci, crop_marks, size, r_c):
+            ci = F.interpolate(ci, size=size, mode='bicubic')
+            size_diff = size // 512
+            #for i in crop_marks:
+                #ci = crop(ci, *i)
+                #size_diff //= 2
+            #i = r_c.get_params(ci, (256,256))
+            #ci = crop(ci, *i)
+            ci = crop(ci,0,0,256,256)
+            #return ci, i
+            return ci
         size = 256
         idx = 0
         crop_marks = []
@@ -194,16 +204,9 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
-                size_diff = size // 512
-                for i, j in crop_marks:
-                    ci = ci[:,:,i:i+256,j:j+256]
-                    size_diff //= 2
-                i = torch.randint(255, (1,))
-                j = torch.randint(255, (1,))
-                scaled_ci = scaled_ci[:,:,i:i+256,j:j+256]
-                crop_marks.append((i,j))
-                patch = input[:,:,i:i+256,j:j+256]
+                scaled_ci = scale_ci(ci, crop_marks, size, self.crop)
+                #crop#_marks.append(cm)
+                patch = crop(input,0,0,256,256)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
