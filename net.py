@@ -183,17 +183,6 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style):
-        def scale_ci(ci, crop_marks, size, r_c):
-            ci = F.interpolate(ci, size=size, mode='bicubic')
-            size_diff = size // 512
-            #for i in crop_marks:
-                #ci = crop(ci, *i)
-                #size_diff //= 2
-            #i = r_c.get_params(ci, (256,256))
-            #ci = crop(ci, *i)
-            ci = crop(ci,0,0,256,256)
-            #return ci, i
-            return ci
         size = 256
         idx = 0
         crop_marks = []
@@ -204,9 +193,16 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci = scale_ci(ci, crop_marks, size, self.crop)
-                #crop#_marks.append(cm)
-                patch = crop(input,0,0,256,256)
+                scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
+                size_diff = size // 512
+                for i, j in crop_marks:
+                    ci = ci[:, :, i:i + 256, j:j + 256]
+                    size_diff //= 2
+                i = torch.randint(255, (1,))
+                j = torch.randint(255, (1,))
+                scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
+                crop_marks.append((i, j))
+                patch = input[:, :, i:i + 256, j:j + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
@@ -527,18 +523,19 @@ class Style_Guided_Discriminator(nn.Module):
         if quantize:
             self.quantizer = VectorQuantize(
             dim = 64,
-            codebook_size = 6400,
-            kmeans_init=True,
-            kmeans_iters=10,
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2
+            codebook_size = 6400
         )
         self.true = torch.Tensor([True]).to(device)
         self.false = torch.Tensor([False]).to(device)
+        self.default_cb = torch.Tensor([0]).float().to(device)
 
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
         style = self.style_encoding(style.detach())
+        if self.quantize:
+            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
+        else:
+            commit_loss = self.default_cb
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
@@ -553,7 +550,7 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.get_ganloss(pred_real, self.true)
             loss_D_fake = self.get_ganloss(pred_fake, self.false)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return (loss_D, style)
+        return (loss_D, style, commit_loss)
 
     def get_ganloss(self, x, pred):
         return self.ganloss(x, pred)
