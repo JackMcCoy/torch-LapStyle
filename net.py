@@ -532,10 +532,7 @@ class Style_Guided_Discriminator(nn.Module):
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
         style = self.style_encoding(style.detach())
-        if self.quantize:
-            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
-        else:
-            commit_loss = self.default_cl
+
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
@@ -550,7 +547,7 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.get_ganloss(pred_real, self.true)
             loss_D_fake = self.get_ganloss(pred_fake, self.false)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return (loss_D, style, commit_loss)
+        return (loss_D, style)
 
     def get_ganloss(self, x, pred):
         return self.ganloss(x, pred)
