@@ -299,11 +299,11 @@ elif args.train_model=='revision':
     else:
         rev_state = None
     rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device))
-    disc_inputs = {'forward': (
-    torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
-    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
-    'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-    disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs, check_trace=False)
+    #disc_inputs = {'forward': (
+    #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
+    #'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
+    #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
+    disc_ = build_disc(disc_state, disc_quant)
     disc_.train()
     rev_.train()
     enc_.to(device)
@@ -317,7 +317,8 @@ elif args.train_model=='revision':
         optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i, args)
+        for optimizer in optimizers:
+            adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(dec_optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
         ci = next(content_iter).to(device)
@@ -357,7 +358,7 @@ elif args.train_model=='revision':
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f} loss_d: {loss_D.item()}')
+            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
             writer.add_scalar('loss_content', loss_c.item(), i + 1)
             writer.add_scalar('loss_style', loss_s.item(), i + 1)
