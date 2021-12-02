@@ -198,8 +198,8 @@ class Revisors(nn.Module):
                 for i in crop_marks:
                     ci = crop(ci, *i)
                     size_diff //= 2
-                i = self.crop.get_params(ci, (256, 256))
-                scaled_ci = crop(scaled_ci, *i)
+                cm = self.crop.get_params(ci, (256, 256))
+                scaled_ci = crop(scaled_ci, *cm)
                 crop_marks.append(cm)
                 patch = crop(input, *cm)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
