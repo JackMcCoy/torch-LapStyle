@@ -172,7 +172,8 @@ class Revisors(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
-        self.crop = RandomCrop(256)
+        self.g_cuda = torch.Generator(device='cuda')
+        self.g_cuda.manual_seed(2147483647)
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
@@ -195,13 +196,14 @@ class Revisors(nn.Module):
                 size *= 2
                 scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
                 size_diff = size // 512
-                for i in crop_marks:
-                    ci = crop(ci, *i)
+                for i, j in crop_marks:
+                    ci = ci[:,:,i:i+256,j:j+256]
                     size_diff //= 2
-                cm = self.crop.get_params(ci, (256, 256))
-                scaled_ci = crop(scaled_ci, *cm)
-                crop_marks.append(cm)
-                patch = crop(input, *cm)
+                i = torch.randint(255, (1,), generator=self.g_cuda)
+                j = torch.randint(255, (1,), generator=self.g_cuda)
+                scaled_ci = scaled_ci[:,:,i:i+256,j:j+256]
+                crop_marks.append((i,j))
+                patch = input[:,:,i:i+256,j:j+256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
