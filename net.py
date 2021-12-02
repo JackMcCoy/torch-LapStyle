@@ -486,7 +486,7 @@ class Style_Guided_Discriminator(nn.Module):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
-            nn.BatchNorm2d(num_channels),
+            nn.BatchNorm2d(num_channels, track_running_stats=False),
             nn.LeakyReLU(0.2)
             )
         self.body = nn.ModuleList([])
@@ -509,7 +509,7 @@ class Style_Guided_Discriminator(nn.Module):
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = 256, norm=False))
             self.norms.append(nn.Sequential(
-                nn.BatchNorm2d(num_channels),
+                nn.BatchNorm2d(num_channels, track_running_stats=False),
                 nn.LeakyReLU(0.2)
             ))
         self.tail = nn.Conv2d(num_channels,
