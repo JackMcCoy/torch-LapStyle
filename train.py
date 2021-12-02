@@ -303,7 +303,7 @@ elif args.train_model=='revision':
     torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
     'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
     'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-    disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs)
+    disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs, check_trace=False)
     disc_.train()
     rev_.train()
     enc_.to(device)
@@ -314,7 +314,7 @@ elif args.train_model=='revision':
     dec_optimizer = torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)
     optimizers = []
     for i in rev_.layers:
-        optimizers.append(torch.optim.AdamW(list(i.parameters())), lr=args.lr)
+        optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
