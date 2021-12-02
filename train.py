@@ -299,11 +299,11 @@ elif args.train_model=='revision':
     else:
         rev_state = None
     rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device))
-    #disc_inputs = {'forward': (
-    #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
-    #'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
-    #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-    disc_ = build_disc(disc_state, disc_quant)
+    disc_inputs = {'forward': (
+    torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
+    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
+    'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
+    disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs)
     disc_.train()
     rev_.train()
     enc_.to(device)
@@ -312,7 +312,9 @@ elif args.train_model=='revision':
     rev_.to(device)
     remd_loss = True if args.remd_loss==1 else False
     dec_optimizer = torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)
-    optimizer = torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
+    optimizers = []
+    for i in rev_.layers:
+        optimizers.append(torch.optim.AdamW(list(i.parameters())), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
@@ -338,7 +340,8 @@ elif args.train_model=='revision':
         opt_D.step()
         set_requires_grad(disc_, False)
 
-        optimizer.zero_grad()
+        for optimizer in optimizers:
+            optimizer.zero_grad()
         dec_optimizer.zero_grad()
 
         cF = enc_(ci_patch)
@@ -348,7 +351,8 @@ elif args.train_model=='revision':
         loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
 
         loss.backward()
-        optimizer.step()
+        for optimizer in optimizers:
+            optimizer.step()
         dec_optimizer.step()
 
         if (i + 1) % 10 == 0:
