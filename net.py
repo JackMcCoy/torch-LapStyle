@@ -481,10 +481,13 @@ class Style_Guided_Discriminator(nn.Module):
         self.norms = nn.ModuleList([])
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 64, kernel_size=3),
+            nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU(),
+            nn.AvgPool2d(3, padding=1, stride=2),
             *style_encoder_block(64),
+            nn.AvgPool2d(3, padding=1, stride=2),
             *style_encoder_block(64),
+            nn.AvgPool2d(3, padding=1, stride=2),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
             nn.LeakyReLU()
@@ -510,7 +513,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.quantize = quantize
         if quantize:
             self.quantizer = VectorQuantize(
-            dim = 64,
+            dim = 4,
             codebook_size = 6400
         )
         self.true = torch.Tensor([True]).to(device)
