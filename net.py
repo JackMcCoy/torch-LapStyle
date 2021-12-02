@@ -199,10 +199,10 @@ class Revisors(nn.Module):
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
                 with torch.no_grad():
-                    x2 = layer(x2.detach(), style.detach())
+                    input = layer(x2.detach(), style.detach())
             else:
-                x2 = layer(x2.detach(), style)
-            input = patch + x2
+                input = layer(x2.detach(), style)
+            input = patch + input
             idx += 1
         return input, scaled_ci, patch
 
