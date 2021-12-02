@@ -260,6 +260,7 @@ elif args.train_model=='revision':
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
+        rev.train()
         return rev
     def build_disc(disc_state):
         disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
@@ -268,6 +269,7 @@ elif args.train_model=='revision':
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
             init_weights(disc)
+        disc.train()
         return disc
     def build_enc(vgg):
         enc = net.Encoder(vgg)
