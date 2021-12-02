@@ -186,14 +186,13 @@ class Revisors(nn.Module):
         def scale_ci(ci, crop_marks, size, r_c):
             ci = F.interpolate(ci, size=size, mode='bicubic')
             size_diff = size // 512
-            #for i in crop_marks:
-                #ci = crop(ci, *i)
-                #size_diff //= 2
-            #i = r_c.get_params(ci, (256,256))
-            #ci = crop(ci, *i)
-            ci = crop(ci,0,0,256,256)
-            #return ci, i
-            return ci
+            for i in crop_marks:
+                ci = crop(ci, *i)
+                size_diff //= 2
+            i = r_c.get_params(ci, (256,256))
+            ci = crop(ci, *i)
+            #ci = crop(ci,0,0,256,256)
+            return ci, i
         size = 256
         idx = 0
         crop_marks = []
@@ -204,9 +203,9 @@ class Revisors(nn.Module):
                 patch = input
             else:
                 size *= 2
-                scaled_ci = scale_ci(ci, crop_marks, size, self.crop)
-                #crop#_marks.append(cm)
-                patch = crop(input,0,0,256,256)
+                scaled_ci, cm = scale_ci(ci, crop_marks, size, self.crop)
+                crop_marks.append(cm)
+                patch = crop(input, *cm)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             if idx != len(self.layers) - 1:
