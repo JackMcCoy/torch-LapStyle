@@ -262,7 +262,7 @@ elif args.train_model=='revision':
             rev.load_state_dict(state, strict=False)
         rev.train()
         return rev
-    def build_disc(disc_state):
+    def build_disc(disc_state, disc_quant):
         disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
                                        quantize=disc_quant).to(device)
         if not disc_state is None:
@@ -303,7 +303,7 @@ elif args.train_model=='revision':
     torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
     'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
     'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-    disc_ = torch.jit.trace_module(build_disc(disc_state), disc_inputs, check_trace=False)
+    disc_ = build_disc(disc_state, disc_quant)
     disc_.train()
     rev_.train()
     enc_.to(device)
@@ -330,7 +330,8 @@ elif args.train_model=='revision':
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
-        loss_D, disc_style = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r4_1'].detach())
+        loss_D, disc_style, cb_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r4_1'].detach())
+        loss_D = loss_D + cb_loss
         loss_D.backward()
         opt_D.step()
         set_requires_grad(disc_, False)
