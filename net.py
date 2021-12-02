@@ -104,14 +104,8 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
-        style_encoder_block = [
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3),
-            nn.ReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2)
-        ]
         self.style_encoding = nn.Sequential(
-            nn.Conv2d(64,64,kernel_size=32,padding=16,stride=32),
+            nn.Conv2d(64,64,kernel_size=32,padding=0,stride=32),
             nn.ReLU()
         )
         self.resblock = ResBlock(64)
