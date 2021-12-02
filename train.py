@@ -311,10 +311,12 @@ elif args.train_model=='revision':
     disc_.to(device)
     rev_.to(device)
     remd_loss = True if args.remd_loss==1 else False
-    optimizer = torch.optim.AdamW(list(rev_.layers.parameters())+list(dec_.parameters()), lr=args.lr)
+    dec_optimizers = torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)
+    optimizer = torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
+        adjust_learning_rate(dec_optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
@@ -337,6 +339,7 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, False)
 
         optimizer.zero_grad()
+        dec_optimizer.zero_grad()
 
         cF = enc_(ci_patch)
 
@@ -346,6 +349,7 @@ elif args.train_model=='revision':
 
         loss.backward()
         optimizer.step()
+        dec_optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
