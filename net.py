@@ -147,7 +147,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        out = self.DownBlock(input.detach())
+        out = self.DownBlock(input)
         out = self.resblock(out)
         if not self.first_layer:
             style = self.style_encoding(style)
@@ -193,15 +193,11 @@ class Revisors(nn.Module):
                 scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
                 crop_marks.append((i, j))
                 patch = input[:, :, i:i + 256, j:j + 256]
-                style = layer.DownBlock(x2.detach())
+                style = layer.DownBlock(x2)
                 style = layer.resblock(style)
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
-            if idx != len(self.layers) - 1:
-                with torch.no_grad():
-                    input = layer(x2.detach(), style.detach())
-            else:
-                input = layer(x2.detach(), style)
+            input = layer(x2, style)
             input = patch + input
             idx += 1
         return input, scaled_ci, patch

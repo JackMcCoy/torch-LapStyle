@@ -323,7 +323,7 @@ elif args.train_model=='revision':
         cF = enc_(ci[0])
         sF = enc_(si[0])
         stylized, cb_loss, style = dec_(sF, cF)
-        rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
+        rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
         si_cropped = random_crop(si[-1])
         patch_feats = enc_(stylized_patch)
         sF = enc_(si_cropped)
