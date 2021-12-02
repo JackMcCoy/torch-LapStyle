@@ -172,8 +172,8 @@ class Revisors(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
-        self.g_cuda = torch.Generator(device='cuda')
-        self.g_cuda.manual_seed(2147483647)
+        #self.g_cuda = torch.Generator(device='cuda')
+        #self.g_cuda.manual_seed(2147483647)
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
 
@@ -199,8 +199,8 @@ class Revisors(nn.Module):
                 for i, j in crop_marks:
                     ci = ci[:,:,i:i+256,j:j+256]
                     size_diff //= 2
-                i = torch.randint(255, (1,), generator=self.g_cuda)
-                j = torch.randint(255, (1,), generator=self.g_cuda)
+                i = torch.randint(255, (1,))
+                j = torch.randint(255, (1,))
                 scaled_ci = scaled_ci[:,:,i:i+256,j:j+256]
                 crop_marks.append((i,j))
                 patch = input[:,:,i:i+256,j:j+256]
