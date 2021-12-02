@@ -110,13 +110,6 @@ class RevisionNet(nn.Module):
             nn.ReLU(),
             nn.AvgPool2d(3, padding=1, stride=2)
         ]
-        self.style_encoding = nn.Sequential(
-            *style_encoder_block,
-            *style_encoder_block,
-            *style_encoder_block,
-            *style_encoder_block,
-            *style_encoder_block
-        )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=False)
@@ -158,8 +151,6 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input.detach())
         out = self.resblock(out)
-        if not self.first_layer:
-            style = self.style_encoding(style)
         out = out + self.relu(self.adaconv_post_res(style, out))
         res = out.clone()
         out = self.UpBlock(out)
