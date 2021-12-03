@@ -502,7 +502,17 @@ class Style_Guided_Discriminator(nn.Module):
         self.default_cl = torch.Tensor([0]).to(device)
 
     def losses(self, real, fake, style):
-        pred_real = self(real, style)
+        idx = 0
+        for i in torch.split(real,2,dim=2):
+            for j in torch.split(i,2,dim=3):
+                if idx == 0:
+                    pred_real = self(j, style)
+                    loss_D_real = self.get_ganloss(pred_real, self.true)
+                else:
+                    patch = self(real,style)
+                    pred_real += patch.data
+                    loss_D_real += self.get_ganloss(patch, self.true).data
+                idx+=1
         pred_fake = self(fake, style)
         if self.relgan:
             pred_real = pred_real.view(-1)
@@ -512,9 +522,8 @@ class Style_Guided_Discriminator(nn.Module):
                     torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
             )
         else:
-            loss_D_real = self.get_ganloss(pred_real, self.true)
             loss_D_fake = self.get_ganloss(pred_fake, self.false)
-            loss_D = (loss_D_real + loss_D_fake) * 0.5
+            loss_D = (loss_D_real/4 + loss_D_fake) * 0.5
         return (loss_D, style)
 
     def get_ganloss(self, x, pred):
@@ -677,7 +686,7 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 tensor_true = torch.Tensor([True]).to(device)
-def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=True):
+def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=True):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -696,16 +705,29 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
             loss_c += content_loss(stylized_feats[key], cF[key]).data
     else:
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
-    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
-    for key in style_layers[1:]:
-        loss_s += style_loss(stylized_feats[key], sF[key])
+    idx = 0
+    for i in torch.split(real, 2, dim=2):
+        for j in torch.split(i, 2, dim=3):
+            sF = enc_(j)
+            if idx == 0:
+                loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
+                if remd_loss:
+                    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
+                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+            else:
+                loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1']).data
+                if remd_loss:
+                    style_remd += (style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
+                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])).data
+            for key in style_layers[1:]:
+                loss_s += style_loss(stylized_feats[key], sF[key]).data
+
     if remd_loss:
         if content_all_layers:
             content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
         else:
             content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
-        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) +\
-            style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+
     else:
         content_relt = 0
         style_remd = 0
@@ -735,5 +757,5 @@ def calc_losses(stylized, ci, si, cF, sF, encoder, decoder, patch_feats, disc_= 
     else:
         patch_loss = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
+    return loss_c, loss_s/4, content_relt, style_remd/4, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
 
