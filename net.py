@@ -519,6 +519,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.default_cl = torch.Tensor([0]).to(device)
 
     def losses(self, real, fake, style):
+        b, n, h, w = style.shape
         idx = 0
         style = self.style_encoding(style.detach())
         if self.quantize:
