@@ -281,7 +281,7 @@ elif args.train_model=='revision':
     dec_ = net.DecoderAdaConv()
     dec_.load_state_dict(torch.load(args.load_model))
     disc_quant = True if args.disc_quantization == 1 else False
-    set_requires_grad(dec_, False)
+    #set_requires_grad(dec_, False)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -298,14 +298,15 @@ elif args.train_model=='revision':
         rev_state = new_path_func('revisor_')
     else:
         rev_state = None
-    rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device))
-    #disc_inputs = {'forward': (
-    #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
-    #'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
-    #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-    disc_ = build_disc(disc_state, disc_quant)
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)))
+    disc_inputs = {'forward': (
+    torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
+    'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
+    'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
+    disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs)
     disc_.train()
     rev_.train()
+    dec_.train()
     enc_.to(device)
     dec_.to(device)
     disc_.to(device)
