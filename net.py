@@ -110,7 +110,7 @@ class RevisionNet(nn.Module):
         )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=False)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=True)
         self.relu = nn.ReLU()
 
 
@@ -474,7 +474,7 @@ class Style_Guided_Discriminator(nn.Module):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
-            nn.BatchNorm2d(num_channels, track_running_stats=False),
+            nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(0.2)
             )
         self.body = nn.ModuleList([])
@@ -483,9 +483,9 @@ class Style_Guided_Discriminator(nn.Module):
 
 
         for i in range(depth - 2):
-            self.body.append(AdaConv(64, 1, s_d = self.s_d, norm=False))
+            self.body.append(AdaConv(64, 1, s_d = self.s_d, norm=True))
             self.norms.append(nn.Sequential(
-                nn.BatchNorm2d(num_channels, track_running_stats=False),
+                nn.BatchNorm2d(num_channels),
                 nn.LeakyReLU(0.2)
             ))
         self.tail = nn.Conv2d(num_channels,
