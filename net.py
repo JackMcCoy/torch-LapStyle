@@ -479,7 +479,7 @@ class Style_Guided_Discriminator(nn.Module):
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
-        self.s_d = 256
+        self.s_d = 320
 
 
         for i in range(depth - 2):
