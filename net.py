@@ -507,7 +507,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.quantize = quantize
         if quantize:
             self.quantizer = VectorQuantize(
-                dim=64,
+                dim=36,
                 codebook_size=6400,
                 kmeans_init=True,
                 kmeans_iters=10,
