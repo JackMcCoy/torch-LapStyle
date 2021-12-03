@@ -298,7 +298,7 @@ elif args.train_model=='revision':
         rev_state = new_path_func('revisor_')
     else:
         rev_state = None
-    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)))
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)), check_trace=False)
     disc_inputs = {'forward': (
     torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 256, 4, 4).to(device)),
     'losses': (torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 512, 32, 32).to(device)),
@@ -349,7 +349,7 @@ elif args.train_model=='revision':
 
         losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
+        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + cb_loss
 
         loss.backward()
         for optimizer in optimizers:
