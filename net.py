@@ -708,7 +708,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None
     idx = 0
     for i in torch.split(real, 2, dim=2):
         for j in torch.split(i, 2, dim=3):
-            sF = enc_(j)
+            sF = enc_(j.detach())
             if idx == 0:
                 loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
                 if remd_loss:
