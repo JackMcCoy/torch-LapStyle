@@ -509,9 +509,8 @@ class Style_Guided_Discriminator(nn.Module):
                     pred_real = self(j, style)
                     loss_D_real = self.get_ganloss(pred_real, self.true)
                 else:
-                    patch = self(j,style)
-                    pred_real += patch.data
-                    loss_D_real += self.get_ganloss(patch, self.true).data
+                    pred_real = self(j,style)
+                    loss_D_real += self.get_ganloss(pred_real, self.true)
                 idx+=1
         pred_fake = self(fake, style)
         if self.relgan:
@@ -715,12 +714,12 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None
                     style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
                                  style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
             else:
-                loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1']).data
+                loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1'])
                 if remd_loss:
                     style_remd += (style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])).data
+                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1']))
             for key in style_layers[1:]:
-                loss_s += style_loss(stylized_feats[key], sF[key]).data
+                loss_s += style_loss(stylized_feats[key], sF[key])
 
     if remd_loss:
         if content_all_layers:
