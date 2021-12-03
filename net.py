@@ -486,7 +486,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
         self.style_projection = nn.Sequential(
-            nn.Linear(5120, 5120)
+            nn.Linear(4096, 4096)
         )
 
 
@@ -506,7 +506,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.quantize = quantize
         if quantize:
             self.quantizer = VectorQuantize(
-                dim=36,
+                dim=16,
                 codebook_size=6400,
                 kmeans_init=True,
                 kmeans_iters=10,
