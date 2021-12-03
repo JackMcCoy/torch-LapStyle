@@ -479,7 +479,20 @@ class Style_Guided_Discriminator(nn.Module):
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
-        self.s_d = 320
+        self.style_encoding = nn.Sequential(
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(512, 64, kernel_size=3),
+            nn.LeakyReLU(),
+            *style_encoder_block(64),
+            *style_encoder_block(64),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.LeakyReLU()
+        )
+        self.s_d = 256
+        self.style_projection = nn.Sequential(
+            nn.Linear(4096, 4096)
+        )
 
 
         for i in range(depth - 2):
@@ -496,13 +509,28 @@ class Style_Guided_Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
         self.quantize = quantize
-
+        if quantize:
+            self.quantizer = VectorQuantize(
+                dim=64,
+                codebook_size=6400,
+                kmeans_init=True,
+                kmeans_iters=10,
+                use_cosine_sim=True,
+                threshold_ema_dead_code=2
+            )
         self.true = torch.Tensor([True]).to(device)
         self.false = torch.Tensor([False]).to(device)
         self.default_cl = torch.Tensor([0]).to(device)
 
     def losses(self, real, fake, style):
+        print(style.shape)
         idx = 0
+        style = self.style_encoding(style.detach())
+        if self.quantize:
+            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
+        else:
+            commit_loss = 0
+        style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         for i in torch.split(real.detach(),256,dim=2):
             for j in torch.split(i.detach(), 256,dim=3):
                 if idx == 0:
