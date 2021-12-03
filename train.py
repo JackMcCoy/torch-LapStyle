@@ -335,7 +335,7 @@ elif args.train_model=='revision':
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
-        loss_D, disc_style, cb_loss = disc_.losses(si_cropped.detach(), rev_stylized.detach(), sF['r1_1'].detach())
+        loss_D, disc_style, cb_loss = disc_.losses(si_cropped.detach(), style.detach(), sF['r1_1'].detach())
         loss_D = loss_D + cb_loss
         loss_D.backward()
         opt_D.step()

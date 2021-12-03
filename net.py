@@ -479,23 +479,8 @@ class Style_Guided_Discriminator(nn.Module):
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
-        self.style_encoding = nn.Sequential(
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3),
-            nn.LeakyReLU(),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            *style_encoder_block(64),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            *style_encoder_block(64),
-            nn.AvgPool2d(3, padding=1, stride=2),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3),
-            nn.LeakyReLU()
-        )
-        self.s_d = 256
-        self.style_projection = nn.Sequential(
-            nn.Linear(4096, 4096)
-        )
+        self.s_d = 320
+
 
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = 256, norm=False))
@@ -522,12 +507,6 @@ class Style_Guided_Discriminator(nn.Module):
 
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
-        style = self.style_encoding(style.detach())
-        if self.quantize:
-            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
-        else:
-            commit_loss = 0
-        style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         pred_real = self(real, style)
         pred_fake = self(fake, style)
         if self.relgan:
