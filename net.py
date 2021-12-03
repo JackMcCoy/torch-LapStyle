@@ -479,7 +479,7 @@ class Style_Guided_Discriminator(nn.Module):
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
-        self.s_d = 256
+        self.s_d = 320
         self.style_encoding = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(self.s_d, self.s_d, kernel_size=1),
