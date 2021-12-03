@@ -314,8 +314,9 @@ elif args.train_model=='revision':
     remd_loss = True if args.remd_loss==1 else False
     dec_optimizer = torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)
     optimizers = []
-    for i in rev_.layers:
-        optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
+    #for i in rev_.layers:
+    #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
+    optimizers.append(torch.optim.AdamW(rev_.parameters(), lr=args.lr))
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
