@@ -506,13 +506,13 @@ class Style_Guided_Discriminator(nn.Module):
         for i in torch.split(real,2,dim=2):
             for j in torch.split(i, 2,dim=3):
                 if idx == 0:
-                    pred_real = self(j, style)
+                    pred_real = self(j.detach(), style.detach())
                     loss_D_real = self.get_ganloss(pred_real, self.true)
                 else:
-                    pred_real = self(j,style)
+                    pred_real = self(j.detach(),style.detach())
                     loss_D_real += self.get_ganloss(pred_real, self.true)
                 idx+=1
-        pred_fake = self(fake, style)
+        pred_fake = self(fake, style.detach())
         if self.relgan:
             pred_real = pred_real.view(-1)
             pred_fake = pred_fake.view(-1)
@@ -709,17 +709,17 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None
         for j in torch.split(i, 2, dim=3):
             sF = enc_(j.detach())
             if idx == 0:
-                loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
+                loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
                 if remd_loss:
-                    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+                    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
+                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
             else:
-                loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1'])
+                loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
                 if remd_loss:
-                    style_remd += (style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1']))
+                    style_remd += (style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
+                                 style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach()))
             for key in style_layers[1:]:
-                loss_s += style_loss(stylized_feats[key], sF[key])
+                loss_s += style_loss(stylized_feats[key], sF[key].detach())
 
     if remd_loss:
         if content_all_layers:
