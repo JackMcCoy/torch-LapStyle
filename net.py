@@ -520,7 +520,7 @@ class Style_Guided_Discriminator(nn.Module):
             loss_D_real = self.get_ganloss(pred_real, self.true)
             loss_D_fake = self.get_ganloss(pred_fake, self.false)
             loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return (loss_D, style, commit_loss)
+        return (loss_D, style)
 
     def get_ganloss(self, x, pred):
         return self.ganloss(x, pred)
