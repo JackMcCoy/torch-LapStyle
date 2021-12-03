@@ -281,7 +281,7 @@ elif args.train_model=='revision':
     dec_ = net.DecoderAdaConv()
     dec_.load_state_dict(torch.load(args.load_model))
     disc_quant = True if args.disc_quantization == 1 else False
-    #set_requires_grad(dec_, False)
+    set_requires_grad(dec_, False)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -306,13 +306,12 @@ elif args.train_model=='revision':
     disc_ = torch.jit.trace_module(build_disc(disc_state, disc_quant), disc_inputs)
     disc_.train()
     rev_.train()
-    dec_.train()
+    dec_.eval()
     enc_.to(device)
     dec_.to(device)
     disc_.to(device)
     rev_.to(device)
     remd_loss = True if args.remd_loss==1 else False
-    dec_optimizer = torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)
     optimizers = []
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
@@ -321,7 +320,6 @@ elif args.train_model=='revision':
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i, args)
-        adjust_learning_rate(dec_optimizer, i, args)
         adjust_learning_rate(opt_D, i, args)
         ci = next(content_iter).to(device)
         si = next(style_iter).to(device)
@@ -330,10 +328,10 @@ elif args.train_model=='revision':
         cF = enc_(ci[0])
         sF = enc_(si[0])
         stylized, cb_loss, style = dec_(sF, cF)
-        rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
+        rev_stylized, ci_patch, stylized_patch = rev_(stylized.detach(), ci[-1].detach(), style.detach())
         si_cropped = random_crop(si[-1])
         patch_feats = enc_(stylized_patch)
-        sF = enc_(si_cropped)
+        sF = enc_(si_cropped.detach())
 
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
@@ -344,9 +342,8 @@ elif args.train_model=='revision':
 
         for optimizer in optimizers:
             optimizer.zero_grad()
-        dec_optimizer.zero_grad()
 
-        cF = enc_(ci_patch)
+        cF = enc_(ci_patch.detach())
 
         losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, sF, enc_, dec_, patch_feats, disc_, disc_style, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
@@ -355,7 +352,6 @@ elif args.train_model=='revision':
         loss.backward()
         for optimizer in optimizers:
             optimizer.step()
-        dec_optimizer.step()
 
         if (i + 1) % 10 == 0:
             print(f'{loss.item():.2f}')
