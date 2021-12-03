@@ -503,8 +503,8 @@ class Style_Guided_Discriminator(nn.Module):
 
     def losses(self, real, fake, style):
         idx = 0
-        for i in torch.split(real.detach(),128,dim=2):
-            for j in torch.split(i.detach(), 128,dim=3):
+        for i in torch.split(real.detach(),256,dim=2):
+            for j in torch.split(i.detach(), 256,dim=3):
                 if idx == 0:
                     pred_real = self(j.detach(), style.detach())
                     loss_D_real = self.get_ganloss(pred_real, self.true)
@@ -705,8 +705,8 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None
     else:
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
     idx = 0
-    for i in torch.split(si.detach(), 128, dim=2):
-        for j in torch.split(i.detach(), 128, dim=3):
+    for i in torch.split(si.detach(), 256, dim=2):
+        for j in torch.split(i.detach(), 256, dim=3):
             sF = encoder(j.detach())
             if idx == 0:
                 loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
