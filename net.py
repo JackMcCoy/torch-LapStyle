@@ -705,7 +705,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats, disc_= None
     else:
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
     idx = 0
-    for i in torch.split(real.detach(), 128, dim=2):
+    for i in torch.split(si.detach(), 128, dim=2):
         for j in torch.split(i.detach(), 128, dim=3):
             sF = enc_(j.detach())
             if idx == 0:
