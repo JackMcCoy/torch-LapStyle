@@ -474,7 +474,7 @@ class Style_Guided_Discriminator(nn.Module):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,num_channels,3,stride=1,padding=1, padding_mode='reflect'),
-            nn.BatchNorm2d(num_channels),
+            nn.BatchNorm2d(num_channels, track_running_state=False),
             nn.LeakyReLU(0.2)
             )
         self.body = nn.ModuleList([])
@@ -485,7 +485,7 @@ class Style_Guided_Discriminator(nn.Module):
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = self.s_d, norm=False))
             self.norms.append(nn.Sequential(
-                nn.BatchNorm2d(num_channels),
+                nn.BatchNorm2d(num_channels, track_running_state=False),
                 nn.LeakyReLU(0.2)
             ))
         self.tail = nn.Conv2d(num_channels,
@@ -496,17 +496,12 @@ class Style_Guided_Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
         self.quantize = quantize
-        if quantize:
-            self.quantizer = VectorQuantize(
-            dim = 64,
-            codebook_size = 6400
-        )
+
         self.true = torch.Tensor([True]).to(device)
         self.false = torch.Tensor([False]).to(device)
         self.default_cl = torch.Tensor([0]).to(device)
 
     def losses(self, real, fake, style):
-        b, n, h, w = style.shape
         pred_real = self(real, style)
         pred_fake = self(fake, style)
         if self.relgan:
