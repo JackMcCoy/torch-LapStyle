@@ -328,21 +328,21 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d, norm=True)
+        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d, norm=True)
+        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d, norm=True)
+        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d, norm=True)
+        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -354,24 +354,23 @@ class DecoderAdaConv(nn.Module):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
-        style, indices, commit_loss = self.vq(style.flatten(2).float())
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'])
+        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'], norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
-        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'])
+        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'], norm=True)
         x += adaconv_out['r3_1'].data
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'])
+        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'], norm=True)
         x += adaconv_out['r2_1'].data
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'])
+        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'], norm=True)
         x += adaconv_out['r1_1'].data
         x = self.decoder_4(x)
-        return x, commit_loss, style
+        return x, style
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
