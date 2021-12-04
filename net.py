@@ -309,7 +309,6 @@ class DecoderAdaConv(nn.Module):
 
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
-            *style_encoder_block(512),
             *style_encoder_block(512)
         )
         self.s_d = 320
