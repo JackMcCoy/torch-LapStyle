@@ -204,7 +204,7 @@ if args.train_model=='drafting':
     for i in tqdm(range(args.max_iter)):
         #warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
-        with autocast():
+        with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             cF = enc_(ci)
