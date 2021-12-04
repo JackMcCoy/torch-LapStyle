@@ -130,6 +130,12 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(log_dir=str(log_dir))
 
+def build_enc(vgg):
+    enc = net.Encoder(vgg)
+    set_requires_grad(enc, False)
+    enc.train(False)
+    return enc
+
 with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
 
@@ -163,8 +169,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 if args.train_model=='drafting':
 
     with autocast(enabled=ac_enabled):
-        enc_ = net.Encoder(vgg)
-        set_requires_grad(enc_, False)
+        enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
         #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
@@ -275,11 +280,7 @@ elif args.train_model=='revision':
             init_weights(disc)
         disc.train()
         return disc
-    def build_enc(vgg):
-        enc = net.Encoder(vgg)
-        set_requires_grad(enc, False)
-        enc.train(False)
-        return enc
+
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
