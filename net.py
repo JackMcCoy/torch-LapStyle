@@ -306,23 +306,11 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self):
         super(DecoderAdaConv, self).__init__()
-        self.vq = VectorQuantize(
-            dim = 16,
-            codebook_size = 6400,
-            kmeans_init=True,
-            kmeans_iters=10,
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2
-        )
+
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 512, kernel_size=3),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 512, kernel_size=3),
-            nn.LeakyReLU(),
+            *style_encoder_block(512)
         )
         self.s_d = 320
         self.style_projection = nn.Sequential(
