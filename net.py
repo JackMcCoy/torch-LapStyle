@@ -314,7 +314,7 @@ class DecoderAdaConv(nn.Module):
         )
         self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d*25)
+            nn.Linear(8192, self.s_d*12*12)
         )
         self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
@@ -343,7 +343,7 @@ class DecoderAdaConv(nn.Module):
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
         style = self.style_projection(style.flatten(1))
-        style = style.reshape(b, self.s_d, 5, 5)
+        style = style.reshape(b, self.s_d, 12, 12)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'], norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
