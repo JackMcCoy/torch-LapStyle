@@ -45,9 +45,9 @@ class KernelPredictor(nn.Module):
         dw_groups = self.c_out * (self.c_in//self.n_groups)
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d, dw_groups, padding=1,padding_mode='reflect',kernel_size=3, stride=2),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Conv2d(dw_groups,dw_groups, padding=1,padding_mode='reflect', kernel_size=3, stride=2),
-            nn.ReLU())
+            nn.LeakyReLU())
         self.pointwise_avg_pool = nn.AvgPool2d(12)
         self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), 1)
         self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
