@@ -185,7 +185,7 @@ if args.train_model=='drafting':
         #disc_.to(device)
 
     scaler = GradScaler()
-    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr, weight_decay=.1)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
