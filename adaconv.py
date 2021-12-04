@@ -3,20 +3,19 @@ from torch import nn
 from function import calc_mean_std
 
 class AdaConv(nn.Module):
-    def __init__(self, ch_in, p, s_d = 512, norm=True):
+    def __init__(self, ch_in, p, s_d = 512):
         super(AdaConv, self).__init__()
         self.s_d = s_d
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d = s_d)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
-        self.norm = norm
 
-    def forward(self, style_encoding, content_in):
+    def forward(self, style_encoding, content_in, norm=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
-        if self.norm:
+        if norm:
             size = content_in.size()
             content_mean, content_std = calc_mean_std(content_in)
 
@@ -61,8 +60,8 @@ class KernelPredictor(nn.Module):
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
 
-        depthwise = torch.reshape(self.depthwise_kernel_conv(style_encoding), (N,self.c_out, self.c_in//self.n_groups, 3, 3))
+        depthwise = self.depthwise_kernel_conv(style_encoding).resize(N,self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_1_kn = torch.reshape(self.pw_cn_kn(s_d),(N, self.c_out, self.c_out//self.n_groups, 1, 1))
+        pointwise_1_kn = self.pw_cn_kn(s_d).resize(N, self.c_out, self.c_out//self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).squeeze()
         return depthwise, pointwise_1_kn, pointwise_bias
