@@ -311,7 +311,7 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512),
             *style_encoder_block(512)
         )
-        self.s_d = 256
+        self.s_d = 512
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
@@ -738,9 +738,9 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
                          style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     if remd_loss:
         if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
 
     else:
         content_relt = 0
