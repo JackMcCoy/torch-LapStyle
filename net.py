@@ -705,11 +705,11 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     if content_all_layers:
         #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
         #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'])
+        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
         for key in content_layers[1:]:
-            loss_c += content_loss(stylized_feats[key], cF[key]).data
+            loss_c += content_loss(stylized_feats[key], cF[key].detach()).data
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     idx = 0
     if sF is None:
         for i in torch.split(si.detach(), 256, dim=2):
@@ -727,6 +727,8 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
                                      style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())).data
                 for key in style_layers[1:]:
                     loss_s += style_loss(stylized_feats[key], sF[key].detach()).data
+        loss_s = loss_s / 4
+        style_remd = style_remd/4
     else:
         loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
         for key in style_layers[1:]:
@@ -769,5 +771,5 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     else:
         patch_loss = 0
 
-    return loss_c, loss_s/4, content_relt, style_remd/4, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
 
