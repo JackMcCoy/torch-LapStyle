@@ -313,7 +313,7 @@ class DecoderAdaConv(nn.Module):
         )
         self.s_d = 320
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d*16)
+            nn.Linear(8192, self.s_d*25)
         )
         self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
