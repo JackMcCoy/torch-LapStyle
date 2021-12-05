@@ -464,11 +464,11 @@ class Style_Guided_Discriminator(nn.Module):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,3,3,stride=1,padding=1, padding_mode='reflect'),
-            nn.ReLU(0.2),
+            nn.ReLU(),
             nn.Conv2d(3, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
-            nn.ReLU(0.2),
+            nn.ReLU(),
             nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
-            nn.ReLU(0.2)
+            nn.ReLU()
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
@@ -486,7 +486,7 @@ class Style_Guided_Discriminator(nn.Module):
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = self.s_d))
             self.norms.append(
-                nn.LeakyReLU(0.2))
+                nn.LeakyReLU())
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=3,
@@ -495,15 +495,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
         self.quantize = quantize
-        if quantize:
-            self.quantizer = VectorQuantize(
-                dim=16,
-                codebook_size=6400,
-                kmeans_init=True,
-                kmeans_iters=10,
-                use_cosine_sim=True,
-                threshold_ema_dead_code=2
-            )
+
         self.true = torch.Tensor([True]).to(device)
         self.false = torch.Tensor([False]).to(device)
         self.default_cl = torch.Tensor([0]).to(device)
@@ -513,10 +505,7 @@ class Style_Guided_Discriminator(nn.Module):
         b, n, h, w = style.shape
         idx = 0
         style = self.style_encoding(style.detach())
-        if self.quantize:
-            style, indices, commit_loss = self.quantizer(style.flatten(2).float())
-        else:
-            commit_loss = 0
+
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         for i in torch.split(real.detach(),256,dim=2):
             for j in torch.split(i.detach(), 256,dim=3):
