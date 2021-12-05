@@ -104,15 +104,17 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
-        self.style_encoding = nn.Sequential(
-            nn.Conv2d(64,64,kernel_size=32,padding=0,stride=32),
-            nn.ReLU()
-        )
+
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
         self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         self.relu = nn.ReLU()
 
+        self.style_reprojection = nn.Sequential(
+            nn.Conv2d(self.s_d, self.s_d, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Linear(2048, 2048)
+        )
 
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
@@ -149,7 +151,8 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        out = out + self.relu(self.adaconv_post_res(style, out, norm=False))
+        style_reprojected = self.style_reprojection(style)
+        out = out + self.relu(self.adaconv_post_res(style_reprojected, out, norm=False))
         out = self.UpBlock(out)
         return out
 
