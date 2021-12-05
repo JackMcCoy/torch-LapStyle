@@ -111,7 +111,7 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
 
         self.style_reprojection = nn.Sequential(
-            nn.Conv2d(self.s_d, self.s_d, kernel_size=1),
+            nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU(),
             nn.Linear(2048, 2048)
         )
