@@ -110,7 +110,7 @@ class RevisionNet(nn.Module):
         )
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d, norm=True)
+        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
         self.relu = nn.ReLU()
 
 
@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        out = out + self.relu(self.adaconv_post_res(style, out))
+        out = out + self.relu(self.adaconv_post_res(style, out, norm=True))
         out = self.UpBlock(out)
         return out
 
