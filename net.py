@@ -112,8 +112,7 @@ class RevisionNet(nn.Module):
 
         self.style_reprojection = nn.Sequential(
             nn.Conv2d(s_d, s_d, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.Linear(2048, 2048)
+            nn.LeakyReLU()
         )
 
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
