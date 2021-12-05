@@ -331,7 +331,7 @@ elif args.train_model=='revision':
             si = [F.interpolate(si, size=256, mode='bicubic'), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-            stylized, cb_loss, style = dec_(sF, cF)
+            stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized.detach(), ci[-1].detach(), style.detach())
             if si[-1].shape[-1]>512:
                 si_cropped = random_crop(si[-1])
