@@ -510,7 +510,7 @@ class Style_Guided_Discriminator(nn.Module):
             for j in torch.split(i.detach(), 256,dim=3):
                 if idx == 0:
                     pred_real = self(j.detach(), style.detach())
-                    loss_D_real = self.ganloss(pred_real, self.true).data
+                    loss_D_real = self.ganloss(pred_real, self.true)
                 else:
                     pred_real = self(j.detach(),style.detach())
                     loss_D_real += self.ganloss(pred_real, self.true).data

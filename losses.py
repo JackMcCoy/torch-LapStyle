@@ -152,8 +152,7 @@ class GANLoss(nn.Module):
         Returns:
             A label tensor filled with ground truth label, and with the size of the input
         """
-        device = torch.device("cuda")
-        target_tensor = target_is_real.expand(prediction.shape).float().to(device)
+        target_tensor = target_is_real.expand(prediction.shape).float()
 
         return target_tensor
 
