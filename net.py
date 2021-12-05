@@ -464,7 +464,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
         self.style_projection = nn.Sequential(
-            nn.Linear(5120, 5120)
+            nn.Linear(2048, 2048)
         )
 
 
