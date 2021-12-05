@@ -179,6 +179,7 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         size = 256
         idx = 0
         i_marks = []
