@@ -534,9 +534,9 @@ class Style_Guided_Discriminator(nn.Module):
 
     def forward(self, x, style):
         x = self.head(x)
-        for idx, i in enumerate(self.body):
+        for i, norm in zip(self.body,self.norms):
             x = i(style, x, norm=False)
-            x = self.norms[idx](x)
+            x = norm(x)
         x = self.tail(x)
         return x
 
