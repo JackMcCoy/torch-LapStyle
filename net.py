@@ -504,13 +504,18 @@ class Style_Guided_Discriminator(nn.Module):
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
         loss_D_real = 0
+        idx = 0
         style = self.style_encoding(style.detach())
-
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
         for i in torch.split(real.detach(),256,dim=2):
             for j in torch.split(i.detach(), 256,dim=3):
-                pred_real = self(j.detach(),style.detach())
-                loss_D_real += self.ganloss(pred_real, self.true).data
+                if idx == 0:
+                    pred_real = self(j.detach(), style.detach())
+                    loss_D_real = self.ganloss(pred_real, self.true).data
+                else:
+                    pred_real = self(j.detach(),style.detach())
+                    loss_D_real += self.ganloss(pred_real, self.true).data
+                idx += 1
         pred_fake = self(fake, style.detach())
 
         loss_D_fake = self.ganloss(pred_fake, self.false)
