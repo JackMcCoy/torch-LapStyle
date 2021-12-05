@@ -249,7 +249,7 @@ if args.train_model=='drafting':
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci.float().to('cpu'), nrow=4, scale_each=True)
-                out_images = torch.hstack([content_img_grid,style_source_grid,styled_img_grid])
+                out_images = make_grid([content_img_grid,style_source_grid,styled_img_grid], nrow=1)
                 save_image(out_images.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
