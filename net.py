@@ -1,7 +1,6 @@
 import typing
 import torch.nn as nn
 import torch
-import random
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils import spectral_norm
@@ -193,8 +192,8 @@ class Revisors(nn.Module):
             for i, j in zip(i_marks, j_marks):
                 ci = ci[:, :, i:i + 256, j:j + 256]
                 size_diff = size_diff // 2
-            i = random.randrange(256)
-            j = random.randrange(256)
+            i = random.randrange(256)[0].int()
+            j = torch.randint(255, (1,))[0].int()
             scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
             i_marks.append(i)
             j_marks.append(j)
