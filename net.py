@@ -199,7 +199,7 @@ class Revisors(nn.Module):
             j_marks.append(j)
             patch = input[:, :, i:i + 256, j:j + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
+            x2 = torch.cat([patch, lap_pyr.detach()], dim = 1)
             input = layer(x2, style)
             input = patch + input
             idx += 1
