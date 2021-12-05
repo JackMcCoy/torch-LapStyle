@@ -304,7 +304,7 @@ elif args.train_model=='revision':
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = torch.jit.script(build_disc(disc_state, disc_quant))#, disc_inputs)
+        disc_ = build_disc(disc_state, disc_quant)#, disc_inputs)
         disc_.train()
         rev_.train()
         dec_.eval()

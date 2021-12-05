@@ -141,7 +141,6 @@ class GANLoss(nn.Module):
         else:
             raise NotImplementedError('gan mode %s not implemented' % gan_mode)
 
-    @torch.jit.export
     def get_target_tensor(self, prediction, target_is_real):
         """Create label tensors with the same size as the input.
 
@@ -152,11 +151,11 @@ class GANLoss(nn.Module):
         Returns:
             A label tensor filled with ground truth label, and with the size of the input
         """
-        target_tensor = target_is_real.expand(prediction.shape).float()
+        target_tensor = target_is_real.expand(prediction.shape).float().to(device)
 
         return target_tensor
 
-    def forward(self,
+    def __call__(self,
                  prediction,
                  target_is_real):
         """Calculate loss given Discriminator's output and grount truth labels.
