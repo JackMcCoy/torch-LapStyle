@@ -6,7 +6,7 @@ class AdaConv(nn.Module):
     def __init__(self, ch_in, p, s_d = 512):
         super(AdaConv, self).__init__()
         self.s_d = s_d
-        self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d = s_d)
+        self.kernel_predictor = torch.jit.trace(KernelPredictor(ch_in, ch_in, p, s_d = s_d), torch.rand(4,128,4,4))
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
