@@ -149,8 +149,6 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        if not self.first_layer:
-            style = self.style_encoding(style)
         out = out + self.relu(self.adaconv_post_res(style, out))
         out = self.UpBlock(out)
         return out
@@ -164,7 +162,7 @@ class Revisors(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=320 if i == 0 else 64, first_layer=i == 0))
+            self.layers.append(RevisionNet(s_d=128, first_layer= i == 0))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -178,23 +176,17 @@ class Revisors(nn.Module):
         crop_marks = []
         for layer in self.layers:
             input = self.upsample(input.detach())
-            if idx == 0:
-                scaled_ci = F.interpolate(ci, size = size, mode='bicubic')
-                patch = input
-            else:
-                size *= 2
-                scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
-                size_diff = size // 512
-                for i, j in crop_marks:
-                    ci = ci[:, :, i:i + 256, j:j + 256]
-                    size_diff //= 2
-                i = torch.randint(255, (1,))
-                j = torch.randint(255, (1,))
-                scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
-                crop_marks.append((i, j))
-                patch = input[:, :, i:i + 256, j:j + 256]
-                style = layer.DownBlock(x2)
-                style = layer.resblock(style)
+            size *= 2
+            scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
+            size_diff = size // 512
+            for i, j in crop_marks:
+                ci = ci[:, :, i:i + 256, j:j + 256]
+                size_diff //= 2
+            i = torch.randint(255, (1,))
+            j = torch.randint(255, (1,))
+            scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
+            crop_marks.append((i, j))
+            patch = input[:, :, i:i + 256, j:j + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
             input = layer(x2, style)
