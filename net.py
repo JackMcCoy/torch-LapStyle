@@ -496,9 +496,8 @@ class Style_Guided_Discriminator(nn.Module):
         self.relgan = relgan
         self.quantize = quantize
 
-        self.true = torch.Tensor([True]).to(device)
-        self.false = torch.Tensor([False]).to(device)
-        self.default_cl = torch.Tensor([0]).to(device)
+        self.true = torch.Tensor([True]).float().to(device)
+        self.false = torch.Tensor([False]).float().to(device)
 
     @torch.jit.export
     def losses(self, real, fake, style):
