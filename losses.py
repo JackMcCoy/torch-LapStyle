@@ -142,7 +142,7 @@ class GANLoss(nn.Module):
             raise NotImplementedError('gan mode %s not implemented' % gan_mode)
 
     @torch.jit.export
-    def get_target_tensor(self, prediction, target_is_real: bool):
+    def get_target_tensor(self, prediction, target_is_real):
         """Create label tensors with the same size as the input.
 
         Args:
