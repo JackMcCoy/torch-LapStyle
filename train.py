@@ -249,13 +249,8 @@ if args.train_model=='drafting':
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si, nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci, nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
-                save_image(content_img_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_ci' + str(
-                               i + 1) + '.jpg')
-                save_image(style_source_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_si' + str(
-                               i + 1) + '.jpg')
+                out_images = torch.hstack([content_img_grid,style_source_grid,styled_img_grid])
+                save_image(out_images.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
                 print(loss)
