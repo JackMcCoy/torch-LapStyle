@@ -279,7 +279,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = net.DecoderAdaConv()
+        dec_ = torch.jit.script(net.DecoderAdaConv())
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
@@ -299,12 +299,12 @@ elif args.train_model=='revision':
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
+        rev_ = torch.jit.script(build_rev(args.revision_depth, rev_state))#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = build_disc(disc_state, disc_quant)#, disc_inputs)
+        disc_ = torch.jit.script(build_disc(disc_state, disc_quant))#, disc_inputs)
         disc_.train()
         rev_.train()
         dec_.eval()

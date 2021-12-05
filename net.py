@@ -504,6 +504,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.false = torch.Tensor([False]).to(device)
         self.default_cl = torch.Tensor([0]).to(device)
 
+    @torch.jit.export
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
         idx = 0
