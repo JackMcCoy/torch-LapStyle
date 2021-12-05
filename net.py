@@ -192,7 +192,7 @@ class Revisors(nn.Module):
             for i, j in zip(i_marks, j_marks):
                 ci = ci[:, :, i:i + 256, j:j + 256]
                 size_diff = size_diff // 2
-            i = random.randrange(256)[0].int()
+            i = torch.randint(255, (1,))[0].int()
             j = torch.randint(255, (1,))[0].int()
             scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
             i_marks.append(i)
