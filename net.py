@@ -1,3 +1,4 @@
+import typing
 import torch.nn as nn
 import torch
 from torchvision.transforms import RandomCrop
@@ -337,7 +338,7 @@ class DecoderAdaConv(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
-    def forward(self, sF, cF):
+    def forward(self, sF: typingDict[str, torch.Tenor], cF: typing.Dict[str, torch.Tenor]):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
