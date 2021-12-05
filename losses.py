@@ -171,7 +171,6 @@ class GANLoss(nn.Module):
         Returns:
             the calculated loss.
         """
-        device = torch.device("cuda")
         target_tensor = self.get_target_tensor(prediction, target_is_real)
         loss = self.loss(prediction, target_tensor)
         return loss
