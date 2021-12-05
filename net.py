@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
         """
         out = self.DownBlock(input)
         out = self.resblock(out)
-        out = out + self.relu(self.adaconv_post_res(style, out, norm=True))
+        out = out + self.relu(self.adaconv_post_res(style, out, norm=False))
         out = self.UpBlock(out)
         return out
 
@@ -530,7 +530,7 @@ class Style_Guided_Discriminator(nn.Module):
     def forward(self, x, style):
         x = self.head(x)
         for idx, i in enumerate(self.body):
-            x = i(style, x, norm=True)
+            x = i(style, x, norm=False)
             x = self.norms[idx](x)
         x = self.tail(x)
         return x
