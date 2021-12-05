@@ -279,7 +279,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.trace(net.DecoderAdaConv(), (torch.rand((args.batch_size,3,256,256)), torch.rand((args.batch_size,3,256,256)), torch.rand((args.batch_size,128,4,4))))
+        dec_ = torch.jit.trace(net.DecoderAdaConv(), (torch.rand((args.batch_size,3,256,256)), torch.rand((args.batch_size,3,256,256))))
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
@@ -299,7 +299,7 @@ elif args.train_model=='revision':
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,128,128).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,320,4,4).to(device)), check_trace=False)
+        rev_ = jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
@@ -316,9 +316,9 @@ elif args.train_model=='revision':
     scaler = GradScaler()
     d_scaler = GradScaler()
     optimizers = []
-    for i in rev_.layers:
-        optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    #optimizers.append(torch.optim.AdamW(rev_.parameters(), lr=args.lr))
+    #for i in rev_.layers:
+    #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
+    optimizers.append(torch.optim.AdamW(rev_.parameters(), lr=args.lr))
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
