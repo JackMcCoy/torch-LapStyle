@@ -503,7 +503,7 @@ class Style_Guided_Discriminator(nn.Module):
     @torch.jit.export
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
-        loss_D_real = torch.Tensor([0]).to(torch.device("cuda"))
+        loss_D_real = 0
         style = self.style_encoding(style.detach())
 
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
