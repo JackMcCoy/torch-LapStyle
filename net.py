@@ -187,7 +187,7 @@ class Revisors(nn.Module):
         for layer in self.layers:
             input = self.upsample(input.detach())
             size *= 2
-            scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
+            scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size // 512
             for i, j in zip(i_marks, j_marks):
                 ci = ci[:, :, i:i + 256, j:j + 256]
