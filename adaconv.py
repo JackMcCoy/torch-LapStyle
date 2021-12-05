@@ -12,7 +12,7 @@ class AdaConv(nn.Module):
         self.tanh = nn.Tanh()
         self.n_groups = ch_in//p
 
-    def forward(self, style_encoding, content_in, norm=True):
+    def forward(self, style_encoding, content_in, norm: bool=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
         N = style_encoding.shape[0]
