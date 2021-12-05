@@ -497,7 +497,9 @@ class Style_Guided_Discriminator(nn.Module):
         self.quantize = quantize
 
         self.true = torch.Tensor([True]).float().to(device)
+        self.true.requires_grad = False
         self.false = torch.Tensor([False]).float().to(device)
+        self.false.requires_grad = False
 
     @torch.jit.export
     def losses(self, real, fake, style):
@@ -510,7 +512,7 @@ class Style_Guided_Discriminator(nn.Module):
             for j in torch.split(i.detach(), 256,dim=3):
                 if idx == 0:
                     pred_real = self(j.detach(), style.detach())
-                    loss_D_real = self.ganloss(pred_real.float(), self.true)
+                    loss_D_real = self.ganloss(pred_real, self.true)
                 else:
                     pred_real = self(j.detach(),style.detach())
                     loss_D_real += self.ganloss(pred_real, self.true).data
