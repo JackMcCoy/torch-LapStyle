@@ -181,19 +181,21 @@ class Revisors(nn.Module):
     def forward(self, input, ci, style):
         size = 256
         idx = 0
-        crop_marks = []
+        i_marks = []
+        j_marks = []
         for layer in self.layers:
             input = self.upsample(input.detach())
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic')
             size_diff = size // 512
-            for i, j in crop_marks:
+            for i, j in zip(i_marks, j_marks):
                 ci = ci[:, :, i:i + 256, j:j + 256]
                 size_diff = size_diff // 2
             i = torch.randint(255, (1,))
             j = torch.randint(255, (1,))
             scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
-            crop_marks.append((i, j))
+            i_marks.append(i)
+            j_marks.append(j)
             patch = input[:, :, i:i + 256, j:j + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr.detach()], axis = 1)
