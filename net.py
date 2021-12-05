@@ -189,7 +189,7 @@ class Revisors(nn.Module):
             size_diff = size // 512
             for i, j in crop_marks:
                 ci = ci[:, :, i:i + 256, j:j + 256]
-                size_diff //= 2
+                size_diff = size_diff // 2
             i = torch.randint(255, (1,))
             j = torch.randint(255, (1,))
             scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
