@@ -279,7 +279,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.trace(net.DecoderAdaConv(), (torch.rand((args.batch_size,3,256,256)), torch.rand((args.batch_size,3,256,256))))
+        dec_ = net.DecoderAdaConv()
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
