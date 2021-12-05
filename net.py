@@ -511,10 +511,10 @@ class Style_Guided_Discriminator(nn.Module):
             for j in torch.split(i.detach(), 256,dim=3):
                 if idx == 0:
                     pred_real = self(j.detach(), style.detach())
-                    loss_D_real = self.ganloss(pred_real, True)
+                    loss_D_real = self.ganloss(pred_real, self.true)
                 else:
                     pred_real = self(j.detach(),style.detach())
-                    loss_D_real += self.ganloss(pred_real, True).data
+                    loss_D_real += self.ganloss(pred_real, self.true).data
                 idx+=1
         pred_fake = self(fake, style.detach())
         if self.relgan:
@@ -525,7 +525,7 @@ class Style_Guided_Discriminator(nn.Module):
                     torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
             )
         else:
-            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D_fake = self.ganloss(pred_fake, self.false)
             loss_D = (loss_D_real/4 + loss_D_fake) * 0.5
         return (loss_D, style)
 
