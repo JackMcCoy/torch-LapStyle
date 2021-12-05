@@ -244,7 +244,7 @@ if args.train_model=='drafting':
             writer.add_scalar('loss_style', loss_s.item(), i + 1)
 
         with torch.no_grad():
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 50 == 0:
                 stylized = stylized.float().to('cpu')
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
