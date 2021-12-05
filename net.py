@@ -107,7 +107,11 @@ class RevisionNet(nn.Module):
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconv_post_res = AdaConv(64, 1, s_d=s_d)
+        self.adaconvs = nn.ModuleList([
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d)])
         self.relu = nn.ReLU()
 
         self.style_reprojection = nn.Sequential(
@@ -127,18 +131,18 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
-        self.UpBlock = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 128, kernel_size=3),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 3, kernel_size=3),)
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 3, kernel_size=3))])
 
     def forward(self, input, style):
         """
@@ -151,8 +155,9 @@ class RevisionNet(nn.Module):
         out = self.DownBlock(input)
         out = self.resblock(out)
         style_reprojected = self.style_reprojection(style)
-        out = out + self.relu(self.adaconv_post_res(style_reprojected, out, norm=False))
-        out = self.UpBlock(out)
+        for adaconv, learnable in zip(self.adaconvs,self.UpBlock):
+            out = out + adaconv(style_reprojected, out, norm=False).data
+            out = learnable(out)
         return out
 
 class Revisors(nn.Module):
