@@ -338,7 +338,7 @@ class DecoderAdaConv(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
-    def forward(self, sF: typing.Dict[str, torch.Tenor], cF: typing.Dict[str, torch.Tenor]):
+    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
         style = self.style_encoding(sF['r4_1'].detach())
