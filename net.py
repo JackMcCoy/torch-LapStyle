@@ -567,19 +567,22 @@ class Discriminator(nn.Module):
         self.relgan = relgan
 
     def losses(self, real, fake):
-        pred_real = self(real)
+        loss_D = 0
         pred_fake = self(fake)
-        if self.relgan:
-            pred_real = pred_real.view(-1)
-            pred_fake = pred_fake.view(-1)
-            loss_D = (
-                    torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                    torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-            )
-        else:
-            loss_D_real = self.ganloss(pred_real, True)
-            loss_D_fake = self.ganloss(pred_fake, False)
-            loss_D = (loss_D_real + loss_D_fake) * 0.5
+        for i in torch.split(real.detach(),256,dim=2):
+            for j in torch.split(i.detach(), 256,dim=3):
+                pred_real = self(j)
+                if self.relgan:
+                    pred_real = pred_real.view(-1)
+                    pred_fake = pred_fake.view(-1)
+                    loss_D += (
+                            torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                            torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                    ).data
+                else:
+                    loss_D_real = self.ganloss(pred_real, True)
+                    loss_D_fake = self.ganloss(pred_fake, False)
+                    loss_D += ((loss_D_real + loss_D_fake) * 0.5).data
         return loss_D
 
     def forward(self, x):
@@ -757,7 +760,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized, disc_style.detach())
+        fake_loss = disc_(disc_style.detach())
         loss_Gp_GAN = disc_.ganloss(fake_loss, tensor_true)
     else:
         loss_Gp_GAN = 0

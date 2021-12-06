@@ -267,8 +267,7 @@ elif args.train_model=='revision':
         rev.train()
         return rev
     def build_disc(disc_state, disc_quant):
-        disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
-                                       quantize=disc_quant).to(device)
+        disc=net.Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=True).to(device)
         if not disc_state is None:
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
@@ -342,7 +341,7 @@ elif args.train_model=='revision':
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D, disc_style = disc_.losses(si_cropped.detach(), rev_stylized.detach(), style.detach())
+            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.detach())
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
