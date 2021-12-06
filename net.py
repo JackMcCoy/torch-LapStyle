@@ -161,7 +161,7 @@ class RevisionNet(nn.Module):
         """
         style_reprojected = self.style_reprojection(style)
         for adaconv, learnable in zip(self.adaconvsDown,self.DownBlock):
-            out = input + adaconv(style_reprojected, out, norm=False).data
+            out = input + adaconv(style_reprojected, input, norm=False).data
             out = learnable(out)
         out = self.resblock(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
