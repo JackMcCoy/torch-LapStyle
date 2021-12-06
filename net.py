@@ -108,7 +108,12 @@ class RevisionNet(nn.Module):
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconvs = nn.ModuleList([
+        self.adaconvsDown = nn.ModuleList([
+            AdaConv(6, 1, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d),
+            AdaConv(64, 1, s_d=s_d)])
+        self.adaconvsUp = nn.ModuleList([
             AdaConv(64, 1, s_d=s_d),
             AdaConv(64, 1, s_d=s_d),
             AdaConv(128, 2, s_d=s_d),
@@ -120,18 +125,19 @@ class RevisionNet(nn.Module):
             nn.LeakyReLU()
         )
 
-        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.DownBlock = nn.ModuleList([
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 64, kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU()),
+            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.ReLU(),)
+            nn.ReLU())])
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
@@ -153,10 +159,12 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        out = self.DownBlock(input)
-        out = self.resblock(out)
         style_reprojected = self.style_reprojection(style)
-        for adaconv, learnable in zip(self.adaconvs,self.UpBlock):
+        for adaconv, learnable in zip(self.adaconvsDown,self.DownBlock):
+            out = out + adaconv(style_reprojected, out, norm=False).data
+            out = learnable(out)
+        out = self.resblock(out)
+        for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
             out = out + adaconv(style_reprojected, out, norm=False).data
             out = learnable(out)
         return out
