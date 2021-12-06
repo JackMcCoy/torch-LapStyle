@@ -151,7 +151,7 @@ class RevisionNet(nn.Module):
             nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 3, kernel_size=3))])
 
-    def forward(self, input, style):
+    def forward(self, out, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -161,7 +161,7 @@ class RevisionNet(nn.Module):
         """
         style_reprojected = self.style_reprojection(style)
         for adaconv, learnable in zip(self.adaconvsDown,self.DownBlock):
-            out = input + adaconv(style_reprojected, input, norm=False).data
+            out = out + adaconv(style_reprojected, out, norm=False).data
             out = learnable(out)
         out = self.resblock(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
