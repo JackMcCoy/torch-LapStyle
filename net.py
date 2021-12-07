@@ -162,7 +162,7 @@ class RevisionNet(nn.Module):
         return out
 
 class Revisors(nn.Module):
-    def __init__(self, levels= 1, state_string = None):
+    def __init__(self, levels= 1, state_string = None, batch_size=8):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -170,7 +170,7 @@ class Revisors(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=128, first_layer= i == 0))
+            self.layers.append(RevisionNet(s_d=128, first_layer= i == 0, batch_size=batch_size))
 
     def load_states(self, state_string):
         states = state_string.split(',')
