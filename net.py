@@ -667,7 +667,7 @@ class SpectralDiscriminator(nn.Module):
                                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
                         )
                     else:
-                        loss_D = (
+                        loss_D += (
                                 torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
                                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
                         ).data
