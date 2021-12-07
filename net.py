@@ -648,6 +648,10 @@ class SpectralDiscriminator(nn.Module):
         self.relu = nn.ReLU()
         self.ganloss = GANLoss('lsgan')
         self.relgan = relgan
+        self.true = torch.Tensor([True]).float().to(device)
+        self.true.requires_grad = False
+        self.false = torch.Tensor([False]).float().to(device)
+        self.false.requires_grad = False
 
     def losses(self, real, fake):
         idx = 0
@@ -655,7 +659,7 @@ class SpectralDiscriminator(nn.Module):
         if self.relgan:
             pred_fake = pred_fake.view(-1)
         else:
-            loss_D_fake = self.ganloss(pred_fake, False)
+            loss_D_fake = self.ganloss(pred_fake, self.false)
         for i in torch.split(real.detach(), 256, dim=2):
             for j in torch.split(i.detach(), 256, dim=3):
                 pred_real = self(j)
@@ -672,7 +676,7 @@ class SpectralDiscriminator(nn.Module):
                                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
                         ).data
                 else:
-                    loss_D_real = self.ganloss(pred_real, True)
+                    loss_D_real = self.ganloss(pred_real, self.true)
                     if idx == 0:
                         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
                     else:
