@@ -102,17 +102,17 @@ class Decoder(nn.Module):
 
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, input_nc=6, first_layer=True):
+    def __init__(self, s_d = 320, , batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
         self.adaconvsUp = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d)])
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
+            AdaConv(128, 2, s_d=s_d, batch_size=batch_size),
+            AdaConv(128, 2, s_d=s_d, batch_size=batch_size)])
         self.relu = nn.ReLU()
 
         self.style_reprojection = nn.Sequential(
@@ -307,7 +307,7 @@ def style_encoder_block(ch):
     ]
 
 class DecoderAdaConv(nn.Module):
-    def __init__(self):
+    def __init__(self, batch_size = 8):
         super(DecoderAdaConv, self).__init__()
 
         self.style_encoding = nn.Sequential(
@@ -319,21 +319,21 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
+        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d, batch_size=batch_size)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d)
+        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d, batch_size=batch_size)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d)
+        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d, batch_size=batch_size)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d)
+        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d, batch_size=batch_size)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),

@@ -260,7 +260,7 @@ if args.train_model=='drafting':
     writer.close()
 elif args.train_model=='revision':
     def build_rev(depth, state):
-        rev = net.Revisors(levels=args.revision_depth).to(device)
+        rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
@@ -278,7 +278,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.script(net.DecoderAdaConv())
+        dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
