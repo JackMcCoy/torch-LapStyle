@@ -102,7 +102,7 @@ class Decoder(nn.Module):
 
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, , batch_size=8, input_nc=6, first_layer=True):
+    def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
 
