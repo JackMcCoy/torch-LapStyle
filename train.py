@@ -259,8 +259,10 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
-    def build_rev(depth, state):
-        rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
+    kp128 = torch.jit.trace(KernelPredictor(128, 128, 2, s_d=128), torch.rand(batch_size, 128, 4, 4))
+    kp64 = torch.jit.trace(KernelPredictor(64, 64, 1, s_d=128), torch.rand(batch_size, 128, 4, 4))
+    def build_rev(kp128, kp64, depth, state):
+        rev = net.Revisors(kp128, kp64, levels=args.revision_depth, batch_size=args.batch_size).to(device)
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
@@ -278,7 +280,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
+        dec_ = torch.jit.script(net.DecoderAdaConv(kp128, kp64, batch_size=args.batch_size))
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
@@ -298,7 +300,7 @@ elif args.train_model=='revision':
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
+        rev_ = build_rev(kp128, kp64, args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),

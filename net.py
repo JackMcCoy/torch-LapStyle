@@ -102,17 +102,17 @@ class Decoder(nn.Module):
 
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
+    def __init__(self, kp128, kp64, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
         self.adaconvsUp = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 2, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 2, s_d=s_d, batch_size=batch_size)])
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size, kp=kp64),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size, kp=kp64),
+            AdaConv(128, 2, s_d=s_d, batch_size=batch_size, kp=kp128),
+            AdaConv(128, 2, s_d=s_d, batch_size=batch_size, kp=kp128)])
         self.relu = nn.ReLU()
 
         self.style_reprojection = nn.Sequential(
@@ -162,7 +162,7 @@ class RevisionNet(nn.Module):
         return out
 
 class Revisors(nn.Module):
-    def __init__(self, levels= 1, state_string = None, batch_size=8):
+    def __init__(self, kp128, kp64, levels= 1, state_string = None, batch_size=8):
         super(Revisors, self).__init__()
         self.layers = nn.ModuleList([])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -170,7 +170,7 @@ class Revisors(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=128, first_layer= i == 0, batch_size=batch_size))
+            self.layers.append(RevisionNet(kp128, kp64, s_d=128, first_layer= i == 0, batch_size=batch_size))
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -307,7 +307,7 @@ def style_encoder_block(ch):
     ]
 
 class DecoderAdaConv(nn.Module):
-    def __init__(self, batch_size = 8):
+    def __init__(self, kp128, kp64, batch_size = 8):
         super(DecoderAdaConv, self).__init__()
 
         self.style_encoding = nn.Sequential(
@@ -319,21 +319,23 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d, batch_size=batch_size)
+        kp512 = torch.jit.trace(KernelPredictor(512, 512, 8, s_d=128), torch.rand(batch_size, 128, 4, 4))
+        kp256 = torch.jit.trace(KernelPredictor(256, 256, 4, s_d=128), torch.rand(batch_size, 128, 4, 4))
+        self.kernel_1 = AdaConv(512, 8, s_d = self.s_d, batch_size=batch_size, kp=kp512)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d, batch_size=batch_size)
+        self.kernel_2 = AdaConv(256, 4, s_d = self.s_d, batch_size=batch_size, kp=kp256)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d, batch_size=batch_size)
+        self.kernel_3 = AdaConv(128, 2, s_d = self.s_d, batch_size=batch_size, kp=kp128)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d, batch_size=batch_size)
+        self.kernel_4 = AdaConv(64, 1, s_d = self.s_d, batch_size=batch_size, kp=kp64)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
