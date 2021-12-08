@@ -268,6 +268,8 @@ elif args.train_model=='revision':
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
         rev.train()
+        for i in rev.layers[:-1]:
+            i.train(False)
         return rev
     def build_disc(disc_state, disc_quant):
         disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False).to(device)
@@ -320,7 +322,7 @@ elif args.train_model=='revision':
     optimizers = []
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizers.append(torch.optim.AdamW(rev_.parameters(), lr=args.lr))
+    optimizers.append(torch.optim.AdamW(rev_.layers[-1]parameters(), lr=args.lr))
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
