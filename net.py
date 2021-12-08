@@ -158,7 +158,6 @@ class RevisionNet(nn.Module):
         out = self.DownBlock(input)
         out = self.resblock(out)
         out = self.riemann_noise(out)
-        print(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
             out = out + adaconv(style_reprojected, out, norm=False).data
             out = learnable(out)
