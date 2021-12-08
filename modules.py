@@ -20,10 +20,10 @@ class ResBlock(nn.Module):
 class RiemannNoise(nn.Module):
     def __init__(self):
         super(RiemannNoise, self).__init__()
-        self.A = nn.Parameter(torch.rand(1,128,128))
-        self.b = nn.Parameter(torch.rand(1,))
-        self.alpha = nn.Parameter(torch.rand(1,))
-        self.r = nn.Parameter(torch.rand(1,))
+        self.A = nn.Parameter(torch.rand(1,128,128)).to(device)
+        self.b = nn.Parameter(torch.rand(1,)).to(device)
+        self.alpha = nn.Parameter(torch.rand(1,)).to(device)
+        self.r = nn.Parameter(torch.rand(1,)).to(device)
 
     def forward(self, x):
         N, c, h, w = x.shape
