@@ -17,6 +17,27 @@ class ResBlock(nn.Module):
         return out
 
 
+class RiemannNoise(nn.Module):
+    def __init__(self):
+        super(RiemannNoise, self).__init__()
+        self.A = nn.Parameter(torch.rand(1,256,256))
+        self.b = nn.Parameter(torch.rand(1,))
+        self.alpha = nn.Parameter(torch.rand(1,))
+        self.r = nn.Parameter(torch.rand(1,))
+
+    def forward(self, x):
+        N, c, h, w = x.shape
+        mu = x.sum(1, keepdim=True)
+        mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
+        s = mu - mu_mean
+        s = s / torch.abs(s).max()
+        sd = self.A * s + self.b
+        s = self.alpha*sd + (1 - self.alpha) + 1
+        sigma = s / torch.linalg.vector_norm(s)
+        out = self.r * sigma * x + self.r * sigma * torch.rand(x.shape)
+        return out
+
+
 class SpectralResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()

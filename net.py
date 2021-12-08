@@ -9,7 +9,7 @@ import numpy as np
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
-from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool, SpectralResBlock
+from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -119,6 +119,7 @@ class RevisionNet(nn.Module):
             nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU()
         )
+        self.riemann_noise = RiemannNoise()
 
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
@@ -156,6 +157,7 @@ class RevisionNet(nn.Module):
         style_reprojected = self.style_reprojection(style)
         out = self.DownBlock(input)
         out = self.resblock(out)
+        out = self.riemann_noise(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
             out = out + adaconv(style_reprojected, out, norm=False).data
             out = learnable(out)
