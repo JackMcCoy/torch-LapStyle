@@ -34,7 +34,7 @@ class RiemannNoise(nn.Module):
         sd = self.A * s + self.b
         s = self.alpha*sd + (1 - self.alpha) + 1
         sigma = s / torch.linalg.vector_norm(s)
-        out = self.r * sigma * x + self.r * sigma * torch.rand(x.shape)
+        out = self.r * sigma * x + self.r * sigma * torch.rand(x.shape).to(torch.device('cuda'))
         return out
 
 
