@@ -171,7 +171,6 @@ class Revisors(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
-        self.riemann_noise = RiemannNoise(256)
         for i in range(levels):
             self.layers.append(RevisionNet(kp128, kp64, s_d=128, first_layer= i == 0, batch_size=batch_size))
 
@@ -188,7 +187,6 @@ class Revisors(nn.Module):
         i_marks = []
         j_marks = []
         for layer in self.layers:
-            input = self.riemann_noise(input)
             input = self.upsample(input.detach())
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
