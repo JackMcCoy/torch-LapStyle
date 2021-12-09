@@ -332,8 +332,8 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='nearest'), ci]
-            si = [F.interpolate(si, size=256, mode='nearest'), si]
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
             stylized, style = dec_(sF, cF)
