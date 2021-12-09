@@ -273,7 +273,7 @@ elif args.train_model=='revision':
                 i.train(False)
         return rev
     def build_disc(disc_state, disc_quant):
-        disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False).to(device)
+        disc=net.SDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False).to(device)
         if not disc_state is None:
             disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
