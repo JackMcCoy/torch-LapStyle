@@ -382,6 +382,11 @@ elif args.train_model=='revision':
 
             writer.add_scalar('loss_content', loss_c.item(), i + 1)
             writer.add_scalar('loss_style', loss_s.item(), i + 1)
+            writer.add_scalar('style_remd', style_remd.item(), i + 1)
+            writer.add_scalar('content_relt', content_relt.item(), i + 1)
+            writer.add_scalar('patch_loss', patch_loss.item(), i + 1)
+            writer.add_scalar('loss_Gp_GAN', loss_Gp_GAN.item(), i + 1)
+            writer.add_scalar('loss_D', loss_D.item(), i + 1)
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
