@@ -118,6 +118,7 @@ parser.add_argument('--load_rev', type=int, default=0)
 parser.add_argument('--load_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
 parser.add_argument('--remd_loss', type=int, default=1)
+parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
@@ -224,7 +225,7 @@ if args.train_model=='drafting':
 
         with autocast(enabled=ac_enabled):
             '''
-            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
             l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
