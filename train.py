@@ -187,7 +187,7 @@ if args.train_model=='drafting':
 
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
-    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
@@ -239,13 +239,14 @@ if args.train_model=='drafting':
             optimizer.step()
 
         if (i + 1) % 10 == 0:
-            print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
+            loss_dict = {}
+            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt],
+                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT']):
+                if type(l)==torch.Tensor:
+                   loss_dict[s] = l.item()
+            print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
 
-            wandb.log({"Content Loss": loss_c.item(),
-                       "Style Loss": loss_s.item(),
-                       "LR": optimizer.param_groups[0]['lr']},
-                      step=i)
+            wandb.log(loss_dict, step=i)
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
