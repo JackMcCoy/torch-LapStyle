@@ -344,7 +344,7 @@ elif args.train_model=='revision':
             for optimizer in optimizers:
                 optimizer.zero_grad()
             stylized, style = dec_(sF, cF)
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1], style)
             if si[-1].shape[-1]>512:
                 si_cropped = random_crop(si[-1])
             else:
@@ -354,7 +354,7 @@ elif args.train_model=='revision':
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.detach())
+            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.clone().detach())
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
