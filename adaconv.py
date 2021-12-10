@@ -3,10 +3,10 @@ from torch import nn
 from function import calc_mean_std
 
 class AdaConv(nn.Module):
-    def __init__(self, ch_in, p, s_d = 512, batch_size=8, kp=None):
+    def __init__(self, ch_in, p, s_d = 512):
         super(AdaConv, self).__init__()
         self.s_d = s_d
-        self.kernel_predictor = kp
+        self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()

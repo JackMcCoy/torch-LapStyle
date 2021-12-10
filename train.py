@@ -260,10 +260,8 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
-    kp128 = torch.jit.trace(KernelPredictor(128, 128, 2, s_d=128), torch.rand(args.batch_size, 128, 4, 4))
-    kp64 = torch.jit.trace(KernelPredictor(64, 64, 1, s_d=128), torch.rand(args.batch_size, 128, 4, 4))
     def build_rev(kp128, kp64, depth, state):
-        rev = net.Revisors(kp128, kp64, levels=args.revision_depth, batch_size=args.batch_size).to(device)
+        rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
         if not state is None:
             state = torch.load(state)
             rev.load_state_dict(state, strict=False)
@@ -284,7 +282,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.script(net.DecoderAdaConv(kp128, kp64, batch_size=args.batch_size))
+        dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
