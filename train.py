@@ -211,7 +211,7 @@ if args.train_model=='drafting':
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             '''
             opt_D.zero_grad()
