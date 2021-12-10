@@ -48,16 +48,6 @@ class KernelPredictor(nn.Module):
         self.pointwise_avg_pool = nn.AvgPool2d(4)
         self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), 1)
         self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
-        self.apply(self._init_weights)
-
-    @staticmethod
-    def _init_weights(m):
-        if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
-        elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding):
         N = style_encoding.shape[0]

@@ -346,7 +346,7 @@ elif args.train_model=='revision':
         opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.detach())
+            loss_D = disc_.losses(si_cropped.detach(), rev_stylized)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
