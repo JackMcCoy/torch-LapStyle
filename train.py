@@ -187,7 +187,7 @@ if args.train_model=='drafting':
 
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
-    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr, weight_decay=.1)
+    optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
     '''
     content_iter = iter(data.DataLoader(
