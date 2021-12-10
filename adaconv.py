@@ -35,7 +35,7 @@ class AdaConv(nn.Module):
                                          groups=self.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight=c[0],
-                                                         bias=d,
+                                                         bias=d[0],
                                                          groups=self.n_groups))
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
