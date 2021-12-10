@@ -178,12 +178,12 @@ if args.train_model=='drafting':
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
         enc_.train(False)
         dec_ = net.DecoderAdaConv()
-        dec_.train()
-        #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         if args.load_model == 'none':
             init_weights(dec_)
         else:
             dec_.load_state_dict(torch.load(args.load_model))
+        dec_.train()
+        #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         #disc_.train()
         enc_.to(device)
         dec_.to(device)
