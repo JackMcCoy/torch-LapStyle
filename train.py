@@ -129,7 +129,7 @@ save_dir = Path(args.save_dir)
 save_dir.mkdir(exist_ok=True, parents=True)
 log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
-wandb.init(project='torch-LapStyle', entity='fdrdavegill', config=vars(args))
+wandb.init(project='torch-LapStyle', entity='davegill', config=vars(args))
 
 def build_enc(vgg):
     enc = net.Encoder(vgg)
