@@ -26,7 +26,7 @@ class AdaConv(nn.Module):
         predicted = torch.vsplit(predicted, N)
         depthwise = torch.vsplit(depthwise, N)
         pointwise_kn = torch.vsplit(pointwise_kn, N)
-        pointwise_bias = torch.hsplit(pointwise_bias, N)
+        pointwise_bias = torch.vsplit(pointwise_bias, N)
 
         for a,b,c,d in zip(predicted, depthwise, pointwise_kn, pointwise_bias):
 
