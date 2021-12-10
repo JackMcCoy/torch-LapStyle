@@ -715,7 +715,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc, ada, cb = decoder(F, F)
+    Icc, ada = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
