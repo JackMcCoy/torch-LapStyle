@@ -384,6 +384,15 @@ elif args.train_model=='revision':
                 optimizer.step()
 
         if (i + 1) % 10 == 0:
+            loss_dict = {}
+            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, mdog, loss_Gp_GAN,loss_D],
+                            ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                             'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss']):
+                if type(l) == torch.Tensor:
+                    loss_dict[s] = l.item()
+            print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+
+            wandb.log(loss_dict, step=i)
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
