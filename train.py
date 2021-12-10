@@ -260,7 +260,7 @@ if args.train_model=='drafting':
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
     writer.close()
 elif args.train_model=='revision':
-    def build_rev(kp128, kp64, depth, state):
+    def build_rev(depth, state):
         rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
         if not state is None:
             state = torch.load(state)
@@ -302,7 +302,7 @@ elif args.train_model=='revision':
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = build_rev(kp128, kp64, args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
+        rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
