@@ -346,7 +346,7 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
-        style = self.style_encoding(sF['r4_1'].detach())
+        style = self.style_encoding(sF['r4_1'])
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'], norm=True)
@@ -733,42 +733,42 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     if content_all_layers:
         #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
         #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
+        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'])
         for key in content_layers[1:]:
-            loss_c += content_loss(stylized_feats[key], cF[key].detach()).data
+            loss_c += content_loss(stylized_feats[key], cF[key]).data
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
     idx = 0
     if sF is None:
         for i in torch.split(si.detach(), 256, dim=2):
             for j in torch.split(i.detach(), 256, dim=3):
                 sF = encoder(j.detach())
                 if idx == 0:
-                    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+                    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
                     if remd_loss:
-                        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
-                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+                        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
+                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
                 else:
-                    loss_s += style_loss(stylized_feats['r1_1'], sF['r1_1'].detach()).data
+                    loss_s = loss_s + style_loss(stylized_feats['r1_1'], sF['r1_1'])
                     if remd_loss:
-                        style_remd += (style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
-                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())).data
+                        style_remd = style_remd + (style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
+                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1']))
                 for key in style_layers[1:]:
-                    loss_s += style_loss(stylized_feats[key], sF[key].detach()).data
+                    loss_s += style_loss(stylized_feats[key], sF[key]).data
         loss_s = loss_s / 4
         style_remd = style_remd/4
     else:
-        loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+        loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
         for key in style_layers[1:]:
-            loss_s += style_loss(stylized_feats[key], sF[key].detach()).data
+            loss_s = loss_s + style_loss(stylized_feats[key], sF[key])
         if remd_loss:
-            style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
-                         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+            style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
+                         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
     if remd_loss:
         if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
 
     else:
         content_relt = 0
@@ -795,7 +795,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'].detach())
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     else:
         patch_loss = 0
 
