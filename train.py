@@ -343,6 +343,7 @@ elif args.train_model=='revision':
             sF = enc_(si[0])
             for optimizer in optimizers:
                 optimizer.zero_grad()
+            opt_D.zero_grad()
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1], style)
             if si[-1].shape[-1]>512:
@@ -351,7 +352,6 @@ elif args.train_model=='revision':
                 si_cropped = si[-1]
             patch_feats = enc_(stylized_patch)
 
-        opt_D.zero_grad()
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
             loss_D = disc_.losses(si_cropped.detach(), rev_stylized.clone().detach())
@@ -364,8 +364,6 @@ elif args.train_model=='revision':
             opt_D.step()
         set_requires_grad(disc_, False)
 
-        for optimizer in optimizers:
-            optimizer.zero_grad()
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch.detach())
 
