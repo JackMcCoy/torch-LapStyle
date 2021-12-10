@@ -23,15 +23,19 @@ class AdaConv(nn.Module):
             content_in = (content_in - content_mean.expand(
                     size)) / content_std.expand(size)
         predicted = self.pad(content_in)
+        predicted = torch.vsplit(predicted, N)
+        depthwise = torch.vsplit(depthwise, N)
+        pointwise_kn = torch.vsplit(pointwise_kn, N)
+        pointwise_bias = torch.hsplit(pointwise_bias, N)
 
-        for i in range(N):
+        for a,b,c,d in zip(predicted, depthwise, pointwise_kn, pointwise_bias):
 
-            depth = nn.functional.conv2d(predicted[i, :, :, :].unsqueeze(0),
-                                         weight=depthwise[i],
+            depth = nn.functional.conv2d(a,
+                                         weight=b,
                                          groups=self.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
-                                                         weight=pointwise_kn[i],
-                                                         bias=pointwise_bias[i],
+                                                         weight=c,
+                                                         bias=d,
                                                          groups=self.n_groups))
         predicted = torch.cat(spatial_conv_out,0)
         return predicted
