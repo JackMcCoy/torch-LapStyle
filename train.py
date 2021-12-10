@@ -181,7 +181,7 @@ if args.train_model=='drafting':
         if args.load_model == 'none':
             init_weights(dec_)
         else:
-            dec_.load_state_dict(torch.load(args.load_model))
+            dec_.load_state_dict(torch.load(args.load_model), strict=False)
         dec_.train()
         #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
         #disc_.train()
