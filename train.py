@@ -130,8 +130,6 @@ save_dir.mkdir(exist_ok=True, parents=True)
 log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 wandb.init(project='torch-LapStyle', entity='fdrdavegill', config=vars(args))
-#wandb.watch(mod, log=ctx.log.wandb.model_log_type, log_freq=ctx.log.wandb.log_frequency)
-log = WandbLog(ctx, data_len)
 
 def build_enc(vgg):
     enc = net.Encoder(vgg)
@@ -319,6 +317,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
+    wandb.watch((rev_,disc_), log='all', log_freq=10)
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
     d_scaler = GradScaler()
