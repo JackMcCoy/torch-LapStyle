@@ -185,6 +185,7 @@ if args.train_model=='drafting':
         dec_.to(device)
         #disc_.to(device)
 
+    wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr, weight_decay=.1)
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
@@ -241,8 +242,10 @@ if args.train_model=='drafting':
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
-            writer.add_scalar('loss_content', loss_c.item(), i + 1)
-            writer.add_scalar('loss_style', loss_s.item(), i + 1)
+            wandb.log({"Content Loss": loss_c.item(),
+                       "Style Loss": loss_s.item(),
+                       "LR": optimizer.param_groups[0]['lr']},
+                      step=i)
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
@@ -258,7 +261,6 @@ if args.train_model=='drafting':
                 state_dict = dec_.state_dict()
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
-    writer.close()
 elif args.train_model=='revision':
     def build_rev(depth, state):
         rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
