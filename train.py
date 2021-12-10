@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from adaconv import KernelPredictor
 import numpy as np
 from PIL import Image, ImageFile
-from tensorboardX import SummaryWriter
+import wandb
 from torchvision import transforms
 from tqdm import tqdm
 from torchvision.utils import save_image, make_grid
@@ -129,7 +129,9 @@ save_dir = Path(args.save_dir)
 save_dir.mkdir(exist_ok=True, parents=True)
 log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
-writer = SummaryWriter(log_dir=str(log_dir))
+wandb.init(project='torch-LapStyle', entity='fdrdavegill', config=vars(args))
+#wandb.watch(mod, log=ctx.log.wandb.model_log_type, log_freq=ctx.log.wandb.log_frequency)
+log = WandbLog(ctx, data_len)
 
 def build_enc(vgg):
     enc = net.Encoder(vgg)
@@ -380,13 +382,15 @@ elif args.train_model=='revision':
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
-            writer.add_scalar('loss_content', loss_c.item(), i + 1)
-            writer.add_scalar('loss_style', loss_s.item(), i + 1)
-            writer.add_scalar('style_remd', style_remd.item(), i + 1)
-            writer.add_scalar('content_relt', content_relt.item(), i + 1)
-            writer.add_scalar('patch_loss', patch_loss.item(), i + 1)
-            writer.add_scalar('loss_Gp_GAN', loss_Gp_GAN.item(), i + 1)
-            writer.add_scalar('loss_D', loss_D.item(), i + 1)
+            wandb.log({"Content Loss": loss_c.item(),
+                       "Style Loss": loss_s.item(),
+                       "Style REMD": style_remd.item(),
+                       "Content RELT": content_relt.item(),
+                       "Patch Loss": patch_loss.item(),
+                       "Revision Disc. Loss": loss_Gp_GAN.item(),
+                       "Discriminator Loss": loss_D.item(),
+                       "LR": opt_D.lr},
+                      step=i)
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
@@ -419,7 +423,7 @@ elif args.train_model=='revision':
                 state_dict = disc_.state_dict()
                 torch.save(state_dict, save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
-    writer.close()
+
 
 elif args.train_model=='vqgan_pretrain':
     dec_ = net.VQGANTrain(args.vgg)
