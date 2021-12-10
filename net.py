@@ -342,6 +342,17 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(64, 3, kernel_size=3)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
+            m.requires_grad = True
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
