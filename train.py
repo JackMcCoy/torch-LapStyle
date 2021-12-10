@@ -388,7 +388,7 @@ elif args.train_model=='revision':
                        "Patch Loss": patch_loss.item(),
                        "Revision Disc. Loss": loss_Gp_GAN.item(),
                        "Discriminator Loss": loss_D.item(),
-                       "LR": opt_D.lr},
+                       "LR": opt_D.param_groups[0].lr},
                       step=i)
 
         with torch.no_grad():
