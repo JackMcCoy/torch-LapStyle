@@ -720,7 +720,7 @@ def identity_loss(i, F, encoder, decoder):
     Fcc = encoder(Icc)
     l_identity2 = 0
     for key in F.keys():
-        l_identity2 = l_identity2 + content_loss(Fcc[key], F[key]).data
+        l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']

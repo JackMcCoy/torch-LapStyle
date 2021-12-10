@@ -226,9 +226,8 @@ if args.train_model=='drafting':
             '''
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=False, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd
-            #            content_relt * 25 + l_identity1*50 + l_identity2 * 1 +\
-            #            l_identity3* 25 + l_identity4 * .5 + mdog * .33 + loss_Gp_GAN * 5 + cb_loss
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
+            l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -239,8 +238,8 @@ if args.train_model=='drafting':
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt],
-                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT']):
+            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4],
+                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4']):
                 if type(l)==torch.Tensor:
                    loss_dict[s] = l.item()
             print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
