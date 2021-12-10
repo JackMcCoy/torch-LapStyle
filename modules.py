@@ -11,6 +11,17 @@ class ResBlock(nn.Module):
                                         nn.Conv2d(dim, dim, kernel_size=3),
                                         nn.ReLU(),
                                         nn.Conv2d(dim, dim, kernel_size=1))
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
+            m.requires_grad = True
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, x):
         out = x + self.conv_block(x)
@@ -74,6 +85,17 @@ class ConvBlock(nn.Module):
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim1, dim2, kernel_size=3),
                                         nn.ReLU())
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
+            m.requires_grad = True
+        elif isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, x):
         out = self.conv_block(x)
