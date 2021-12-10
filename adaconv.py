@@ -8,8 +8,6 @@ class AdaConv(nn.Module):
         self.s_d = s_d
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
-        self.relu = nn.LeakyReLU()
-        self.tanh = nn.Tanh()
         self.n_groups = ch_in//p
         self.apply(self._init_weights)
 
