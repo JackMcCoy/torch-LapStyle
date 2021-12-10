@@ -122,6 +122,10 @@ parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
+parser.add_argument('--fp16', type=int, default=0)
+
+if args.fp16 ==1:
+    ac_enabled=True
 
 args = parser.parse_args()
 
