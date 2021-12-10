@@ -244,8 +244,6 @@ if args.train_model=='drafting':
 
             wandb.log({"Content Loss": loss_c.item(),
                        "Style Loss": loss_s.item(),
-                       "Style REMD": style_remd.item(),
-                       "Content RELT": content_relt.item(),
                        "LR": optimizer.param_groups[0]['lr']},
                       step=i)
 
