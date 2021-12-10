@@ -31,10 +31,10 @@ class AdaConv(nn.Module):
         for a,b,c,d in zip(predicted, depthwise, pointwise_kn, pointwise_bias):
 
             depth = nn.functional.conv2d(a,
-                                         weight=b,
+                                         weight=b[0],
                                          groups=self.n_groups)
             spatial_conv_out.append(nn.functional.conv2d(depth,
-                                                         weight=c,
+                                                         weight=c[0],
                                                          bias=d,
                                                          groups=self.n_groups))
         predicted = torch.cat(spatial_conv_out,0)
