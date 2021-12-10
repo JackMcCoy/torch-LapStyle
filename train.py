@@ -206,11 +206,10 @@ if args.train_model=='drafting':
         #warmup_lr_adjust(optimizer, i)
         #warmup_lr_adjust(opt_D, i)
         with autocast(enabled=ac_enabled):
-            with torch.no_grad():
-                ci = next(content_iter).to(device)
-                si = next(style_iter).to(device)
-                cF = enc_(ci)
-                sF = enc_(si)
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            cF = enc_(ci)
+            sF = enc_(si)
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             '''

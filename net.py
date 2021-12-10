@@ -733,8 +733,7 @@ def calc_patch_loss(stylized_feats, patch_feats):
 
 tensor_true = torch.Tensor([True]).to(device)
 def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=False, sF=None):
-    with torch.no_grad():
-        stylized_feats = encoder(stylized)
+    stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
@@ -756,8 +755,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     if sF is None:
         for i in torch.split(si.detach(), 256, dim=2):
             for j in torch.split(i.detach(), 256, dim=3):
-                with torch.no_grad():
-                    sF = encoder(j)
+                sF = encoder(j.detach())
                 if idx == 0:
                     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
                     if remd_loss:
@@ -789,13 +787,12 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         content_relt = 0
         style_remd = 0
     if mdog_losses:
-        with torch.no_grad():
-            cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-            sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-            cXF = encoder(cX)
-            sXF = encoder(sX)
-            stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-            cdogF = encoder(stylized_dog)
+        cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cXF = encoder(cX)
+        sXF = encoder(sX)
+        stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cdogF = encoder(stylized_dog)
 
         mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])
         mxdog_content_contraint = content_loss(cdogF['r4_1'], cXF['r4_1'])
