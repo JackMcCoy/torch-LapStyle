@@ -288,7 +288,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
+        dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
@@ -341,6 +341,8 @@ elif args.train_model=='revision':
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
+            for optimizer in optimizers:
+                optimizer.zero_grad()
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style.detach())
             if si[-1].shape[-1]>512:
