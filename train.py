@@ -321,7 +321,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
-    wandb.watch((rev_,disc_), log='all', log_freq=10)
+    wandb.watch((rev_,disc_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
     d_scaler = GradScaler()
