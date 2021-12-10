@@ -311,7 +311,10 @@ def style_encoder_block(ch):
 class DecoderAdaConv(nn.Module):
     def __init__(self, batch_size = 8):
         super(DecoderAdaConv, self).__init__()
-
+        self.riemann_noise4 = RiemannNoise(256)
+        self.riemann_noise3 = RiemannNoise(128)
+        self.riemann_noise2 = RiemannNoise(64)
+        self.riemann_noise1 = RiemannNoise(32)
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
@@ -349,18 +352,18 @@ class DecoderAdaConv(nn.Module):
         style = self.style_encoding(sF['r4_1'].detach())
         style = self.style_projection(style.flatten(1))
         style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'], norm=True)
+        adaconv_out['r4_1'] = self.kernel_1(style, self.riemann_noise1(cF['r4_1']), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
-        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'], norm=True)
+        adaconv_out['r3_1'] =  self.kernel_2(style, self.riemann_noise2(cF['r3_1']), norm=True)
         x = x + adaconv_out['r3_1']
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'], norm=True)
+        adaconv_out['r2_1'] = self.kernel_3(style, self.riemann_noise3(cF['r2_1']), norm=True)
         x = x + adaconv_out['r2_1']
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'], norm=True)
+        adaconv_out['r1_1'] = self.kernel_4(style, self.riemann_noise4(cF['r1_1']), norm=True)
         x = x + adaconv_out['r1_1']
         x = self.decoder_4(x)
         return x, style
@@ -591,7 +594,7 @@ class Discriminator(nn.Module):
                     if idx ==0:
                         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
                     else:
-                        loss_D += ((loss_D_real + loss_D_fake) * 0.5).data
+                        loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
                 idx += 1
         return loss_D
 
