@@ -650,7 +650,7 @@ class OptimizedBlock(nn.Module):
         return x
 
 class SpectralDiscriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64, relgan=True, batch_size=5):
+    def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
         self.spectral_gan = nn.Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
