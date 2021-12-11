@@ -727,7 +727,7 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 tensor_true = torch.Tensor([True]).to(device)
-def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=False, sF=None):
+def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_= None, disc_style=None, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=False, sF=None, GANLoss=None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -798,7 +798,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
+        loss_Gp_GAN = GANLoss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
