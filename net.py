@@ -187,7 +187,7 @@ class Revisors(nn.Module):
         i_marks = []
         j_marks = []
         for layer in self.layers:
-            input = self.upsample(input.detach())
+            input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size // 512
@@ -200,7 +200,7 @@ class Revisors(nn.Module):
             i_marks.append(i)
             j_marks.append(j)
             patch = input[:, :, i:i + 256, j:j + 256]
-            lap_pyr = F.conv2d(F.pad(scaled_ci, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+            lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
             input = layer(x2, style)
             input = patch + input
@@ -363,18 +363,18 @@ class DecoderAdaConv(nn.Module):
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
         style = self.riemann_noise(style)
-        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'], norm=True)
+        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'].detach(), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
-        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'], norm=True)
+        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'].detach(), norm=True)
         x = x + adaconv_out['r3_1']
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'], norm=True)
+        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'].detach(), norm=True)
         x = x + adaconv_out['r2_1']
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'], norm=True)
+        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'].detach(), norm=True)
         x = x + adaconv_out['r1_1']
         x = self.decoder_4(x)
         return x, style
@@ -744,42 +744,42 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     if content_all_layers:
         #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
         #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'])
+        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
         for key in content_layers[1:]:
-            loss_c += content_loss(stylized_feats[key], cF[key]).data
+            loss_c += content_loss(stylized_feats[key], cF[key].detach()).data
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     idx = 0
     if sF is None:
         for i in torch.split(si.detach(), 256, dim=2):
             for j in torch.split(i.detach(), 256, dim=3):
                 sF = encoder(j.detach())
                 if idx == 0:
-                    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
+                    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
                     if remd_loss:
-                        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+                        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
+                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
                 else:
-                    loss_s = loss_s + style_loss(stylized_feats['r1_1'], sF['r1_1'])
+                    loss_s = loss_s + style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
                     if remd_loss:
-                        style_remd = style_remd + (style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1']))
+                        style_remd = style_remd + (style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
+                                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach()))
                 for key in style_layers[1:]:
-                    loss_s += style_loss(stylized_feats[key], sF[key]).data
+                    loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
         loss_s = loss_s / 4
         style_remd = style_remd/4
     else:
-        loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'])
+        loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
         for key in style_layers[1:]:
-            loss_s = loss_s + style_loss(stylized_feats[key], sF[key])
+            loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
         if remd_loss:
-            style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1']) + \
-                         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'])
+            style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
+                         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     if remd_loss:
         if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
 
     else:
         content_relt = 0
@@ -801,12 +801,12 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(fake_loss, tensor_true)
+        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'].detach())
     else:
         patch_loss = 0
 

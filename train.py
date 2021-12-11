@@ -345,7 +345,7 @@ elif args.train_model=='revision':
                 optimizer.zero_grad()
             opt_D.zero_grad()
             stylized, style = dec_(sF, cF)
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1], style)
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
             if si[-1].shape[-1]>512:
                 si_cropped = random_crop(si[-1])
             else:
