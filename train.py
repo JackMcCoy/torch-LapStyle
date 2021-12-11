@@ -247,7 +247,7 @@ if args.train_model=='drafting':
             for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized],
                 ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example']):
                 if s == 'example':
-                   loss_dict[s] = l[0].detach().cpu().numpy()
+                   loss_dict[s] = wandb.Image(l[0].detach().cpu().numpy())
                 elif type(l)==torch.Tensor:
                    loss_dict[s] = l.item()
             print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
@@ -387,10 +387,12 @@ elif args.train_model=='revision':
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, mdog, loss_Gp_GAN,loss_D],
+            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, mdog, loss_Gp_GAN,loss_D, stylized],
                             ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                             'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss']):
-                if type(l) == torch.Tensor:
+                             'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss','example']):
+                if s == 'example':
+                   loss_dict[s] = wandb.Image(l[0].detach().cpu().numpy())
+                elif type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
@@ -398,15 +400,6 @@ elif args.train_model=='revision':
             print(f'{loss.item():.2f}')
             print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
-            wandb.log({"Content Loss": loss_c.item(),
-                       "Style Loss": loss_s.item(),
-                       "Style REMD": style_remd.item(),
-                       "Content RELT": content_relt.item(),
-                       "Patch Loss": patch_loss.item(),
-                       "Revision Disc. Loss": loss_Gp_GAN.item(),
-                       "Discriminator Loss": loss_D.item(),
-                       "LR": opt_D.param_groups[0]['lr']},
-                      step=i)
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
