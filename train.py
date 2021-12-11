@@ -17,7 +17,7 @@ import math
 import vgg
 import net
 from function import init_weights
-from net import calc_losses, calc_patch_loss
+from net import calc_losses, calc_patch_loss, calc_GAN_loss
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
 
@@ -313,7 +313,8 @@ elif args.train_model=='revision':
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = build_disc(disc_state, disc_quant)#, disc_inputs)
+        disc_ = torch.jit.trace(build_disc(disc_state, disc_quant), torch.rand(args.batch_size, 3, 256, 256).to(device))
+        ganloss = GANLoss('lsgan', batch_size=args.batch_size)
         disc_.train()
         rev_.train()
         dec_.eval()
@@ -354,7 +355,7 @@ elif args.train_model=='revision':
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.clone().detach())
+            loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)

@@ -657,53 +657,19 @@ class OptimizedBlock(nn.Module):
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, batch_size=5):
         super(SpectralDiscriminator, self).__init__()
-        self.head = OptimizedBlock(3, num_channels, 3, 1, downsample=True)
-        self.body = []
+        head = OptimizedBlock(3, num_channels, 3, 1, downsample=True)
+        body = []
         ch = num_channels
         for i in range(depth - 2):
-            self.body.append(SpectralResBlock(ch, ch * 2, 5, 2, downsample=True))
+            body.append(SpectralResBlock(ch, ch * 2, 5, 2, downsample=True))
             ch = ch*2
-        self.body = nn.Sequential(*self.body)
-        self.tail = SpectralResBlock(ch, ch, 3, 1, downsample=False)
-        self.relu = nn.ReLU()
-        self.ganloss = GANLoss('lsgan', batch_size=batch_size)
+
+        tail = SpectralResBlock(ch, ch, 3, 1, downsample=False)
+        self.spectral_gan = nn.Sequential([head, *body, tail, nn.ReLU()])
         self.relgan = relgan
 
-    def losses(self, real, fake):
-        idx = 0
-        pred_fake = self(fake)
-        if self.relgan:
-            pred_fake = pred_fake.view(-1)
-        else:
-            loss_D_fake = self.ganloss(pred_fake, False)
-        for i in torch.split(real.detach(), 256, dim=2):
-            for j in torch.split(i.detach(), 256, dim=3):
-                pred_real = self(j)
-                if self.relgan:
-                    pred_real = pred_real.view(-1)
-                    if idx == 0:
-                        loss_D = (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        )
-                    else:
-                        loss_D += (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        ).data
-                else:
-                    loss_D_real = self.ganloss(pred_real, True)
-                    if idx == 0:
-                        loss_D = ((loss_D_real + loss_D_fake) * 0.5)
-                    else:
-                        loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
-                idx += 1
-        return loss_D
-
     def forward(self, x):
-        x = self.head(x)
-        x = self.body(x)
-        x = self.relu(self.tail(x))
+        x = self.spectral_gan(x)
         return x
 
 mse_loss = GramErrors()
@@ -724,6 +690,37 @@ def identity_loss(i, F, encoder, decoder):
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
+
+def calc_GAN_loss(real, fake, disc_, ganloss):
+    idx = 0
+    pred_fake = disc_(fake)
+    if disc_.relgan:
+        pred_fake = pred_fake.view(-1)
+    else:
+        loss_D_fake = ganloss(pred_fake, False)
+    for i in torch.split(real.detach(), 256, dim=2):
+        for j in torch.split(i.detach(), 256, dim=3):
+            pred_real = disc_(j)
+            if self.relgan:
+                pred_real = pred_real.view(-1)
+                if idx == 0:
+                    loss_D = (
+                            torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                            torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                    )
+                else:
+                    loss_D += (
+                            torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                            torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                    ).data
+            else:
+                loss_D_real = ganloss(pred_real, True)
+                if idx == 0:
+                    loss_D = ((loss_D_real + loss_D_fake) * 0.5)
+                else:
+                    loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
+            idx += 1
+    return loss_D
 
 def calc_patch_loss(stylized_feats, patch_feats):
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])

@@ -144,7 +144,7 @@ class GANLoss(nn.Module):
 
     def __call__(self,
                  prediction,
-                 target_is_real):
+                 target_is_real: bool):
         """Calculate loss given Discriminator's output and grount truth labels.
 
         Args:
