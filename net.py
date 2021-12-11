@@ -653,8 +653,10 @@ class Sequential(nn.Sequential):
     def __init__(self, *args):
         super(Sequential, self).__init__(*args)
 
-    def forward(self, x: torch.Tensor):
-        return super(Sequential, self)(x)
+    def forward(self, input: torch.Tensor):
+        for module in self:
+            input = module(input)
+        return input
 
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
@@ -667,8 +669,7 @@ class SpectralDiscriminator(nn.Module):
         self.relgan = relgan
 
     def forward(self, x):
-        for module in self:
-            x = module(x)
+        x = self.spectral_gan(x)
         return x
 
 mse_loss = GramErrors()
