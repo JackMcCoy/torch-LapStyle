@@ -108,7 +108,7 @@ class GANLoss(nn.Module):
     that has the same size as the input.
     """
     def __init__(self,
-                 gan_mode):
+                 gan_mode, batch_size=5):
         """ Initialize the GANLoss class.
 
         Args:
@@ -129,8 +129,8 @@ class GANLoss(nn.Module):
         if loss_weight <= 0:
             return None
 
-        self.target_real_label = target_real_label
-        self.target_fake_label = target_fake_label
+        self.target_real = torch.ones(batch_size,3,256,256).to(torch.device('cuda'))
+        self.target_fake = torch.zeros(batch_size,3,256,256).to(torch.device('cuda'))
         self.loss_weight = loss_weight
 
         self.gan_mode = gan_mode
@@ -141,19 +141,6 @@ class GANLoss(nn.Module):
         else:
             raise NotImplementedError('gan mode %s not implemented' % gan_mode)
 
-    def get_target_tensor(self, prediction, target_is_real):
-        """Create label tensors with the same size as the input.
-
-        Args:
-            prediction (tensor) - - tpyically the prediction from a discriminator
-            target_is_real (bool) - - if the ground truth label is for real images or fake images
-
-        Returns:
-            A label tensor filled with ground truth label, and with the size of the input
-        """
-        target_tensor = target_is_real.expand(prediction.shape).float().to(device)
-
-        return target_tensor
 
     def __call__(self,
                  prediction,
@@ -168,8 +155,11 @@ class GANLoss(nn.Module):
         Returns:
             the calculated loss.
         """
-        target_tensor = self.get_target_tensor(prediction, target_is_real)
-        loss = self.loss(prediction, target_tensor)
+        if target_is_real:
+            target_tensor = self.target_real
+        else:
+            target_tensor = self.target_fake
+        loss = self.loss(prediction, target_tensor.detach())
         return loss
 
 class GramErrors():
