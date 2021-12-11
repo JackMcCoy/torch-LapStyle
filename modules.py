@@ -52,7 +52,6 @@ class RiemannNoise(nn.Module):
 class SpectralResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()
-        spectral_norm = torch.nn.utils.parametrizations.spectral_norm
         self.conv_block = nn.Sequential(nn.ReLU(),
                                         spectral_norm(nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')),
                                         nn.ReLU(),
