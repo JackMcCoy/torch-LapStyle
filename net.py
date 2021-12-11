@@ -650,8 +650,8 @@ class OptimizedBlock(nn.Module):
         return x
 
 class Sequential(nn.Sequential):
-    def __init__(self):
-        super(Sequential, self).__init__()
+    def __init__(self, *args):
+        super(Sequential, self).__init__(*args)
 
     def forward(self, x: torch.Tensor):
         return super(Sequential, self)(x)
