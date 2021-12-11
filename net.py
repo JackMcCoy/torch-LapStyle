@@ -667,7 +667,8 @@ class SpectralDiscriminator(nn.Module):
         self.relgan = relgan
 
     def forward(self, x):
-        x = self.spectral_gan(x)
+        for module in self:
+            x = module(x)
         return x
 
 mse_loss = GramErrors()
