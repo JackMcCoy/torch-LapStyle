@@ -391,7 +391,7 @@ elif args.train_model=='revision':
                             ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                              'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss','example']):
                 if s == 'example':
-                   loss_dict[s] = wandb.Image(l[0].detach().cpu().numpy())
+                   loss_dict[s] = wandb.Image(l[0].transpose(2,0).detach().cpu().numpy())
                 elif type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
