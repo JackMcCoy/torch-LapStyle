@@ -656,7 +656,7 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, batch_size=5):
         super(SpectralDiscriminator, self).__init__()
         self.spectral_gan = nn.Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
-                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i, ch in range(depth-2)],
+                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch, ch, 3, 1, downsample=False),
                                           nn.ReLU())
         self.relgan = relgan
