@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
-from torch.nn.utils import spectral_norm
+from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
 

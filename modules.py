@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torch.nn.utils import spectral_norm
+from torch.nn.utils.parametrizations import spectral_norm
 import torch
 from function import normalized_feat, calc_mean_std
 
