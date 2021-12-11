@@ -655,15 +655,10 @@ class OptimizedBlock(nn.Module):
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, batch_size=5):
         super(SpectralDiscriminator, self).__init__()
-        head = OptimizedBlock(3, num_channels, 3, 1, downsample=True)
-        body = []
-        ch = num_channels
-        for i in range(depth - 2):
-            body.append(SpectralResBlock(ch, ch * 2, 5, 2, downsample=True))
-            ch = ch*2
-
-        tail = SpectralResBlock(ch, ch, 3, 1, downsample=False)
-        self.spectral_gan = nn.Sequential(head, *body, tail, nn.ReLU())
+        self.spectral_gan = nn.Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
+                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i, ch in range(depth-2)],
+                                          SpectralResBlock(ch, ch, 3, 1, downsample=False),
+                                          nn.ReLU())
         self.relgan = relgan
 
     def forward(self, x):
