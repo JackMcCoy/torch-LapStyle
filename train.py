@@ -285,36 +285,7 @@ elif args.train_model=='revision':
     random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device).eval(),({'r1_1':torch.rand(args.batch_size,64,256,256).to(device),
-                                                                                                  'r2_1':torch.rand(args.batch_size,128,128,128).to(device),
-                                                                                                  'r3_1':torch.rand(args.batch_size,256,64,64).to(device),
-                                                                                                  'r4_1':torch.rand(args.batch_size,512,32,32).to(device)},
-                                                                                                 {
-                                                                                                     'r1_1': torch.rand(
-                                                                                                         args.batch_size,
-                                                                                                         64,
-                                                                                                         256,
-                                                                                                         256).to(
-                                                                                                         device),
-                                                                                                     'r2_1': torch.rand(
-                                                                                                         args.batch_size,
-                                                                                                         128,
-                                                                                                         128,
-                                                                                                         128).to(
-                                                                                                         device),
-                                                                                                     'r3_1': torch.rand(
-                                                                                                         args.batch_size,
-                                                                                                         256,
-                                                                                                         64,
-                                                                                                         64).to(
-                                                                                                         device),
-                                                                                                     'r4_1': torch.rand(
-                                                                                                         args.batch_size,
-                                                                                                         512,
-                                                                                                         32,
-                                                                                                         32).to(
-                                                                                                         device)}
-                                                                                                 ,))
+        dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
         dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
@@ -334,7 +305,7 @@ elif args.train_model=='revision':
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
+        rev_ = build_rev(args.revision_depth, rev_state)#,(torch.rand(args.batch_size,3,256,256).to(device),torch.rand(args.batch_size,3,args.crop_size,args.crop_size).to(device),torch.rand(args.batch_size,128,4,4).to(device)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),

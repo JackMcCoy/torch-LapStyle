@@ -21,7 +21,6 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
-    @torch.jit.script
     def forward(self, style_encoding, content_in, norm: bool=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
@@ -74,7 +73,6 @@ class KernelPredictor(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
-    @torch.jit.script
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
 
