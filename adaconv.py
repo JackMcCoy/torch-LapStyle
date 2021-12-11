@@ -11,6 +11,7 @@ class AdaConv(nn.Module):
         self.n_groups = ch_in//p
         self.apply(self._init_weights)
 
+    @torch.jit.script
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
@@ -21,6 +22,7 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
+    @torch.jit.script
     def forward(self, style_encoding, content_in, norm: bool=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         spatial_conv_out = []
@@ -63,6 +65,7 @@ class KernelPredictor(nn.Module):
         self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
         self.apply(self._init_weights)
 
+    @torch.jit.script
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
@@ -73,6 +76,7 @@ class KernelPredictor(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
+    @torch.jit.script
     def forward(self, style_encoding):
         N = style_encoding.shape[0]
 
