@@ -278,10 +278,6 @@ elif args.train_model=='revision':
         return rev
     def build_disc(disc_state, disc_quant):
         disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, batch_size = args.batch_size).to(device)
-        if not disc_state is None:
-            disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-        else:
-            init_weights(disc)
         disc.eval()
         return disc
 
@@ -316,6 +312,10 @@ elif args.train_model=='revision':
         disc_ = torch.jit.trace(build_disc(disc_state, disc_quant), torch.rand(args.batch_size, 3, 256, 256).to(device),strict=False)
         ganloss = torch.jit.script(GANLoss('lsgan', batch_size=args.batch_size))
         disc_.train()
+        if not disc_state is None:
+            disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+        else:
+            init_weights(disc)
         rev_.train()
         dec_.eval()
         enc_.to(device)
