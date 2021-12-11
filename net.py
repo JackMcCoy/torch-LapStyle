@@ -633,9 +633,8 @@ class SNLinear(nn.Linear):
 
 
 class OptimizedBlock(nn.Module):
-    def __init__(self, in_channels, dim,kernel,padding, downsample=False):
+    def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
-        out_size=(1,dim,256,256)
         self.conv_block = nn.Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
                                         nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
@@ -643,8 +642,7 @@ class OptimizedBlock(nn.Module):
         self.downsample = downsample
 
     def forward(self, in_feat):
-        x = in_feat
-        x = self.conv_block(x)
+        x = self.conv_block(in_feat)
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
         return x + self.shortcut(in_feat)
