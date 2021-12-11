@@ -129,8 +129,8 @@ class GANLoss(nn.Module):
         if loss_weight <= 0:
             return None
 
-        self.target_real = torch.ones(batch_size,1024,8,8).to(torch.device('cuda'))
-        self.target_fake = torch.zeros(batch_size,1024,8,8).to(torch.device('cuda'))
+        self.target_real = torch.ones(batch_size,512,16,16).to(torch.device('cuda'))
+        self.target_fake = torch.zeros(batch_size,512,16,16).to(torch.device('cuda'))
         self.loss_weight = loss_weight
 
         self.gan_mode = gan_mode
