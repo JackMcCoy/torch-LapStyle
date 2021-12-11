@@ -365,7 +365,7 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
-            cF = enc_(ci_patch.detach())
+            cF = enc_(ci_patch)
 
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
