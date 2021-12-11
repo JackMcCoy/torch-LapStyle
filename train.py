@@ -278,7 +278,7 @@ elif args.train_model=='revision':
         return rev
     def build_disc(disc_state, disc_quant):
         disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, batch_size = args.batch_size).to(device)
-        disc.eval()
+        disc.train()
         return disc
 
     random_crop = transforms.RandomCrop(512)
