@@ -129,8 +129,8 @@ class GANLoss(nn.Module):
         if loss_weight <= 0:
             return None
 
-        self.target_real = torch.ones(batch_size,3,256,256).to(torch.device('cuda'))
-        self.target_fake = torch.zeros(batch_size,3,256,256).to(torch.device('cuda'))
+        self.target_real = torch.ones(batch_size,1024,8,8).to(torch.device('cuda'))
+        self.target_fake = torch.zeros(batch_size,1024,8,8).to(torch.device('cuda'))
         self.loss_weight = loss_weight
 
         self.gan_mode = gan_mode
@@ -159,8 +159,6 @@ class GANLoss(nn.Module):
             target_tensor = self.target_real
         else:
             target_tensor = self.target_fake
-        print(target_tensor.shape)
-        print(prediction.shape)
         loss = self.loss(prediction, target_tensor.detach())
         return loss
 
