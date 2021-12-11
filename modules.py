@@ -75,7 +75,10 @@ class SpectralResBlock(nn.Module):
         return x
 
     def forward(self, in_feat):
-        return self.residual(in_feat) + self.shortcut(in_feat)
+        res = self.residual(in_feat)
+        shortcut = self.shortcut(in_feat)
+        out = res + shortcut
+        return out
 
 
 class ConvBlock(nn.Module):
