@@ -244,9 +244,11 @@ if args.train_model=='drafting':
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4],
-                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4']):
-                if type(l)==torch.Tensor:
+            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized],
+                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example']):
+                if s == 'example':
+                   loss_dict[s] = l[0].detach().cpu().numpy()
+                elif type(l)==torch.Tensor:
                    loss_dict[s] = l.item()
             print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
 

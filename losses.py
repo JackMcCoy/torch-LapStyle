@@ -108,7 +108,7 @@ class GANLoss(nn.Module):
     that has the same size as the input.
     """
     def __init__(self,
-                 gan_mode, batch_size=5):
+                 gan_mode, depth=5, conv_ch=64, batch_size=5):
         """ Initialize the GANLoss class.
 
         Args:
@@ -129,8 +129,10 @@ class GANLoss(nn.Module):
         if loss_weight <= 0:
             return None
 
-        self.target_real = torch.ones(batch_size,512,16,16).to(torch.device('cuda'))
-        self.target_fake = torch.zeros(batch_size,512,16,16).to(torch.device('cuda'))
+        c = conv_ch*2**(depth-2)
+        h = 512/2**depth
+        self.target_real = torch.ones(batch_size,c,h,h).to(torch.device('cuda'))
+        self.target_fake = torch.zeros(batch_size,c,h,h).to(torch.device('cuda'))
         self.loss_weight = loss_weight
 
         self.gan_mode = gan_mode
