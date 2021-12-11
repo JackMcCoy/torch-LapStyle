@@ -665,7 +665,7 @@ class SpectralDiscriminator(nn.Module):
             ch = ch*2
 
         tail = SpectralResBlock(ch, ch, 3, 1, downsample=False)
-        self.spectral_gan = nn.Sequential([head, *body, tail, nn.ReLU()])
+        self.spectral_gan = nn.Sequential(head, *body, tail, nn.ReLU())
         self.relgan = relgan
 
     def forward(self, x):
