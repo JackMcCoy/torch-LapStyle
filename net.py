@@ -656,6 +656,7 @@ class Sequential(nn.Sequential):
 
     def forward(self, input: torch.Tensor):
         for module in self:
+            print(module.__name__)
             input = module(input)
         return input
 
