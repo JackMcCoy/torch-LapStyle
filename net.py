@@ -643,7 +643,7 @@ class OptimizedBlock(nn.Module):
 
     def forward(self, in_feat):
         x = self.conv_block(in_feat)
-        x = self.downsample(nn.functional.avg_pool2d(x, 2))
+        x = self.downsample(x)
         shortcut = self.downsample(in_feat)
         shortcut = self.c_sc(shortcut)
         x = x + shortcut
