@@ -639,18 +639,15 @@ class OptimizedBlock(nn.Module):
                                         nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
         self.c_sc = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
-        self.downsample = downsample
+        self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
     def forward(self, in_feat):
         x = self.conv_block(in_feat)
-        if self.downsample:
-            x = nn.functional.avg_pool2d(x, 2)
-        return x + self.shortcut(in_feat)
-
-    def shortcut(self, x):
-        if self.downsample:
-            x = nn.functional.avg_pool2d(x, 2)
-        return self.c_sc(x)
+        x = self.downsample(nn.functional.avg_pool2d(x, 2))
+        shortcut = self.downsample(in_feat)
+        shortcut = self.c_sc(shortcut)
+        x = x + shortcut
+        return x
 
 class SpectralDiscriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, batch_size=5):
