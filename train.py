@@ -309,7 +309,7 @@ elif args.train_model=='revision':
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = torch.jit.trace(build_disc(disc_state, disc_quant), torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
+        disc_ = build_disc(disc_state, disc_quant)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
         ganloss = torch.jit.script(GANLoss('lsgan', batch_size=args.batch_size))
         disc_.train()
         if not disc_state is None:
