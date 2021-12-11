@@ -700,7 +700,7 @@ class SpectralDiscriminator(nn.Module):
                     if idx == 0:
                         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
                     else:
-                        loss_D += ((loss_D_real + loss_D_fake) * 0.5).data
+                        loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
                 idx += 1
         return loss_D
 
