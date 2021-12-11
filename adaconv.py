@@ -11,7 +11,6 @@ class AdaConv(nn.Module):
         self.n_groups = ch_in//p
         self.apply(self._init_weights)
 
-    @torch.jit.script
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
@@ -65,7 +64,6 @@ class KernelPredictor(nn.Module):
         self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
         self.apply(self._init_weights)
 
-    @torch.jit.script
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
