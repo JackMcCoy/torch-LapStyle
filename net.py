@@ -635,6 +635,7 @@ class SNLinear(nn.Linear):
 class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
+        spectral_norm = torch.nn.utils.parametrizations.spectral_norm
         self.conv_block = Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
                                         nn.ReLU(),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
@@ -662,6 +663,7 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
+        spectral_norm = torch.nn.utils.parametrizations.spectral_norm
         self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False),
