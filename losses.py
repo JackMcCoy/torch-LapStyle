@@ -130,7 +130,7 @@ class GANLoss(nn.Module):
             return None
 
         c = int(conv_ch*2**(depth-2))
-        h = int(512/2**depth)
+        h = int(256/(2**depth))
         self.target_real = torch.ones(batch_size,c,h,h).to(torch.device('cuda'))
         self.target_fake = torch.zeros(batch_size,c,h,h).to(torch.device('cuda'))
         self.loss_weight = loss_weight
