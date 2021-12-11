@@ -649,7 +649,7 @@ class OptimizedBlock(nn.Module):
         x = x + shortcut
         return x
 
-class Sequential(nn.Sequential)
+class Sequential(nn.Sequential):
     def __init__(self):
         super(Sequential, self).__init__()
 
