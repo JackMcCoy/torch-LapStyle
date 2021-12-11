@@ -17,7 +17,7 @@ import math
 import vgg
 import net
 from function import init_weights
-from modules import GANLoss
+from losses import GANLoss
 from net import calc_losses, calc_patch_loss, calc_GAN_loss
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
