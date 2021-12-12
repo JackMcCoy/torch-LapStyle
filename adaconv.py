@@ -31,6 +31,8 @@ class AdaConv(nn.Module):
 
             content_in = (content_in - content_mean.expand(
                     size)) / content_std.expand(size)
+        print(content_in.shape)
+        print('\n')
         predicted = self.pad(content_in)
         predicted = torch.vsplit(predicted, N)
         depthwise = torch.unbind(depthwise, 0)
@@ -38,7 +40,10 @@ class AdaConv(nn.Module):
         pointwise_bias = torch.unbind(pointwise_bias, 0)
 
         for a,b,c,d in zip(predicted, depthwise, pointwise_kn, pointwise_bias):
-
+            print(a.shape)
+            print(b.shape)
+            print(c.shape)
+            print(d.shape)
             depth = nn.functional.conv2d(a,
                                          weight=b,
                                          groups=self.n_groups)
@@ -47,6 +52,7 @@ class AdaConv(nn.Module):
                                                          bias=d,
                                                          groups=self.n_groups))
         predicted = torch.stack(spatial_conv_out,0)
+        print(predicted.shape)
         return predicted
 
 class KernelPredictor(nn.Module):
