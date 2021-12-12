@@ -321,7 +321,7 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.riemann_noise = RiemannNoise(64)
+        self.riemann_noise = RiemannNoise(32)
         self.style_out_riemann_noise = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
