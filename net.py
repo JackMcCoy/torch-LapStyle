@@ -720,6 +720,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
                 else:
                     loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
             idx += 1
+    loss_D = loss_D / 4
     return loss_D
 
 def calc_patch_loss(stylized_feats, patch_feats):
