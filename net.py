@@ -697,7 +697,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
         pred_fake = pred_fake.view(-1)
     else:
         loss_D_fake = ganloss(pred_fake, False)
-    pred_real = disc_(j)
+    pred_real = disc_(real)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
         if idx == 0:
