@@ -347,7 +347,7 @@ elif args.train_model=='revision':
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
             for optimizer in optimizers:
-                scaler.step(optimizer)
+                optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
             if si[-1].shape[-1]>512:
@@ -375,11 +375,10 @@ elif args.train_model=='revision':
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
 
-        for optimizer in optimizers:
-            optimizer.zero_grad(set_to_none=True)
-
         if ac_enabled:
             scaler.scale(loss).backward()
+            for optimizer in optimizers:
+                scaler.step(optimizer)
             scaler.update()
         else:
             loss.backward()
