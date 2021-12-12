@@ -216,7 +216,6 @@ if args.train_model=='drafting':
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             '''
             opt_D.zero_grad()
@@ -234,6 +233,7 @@ if args.train_model=='drafting':
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
             l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
+        optimizer.zero_grad(set_to_none=True)
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -345,9 +345,7 @@ elif args.train_model=='revision':
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-            for optimizer in optimizers:
-                optimizer.zero_grad()
-            opt_D.zero_grad()
+
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
             if si[-1].shape[-1]>512:
@@ -359,6 +357,7 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
             loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
+        opt_D.zero_grad(set_to_none=True)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
@@ -374,6 +373,9 @@ elif args.train_model=='revision':
             losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
+
+        for optimizer in optimizers:
+            optimizer.zero_grad(set_to_none=True)
 
         if ac_enabled:
             scaler.scale(loss).backward()
