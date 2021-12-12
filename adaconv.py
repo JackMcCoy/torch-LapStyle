@@ -45,7 +45,7 @@ class AdaConv(nn.Module):
                                                          weight=c,
                                                          bias=d,
                                                          groups=self.n_groups))
-        predicted = torch.vstack(spatial_conv_out,0)
+        predicted = torch.vstack(spatial_conv_out)
         return predicted
 
 class KernelPredictor(nn.Module):
