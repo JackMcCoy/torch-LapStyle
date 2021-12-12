@@ -284,7 +284,7 @@ elif args.train_model=='revision':
         disc.train()
         return disc
 
-    random_crop = transforms.RandomCrop(512)
+    random_crop = transforms.RandomCrop(256)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -350,10 +350,7 @@ elif args.train_model=='revision':
                 optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
-            if si[-1].shape[-1]>512:
-                si_cropped = random_crop(si[-1])
-            else:
-                si_cropped = si[-1]
+            si_cropped = random_crop(si[-1])
             patch_feats = enc_(stylized_patch)
 
         set_requires_grad(disc_, True)
@@ -370,8 +367,8 @@ elif args.train_model=='revision':
 
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch)
-
-            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss)
+            sF = enc_(si_cropped)
+            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
 
