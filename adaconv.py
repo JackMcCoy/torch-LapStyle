@@ -39,9 +39,13 @@ class AdaConv(nn.Module):
 
         for a,b,c,d in zip(predicted, depthwise, pointwise_kn, pointwise_bias):
 
+            print(a.shape)
+            print(b.shape)
             depth = nn.functional.conv2d(a,
                                          weight=b.squeeze(),
                                          groups=self.n_groups)
+            print(c.shape)
+            print(d.shape)
             spatial_conv_out.append(nn.functional.conv2d(depth,
                                                          weight=c,
                                                          bias=d.squeeze(),
