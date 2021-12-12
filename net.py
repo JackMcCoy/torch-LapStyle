@@ -321,8 +321,7 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.riemann_noise = RiemannNoise(32)
-        self.style_out_riemann_noise = RiemannNoise(4)
+        self.riemann_noise = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
@@ -359,12 +358,11 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
-        style = self.riemann_noise(sF['r4_1'])
-        style = self.style_encoding(style)
+        style = self.style_encoding(sF['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        style = self.style_out_riemann_noise(style)
+        style = self.riemann_noise(style)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'].detach(), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
