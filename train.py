@@ -345,7 +345,9 @@ elif args.train_model=='revision':
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-
+            opt_D.zero_grad(set_to_none=True)
+            for optimizer in optimizers:
+                scaler.step(optimizer)
             stylized, style = dec_(sF, cF)
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style)
             if si[-1].shape[-1]>512:
@@ -357,7 +359,6 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
             loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
-        opt_D.zero_grad(set_to_none=True)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
@@ -379,8 +380,6 @@ elif args.train_model=='revision':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            for optimizer in optimizers:
-                scaler.step(optimizer)
             scaler.update()
         else:
             loss.backward()
