@@ -389,9 +389,9 @@ elif args.train_model=='revision':
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, mdog, loss_Gp_GAN,loss_D, stylized],
+            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, mdog, loss_Gp_GAN,loss_D, stylized,patch_loss],
                             ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                             'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss','example']):
+                             'MDOG Loss', 'Revision Disc. Loss','Discriminator Loss','example','Patch Loss']):
                 if s == 'example':
                    loss_dict[s] = wandb.Image(l[0].transpose(2,0).transpose(1,0).detach().cpu().numpy())
                 elif type(l) == torch.Tensor:
