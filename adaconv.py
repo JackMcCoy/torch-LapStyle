@@ -32,7 +32,7 @@ class AdaConv(nn.Module):
             content_in = (content_in - content_mean.expand(
                     size)) / content_std.expand(size)
         predicted = self.pad(content_in)
-        predicted = torch.unbind(predicted, 0)
+        predicted = torch.vsplit(predicted, N)
         depthwise = torch.unbind(depthwise, 0)
         pointwise_kn = torch.unbind(pointwise_kn, 0)
         pointwise_bias = torch.unbind(pointwise_bias, 0)
