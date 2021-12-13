@@ -350,7 +350,7 @@ elif args.train_model=='revision':
                 optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
-            crop_marks = torch.randint(256, (args.depth, 2)).int().to(device)
+            crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
             crop_marks.requires_grad = False
 
             rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_, crop_marks)
