@@ -114,7 +114,7 @@ class RevisionNet(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d * 16)
         )
-        self.riemann_noise = RiemannNoise(4)
+        self.style_riemann_noise = RiemannNoise(4)
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
@@ -129,8 +129,9 @@ class RevisionNet(nn.Module):
             nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU()
         )
-        self.riemann_noise = RiemannNoise(128)
+        
         '''
+        self.riemann_noise = RiemannNoise(128)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
@@ -169,7 +170,7 @@ class RevisionNet(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        style = self.riemann_noise(style)
+        style = self.style_riemann_noise(style)
         out = self.DownBlock(input)
         out = self.resblock(out)
         out = self.riemann_noise(out)
