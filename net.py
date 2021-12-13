@@ -502,7 +502,7 @@ class Style_Guided_Discriminator(nn.Module):
             self.norms.append(
                 nn.Sequential(nn.LeakyReLU(.2),
                               nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect'),
-                              nn.BatchNorm2d(),
+                              nn.BatchNorm2d(64),
             nn.LeakyReLU(.2),))
         self.tail = nn.Conv2d(num_channels,
                               1,
