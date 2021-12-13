@@ -115,6 +115,6 @@ def init_weights(net,
                 'BatchNorm'
         ) != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             torch.nn.init.normal_(m.weight, 1.0, init_gain)
-            torch.nn.init.constant_(m.bias, 0.0)
+            torch.nn.init.constant_(m.bias, 0.01)
 
     net.apply(init_func)
