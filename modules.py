@@ -38,16 +38,18 @@ class RiemannNoise(nn.Module):
         self.noise = torch.Tensor([0]).to(torch.device('cuda'))
 
     def forward(self, x):
-        N, c, h, w = x.shape
-        mu = x.sum(1, keepdim=True)
-        mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
-        s = mu - mu_mean
-        s = s / torch.abs(s).max()
-        sd = self.A * s + self.b
-        s = self.alpha*sd + (1 - self.alpha) + 1
-        sigma = s / torch.linalg.vector_norm(s)
-        out = self.r * sigma * x + self.r * sigma * self.noise.repeat(x.shape).normal_()
-        return out
+        if self.training:
+            N, c, h, w = x.shape
+            mu = x.sum(1, keepdim=True)
+            mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
+            s = mu - mu_mean
+            s = s / torch.abs(s).max()
+            sd = self.A * s + self.b
+            s = self.alpha*sd + (1 - self.alpha) + 1
+            sigma = s / torch.linalg.vector_norm(s)
+            out = self.r * sigma * x + self.r * sigma * self.noise.repeat(x.shape).normal_()
+            return out
+        return x
 
 
 class SpectralResBlock(nn.Module):
