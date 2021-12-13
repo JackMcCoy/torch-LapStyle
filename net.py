@@ -172,10 +172,8 @@ class RevisionNet(nn.Module):
         """
         b = input.shape[0]
 
-        style = style.flatten(1)
         style = self.style_reprojection(style)
         style = self.style_riemann_noise(style)
-        style = style.reshape(b, self.s_d, 4, 4)
 
         content = self.style_encoding(stylized_feats['r4_1'])
         content = content.flatten(1)
