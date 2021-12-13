@@ -175,7 +175,7 @@ class RevisionNet(nn.Module):
         out = self.resblock(out)
         out = self.riemann_noise(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
-            out = out + adaconv(style, out, norm=False)
+            out = out + adaconv(style, out, norm=True)
             out = learnable(out)
         return out
 
