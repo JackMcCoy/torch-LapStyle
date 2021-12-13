@@ -476,7 +476,7 @@ class DecoderVQGAN(nn.Module):
 
 
 class Style_Guided_Discriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False):
+    def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,3,3,stride=1,padding=1, padding_mode='reflect'),
@@ -508,7 +508,7 @@ class Style_Guided_Discriminator(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1, padding_mode='reflect')
-        self.ganloss = GANLoss('lsgan')
+        self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
 

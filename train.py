@@ -280,7 +280,7 @@ elif args.train_model=='revision':
                 i.train(False)
         return rev
     def build_disc(disc_state, disc_quant):
-        disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels).to(device)
+        disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels, batch_size=args.batch_size).to(device)
         disc.train()
         return disc
 
