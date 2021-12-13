@@ -483,8 +483,6 @@ class Style_Guided_Discriminator(nn.Module):
             nn.LeakyReLU(.2),
             nn.Conv2d(3, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(.2),
-            nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(.2),
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
@@ -502,7 +500,10 @@ class Style_Guided_Discriminator(nn.Module):
         for i in range(depth - 2):
             self.body.append(AdaConv(64, 1, s_d = self.s_d))
             self.norms.append(
-                nn.LeakyReLU())
+                nn.Sequential(nn.LeakyReLU(.2),
+                              nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect'),
+                              nn.BatchNorm2d(),
+            nn.LeakyReLU(.2),))
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=3,
@@ -516,7 +517,7 @@ class Style_Guided_Discriminator(nn.Module):
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
 
-        style = self.style_encoding(style.detach())
+        style = self.style_encoding(style.clone())
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
 
         pred_real = self(real.detach(), style)
