@@ -199,6 +199,7 @@ class Revisors(nn.Module):
     def forward(self, input, ci, style, enc_, crop_marks):
         device = torch.device("cuda")
         idx = 0
+        size = 256
         for layer in self.layers:
             stylized_feats = enc_(input)
             input = self.upsample(input)
