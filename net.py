@@ -105,6 +105,16 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
+        self.style_encoding = nn.Sequential(
+            *style_encoder_block(512),
+            *style_encoder_block(512),
+            *style_encoder_block(512)
+        )
+        self.s_d = 128
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, self.s_d * 16)
+        )
+        self.riemann_noise = RiemannNoise(4)
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
@@ -114,13 +124,13 @@ class RevisionNet(nn.Module):
             AdaConv(128, 2, s_d=s_d),
             AdaConv(128, 2, s_d=s_d)])
         self.relu = nn.ReLU()
-
+        '''
         self.style_reprojection = nn.Sequential(
             nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU()
         )
         self.riemann_noise = RiemannNoise(128)
-
+        '''
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
@@ -146,7 +156,7 @@ class RevisionNet(nn.Module):
             nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 3, kernel_size=3))])
 
-    def forward(self, input, style):
+    def forward(self, input, style, stylized_feats):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -154,12 +164,16 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        style_reprojected = self.style_reprojection(style)
+        style = self.style_encoding(stylized_feats['r4_1'])
+        style = style.flatten(1)
+        style = self.style_projection(style)
+        style = style.reshape(b, self.s_d, 4, 4)
+        style = self.riemann_noise(style)
         out = self.DownBlock(input)
         out = self.resblock(out)
         out = self.riemann_noise(out)
         for adaconv, learnable in zip(self.adaconvsUp,self.UpBlock):
-            out = out + adaconv(style_reprojected, out, norm=False)
+            out = out + adaconv(style, out, norm=False)
             out = learnable(out)
         return out
 
@@ -180,13 +194,14 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style):
+    def forward(self, input, ci, style, enc_):
         device = torch.device("cuda")
         size = 256
         idx = 0
         i_marks = []
         j_marks = []
         for layer in self.layers:
+            stylized_feats = enc_(input)
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
@@ -202,7 +217,7 @@ class Revisors(nn.Module):
             patch = input[:, :, i:i + 256, j:j + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
-            input = layer(x2, style)
+            input = layer(x2, style, stylized_feats)
             input = patch + input
             idx += 1
         return input, scaled_ci, patch
