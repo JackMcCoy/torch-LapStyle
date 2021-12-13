@@ -280,7 +280,7 @@ elif args.train_model=='revision':
                 i.train(False)
         return rev
     def build_disc(disc_state, disc_quant):
-        disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=True, batch_size = args.batch_size).to(device)
+        disc=net.Style_Guided_Discriminator(depth=args.disc_depth, num_channels=args.disc_channels).to(device)
         disc.train()
         return disc
 
@@ -355,7 +355,7 @@ elif args.train_model=='revision':
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
+            loss_D = disc_.losses(si_cropped.detach(), rev_stylized.clone().detach(), style)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
@@ -368,7 +368,7 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch)
             sF = enc_(si_cropped)
-            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF)
+            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=False, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, disc_style=style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss
 

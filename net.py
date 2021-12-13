@@ -480,18 +480,18 @@ class Style_Guided_Discriminator(nn.Module):
         super(Style_Guided_Discriminator, self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3,3,3,stride=1,padding=1, padding_mode='reflect'),
-            nn.ReLU(),
+            nn.LeakyReLU(.2),
             nn.Conv2d(3, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
-            nn.ReLU(),
+            nn.LeakyReLU(.2),
             nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
-            nn.ReLU()
+            nn.LeakyReLU(.2),
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
         self.s_d = 128
         self.style_encoding = nn.Sequential(
             nn.Conv2d(self.s_d, self.s_d, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.LeakyReLU(.2),
         )
 
         self.style_projection = nn.Sequential(
@@ -512,30 +512,20 @@ class Style_Guided_Discriminator(nn.Module):
         self.relgan = relgan
         self.quantize = quantize
 
-        self.true = torch.Tensor([True]).float().to(device)
-        self.true.requires_grad = False
-        self.false = torch.Tensor([False]).float().to(device)
-        self.false.requires_grad = False
 
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
-        loss_D_real = 0
-        idx = 0
+
         style = self.style_encoding(style.detach())
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
-        for i in torch.split(real.detach(),256,dim=2):
-            for j in torch.split(i.detach(), 256,dim=3):
-                if idx == 0:
-                    pred_real = self(j.detach(), style.detach())
-                    loss_D_real = self.ganloss(pred_real, self.true)
-                else:
-                    pred_real = self(j.detach(),style.detach())
-                    loss_D_real += self.ganloss(pred_real, self.true).data
-                idx += 1
-        pred_fake = self(fake, style.detach())
 
-        loss_D_fake = self.ganloss(pred_fake, self.false)
-        loss_D = (loss_D_real/4 + loss_D_fake) * 0.5
+        pred_real = self(real.detach(), style)
+        loss_D_real = self.ganloss(pred_real, True)
+
+        pred_fake = self(fake, style)
+
+        loss_D_fake = self.ganloss(pred_fake, False)
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
         return (loss_D, style)
 
     def forward(self, x, style):
@@ -764,8 +754,8 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized)
-        loss_Gp_GAN = GANLoss(fake_loss, True)
+        fake_loss = disc_(stylized, disc_style)
+        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
