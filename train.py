@@ -61,7 +61,7 @@ class FlatFolderDataset(data.Dataset):
 
 def set_requires_grad(nets, requires_grad=False):
     for param in nets.parameters():
-        param.trainable = requires_grad
+        param.requires_grad = requires_grad
 
 def adjust_learning_rate(optimizer, iteration_count,args):
     """Imitating the original implementation"""
@@ -349,7 +349,11 @@ elif args.train_model=='revision':
             for optimizer in optimizers:
                 optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_)
+
+            crop_marks = torch.randint(256, (args.depth, 2)).int().to(device)
+            crop_marks.requires_grad = False
+
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_, crop_marks)
             si_cropped = random_crop(si[-1])
             patch_feats = enc_(stylized_patch)
 

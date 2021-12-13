@@ -196,27 +196,20 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, enc_):
+    def forward(self, input, ci, style, enc_, crop_marks):
         device = torch.device("cuda")
-        size = 256
         idx = 0
-        i_marks = []
-        j_marks = []
         for layer in self.layers:
             stylized_feats = enc_(input)
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size // 512
-            for i, j in zip(i_marks, j_marks):
-                ci = ci[:, :, i:i + 256, j:j + 256]
+            for i in range(idx):
+                ci = ci[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
                 size_diff = size_diff // 2
-            i = torch.randint(255, (1,))[0].int()
-            j = torch.randint(255, (1,))[0].int()
-            scaled_ci = scaled_ci[:, :, i:i + 256, j:j + 256]
-            i_marks.append(i)
-            j_marks.append(j)
-            patch = input[:, :, i:i + 256, j:j + 256]
+            scaled_ci = scaled_ci[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
+            patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
             input = layer(x2, style, stylized_feats)
