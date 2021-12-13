@@ -149,6 +149,18 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU())
+        self.middleUpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
+                                                    nn.ReLU()),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
+                                                    nn.ReLU()),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 128, kernel_size=3),
+                                                    nn.ReLU()),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 128, kernel_size=3))])
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3),
@@ -183,10 +195,11 @@ class RevisionNet(nn.Module):
         out = self.DownBlock(input)
         out = self.resblock(out)
         out = self.riemann_noise(out)
-        for adaconvS, adaconvC, learnable in zip(self.adaconvsStyleUp, self.adaconvsContentUp, self.UpBlock):
+        for adaconvS, adaconvC, learnable1, learnable2 in zip(self.adaconvsStyleUp, self.adaconvsContentUp, self.middleUpBlock, self.UpBlock):
             out = out + adaconvS(style, out, norm=True)
+            out = learnable1(out)
             out = out + adaconvC(content, out, norm=True)
-            out = learnable(out)
+            out = learnable2(out)
         return out
 
 class Revisors(nn.Module):
