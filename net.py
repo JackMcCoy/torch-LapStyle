@@ -118,22 +118,19 @@ class RevisionNet(nn.Module):
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconvsStyleUp = nn.ModuleList([
+        self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, s_d=s_d),
             AdaConv(64, 1, s_d=s_d),
             AdaConv(128, 2, s_d=s_d),
             AdaConv(128, 2, s_d=s_d)])
-        self.adaconvsContentUp = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d)])
-        self.relu = nn.ReLU()
 
+        self.relu = nn.ReLU()
+        '''
         self.style_reprojection = nn.Sequential(
             nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU()
         )
+        '''
         
 
         self.riemann_noise = RiemannNoise(128)
@@ -149,30 +146,21 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU())
-        self.middleUpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 64, kernel_size=3),
+                                                    nn.Conv2d(64, 128, kernel_size=3),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3))])
-        self.UpBlock = nn.ModuleList([nn.Sequential(
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3),
-            nn.ReLU()),
-            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 128, kernel_size=3),
-            nn.ReLU()),
-            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 128, kernel_size=3),
-            nn.ReLU()),
-            nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 3, kernel_size=3))])
+                                                    nn.Conv2d(128, 128, kernel_size=3),
+                                                    nn.ReLU(),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 3, kernel_size=3),)])
 
     def forward(self, input, style, stylized_feats):
         """
@@ -184,22 +172,17 @@ class RevisionNet(nn.Module):
         """
         b = input.shape[0]
 
-        style = self.style_reprojection(style)
-        style = self.style_riemann_noise(style)
-
-        content = self.style_encoding(stylized_feats['r4_1'])
-        content = content.flatten(1)
-        content = self.style_projection(content)
-        content = content.reshape(b, self.s_d, 4, 4)
+        style = self.style_encoding(stylized_feats['r4_1'])
+        style = style.flatten(1)
+        style = self.style_projection(style)
+        style = style.reshape(b, self.s_d, 4, 4)
 
         out = self.DownBlock(input)
         out = self.resblock(out)
         out = self.riemann_noise(out)
-        for adaconvS, adaconvC, learnable1, learnable2 in zip(self.adaconvsStyleUp, self.adaconvsContentUp, self.middleUpBlock, self.UpBlock):
-            out = out + adaconvS(style, out, norm=True)
-            out = learnable1(out)
-            out = out + adaconvC(content, out, norm=True)
-            out = learnable2(out)
+        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
+            out = out + adaconv(style, out, norm=True)
+            out = learnable(out)
         return out
 
 class Revisors(nn.Module):
