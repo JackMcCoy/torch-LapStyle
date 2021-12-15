@@ -193,6 +193,7 @@ class Revisors(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
+        self.levels = levels
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=128, first_layer= i == 0, batch_size=batch_size))
 
@@ -202,7 +203,7 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, enc_, crop_marks):
+    def forward(self, input, ci, style, enc_, crop_marks, optimizers):
         device = torch.device("cuda")
         idx = 0
         size = 256
@@ -219,6 +220,9 @@ class Revisors(nn.Module):
             patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
+            if idx == self.levels-1:
+                for optimizer in optimizers:
+                    optimizer.zero_grad(set_to_none=True)
             input = layer(x2, style, stylized_feats)
             input = patch + input
             idx += 1

@@ -277,7 +277,7 @@ elif args.train_model=='revision':
         rev.train()
         if args.revision_depth>1:
             for i in rev.layers[:-1]:
-                i.train(False)
+                set_requires_grad(i, False)
         return rev
     def build_disc(disc_state, disc_quant):
         disc=net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False, batch_size = args.batch_size).to(device)
@@ -346,14 +346,12 @@ elif args.train_model=='revision':
             cF = enc_(ci[0])
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
-            for optimizer in optimizers:
-                optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
             crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
             crop_marks.requires_grad = False
 
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_, crop_marks)
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_, crop_marks, optimizers)
             si_cropped = random_crop(si[-1])
             patch_feats = enc_(stylized_patch)
 
