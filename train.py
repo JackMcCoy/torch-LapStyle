@@ -327,6 +327,7 @@ elif args.train_model=='revision':
         disc_.to(device)
         rev_.to(device)
         gannoise = RiemannNoise(256)
+        gannoise.to(device)
     wandb.watch((rev_,disc_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler()
