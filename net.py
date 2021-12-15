@@ -176,9 +176,6 @@ class RevisionNet(nn.Module):
                                       nn.Sequential(nn.BatchNorm2d(128),
                                                     nn.ReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.BatchNorm2d(128),
-                                                    nn.ReLU(),
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
