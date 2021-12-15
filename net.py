@@ -134,6 +134,7 @@ class RevisionNet(nn.Module):
         
 
         self.riemann_noise = RiemannNoise(128)
+        self.riemann_style_noise = RiemannNoise(4)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
@@ -177,6 +178,7 @@ class RevisionNet(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
+        style = self.riemann_style_noise(style)
 
         out = self.DownBlock(input.clone().detach())
         out = self.resblock(out)
