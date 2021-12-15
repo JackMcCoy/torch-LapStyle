@@ -173,7 +173,10 @@ class RevisionNet(nn.Module):
                                                     nn.ReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     spectral_norm(nn.Conv2d(128, 3, kernel_size=3)),
-                                                    nn.Tanh())])
+                                                    )])
+        self.patch_up = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                        spectral_norm(nn.Conv2d(3, 12, kernel_size=3)),
+                                      nn.PixelShuffle(2))
 
     def forward(self, input, style, stylized_feats):
         """
@@ -190,12 +193,13 @@ class RevisionNet(nn.Module):
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
 
-        out = self.DownBlock(input)
+        out = self.DownBlock(input.clone().detach())
         out = self.resblock(out)
         out = self.riemann_noise(out)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
+        out = (out + input.clone().detach()[:,:3,:,:]).tanh()
         return out
 
 class Revisors(nn.Module):
@@ -237,7 +241,6 @@ class Revisors(nn.Module):
                 for optimizer in optimizers:
                     optimizer.zero_grad(set_to_none=True)
             input = layer(x2, style, stylized_feats)
-            input = patch + input
             idx += 1
         return input, scaled_ci, patch
 
