@@ -199,7 +199,8 @@ class RevisionNet(nn.Module):
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
-        out = (out + input.clone().detach()[:,:3,:,:]).tanh()
+        patch = self.patch_up(input.clone().detach()[:,:3,:,:])
+        out = (out + patch).tanh()
         return out
 
 class Revisors(nn.Module):
