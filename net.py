@@ -135,35 +135,45 @@ class RevisionNet(nn.Module):
 
         self.riemann_noise = RiemannNoise(128)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(6, 128, kernel_size=3),
-            nn.LeakyReLU(.2),
+            spectral_norm(nn.Conv2d(6, 128, kernel_size=3)),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.LeakyReLU(.2),
+            spectral_norm(nn.Conv2d(128, 128, kernel_size=3, stride=1)),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1),
-            nn.LeakyReLU(.2),
+            spectral_norm(nn.Conv2d(128, 64, kernel_size=3, stride=1)),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.LeakyReLU(.2))
+            spectral_norm(nn.Conv2d(64, 64, kernel_size=3, stride=2)),
+            nn.BatchNorm2d(64),
+            nn.ReLU())
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
-                                                    nn.LeakyReLU(.2),
+                                                    spectral_norm(nn.Conv2d(64, 256, kernel_size=3)),
+                                                    nn.BatchNorm2d(256),
+                                                    nn.ReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 64, kernel_size=3),
-                                                    nn.LeakyReLU(.2)),
+                                                    spectral_norm(nn.Conv2d(64, 64, kernel_size=3)),
+                                                    nn.BatchNorm2d(64),
+                                                    nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 128, kernel_size=3),
-                                                    nn.LeakyReLU(.2)),
+                                                    spectral_norm(nn.Conv2d(64, 128, kernel_size=3)),
+                                                    nn.BatchNorm2d(128),
+                                                    nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.LeakyReLU(.2)),
+                                                    spectral_norm(nn.Conv2d(128, 128, kernel_size=3)),
+                                                    nn.BatchNorm2d(128),
+                                                    nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.LeakyReLU(.2),
+                                                    spectral_norm(nn.Conv2d(128, 128, kernel_size=3)),
+                                                    nn.BatchNorm2d(128),
+                                                    nn.ReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3),)])
+                                                    spectral_norm(nn.Conv2d(128, 3, kernel_size=3)),
+                                                    nn.Tanh())])
 
     def forward(self, input, style, stylized_feats):
         """
@@ -679,8 +689,7 @@ class SpectralDiscriminator(nn.Module):
         ch = num_channels
         self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False),
-                                          nn.Sigmoid())
+                                          SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False))
         self.relgan = relgan
 
     def forward(self, x):
