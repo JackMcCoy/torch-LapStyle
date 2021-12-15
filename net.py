@@ -135,47 +135,44 @@ class RevisionNet(nn.Module):
 
         self.riemann_noise = RiemannNoise(128)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            spectral_norm(nn.Conv2d(6, 128, kernel_size=3)),
+            nn.Conv2d(6, 128, kernel_size=3),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            spectral_norm(nn.Conv2d(128, 128, kernel_size=3, stride=1)),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            spectral_norm(nn.Conv2d(128, 64, kernel_size=3, stride=1)),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            spectral_norm(nn.Conv2d(64, 64, kernel_size=3, stride=2)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.BatchNorm2d(64),
             nn.ReLU())
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(64, 256, kernel_size=3)),
+                                                    nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.BatchNorm2d(256),
                                                     nn.ReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(64, 64, kernel_size=3)),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.BatchNorm2d(64),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(64, 128, kernel_size=3)),
+                                                    nn.Conv2d(64, 128, kernel_size=3),
                                                     nn.BatchNorm2d(128),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(128, 128, kernel_size=3)),
+                                                    nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.BatchNorm2d(128),
                                                     nn.ReLU()),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(128, 128, kernel_size=3)),
+                                                    nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.BatchNorm2d(128),
                                                     nn.ReLU(),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(128, 3, kernel_size=3)),
+                                                    nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
-        self.patch_up = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        spectral_norm(nn.Conv2d(3, 3, kernel_size=3)))
 
     def forward(self, input, style, stylized_feats):
         """
@@ -198,8 +195,7 @@ class RevisionNet(nn.Module):
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
-        patch = self.patch_up(input.clone().detach()[:,:3,:,:])
-        out = (out + patch).tanh()
+        out = (out + input.clone().detach()[:,:3,:,:])
         return out
 
 class Revisors(nn.Module):
