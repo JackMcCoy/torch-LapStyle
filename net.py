@@ -172,7 +172,8 @@ class RevisionNet(nn.Module):
                                                     nn.BatchNorm2d(128),
                                                     nn.ReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    spectral_norm(nn.Conv2d(128, 3, kernel_size=3)))])
+                                                    spectral_norm(nn.Conv2d(128, 3, kernel_size=3)),
+                                                    nn.Tanh())])
 
     def forward(self, input, style, stylized_feats):
         """
