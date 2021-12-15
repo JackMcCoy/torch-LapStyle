@@ -326,7 +326,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
-        gannoise = RiemannNoise(256)
+        gannoise = RiemannNoise(128)
         gannoise.to(device)
     wandb.watch((rev_,disc_, gannoise), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
@@ -360,7 +360,7 @@ elif args.train_model=='revision':
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(gannoise(si_cropped.detach()), gannoise(rev_stylized.clone()).detach(), disc_, ganloss)
+            loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss, gannoise)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)

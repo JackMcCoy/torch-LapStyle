@@ -677,13 +677,16 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
-        self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
+        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False))
+                                          SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False)])
         self.relgan = relgan
 
-    def forward(self, x):
-        x = self.spectral_gan(x)
+    def forward(self, x, gannoise):
+        x = self.spectral_gan[0](x)
+        x = gannoise(x)
+        for layer in self.spectral_gan[1:]:
+            x = layer(x)
         return x
 
 mse_loss = GramErrors()
@@ -705,13 +708,13 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 
-def calc_GAN_loss(real, fake, disc_, ganloss):
-    pred_fake = disc_(fake)
+def calc_GAN_loss(real, fake, disc_, ganloss, gannoise):
+    pred_fake = disc_(fake, gannoise)
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
         loss_D_fake = ganloss(pred_fake, False)
-    pred_real = disc_(real)
+    pred_real = disc_(real, gannoise)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
         loss_D = (
@@ -778,7 +781,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, gannoise, patch_feats=No
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(gannoise(stylized))
+        fake_loss = disc_(stylized, gannoise)
         loss_Gp_GAN = GANLoss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
