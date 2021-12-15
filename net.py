@@ -175,8 +175,7 @@ class RevisionNet(nn.Module):
                                                     spectral_norm(nn.Conv2d(128, 3, kernel_size=3)),
                                                     )])
         self.patch_up = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        spectral_norm(nn.Conv2d(3, 12, kernel_size=3)),
-                                      nn.PixelShuffle(2))
+                                        spectral_norm(nn.Conv2d(3, 3, kernel_size=3)))
 
     def forward(self, input, style, stylized_feats):
         """
@@ -199,7 +198,7 @@ class RevisionNet(nn.Module):
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
-        patch = self.patch_up(input.clone().detach()[:,:3,:,:])
+        patch = self.patch(input.clone().detach()[:,:3,:,:])
         out = (out + patch).tanh()
         return out
 
