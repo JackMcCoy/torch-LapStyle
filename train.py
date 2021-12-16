@@ -336,7 +336,7 @@ elif args.train_model=='revision':
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(list(rev_.layers[-1].parameters())+list(gannoise.parameters()), lr=args.lr))
-    opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.lr)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.lr, momentum=.9)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i, args)
