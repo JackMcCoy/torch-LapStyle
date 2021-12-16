@@ -326,7 +326,7 @@ elif args.train_model=='revision':
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
-        gannoise = RiemannNoise(128)
+        gannoise = RiemannNoise(256)
         gannoise.to(device)
     wandb.watch((rev_,disc_, gannoise), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
