@@ -683,9 +683,9 @@ class SpectralDiscriminator(nn.Module):
         self.relgan = relgan
 
     def forward(self, x, gannoise):
-        x = self.spectral_gan[0](x)
-        x = gannoise(x)
-        for layer in self.spectral_gan[1:]:
+        #x = self.spectral_gan[0](x)
+        #x = gannoise(x)
+        for layer in self.spectral_gan:
             x = layer(x)
         return x
 
