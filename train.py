@@ -336,7 +336,7 @@ elif args.train_model=='revision':
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(list(rev_.layers[-1].parameters())+list(gannoise.parameters()), lr=args.lr))
-    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.lr, momentum=.9)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.lr, momentum = .9)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i, args)
@@ -360,7 +360,7 @@ elif args.train_model=='revision':
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss, gannoise)
+            loss_D = calc_GAN_loss(gannoise(si_cropped.detach()), gannoise(rev_stylized.clone()).detach(), disc_, ganloss)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             d_scaler.step(opt_D)
