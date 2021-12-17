@@ -689,13 +689,13 @@ class SpectralDiscriminator(nn.Module):
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False),
                                        nn.AvgPool2d(2))
-        self.linear_project = spectral_norm(nn.Linear(32768,196608))
+        self.linear_project = spectral_norm(nn.Linear(256,768))
         self.relgan = relgan
 
     def forward(self, x):
         b = x.shape[0]
         x = self.spectral_gan(x)
-        x = x.reshape(b,-1)
+        x = x.reshape(b,512,-1)
         x = self.linear_project(x)
         x = x.reshape(b, 3, 256, 256)
         return x
