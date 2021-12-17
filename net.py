@@ -132,6 +132,8 @@ class RevisionNet(nn.Module):
         )
         '''
 
+
+        self.riemann_noise = RiemannNoise(128)
         self.riemann_style_noise = RiemannNoise(4)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
@@ -148,16 +150,20 @@ class RevisionNet(nn.Module):
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.ReLU(),
+                                                    RiemannNoise(128),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
-                                                    nn.ReLU()),
+                                                    nn.ReLU(),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 128, kernel_size=3),
-                                                    nn.ReLU()),
+                                                    nn.ReLU(),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.ReLU()),
+                                                    nn.ReLU(),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
@@ -180,6 +186,7 @@ class RevisionNet(nn.Module):
 
         out = self.DownBlock(input.clone().detach())
         out = self.resblock(out)
+        out = self.riemann_noise(out)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
