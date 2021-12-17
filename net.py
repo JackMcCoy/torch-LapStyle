@@ -690,7 +690,7 @@ class SpectralDiscriminator(nn.Module):
                                           SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False))
         self.linear_project = Sequential(spectral_norm(nn.Linear(256,768)),
                                          nn.LeakyReLU(.2),
-                                         spectral_norm(nn.Linear(768, 768))
+                                         spectral_norm(nn.Linear(768, 768)))
         self.relgan = relgan
 
     def forward(self, x):
