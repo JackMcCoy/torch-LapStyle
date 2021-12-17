@@ -64,9 +64,10 @@ def set_requires_grad(nets, requires_grad=False):
     for param in nets.parameters():
         param.requires_grad = requires_grad
 
-def adjust_learning_rate(optimizer, iteration_count,args):
+def adjust_learning_rate(optimizer, iteration_count,args, disc=False):
     """Imitating the original implementation"""
-    lr = args.lr / (1.0 + args.lr_decay * iteration_count)
+    lr = args.disc_lr if disc else args.lr
+    lr = lr / (1.0 + args.lr_decay * iteration_count)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -100,6 +101,7 @@ parser.add_argument('--save_dir', default='./experiments',
 parser.add_argument('--log_dir', default='./logs',
                     help='Directory to save the log')
 parser.add_argument('--lr', type=float, default=1e-4)
+parser.add_argument('--disc_lr', type=float, default=1e-3)
 parser.add_argument('--lr_decay', type=float, default=5e-5)
 parser.add_argument('--max_iter', type=int, default=160000)
 parser.add_argument('--batch_size', type=int, default=8)
@@ -334,7 +336,7 @@ elif args.train_model=='revision':
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(rev_.layers[-1].parameters(), lr=args.lr))
-    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.lr, momentum = .9)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .9, disc=True)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i, args)
