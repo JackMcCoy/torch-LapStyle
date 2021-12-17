@@ -354,26 +354,26 @@ class DecoderAdaConv(nn.Module):
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256))
-        self.noise_1 = RiemannNoise(32)
+        self.noise_1 = RiemannNoise(256)
         self.kernel_2 = AdaConv(256, 4, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128)
         )
-        self.noise_2 = RiemannNoise(64)
+        self.noise_2 = RiemannNoise(128)
         self.kernel_3 = AdaConv(128, 2, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.noise_3 = RiemannNoise(128)
+        self.noise_3 = RiemannNoise(64)
         self.kernel_4 = AdaConv(64, 1, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, kernel_size=3)
         )
-        self.noise_4 = RiemannNoise(256)
+        self.noise_4 = RiemannNoise(32)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
