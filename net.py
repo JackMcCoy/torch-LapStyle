@@ -135,19 +135,25 @@ class RevisionNet(nn.Module):
 
         self.riemann_noise = RiemannNoise(128)
         self.riemann_style_noise = RiemannNoise(4)
-        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.DownBlock = nn.Sequential(RiemannNoise(256),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
+            RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3, stride=1),
             nn.ReLU(),
+            RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 64, kernel_size=3, stride=1),
             nn.ReLU(),
+            RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.ReLU())
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.ReLU(),
+            RiemannNoise(128),)
+        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.ReLU(),
                                                     RiemannNoise(128),
@@ -688,9 +694,9 @@ class SpectralDiscriminator(nn.Module):
         self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False))
-        self.linear_project = Sequential(spectral_norm(nn.Linear(256,384)),
+        self.linear_project = Sequential(spectral_norm(nn.Linear(256,512)),
                                          nn.LeakyReLU(.2),
-                                         spectral_norm(nn.Linear(384, 384)))
+                                         spectral_norm(nn.Linear(512, 384)))
         self.relgan = relgan
 
     def forward(self, x):
