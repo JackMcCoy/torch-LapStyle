@@ -688,9 +688,9 @@ class SpectralDiscriminator(nn.Module):
         self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), ch*2**(depth-2), 3, 1, downsample=False))
-        self.linear_project = Sequential(spectral_norm(nn.Linear(256,768)),
+        self.linear_project = Sequential(spectral_norm(nn.Linear(256,384)),
                                          nn.LeakyReLU(.2),
-                                         spectral_norm(nn.Linear(768, 768)))
+                                         spectral_norm(nn.Linear(384, 384)))
         self.relgan = relgan
 
     def forward(self, x):
