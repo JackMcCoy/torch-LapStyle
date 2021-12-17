@@ -336,11 +336,11 @@ elif args.train_model=='revision':
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(rev_.layers[-1].parameters(), lr=args.lr))
-    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .9, disc=True)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .9)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i, args)
-        adjust_learning_rate(opt_D, i, args)
+        adjust_learning_rate(opt_D, i, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
