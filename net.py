@@ -696,10 +696,8 @@ class SpectralDiscriminator(nn.Module):
     def forward(self, x):
         b = x.shape[0]
         x = self.spectral_gan(x)
-        print(x.shape)
         x = x.reshape(b,512,-1)
         x = self.linear_project(x)
-        print(x.shape)
         x = x.reshape(b, 3, 256, 256)
         return x
 
