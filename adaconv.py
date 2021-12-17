@@ -28,9 +28,9 @@ class AdaConv(nn.Module):
         if norm:
             size = content_in.size()
             content_mean, content_std = calc_mean_std(content_in)
-
-            content_in = (content_in - content_mean.expand(
-                    size)) / content_std.expand(size)
+            content_mean = content_mean.expand(size)
+            content_std = content_std.expand(size)
+            content_in = (content_in - content_mean) / content_std
         predicted = self.pad(content_in)
         predicted = torch.vsplit(predicted, N)
         depthwise = torch.unbind(depthwise, 0)

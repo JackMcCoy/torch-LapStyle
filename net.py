@@ -659,7 +659,7 @@ class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
         self.conv_block = Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
-                                        nn.LeakyReLU(0.2, inplace=True),
+                                        nn.LeakyReLU(0.2),
                                         spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
         self.c_sc = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
