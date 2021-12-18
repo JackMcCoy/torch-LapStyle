@@ -104,11 +104,11 @@ class Decoder(nn.Module):
 class SwitchableNoise(nn.Module):
     def __init__(self, size, switch=True):
         if switch:
-            self.fn = RiemannNoise(size)
+            self.noise_or_ident = RiemannNoise(size)
         else:
-            self.fn = nn.Identity()
+            self.noise_or_ident = nn.Identity()
     def forward(self, x):
-        return self.fn(x)
+        return self.noise_or_ident(x)
 
 
 class RevisionNet(nn.Module):
