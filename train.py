@@ -354,7 +354,9 @@ elif args.train_model=='revision':
             crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
             crop_marks.requires_grad = False
 
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), style, enc_, crop_marks, optimizers)
+            for optimizer in optimizers:
+                optimizer.zero_grad(set_to_none=True)
+            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), enc_, crop_marks)
             si_cropped = random_crop(si[-1])
             patch_feats = enc_(stylized_patch)
 

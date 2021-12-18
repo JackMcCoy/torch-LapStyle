@@ -101,6 +101,16 @@ class Decoder(nn.Module):
         return t
 
 
+class SwitchableNoise(nn.Module):
+    def __init__(self, size, switch=True):
+        if switch:
+            self.fn = RiemannNoise(size)
+        else:
+            self.fn = nn.Identity()
+    def forward(self, x):
+        return self.fn(x)
+
+
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
@@ -134,46 +144,46 @@ class RevisionNet(nn.Module):
 
 
         self.riemann_style_noise = RiemannNoise(4)
-        self.DownBlock = nn.Sequential(RiemannNoise(256),
+        self.DownBlock = nn.Sequential(SwitchableNoise(256, first_layer),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.ReLU(),
-            RiemannNoise(256),
+            SwitchableNoise(256, first_layer),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3, stride=1),
             nn.ReLU(),
-            RiemannNoise(256),
+            SwitchableNoise(256, first_layer),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 64, kernel_size=3, stride=1),
             nn.ReLU(),
-            RiemannNoise(256),
+            SwitchableNoise(256, first_layer),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),
-            RiemannNoise(128),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
+            SwitchableNoise(128, first_layer),)
+        self.UpBlock = nn.ModuleList([nn.Sequential(SwitchableNoise(128, first_layer),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(128),
+                                                    SwitchableNoise(128, first_layer),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256)),
+                                                    SwitchableNoise(256, first_layer)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 128, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256)),
+                                                    SwitchableNoise(256, first_layer)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256)),
+                                                    SwitchableNoise(256, first_layer)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
-    def forward(self, input, style, stylized_feats):
+    def forward(self, input, stylized_feats):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -215,7 +225,7 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, enc_, crop_marks, optimizers):
+    def forward(self, input, ci, style, enc_, crop_marks):
         device = torch.device("cuda")
         idx = 0
         size = 256
@@ -232,9 +242,9 @@ class Revisors(nn.Module):
             patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
-            if idx == self.levels-1:
-                for optimizer in optimizers:
-                    optimizer.zero_grad(set_to_none=True)
+            #if idx == self.levels-1:
+            #    for optimizer in optimizers:
+            #        optimizer.zero_grad(set_to_none=True)
             input = layer(x2, style, stylized_feats)
             idx += 1
         return input, scaled_ci, patch
