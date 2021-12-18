@@ -226,7 +226,7 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, enc_, crop_marks):
+    def forward(self, input, ci, enc_, crop_marks):
         device = torch.device("cuda")
         idx = 0
         size = 256
@@ -246,7 +246,7 @@ class Revisors(nn.Module):
             #if idx == self.levels-1:
             #    for optimizer in optimizers:
             #        optimizer.zero_grad(set_to_none=True)
-            input = layer(x2, style, stylized_feats)
+            input = layer(x2, stylized_feats)
             idx += 1
         return input, scaled_ci, patch
 
