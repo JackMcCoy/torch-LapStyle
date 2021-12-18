@@ -103,6 +103,7 @@ class Decoder(nn.Module):
 
 class SwitchableNoise(nn.Module):
     def __init__(self, size, switch=True):
+        super(SwitchableNoise, self).__init__()
         if switch:
             self.noise_or_ident = RiemannNoise(size)
         else:
