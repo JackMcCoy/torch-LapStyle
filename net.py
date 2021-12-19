@@ -242,7 +242,7 @@ class Revisors(nn.Module):
                 tr = tl + (256// size_diff)
                 bl = crop_marks[i][1] // size_diff
                 br = bl + (256 // size_diff)
-                print(f'{tl=!s} {tr=!s} {bl=!s} {br=!s}')
+                print(f'{tl:!s} {tr:!s} {bl:!s} {br:!s}')
                 scaled_ci = scaled_ci[:, :, int(tl):int(tr), int(bl):int(br)]
                 size_diff = size_diff *.5
             patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
