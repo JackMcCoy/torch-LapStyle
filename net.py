@@ -236,12 +236,12 @@ class Revisors(nn.Module):
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
-            size_diff = 512/size
+            size_diff = size//512
             for i in range(idx+1):
-                tl = crop_marks[i][0] // size_diff
-                tr = tl + (256// size_diff)
-                bl = crop_marks[i][1] // size_diff
-                br = bl + (256 // size_diff)
+                tl = crop_marks[i][0] * size_diff
+                tr = tl + (256*2**((idx+1)-(i+1)))
+                bl = crop_marks[i][1] * size_diff
+                br = bl + (256*2**(idx+1)-(i+1))
                 print(str(tl)+' '+str(tr)+ ' '+ str(bl)+' '+str(br))
                 scaled_ci = scaled_ci[:, :, int(tl):int(tr), int(bl):int(br)]
                 size_diff = size_diff *.5
