@@ -231,7 +231,6 @@ class Revisors(nn.Module):
         idx = 0
         size = 256
         for layer in self.layers:
-            print(ci.shape)
             stylized_feats = enc_(input)
             input = self.upsample(input)
             size *= 2
@@ -242,7 +241,6 @@ class Revisors(nn.Module):
                 tr = (tl + (512*2**(idx-1-i))).int()
                 bl = (crop_marks[i][1] * 2**(idx-i)).int()
                 br = (bl + (512*2**(idx-1-i))).int()
-                print(str(tl)+' '+str(tr)+ ' '+ str(bl)+' '+str(br))
                 scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
                 size_diff = size_diff *.5
             patch = input[:, :, tl:tr, bl:br]
