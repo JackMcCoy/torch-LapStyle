@@ -237,7 +237,7 @@ class Revisors(nn.Module):
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size//256
-            for i in range(idx):
+            for i in range(idx+1):
                 tl = crop_marks[i][0] * (2**(idx-1-i))
                 tr = tl + (256*2**idx // size_diff)
                 bl = crop_marks[i][1] * (2**(idx-1-i))
