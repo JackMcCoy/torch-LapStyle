@@ -239,9 +239,9 @@ class Revisors(nn.Module):
             size_diff = size//256
             for i in range(idx+1):
                 tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                tr = tl + (256*2**(idx-1-i))
+                tr = (tl + (256*2**(idx-1-i))).int()
                 bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                br = bl + (256*2**(idx-1-i))
+                br = (bl + (256*2**(idx-1-i))).int()
                 print(str(tl)+' '+str(tr)+ ' '+ str(bl)+' '+str(br))
                 scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
                 size_diff = size_diff *.5
