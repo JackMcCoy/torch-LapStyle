@@ -238,12 +238,12 @@ class Revisors(nn.Module):
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size//256
             for i in range(idx+1):
-                tl = crop_marks[i][0] * (2**(idx-1-i))
+                tl = (crop_marks[i][0] * (2**(idx-1-i))).int()
                 tr = tl + (256*2**idx // size_diff)
-                bl = crop_marks[i][1] * (2**(idx-1-i))
+                bl = (crop_marks[i][1] * (2**(idx-1-i))).int()
                 br = bl + (256*2**(idx) // (i+1))
                 print(str(tl)+' '+str(tr)+ ' '+ str(bl)+' '+str(br))
-                scaled_ci = scaled_ci[:, :, int(tl):int(tr), int(bl):int(br)]
+                scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
                 size_diff = size_diff *.5
             patch = input[:, :, tl:tr, bl:br]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
