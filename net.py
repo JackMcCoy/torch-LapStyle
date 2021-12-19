@@ -786,17 +786,17 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         sF = [sF]
     for idx, s in enumerate(sF):
         if idx == 0:
-            loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         else:
-            loss_s = loss_s + style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+            loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         for key in style_layers[1:]:
-            loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
         if remd_loss:
             if idx == 0:
-                style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
-                             style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
-            style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + \
-                         style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+                style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
+                             style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
+            style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
+                         style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
     if remd_loss:
         if content_all_layers:
             content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
