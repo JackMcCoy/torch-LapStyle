@@ -231,6 +231,7 @@ class Revisors(nn.Module):
         idx = 0
         size = 256
         for layer in self.layers:
+            print(ci.shape)
             stylized_feats = enc_(input)
             input = self.upsample(input)
             size *= 2

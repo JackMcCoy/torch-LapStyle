@@ -349,6 +349,7 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
+            print(ci.shape)
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
