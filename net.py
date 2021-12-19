@@ -193,7 +193,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         b = input.shape[0]
-        print(input.shape)
         style = self.style_encoding(stylized_feats['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
