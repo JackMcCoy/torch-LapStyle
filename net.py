@@ -242,7 +242,8 @@ class Revisors(nn.Module):
                 tr = tl + (256// size_diff)
                 bl = crop_marks[i][1] // size_diff
                 br = bl + (256 // size_diff)
-                scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
+                print(f'{tl=} {tr=} {bl=} {br=}')
+                scaled_ci = scaled_ci[:, :, int(tl):int(tr), int(bl):int(br)]
                 size_diff = size_diff *.5
             patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
