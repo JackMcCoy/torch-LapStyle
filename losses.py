@@ -41,8 +41,9 @@ def calc_emd_loss(pred, target):
 class CalcContentReltLoss():
     """Calc Content Relt Loss.
     """
-    def __init__(self):
+    def __init__(self, eps=1e-5):
         super(CalcContentReltLoss, self).__init__()
+        self.eps = eps
 
     def __call__(self, pred, target):
         """Forward Function.
@@ -52,10 +53,10 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         dM = 1.
-        Mx = torch.clip(calc_emd_loss(pred, pred), 0, 1)
-        Mx = torch.clip(Mx / (Mx.sum(1, keepdim=True)), 0, 1)
-        My = torch.clip(calc_emd_loss(target, target), 0, 1)
-        My = torch.clip(My / (My.sum(1, keepdim=True)), 0,1)
+        Mx = calc_emd_loss(pred, pred)
+        Mx = Mx / (Mx.sum(1, keepdim=True)+self.eps)
+        My = calc_emd_loss(target, target)
+        My = My / (My.sum(1, keepdim=True)+self.eps)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
