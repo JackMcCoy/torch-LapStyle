@@ -236,16 +236,16 @@ class Revisors(nn.Module):
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
-            size_diff = size//512
-            for i in range(idx+1):
-                tl = crop_marks[i][0] * size_diff
-                tr = tl + (256*2**((idx+1)-(i+1)))
-                bl = crop_marks[i][1] * size_diff
-                br = bl + (256*2**(idx+1)-(i+1))
+            size_diff = size//256
+            for i in range(idx):
+                tl = crop_marks[i][0] * (2**(idx-1-i))
+                tr = tl + (256*2**idx // size_diff)
+                bl = crop_marks[i][1] * (2**(idx-1-i))
+                br = bl + (256*2**(idx) // (i+1))
                 print(str(tl)+' '+str(tr)+ ' '+ str(bl)+' '+str(br))
                 scaled_ci = scaled_ci[:, :, int(tl):int(tr), int(bl):int(br)]
                 size_diff = size_diff *.5
-            patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
+            patch = input[:, :, tl:tr, bl:br]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
             #if idx == self.levels-1:
