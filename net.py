@@ -230,6 +230,7 @@ class Revisors(nn.Module):
         device = torch.device("cuda")
         idx = 0
         size = 256
+        print(crop_marks)
         for layer in self.layers:
 
             stylized_feats = enc_(input)
@@ -237,8 +238,8 @@ class Revisors(nn.Module):
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
             size_diff = size // 512
-            print(input.shape)
-            print(scaled_ci.shape)
+
+
             for i in range(idx+1):
                 print(scaled_ci.shape)
                 scaled_ci = scaled_ci[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
@@ -251,6 +252,7 @@ class Revisors(nn.Module):
             #    for optimizer in optimizers:
             #        optimizer.zero_grad(set_to_none=True)
             input = layer(x2, stylized_feats)
+            print(input.shape)
             idx += 1
         return input, scaled_ci, patch
 
