@@ -122,6 +122,7 @@ parser.add_argument('--load_rev', type=int, default=0)
 parser.add_argument('--load_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
 parser.add_argument('--remd_loss', type=int, default=1)
+parser.add_argument('--content_style_loss', type=int, default=1)
 parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
@@ -135,6 +136,7 @@ if args.fp16 ==1:
     ac_enabled=True
 
 args.split_style = args.split_style == 1
+args.content_style_loss = args.content_style_loss == 1
 
 device = torch.device('cuda')
 save_dir = Path(args.save_dir)
@@ -291,8 +293,8 @@ elif args.train_model=='revision':
         return disc
 
     random_crop = transforms.RandomCrop(256)
-    #if args.split_style:
-    #    random_crop_2 = transforms.RandomCrop(512)
+    if args.split_style:
+        random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -378,13 +380,17 @@ elif args.train_model=='revision':
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
-            cF = enc_(ci_patch)
-            if args.split_style:
-            #    si_cropped = random_crop_2(si[-1])
-                sF = None
+            if args.content_style_loss:
+                cF = enc_(ci_patch)
+                if args.split_style:
+                    si_cropped = random_crop_2(si[-1])
+                    sF = None
+                else:
+                    sF = enc_(si_cropped)
             else:
-                sF = enc_(si_cropped)
-            losses = calc_losses(rev_stylized, ci_patch, si[-1], cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, split_style = args.split_style)
+                cF = None
+                sF = None
+            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_content_style = args.content_style_loss, calc_identity=False, disc_loss=True, mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, split_style = args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
@@ -411,7 +417,6 @@ elif args.train_model=='revision':
 
             wandb.log(loss_dict, step=i)
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
 
         with torch.no_grad():
