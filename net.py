@@ -794,15 +794,6 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     for idx, s in enumerate(sF):
         if idx == 0:
             loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
-=======
-    if calc_content_style:
-        if content_all_layers:
-            #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-            #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-            loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
-            for key in content_layers[1:]:
-                loss_c += content_loss(stylized_feats[key], cF[key].detach()).data
->>>>>>> refs/remotes/origin/vqgan
         else:
             loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
         if split_style:
@@ -825,15 +816,11 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
                                  style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
                 style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
                              style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
-    else:
-        loss_c = 0
-        loss_s = 0
     if remd_loss:
         if content_all_layers:
             content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
             content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
-
     else:
         content_relt = 0
         style_remd = 0
