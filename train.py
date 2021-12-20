@@ -413,7 +413,6 @@ elif args.train_model=='revision':
 
             wandb.log(loss_dict, step=i)
             print(f'{loss.item():.2f}')
-            print(f'c: {loss_c.item():.3f} s: {loss_s.item():.3f}')
 
 
         with torch.no_grad():
