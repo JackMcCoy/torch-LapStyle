@@ -291,8 +291,8 @@ elif args.train_model=='revision':
         return disc
 
     random_crop = transforms.RandomCrop(256)
-    if args.split_style:
-        random_crop_2 = transforms.RandomCrop(512)
+    #if args.split_style:
+    #    random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -380,11 +380,11 @@ elif args.train_model=='revision':
         with autocast(enabled=ac_enabled):
             cF = enc_(ci_patch)
             if args.split_style:
-                si_cropped = random_crop_2(si[-1])
+            #    si_cropped = random_crop_2(si[-1])
                 sF = None
             else:
                 sF = enc_(si_cropped)
-            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, split_style = args.split_style)
+            losses = calc_losses(rev_stylized, ci[-1], si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_identity=False, disc_loss=True, mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, split_style = args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
