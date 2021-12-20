@@ -783,12 +783,11 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
         sF = []
-        patches=unfold(si)
         b = patches.shape[0]
-        randperm = torch.randperm(si.shape[-1]//256)
-        for i in range(4):
-            j = patches[:,:,randperm[i]].reshape(b,3,256,256)
-            sF.append(encoder(j.detach()))
+        patches = unfold(si)
+        patches = patches.reshape(b, -1, 3, 256, 256)
+        for i in patches.shape[1]:
+            sF.append(encoder(i.detach()))
     else:
         sF = [sF]
     for idx, s in enumerate(sF):
