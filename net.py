@@ -785,8 +785,8 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         sF = []
         b = si.shape[0]
         patches = unfold(si)
-        patches = patches.reshape(b, -1, 3, 256, 256)
-        for i in patches[:,1,:,:]:
+        patches = patches.reshape(-1,b, 3, 256, 256)
+        for i in patches:
             sF.append(encoder(i.detach()))
     else:
         sF = [sF]
