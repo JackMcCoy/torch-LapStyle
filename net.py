@@ -772,7 +772,6 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         l_identity2 = 0
         l_identity3 = 0
         l_identity4 = 0
-<<<<<<< HEAD
         cb_loss = 0
     if content_all_layers:
         #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
