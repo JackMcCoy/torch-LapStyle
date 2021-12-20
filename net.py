@@ -21,6 +21,8 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 device = torch.device('cuda')
 
+unfold = torch.nn.Unfold(256,stride=256)
+
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
 
@@ -779,9 +781,12 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
         sF = []
-        for i in torch.split(si,256, 2):
-            for j in torch.split(i,256,3):
-                sF.append(encoder(j.detach()))
+        patches=unfold(si)
+        b = patches.shape[0]
+        randperm = torch.randperm(si.shape[-1]//256)
+        for i in range(4):
+            j = patches[:,:,randperm[i]].reshape(b,3,256,256)
+            sF.append(encoder(j.detach()))
     else:
         sF = [sF]
     for idx, s in enumerate(sF):
