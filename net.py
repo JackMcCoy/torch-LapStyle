@@ -21,8 +21,6 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 device = torch.device('cuda')
 
-unfold = torch.nn.Unfold(256,stride=256)
-
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
 
@@ -195,6 +193,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         b = input.shape[0]
+
         style = self.style_encoding(stylized_feats['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
@@ -236,15 +235,12 @@ class Revisors(nn.Module):
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
-            size_diff = size//256
+            size_diff = size // 512
             for i in range(idx+1):
-                tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                tr = (tl + (512*2**(idx-1-i))).int()
-                bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                br = (bl + (512*2**(idx-1-i))).int()
-                scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
-                size_diff = size_diff *.5
-            patch = input[:, :, tl:tr, bl:br]
+                ci = ci[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
+                size_diff = size_diff // 2
+            scaled_ci = scaled_ci[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
+            patch = input[:, :, crop_marks[i][0]:crop_marks[i][0] + 256, crop_marks[i][1]:crop_marks[i][1] + 256]
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patch, lap_pyr], dim = 1)
             #if idx == self.levels-1:
@@ -783,12 +779,9 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
         sF = []
-        patches=unfold(si)
-        b = patches.shape[0]
-        randperm = torch.randperm(si.shape[-1]//256)
-        for i in range(4):
-            j = patches[:,:,randperm[i]].reshape(b,3,256,256)
-            sF.append(encoder(j.detach()))
+        for i in torch.split(si,256, 2):
+            for j in torch.split(i,256,3):
+                sF.append(encoder(j.detach()))
     else:
         sF = [sF]
     for idx, s in enumerate(sF):
