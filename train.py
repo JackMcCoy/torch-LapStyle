@@ -372,11 +372,13 @@ elif args.train_model=='revision':
             loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
-            d_scaler.step(opt_D)
-            d_scaler.update()
+            if i+1 % 2 == 0:
+                d_scaler.step(opt_D)
+                d_scaler.update()
         else:
             loss_D.backward()
-            opt_D.step()
+            if i + 1 % 2 == 0:
+                opt_D.step()
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
@@ -396,13 +398,15 @@ elif args.train_model=='revision':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            for optimizer in optimizers:
-                scaler.step(optimizer)
-            scaler.update()
+            if i + 1 % 2 == 0:
+                for optimizer in optimizers:
+                    scaler.step(optimizer)
+                scaler.update()
         else:
             loss.backward()
-            for optimizer in optimizers:
-                optimizer.step()
+            if i + 1 % 2 == 0:
+                for optimizer in optimizers:
+                    optimizer.step()
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
