@@ -195,7 +195,7 @@ def build_rev(depth, state):
     return rev
 
 def build_revlap(depth, state, encoder):
-    rev = RevisorLap(encoder, levels=args.revision_depth).to(device)
+    rev = RevisorLap(levels=args.revision_depth).to(device)
     if not state is None:
         state = torch.load(state)
         rev.load_state_dict(state, strict=False)
