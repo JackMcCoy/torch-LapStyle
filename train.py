@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from revlap import RevisorLap
+from revlap
 
 import torch
 import torch.nn as nn
@@ -194,8 +194,8 @@ def build_rev(depth, state):
             set_requires_grad(i, False)
     return rev
 
-def build_revlap(depth, state, encoder):
-    rev = RevisorLap(encoder, levels=args.revision_depth).to(device)
+def build_revlap(depth, state):
+    rev = revlap.RevisorLap(levels=args.revision_depth).to(device)
     if not state is None:
         state = torch.load(state)
         rev.load_state_dict(state, strict=False)
@@ -450,7 +450,7 @@ elif args.train_model == 'revlap':
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
+        revlap.enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
         disc_state = None
         if args.load_rev == 1 or args.load_disc == 1:
@@ -464,7 +464,7 @@ elif args.train_model == 'revlap':
         else:
             rev_state = None
         rev_ = build_revlap(args.revision_depth,
-                         rev_state, enc_)
+                         rev_state)
 
         disc_ = build_disc(disc_state,
                            disc_quant)
@@ -475,7 +475,7 @@ elif args.train_model == 'revlap':
         else:
             init_weights(disc_)
         dec_.train()
-        enc_.to(device)
+        revlap.enc_.to(device)
         dec_.to(device)
     wandb.watch((rev_, dec_, disc_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss == 1 else False
@@ -490,17 +490,17 @@ elif args.train_model == 'revlap':
             adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args, disc=True)
         with autocast(enabled=ac_enabled):
-            ci = next(content_iter).to(device)
+            revlap.ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
+            ci = [F.interpolate(revlap.ci, size=256, mode='bicubic', align_corners=False)]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+            cF = revlap.enc_(ci[0])
+            sF = revlap.enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
             optimizer.zero_grad(set_to_none=True)
-            rev_stylized = rev_(stylized, ci[-1].detach())
+            rev_stylized = rev_(stylized)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
 
@@ -522,18 +522,18 @@ elif args.train_model == 'revlap':
         with autocast(enabled=ac_enabled):
             scaled_stylized=F.interpolate(rev_stylized,size=256,mode='bicubic')
 
-            losses = calc_losses(scaled_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+            losses = calc_losses(scaled_stylized, ci[0], si[0], cF, revlap.enc_, dec_, None, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
-            cF = enc_(ci[-1][:,:,-256:,-256:])
-            sF = enc_(si_cropped)
+            cF = revlap.enc_(revlap.ci[-1][:,:,-256:,-256:])
+            sF = revlap.enc_(si_cropped)
             #patch_feats = enc_(stylized_patch)
 
-            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, None, disc_,
+            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, revlap.enc_, dec_, None, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=ganloss, sF=sF, split_style=args.split_style)

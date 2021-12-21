@@ -11,6 +11,7 @@ import numpy as np
 upsample = nn.Upsample(scale_factor=2, mode='bicubic')
 downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
 ci = None
+encoder = None
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
     return upsample(other_stream),  + fn_out
@@ -26,29 +27,23 @@ class RevisorLap(nn.Module):
         self.layers = nn.ModuleList([])
         self.levels = levels
         self.encoder = encoder
-        self.ci = None
-        self.style_embedding = None
         self.revision_net = RevisionNet(self)
         self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
                                                 coupling_forward=[additive_coupling_forward],
                                                 coupling_inverse=[additive_coupling_inverse],
                                                 target_device=torch.device('cuda'))
         for i in range(levels):
-            self.layers.append(RevisionNet(self))
+            self.layers.append(RevisionNet())
 
-    def forward(self, x, content, enc_, crop_marks):
-        global ci
-        ci = content
+    def forward(self, x):
         self.style_embedding = style
         x = x.repeat((0,2,0,0))
         x = self.stem(x)
         return x
 
 class RevisionNet(nn.Module):
-    def __init__(self, mod):
+    def __init__(self):
         super(RevisionNet, self).__init__()
-
-        self.parent = mod
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
@@ -120,7 +115,7 @@ class RevisionNet(nn.Module):
         return out
 
     def thumbnail_style_calc(self, style):
-        style = self.parent.encoder(style)
+        style = encoder(style)
         style = self.style_encoding(style['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
@@ -183,7 +178,6 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        global ci
         input = self.upsample(input)
         size *= 2
         scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
