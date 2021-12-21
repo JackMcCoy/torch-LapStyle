@@ -559,6 +559,8 @@ elif args.train_model == 'revlap':
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Revision Disc. Loss', 'Discriminator Loss', 'example', 'Patch Loss', 'MXDOG Loss']):
                 if s == 'example':
+                    print(s)
+                    print(s.shape)
                     if len(l.shape) == 3:
                         loss_dict[s] = wandb.Image(
                             l.transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
