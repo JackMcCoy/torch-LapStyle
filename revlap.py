@@ -180,5 +180,5 @@ class RevisionNet(nn.Module):
         print(input.shape)
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
-        out = recursive_controller(input, scaled_ci, input)
+        out = self.recursive_controller(input, scaled_ci, input)
         return out
