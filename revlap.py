@@ -55,9 +55,9 @@ class RevisionNet(nn.Module):
             *style_encoder_block(512),
             *style_encoder_block(512)
         )
-        self.s_d = 128
+        s_d = 128
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16)
+            nn.Linear(8192, s_d * 16)
         )
         self.style_riemann_noise = RiemannNoise(4)
 
@@ -89,24 +89,24 @@ class RevisionNet(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),
             RiemannNoise(128),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128, first_layer),
+        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(128, first_layer),
+                                                    RiemannNoise(128),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256, first_layer)),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 128, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256, first_layer)),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.ReLU(),
-                                                    RiemannNoise(256, first_layer)),
+                                                    RiemannNoise(256)),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
