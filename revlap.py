@@ -101,11 +101,6 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
-    def copy(self, index):
-        out = copy.deepcopy(self)
-        out.layer_num = index
-        return out
-
     def thumbnail_style_calc(self, style, enc_):
         b = style.shape[0]
         style = enc_(style)
@@ -120,7 +115,7 @@ class RevisionNet(nn.Module):
         holder = []
         base_case = False
         thumbnail_style = None
-        if x.shape[-1] == 256:
+        if x.shape[-1] == 512:
             base_case = True
             thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
 
@@ -173,6 +168,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         input = self.upsample(input)
-        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num, mode='bicubic', align_corners=False).detach()
+        scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
