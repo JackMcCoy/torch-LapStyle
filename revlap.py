@@ -104,8 +104,10 @@ class RevisionNet(nn.Module):
     def thumbnail_style_calc(self, style, enc_):
         b = style.shape[0]
         style = self.downsample(style)
+        print(style.shape)
         style = enc_(style)
         style = self.style_encoding(style['r4_1'])
+        print(style.shape)
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
