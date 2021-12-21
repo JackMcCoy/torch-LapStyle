@@ -1,9 +1,11 @@
 import copy
 import revlib
-from net import style_encoder_block, RiemannNoise, ResBlock
+from net import style_encoder_block, ResBlock
+from modules import RiemannNoise
 import torch
 from torch import nn
 import torch.nn.functional as F
+import numpy as np
 
 upsample = nn.Upsample(scale_factor=2, mode='bicubic')
 downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
