@@ -116,13 +116,12 @@ class RevisionNet(nn.Module):
         holder = []
         base_case = False
         thumbnail_style = None
-        print(x.shape)
         if x.shape[-1] == 512:
             base_case = True
             thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
 
         for i, c in zip(x.chunk(2,dim=2), ci.chunk(2,dim=2)):
-            for j, c2 in zip(i.chunk(2,dim=3), ci.chunk(2,dim=3)):
+            for j, c2 in zip(i.chunk(2,dim=3), c.chunk(2,dim=3)):
                 if not base_case:
                     holder.append(self.recursive_controller(j, c2, x, enc_))
                 else:
@@ -150,8 +149,6 @@ class RevisionNet(nn.Module):
     '''
 
     def generator(self, x, ci, style):
-        print(x.shape)
-        print(ci.shape)
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(torch.device('cuda'))
         out = torch.cat([x, lap_pyr], dim=1)
@@ -171,9 +168,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        print(input.shape)
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
-        print(scaled_ci.shape)
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
