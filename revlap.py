@@ -122,6 +122,7 @@ class RevisionNet(nn.Module):
     def recursive_controller(self, x, ci, thumbnail, enc_):
         holder = []
         base_case = False
+        thumbnail_style = None
         if x.shape[-1] == 256:
             base_case = True
             thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
