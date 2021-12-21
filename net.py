@@ -782,7 +782,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
     else:
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
-        num_calcs = 3
+        num_calcs = 2
         sF = []
         b = si.shape[0]
         patches = unfold(si)
