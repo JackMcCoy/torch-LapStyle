@@ -46,7 +46,8 @@ class RevisionNet(nn.Module):
 
         self.parent = mod
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda')).requires_grad(False)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
+        self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
