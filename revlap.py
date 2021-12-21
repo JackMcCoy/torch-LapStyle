@@ -129,9 +129,9 @@ class RevisionNet(nn.Module):
         for i, c in zip(x.chunk(2,dim=2), ci.chunk(2,dim=2)):
             for j, c2 in zip(i.chunk(2,dim=3), ci.chunk(2,dim=3)):
                 if base_case:
-                    holder.append(self.recursive_controller(j, c2, x))
+                    holder.append(self.recursive_controller(j, c2, x, enc_))
                 else:
-                    holder.append(self.generator(j, c2, thumbnail_style, enc_))
+                    holder.append(self.generator(j, c2, thumbnail_style))
         holder = torch.cat((torch.cat([holder[0],holder[2]],dim=2),
                             torch.cat([holder[1],holder[3]],dim=2)),dim=3)
         return holder
