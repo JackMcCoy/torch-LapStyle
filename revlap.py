@@ -22,11 +22,10 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class RevisorLap(nn.Module):
-    def __init__(self, encoder, levels= 1):
+    def __init__(self, levels= 1):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
-        self.encoder = encoder
         self.revision_net = RevisionNet(self)
         self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
                                                 coupling_forward=[additive_coupling_forward],
