@@ -169,6 +169,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         input = self.upsample(input)
-        scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
+        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num, mode='bicubic', align_corners=False).detach()
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
