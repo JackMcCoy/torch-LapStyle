@@ -26,7 +26,7 @@ class RevisorLap(nn.Module):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
-        self.revision_net = RevisionNet(self)
+        self.revision_net = RevisionNet()
         self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
                                                 coupling_forward=[additive_coupling_forward],
                                                 coupling_inverse=[additive_coupling_inverse],
