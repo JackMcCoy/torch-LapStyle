@@ -10,6 +10,7 @@ import numpy as np
 
 upsample = nn.Upsample(scale_factor=2, mode='bicubic')
 downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
+ci = None
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
     return upsample(other_stream),  + fn_out
@@ -35,8 +36,9 @@ class RevisorLap(nn.Module):
         for i in range(levels):
             self.layers.append(RevisionNet(self))
 
-    def forward(self, x, ci, enc_, crop_marks):
-        self.ci = ci
+    def forward(self, x, content, enc_, crop_marks):
+        global ci
+        ci = content
         self.style_embedding = style
         x = x.repeat((0,2,0,0))
         x = self.stem(x)
@@ -181,9 +183,9 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-
+        global ci
         input = self.upsample(input)
         size *= 2
-        scaled_ci = F.interpolate(self.parent.ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
+        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
         out = recursive_controller(input, scaled_ci)
         return out
