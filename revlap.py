@@ -114,6 +114,7 @@ class RevisionNet(nn.Module):
         style = self.riemann_style_noise(style)
         return style
 
+    '''
     def recursive_controller(self, x, ci, thumbnail, enc_):
         holder = []
         base_case = False
@@ -141,14 +142,14 @@ class RevisionNet(nn.Module):
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(j, c2, thumbnail_style)))
+                        mini_holder.append((self.generator(s2, cs2, thumbnail_style)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
         holder = torch.cat((torch.cat([holder[0], holder[2]], dim=2),
                                  torch.cat([holder[1], holder[3]], dim=2)), dim=3)
         return holder
 
-    '''
+
 
     def generator(self, x, ci, style):
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
