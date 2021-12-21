@@ -485,8 +485,7 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(list(dec_.parameters())+list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum=.9)
     for i in tqdm(range(args.max_iter)):
-        for optimizer in optimizers:
-            adjust_learning_rate(optimizer, i, args)
+        adjust_learning_rate(optimizer, i, args)
         adjust_learning_rate(opt_D, i, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -543,14 +542,12 @@ elif args.train_model == 'revlap':
         if ac_enabled:
             scaler.scale(loss).backward()
             if i + 1 % 2 == 0:
-                for optimizer in optimizers:
-                    scaler.step(optimizer)
+                scaler.step(optimizer)
                 scaler.update()
         else:
             loss.backward()
             if i + 1 % 2 == 0:
-                for optimizer in optimizers:
-                    optimizer.step()
+                optimizer.step()
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
