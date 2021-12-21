@@ -35,7 +35,7 @@ class RevisorLap(nn.Module):
             self.layers.append(RevisionNet())
 
     def forward(self, x):
-        x = x.repeat((0,2,0,0))
+        x = x.repeat((1,2,1,1))
         x = self.stem(x)
         return x
 
