@@ -35,7 +35,6 @@ class RevisorLap(nn.Module):
             self.layers.append(RevisionNet())
 
     def forward(self, x):
-        self.style_embedding = style
         x = x.repeat((0,2,0,0))
         x = self.stem(x)
         return x
