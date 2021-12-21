@@ -1,5 +1,4 @@
 import copy
-import revlib
 from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
 from modules import RiemannNoise
@@ -26,17 +25,14 @@ class RevisorLap(nn.Module):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
-        self.revision_net = RevisionNet()
-        self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
-                                                coupling_forward=[additive_coupling_forward],
-                                                coupling_inverse=[additive_coupling_inverse],
-                                                target_device=torch.device('cuda'))
+        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
+
         for i in range(levels):
             self.layers.append(RevisionNet())
 
-    def forward(self, x):
-        x = x.repeat((1,2,1,1))
-        x = self.stem(x)
+    def forward(self, x, enc_, ci):
+        for layer in self.layers():
+            x = self.upsample(x) + layer(x, enc_, ci)
         return x
 
 class RevisionNet(nn.Module):
@@ -45,7 +41,7 @@ class RevisionNet(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
@@ -112,8 +108,8 @@ class RevisionNet(nn.Module):
         out.layer_num = index
         return out
 
-    def thumbnail_style_calc(self, style):
-        style = encoder(style)
+    def thumbnail_style_calc(self, style, enc_):
+        style = enc_(style)
         style = self.style_encoding(style['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
@@ -121,12 +117,12 @@ class RevisionNet(nn.Module):
         style = self.riemann_style_noise(style)
         return style
 
-    def recursive_controller(self, x, ci, thumbnail):
+    def recursive_controller(self, x, ci, thumbnail, enc_):
         holder = []
         base_case = False
         if x.shape[-1] == 512:
             base_case = True
-            thumbnail_style = self.thumbnail_style_calc(thumbnail)
+            thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
 
         for i, c in zip(x.chunk(2,dim=2), ci.chunk(2,dim=2)):
             for j, c2 in zip(i.chunk(2,dim=3), ci.chunk(2,dim=3)):
@@ -157,7 +153,6 @@ class RevisionNet(nn.Module):
     '''
 
     def generator(self, x, ci, style):
-        print(x.shape)
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
         out = torch.cat([x, lap_pyr], dim=1)
@@ -169,7 +164,7 @@ class RevisionNet(nn.Module):
             out = learnable(out)
         return out
 
-    def forward(self, input):
+    def forward(self, input, enc_, ci):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -177,8 +172,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        print(input.shape)
         input = self.upsample(input)
-        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
-        out = self.recursive_controller(input, scaled_ci, input)
+        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False).detach()
+        out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
