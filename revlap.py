@@ -134,11 +134,11 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci):
+    def recursive_controller(self, x, ci, enc_):
         holder = []
         for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
             for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
-                thumbnail_style = self.thumbnail_style_calc(j)
+                thumbnail_style = self.thumbnail_style_calc(j, enc_)
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
@@ -173,5 +173,5 @@ class RevisionNet(nn.Module):
         """
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
-        out = self.recursive_controller(input, scaled_ci, input, enc_)
+        out = self.recursive_controller(input, scaled_ci, enc_)
         return out
