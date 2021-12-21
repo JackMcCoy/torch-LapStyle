@@ -530,6 +530,7 @@ elif args.train_model == 'revlap':
 
             cF = enc_(ci[-1][:,:,-256:,-256:])
             sF = enc_(si_cropped)
+            ci_path = ci[-1][:,:,-256:,-256:]
             #patch_feats = enc_(stylized_patch)
 
             losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, None, disc_,
