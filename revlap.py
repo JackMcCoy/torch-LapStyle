@@ -125,7 +125,7 @@ class RevisionNet(nn.Module):
         style = style.reshape(b, self.s_d, 4, 4)
         style = self.riemann_style_noise(style)
         return style
-
+    '''
     def recursive_controller(self, x, ci, thumbnail):
         holder = []
         base_case = False
@@ -142,6 +142,24 @@ class RevisionNet(nn.Module):
         holder = torch.cat((torch.cat([holder[0],holder[2]],dim=2),
                             torch.cat([holder[1],holder[3]],dim=2)),dim=3)
         return holder
+    '''
+
+    def recursive_controller(self, x, ci):
+        holder = []
+        for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
+            for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
+                thumbnail_style = self.thumbnail_style_calc(j)
+                mini_holder = []
+                for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
+                    for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
+                        mini_holder.append((self.generator(j, c2, thumbnail_style)))
+                holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
+                            torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
+        holder = torch.cat((torch.cat([holder[0], holder[2]], dim=2),
+                                 torch.cat([holder[1], holder[3]], dim=2)), dim=3)
+        return holder
+
+
 
     def generator(self, x, ci, style):
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
@@ -167,5 +185,5 @@ class RevisionNet(nn.Module):
         input = self.upsample(input)
         size *= 2
         scaled_ci = F.interpolate(self.parent.ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
-        out = recursive_controller(input, scaled_ci, input)
+        out = recursive_controller(input, scaled_ci)
         return out
