@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from revlap import RevisorLap
 
 import torch
 import torch.nn as nn
@@ -194,7 +195,7 @@ def build_rev(depth, state):
     return rev
 
 def build_revlap(depth, state, encoder):
-    rev = net.RevisorLap(encoder, levels=args.revision_depth).to(device)
+    rev = RevisorLap(encoder, levels=args.revision_depth).to(device)
     if not state is None:
         state = torch.load(state)
         rev.load_state_dict(state, strict=False)
