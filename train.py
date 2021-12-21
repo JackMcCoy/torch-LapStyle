@@ -202,7 +202,7 @@ def build_revlap(depth, state, encoder):
     rev.train()
     return rev
 
-def build_disc(disc_state, disc_quant):
+def build_disc(disc_state):
     disc = net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
                                      batch_size=args.batch_size).to(device)
     disc.train()
@@ -466,8 +466,7 @@ elif args.train_model == 'revlap':
         rev_ = build_revlap(args.revision_depth,
                          rev_state, enc_)
 
-        disc_ = build_disc(disc_state,
-                           disc_quant)
+        disc_ = build_disc(disc_state)
         ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
         disc_.train()
         if not disc_state is None:
