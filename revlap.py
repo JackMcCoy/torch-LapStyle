@@ -116,6 +116,7 @@ class RevisionNet(nn.Module):
         holder = []
         base_case = False
         thumbnail_style = None
+        print(x.shape)
         if x.shape[-1] == 512:
             base_case = True
             thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
@@ -170,6 +171,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        print(input.shape)
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
         print(scaled_ci.shape)
