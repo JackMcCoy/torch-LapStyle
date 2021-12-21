@@ -145,6 +145,8 @@ class RevisionNet(nn.Module):
                         mini_holder.append((self.generator(s2, cs2, thumbnail_style)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
+        if len(holder)==1:
+            return holder[0]
         holder = torch.cat((torch.cat([holder[0], holder[2]], dim=2),
                                  torch.cat([holder[1], holder[3]], dim=2)), dim=3)
         return holder
