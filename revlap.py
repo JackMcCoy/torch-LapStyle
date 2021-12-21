@@ -26,9 +26,9 @@ class RevisorLap(nn.Module):
         for i in range(levels):
             self.layers.append(RevisionNet(i))
 
-    def forward(self, x, enc_, ci):
+    def forward(self, x, enc_, style, ci):
         for layer in self.layers:
-            x = self.upsample(x) + layer(x, enc_, ci)
+            x = self.upsample(x) + layer(x, enc_, ci, style)
         return x
 
 class RevisionNet(nn.Module):
@@ -39,17 +39,9 @@ class RevisionNet(nn.Module):
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-        self.style_encoding = nn.Sequential(
-            *style_encoder_block(512),
-            *style_encoder_block(512),
-            *style_encoder_block(512)
-        )
+
         s_d = 128
         self.s_d = 128
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, s_d * 16)
-        )
-        self.style_riemann_noise = RiemannNoise(4)
 
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
@@ -133,15 +125,14 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci, enc_):
+    def recursive_controller(self, x, ci, style, enc_):
         holder = []
         for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
             for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
-                thumbnail_style = self.thumbnail_style_calc(j, enc_)
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(s2, cs2, thumbnail_style)))
+                        mini_holder.append((self.generator(s2, cs2, style)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
         if len(holder)==1:
@@ -174,5 +165,5 @@ class RevisionNet(nn.Module):
         """
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
-        out = self.recursive_controller(input, scaled_ci, enc_)
+        out = self.recursive_controller(input, scaled_ci, style, enc_)
         return out

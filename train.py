@@ -495,10 +495,11 @@ elif args.train_model == 'revlap':
             cF = enc_(ci[0])
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
+            optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
-            optimizer.zero_grad(set_to_none=True)
-            rev_stylized = rev_(stylized, enc_, ci[-1].detach())
+
+            rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
 
