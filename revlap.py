@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
     def recursive_controller(self, x, ci, thumbnail, enc_):
         holder = []
         base_case = False
-        if x.shape[-1] == 512:
+        if x.shape[-1] == 256:
             base_case = True
             thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
 
@@ -155,6 +155,7 @@ class RevisionNet(nn.Module):
     def generator(self, x, ci, style):
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
+        out =self.upsample(x)
         out = torch.cat([x, lap_pyr], dim=1)
 
         out = self.DownBlock(out.clone().detach())
@@ -172,7 +173,6 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False).detach()
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
