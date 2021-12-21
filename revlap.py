@@ -7,10 +7,6 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 
-upsample = nn.Upsample(scale_factor=2, mode='bicubic')
-downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-ci = None
-encoder = None
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
     return upsample(other_stream),  + fn_out
@@ -42,6 +38,7 @@ class RevisionNet(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
+        self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
@@ -158,7 +155,6 @@ class RevisionNet(nn.Module):
     def generator(self, x, ci, style):
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(torch.device('cuda'))
-        out =self.upsample(x)
         out = torch.cat([x, lap_pyr], dim=1)
 
         out = self.DownBlock(out.clone().detach())
@@ -176,6 +172,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False).detach()
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
