@@ -125,7 +125,7 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci, style, enc_):
+    def recursive_controller(self, x, ci, style):
         holder = []
         for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
             for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
@@ -155,7 +155,7 @@ class RevisionNet(nn.Module):
             out = learnable(out)
         return out
 
-    def forward(self, input, enc_, ci):
+    def forward(self, input, ci, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -165,5 +165,5 @@ class RevisionNet(nn.Module):
         """
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=False).detach()
-        out = self.recursive_controller(input, scaled_ci, style, enc_)
+        out = self.recursive_controller(input, scaled_ci, style)
         return out
