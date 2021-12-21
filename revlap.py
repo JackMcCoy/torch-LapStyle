@@ -157,6 +157,7 @@ class RevisionNet(nn.Module):
     '''
 
     def generator(self, x, ci, style):
+        print(x.shape)
         lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
         out = torch.cat([x, lap_pyr], dim=1)
@@ -176,6 +177,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        print(input.shape)
         input = self.upsample(input)
         size *= 2
         scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False)
