@@ -1,5 +1,6 @@
 import copy
 import revlib
+from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
 from modules import RiemannNoise
 import torch
