@@ -1,6 +1,8 @@
 import copy
 import revlib
 from net import style_encoder_block, RiemannNoise, ResBlock
+import torch
+from torch import nn
 import torch.nn.functional as F
 
 upsample = nn.Upsample(scale_factor=2, mode='bicubic')
