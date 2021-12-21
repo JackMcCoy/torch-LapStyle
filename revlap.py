@@ -29,8 +29,8 @@ class RevisorLap(nn.Module):
         self.style_embedding = None
         self.revision_net = RevisionNet(self)
         self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
-                                                coupling_forward=[momentum_coupling_forward],
-                                                coupling_inverse=[momentum_coupling_inverse],
+                                                coupling_forward=[additive_coupling_forward],
+                                                coupling_inverse=[additive_coupling_inverse],
                                                 target_device=ctx.model.device)
         for i in range(levels):
             self.layers.append(RevisionNet(self))
@@ -38,6 +38,7 @@ class RevisorLap(nn.Module):
     def forward(self, x, ci, enc_, crop_marks):
         self.ci = ci
         self.style_embedding = style
+        x = x.repeat((0,2,0,0))
         x = self.stem(x)
         return x
 
