@@ -24,7 +24,7 @@ class RevisorLap(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
 
         for i in range(levels):
-            self.layers.append(RevisionNet())
+            self.layers.append(RevisionNet(i))
 
     def forward(self, x, enc_, ci):
         for layer in self.layers:
@@ -32,7 +32,7 @@ class RevisorLap(nn.Module):
         return x
 
 class RevisionNet(nn.Module):
-    def __init__(self):
+    def __init__(self, layer_num):
         super(RevisionNet, self).__init__()
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
@@ -59,7 +59,7 @@ class RevisionNet(nn.Module):
             AdaConv(128, 2, s_d=s_d)])
 
         self.relu = nn.ReLU()
-        self.layer_num = 0
+        self.layer_num = layer_num
 
         self.riemann_style_noise = RiemannNoise(4)
         self.DownBlock = nn.Sequential(RiemannNoise(256),
@@ -173,6 +173,6 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         input = self.upsample(input)
-        scaled_ci = F.interpolate(ci, size=256*2**self.layer_num+1, mode='bicubic', align_corners=False).detach()
+        scaled_ci = F.interpolate(ci, size=256*2**(self.layer_num+1), mode='bicubic', align_corners=False).detach()
         out = self.recursive_controller(input, scaled_ci, input, enc_)
         return out
