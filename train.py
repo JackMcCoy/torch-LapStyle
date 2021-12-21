@@ -559,7 +559,11 @@ elif args.train_model == 'revlap':
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Revision Disc. Loss', 'Discriminator Loss', 'example', 'Patch Loss', 'MXDOG Loss']):
                 if s == 'example':
-                    loss_dict[s] = wandb.Image(l[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                    if len(l.shape) == 3:
+                        loss_dict[s] = wandb.Image(
+                            l.transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                    else:
+                        loss_dict[s] = wandb.Image(l[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
                 elif type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
