@@ -31,7 +31,7 @@ class RevisorLap(nn.Module):
         self.stem = revlib.ReversibleSequential(*[self.revision_net.copy(i) for i in range(levels)],
                                                 coupling_forward=[additive_coupling_forward],
                                                 coupling_inverse=[additive_coupling_inverse],
-                                                target_device=ctx.model.device)
+                                                target_device=torch.device('cuda'))
         for i in range(levels):
             self.layers.append(RevisionNet(self))
 
