@@ -31,7 +31,7 @@ class RevisorLap(nn.Module):
             self.layers.append(RevisionNet())
 
     def forward(self, x, enc_, ci):
-        for layer in self.layers():
+        for layer in self.layers:
             x = self.upsample(x) + layer(x, enc_, ci)
         return x
 
