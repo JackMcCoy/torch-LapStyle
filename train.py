@@ -463,7 +463,7 @@ elif args.train_model == 'revlap':
         else:
             rev_state = None
         rev_ = build_revlap(args.revision_depth,
-                         rev_state)
+                         rev_state, enc_)
 
         disc_ = build_disc(disc_state,
                            disc_quant)
