@@ -71,7 +71,7 @@ class RevisionNet(nn.Module):
             RiemannNoise(128),)
         self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
+                                                    nn.Conv2d(64, 256, kernel_size=3, groups=2),
                                                     nn.ReLU(),
                                                     RiemannNoise(128),
                                                     nn.PixelShuffle(2),
