@@ -531,12 +531,12 @@ elif args.train_model == 'revlap':
             cF = enc_(ci[-1][:,:,-256:,-256:])
             sF = enc_(si_cropped)
             ci_patch = ci[-1][:,:,-256:,-256:]
-            #patch_feats = enc_(stylized_patch)
+            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
 
-            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, None, disc_,
+            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                 patch_loss=False, GANLoss=ganloss, sF=sF, split_style=args.split_style)
+                                 patch_loss=True, GANLoss=ganloss, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
             loss = loss + loss_small
