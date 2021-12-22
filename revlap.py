@@ -21,7 +21,7 @@ class RevisorLap(nn.Module):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
-        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic', align_corners='True')
 
         for i in range(levels):
             self.layers.append(RevisionNet(i))
@@ -37,8 +37,8 @@ class RevisionNet(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
-        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
-        self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic', align_corners='True')
+        self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic', align_corners='True')
         self.style_encoding = nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
