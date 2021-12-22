@@ -132,15 +132,15 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci, enc_):
+    def recursive_controller(self, x, ci, enc_, style):
         holder = []
         for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
             for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
-                thumbnail_style = self.thumbnail_style_calc(j, enc_)
+                #thumbnail_style = self.thumbnail_style_calc(j, enc_)
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(s2, cs2, thumbnail_style, enc_)))
+                        mini_holder.append((self.generator(s2, cs2, style, enc_)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
         if len(holder)==1:
@@ -165,7 +165,7 @@ class RevisionNet(nn.Module):
         out = out + x
         return out
 
-    def forward(self, input, enc_, ci):
+    def forward(self, input, enc_, ci, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -175,5 +175,5 @@ class RevisionNet(nn.Module):
         """
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
-        out = self.recursive_controller(input, scaled_ci, enc_)
+        out = self.recursive_controller(input, scaled_ci, enc_, style)
         return out
