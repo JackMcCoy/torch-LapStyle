@@ -554,11 +554,13 @@ elif args.train_model == 'revlap':
         if ac_enabled:
             scaler.scale(loss).backward()
             if i + 1 % 4 == 0:
-                scaler.step(dec_optimizer)
                 scaler.step(optimizer)
                 scaler.update()
-                dec_optimizer.zero_grad()
                 optimizer.zero_grad()
+            if i + 5 % 4 == 0:
+                scaler.step(dec_optimizer)
+                scaler.update()
+                dec_optimizer.zero_grad()
         else:
             loss.backward()
             if i + 1 % 1 == 0:
