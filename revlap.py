@@ -152,9 +152,7 @@ class RevisionNet(nn.Module):
 
 
     def generator(self, x, ci, style):
-        lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
-                           groups=3).to(torch.device('cuda'))
-        out = torch.cat([x, lap_pyr], dim=1)
+        out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)
         out = self.resblock(out)
