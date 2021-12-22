@@ -105,7 +105,7 @@ class RevisionNet(nn.Module):
         print(style.shape)
         b = style.shape[0]
         style = self.downsample(style)
-        style = enc_(style,r4_1_only=True)
+        style = enc_(style)
         style = self.style_encoding(style)
         style = style.flatten(1)
         style = self.style_projection(style)
