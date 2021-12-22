@@ -482,10 +482,12 @@ elif args.train_model == 'revlap':
     d_scaler = GradScaler()
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizer = torch.optim.AdamW(list(dec_.parameters())+list(rev_.parameters()), lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i//4, args)
+        adjust_learning_rate(dec_optimizer, i // 4, args)
         adjust_learning_rate(opt_D, i, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -495,10 +497,10 @@ elif args.train_model == 'revlap':
             cF = enc_(ci[0])
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
-            optimizer.zero_grad(set_to_none=True)
+            dec_optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
-
+            optimizer.zero_grad(set_to_none=True)
             rev_stylized = rev_(stylized, enc_, ci[-1].detach())
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
@@ -544,11 +546,13 @@ elif args.train_model == 'revlap':
         if ac_enabled:
             scaler.scale(loss).backward()
             if i + 1 % 4 == 0:
+                scaler.step(dec_optimizer)
                 scaler.step(optimizer)
                 scaler.update()
         else:
             loss.backward()
             if i + 1 % 4 == 0:
+                dec_optimizer.step()
                 optimizer.step()
 
         if (i + 1) % 10 == 0:
