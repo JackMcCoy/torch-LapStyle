@@ -527,14 +527,14 @@ elif args.train_model == 'revlap':
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
             loss_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
             losses_scaled = calc_losses(scaled_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
             losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
             cF = enc_(ci[-1][:,:,-256:,-256:])
