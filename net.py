@@ -53,7 +53,7 @@ class Encoder(nn.Module):
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
         #self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
-    def forward(self, x):
+    def forward(self, x, r4_1_only = False):
         encodings = {}
         x = self.enc_1(x)
         encodings['r1_1'] = x
@@ -63,6 +63,8 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
+        if r4_1_only:
+            return encodings['r4_1']
         #x = self.enc_5(x)
         #encodings['r5_1'] = x
         return encodings
