@@ -23,7 +23,6 @@ class AdaConv(nn.Module):
 
     def forward(self, style_encoding, content_in, norm: bool=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
-        N, ch, h, w = content_in.shape
         if norm:
             size = content_in.size()
             content_mean, content_std = calc_mean_std(content_in)
@@ -31,6 +30,7 @@ class AdaConv(nn.Module):
             content_std = content_std.expand(size)
             content_in = (content_in - content_mean) / content_std
         predicted = self.pad(content_in)
+        N, ch, h, w = predicted.shape
         predicted = predicted.view(N,1,ch,h,w)
 
         for idx, (a,b,c,d) in enumerate(zip(predicted, depthwise, pointwise_kn, pointwise_bias)):
