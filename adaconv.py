@@ -27,7 +27,7 @@ class AdaConv(nn.Module):
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.expand(N, ch, h, w)
-            content_std = content_std.expand(N, ch, h, wZ)
+            content_std = content_std.expand(N, ch, h, w)
             predicted = (predicted - content_mean) / content_std
         predicted = self.pad(content_in)
         predicted = predicted.view(N,1,ch,h+2,w+2)
