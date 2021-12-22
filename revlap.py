@@ -152,6 +152,7 @@ class RevisionNet(nn.Module):
 
 
     def generator(self, x, ci, style, enc_):
+        print(ci.shape)
         ci = self.content_adaconv(style, ci, norm=True)
         out = torch.cat([x, ci], dim=1)
 
