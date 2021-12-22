@@ -156,7 +156,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(torch.device('cuda'))
         out = torch.cat([x, lap_pyr], dim=1)
 
-        out = self.DownBlock(out.clone().detach())
+        out = self.DownBlock(out)
         out = self.resblock(out)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
