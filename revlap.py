@@ -161,6 +161,7 @@ class RevisionNet(nn.Module):
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
+        out = out + x
         return out
 
     def forward(self, input, enc_, ci):
