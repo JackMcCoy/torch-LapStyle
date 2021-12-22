@@ -511,7 +511,7 @@ elif args.train_model == 'revlap':
             loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
-            if i + 1 % 4 == 0:
+            if i + 1 % 2 == 0:
                 d_scaler.step(opt_D)
                 d_scaler.update()
         else:
@@ -557,7 +557,7 @@ elif args.train_model == 'revlap':
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 5 % 4 == 0:
+            if i + 3 % 4 == 0:
                 scaler.step(dec_optimizer)
                 scaler.update()
                 dec_optimizer.zero_grad()
