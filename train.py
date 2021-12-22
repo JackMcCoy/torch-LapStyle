@@ -490,8 +490,8 @@ elif args.train_model == 'revlap':
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
@@ -539,7 +539,7 @@ elif args.train_model == 'revlap':
                                  patch_loss=True, GANLoss=ganloss, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-            loss = loss*(1/16) + loss_small
+            loss = loss*.25 + loss_small
 
         if ac_enabled:
             scaler.scale(loss).backward()
