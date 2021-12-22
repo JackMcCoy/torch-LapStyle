@@ -134,7 +134,7 @@ class RevisionNet(nn.Module):
     def generator(self, x, ci, style, enc_):
         cF = enc_(ci)
         sF = enc_(x)
-        ci = ci+self.content_adaconv(style, cF['r1_1'], norm=True)
+        ci = cF['r1_1']+self.content_adaconv(style, cF['r1_1'], norm=True)
         out = torch.cat([sF['r1_1'], ci], dim=1)
 
         out = self.DownBlock(out)
