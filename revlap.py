@@ -28,7 +28,7 @@ class RevisorLap(nn.Module):
 
     def forward(self, x, enc_, ci):
         for layer in self.layers:
-            x = self.upsample(x) + layer(x, enc_, ci)
+            x = layer(x, enc_, ci)
         return x
 
 class RevisionNet(nn.Module):
