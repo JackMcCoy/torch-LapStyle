@@ -29,11 +29,10 @@ class AdaConv(nn.Module):
             content_mean = content_mean.expand(N, ch, h, w)
             content_std = content_std.expand(N, ch, h, w)
             predicted = (predicted - content_mean) / content_std
-        predicted = self.pad(predicted)
-        predicted = predicted.view(N,1,ch,h+2,w+2)
+        predicted = predicted.view(N,1,ch,h,w)
 
         for idx, (a,b,c,d) in enumerate(zip(predicted, depthwise, pointwise_kn, pointwise_bias)):
-            depth = nn.functional.conv2d(a,
+            depth = nn.functional.conv2d(self.pad(a),
                                          weight=b,
                                          groups=self.n_groups)
             predicted[idx].copy_(nn.functional.conv2d(depth,
