@@ -35,10 +35,10 @@ class AdaConv(nn.Module):
             depth = nn.functional.conv2d(self.pad(a),
                                          weight=b,
                                          groups=self.n_groups)
-            predicted[idx].copy_(nn.functional.conv2d(depth,
+            predicted[idx] = nn.functional.conv2d(depth,
                                                          weight=c,
                                                          bias=d,
-                                                         groups=self.n_groups))
+                                                         groups=self.n_groups)
         predicted = predicted.view(N,ch,h,w)
         return predicted
 
