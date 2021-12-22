@@ -63,8 +63,6 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        if r4_1_only:
-            return encodings['r4_1']
         #x = self.enc_5(x)
         #encodings['r5_1'] = x
         return encodings
