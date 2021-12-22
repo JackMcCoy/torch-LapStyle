@@ -39,17 +39,8 @@ class RevisionNet(nn.Module):
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-        self.style_encoding = nn.Sequential(
-            *style_encoder_block(512),
-            *style_encoder_block(512),
-            *style_encoder_block(512)
-        )
         s_d = 128
         self.s_d = 128
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, s_d * 16)
-        )
-        self.style_riemann_noise = RiemannNoise(4)
         self.content_adaconv = AdaConv(64, 1, s_d=s_d)
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
@@ -61,7 +52,6 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
         self.layer_num = layer_num
 
-        self.riemann_style_noise = RiemannNoise(4)
         self.DownBlock = nn.Sequential(RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, kernel_size=3),
@@ -101,16 +91,6 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
-    def thumbnail_style_calc(self, style, enc_):
-        b = style.shape[0]
-        style = self.downsample(style)
-        style = enc_(style)
-        style = self.style_encoding(style['r4_1'])
-        style = style.flatten(1)
-        style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
-        style = self.riemann_style_noise(style)
-        return style
 
     '''
     def recursive_controller(self, x, ci, thumbnail, enc_):
@@ -154,7 +134,7 @@ class RevisionNet(nn.Module):
     def generator(self, x, ci, style, enc_):
         cF = enc_(ci)
         sF = enc_(x)
-        ci = self.content_adaconv(style, cF['r1_1'], norm=True)
+        ci = ci+self.content_adaconv(style, cF['r1_1'], norm=True)
         out = torch.cat([sF['r1_1'], ci], dim=1)
 
         out = self.DownBlock(out)
