@@ -21,16 +21,15 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.0)
 
-    def forward(self, style_encoding, content_in, norm: bool=True):
+    def forward(self, style_encoding, predicted, norm: bool=True):
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
-        if norm:
-            size = content_in.size()
-            content_mean, content_std = calc_mean_std(content_in)
-            content_mean = content_mean.expand(size)
-            content_std = content_std.expand(size)
-            content_in = (content_in - content_mean) / content_std
-        predicted = self.pad(content_in)
         N, ch, h, w = predicted.shape
+        if norm:
+            content_mean, content_std = calc_mean_std(predicted)
+            content_mean = content_mean.expand(N, ch, h, w)
+            content_std = content_std.expand(N, ch, h, w)
+            predicted = (predicted - content_mean) / content_std
+
         predicted = predicted.view(N,1,ch,h,w)
 
         for idx, (a,b,c,d) in enumerate(zip(predicted, depthwise, pointwise_kn, pointwise_bias)):
