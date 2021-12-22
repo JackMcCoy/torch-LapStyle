@@ -22,6 +22,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding, predicted, norm: bool=True):
+        conv_out = []
         depthwise, pointwise_kn, pointwise_bias = self.kernel_predictor(style_encoding)
         N, ch, h, w = predicted.shape
         if norm:
@@ -35,12 +36,12 @@ class AdaConv(nn.Module):
             depth = nn.functional.conv2d(self.pad(predicted[idx]),
                                          weight=depthwise[idx],
                                          groups=self.n_groups)
-            predicted[idx] = nn.functional.conv2d(depth,
+            conv_out.append(nn.functional.conv2d(depth,
                                                          weight=pointwise_kn[idx],
                                                          bias=pointwise_bias[idx],
-                                                         groups=self.n_groups)
-        predicted = predicted.view(N,ch,h,w)
-        return predicted
+                                                         groups=self.n_groups))
+        conv_out = torch.cat(conv_out,0)
+        return conv_out
 
 class KernelPredictor(nn.Module):
     def __init__(self, c_in, c_out, p, s_d):
