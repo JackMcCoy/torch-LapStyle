@@ -50,7 +50,7 @@ class RevisionNet(nn.Module):
             nn.Linear(8192, s_d * 16)
         )
         self.style_riemann_noise = RiemannNoise(4)
-
+        self.content_adaconv = AdaConv(256, 4, s_d=s_d)
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, s_d=s_d),
@@ -140,7 +140,7 @@ class RevisionNet(nn.Module):
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(s2, cs2, thumbnail_style)))
+                        mini_holder.append((self.generator(s2, cs2, thumbnail_style, enc_)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
         if len(holder)==1:
@@ -151,7 +151,8 @@ class RevisionNet(nn.Module):
 
 
 
-    def generator(self, x, ci, style):
+    def generator(self, x, ci, style, enc_):
+        ci = self.content_adaconv(style, ci, norm=True)
         out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)
