@@ -26,9 +26,9 @@ class RevisorLap(nn.Module):
         for i in range(levels):
             self.layers.append(RevisionNet(i))
 
-    def forward(self, x, enc_, ci):
+    def forward(self, x, enc_, ci, style):
         for layer in self.layers:
-            x = layer(x, enc_, ci)
+            x = layer(x, enc_, ci, style)
         return x
 
 class RevisionNet(nn.Module):
