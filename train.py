@@ -485,8 +485,8 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(list(dec_.parameters())+list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum=.9)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i, args)
-        adjust_learning_rate(opt_D, i, args, disc=True)
+        adjust_learning_rate(optimizer, i//4, args)
+        adjust_learning_rate(opt_D, i//4, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -509,12 +509,12 @@ elif args.train_model == 'revlap':
             loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
-            if i + 1 % 1 == 0:
+            if i + 1 % 4 == 0:
                 d_scaler.step(opt_D)
                 d_scaler.update()
         else:
             loss_D.backward()
-            if i + 1 % 1 == 0:
+            if i + 1 % 4 == 0:
                 opt_D.step()
         set_requires_grad(disc_, False)
 
@@ -543,12 +543,12 @@ elif args.train_model == 'revlap':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i + 1 % 2 == 0:
+            if i + 1 % 4 == 0:
                 scaler.step(optimizer)
                 scaler.update()
         else:
             loss.backward()
-            if i + 1 % 2 == 0:
+            if i + 1 % 4 == 0:
                 optimizer.step()
 
         if (i + 1) % 10 == 0:
@@ -571,8 +571,8 @@ elif args.train_model == 'revlap':
             if (i + 1) % 50 == 0:
                 stylized = stylized.float().to('cpu')
                 rev_stylized = rev_stylized.float().to('cpu')
-                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
+                draft_img_grid = make_grid(stylized, nrow=4)
+                styled_img_grid = make_grid(rev_stylized, nrow=4)
                 si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
                 ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)

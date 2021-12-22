@@ -102,7 +102,6 @@ class RevisionNet(nn.Module):
                                                     )])
 
     def thumbnail_style_calc(self, style, enc_):
-        print(style.shape)
         b = style.shape[0]
         style = self.downsample(style)
         style = enc_(style)
