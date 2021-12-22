@@ -50,7 +50,7 @@ class RevisionNet(nn.Module):
             nn.Linear(8192, s_d * 16)
         )
         self.style_riemann_noise = RiemannNoise(4)
-        self.content_adaconv = AdaConv(256, 4, s_d=s_d)
+        self.content_adaconv = AdaConv(64, 1, s_d=s_d)
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, s_d=s_d),
@@ -64,7 +64,7 @@ class RevisionNet(nn.Module):
         self.riemann_style_noise = RiemannNoise(4)
         self.DownBlock = nn.Sequential(RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(6, 128, kernel_size=3),
+            nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(),
             RiemannNoise(256),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -153,8 +153,10 @@ class RevisionNet(nn.Module):
 
     def generator(self, x, ci, style, enc_):
         print(ci.shape)
-        ci = self.content_adaconv(style, ci, norm=False)
-        out = torch.cat([x, ci], dim=1)
+        cF = enc_(ci)
+        sF = enc(style)
+        ci = self.content_adaconv(style, cF['r1_1'], norm=True)
+        out = torch.cat([sF['r1_1'], ci], dim=1)
 
         out = self.DownBlock(out)
         out = self.resblock(out)
