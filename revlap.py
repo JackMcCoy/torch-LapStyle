@@ -17,14 +17,14 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class RevisorLap(nn.Module):
-    def __init__(self, levels= 1):
+    def __init__(self, batch_size,levels= 1):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic', align_corners='True')
 
         for i in range(levels):
-            self.layers.append(RevisionNet(i))
+            self.layers.append(RevisionNet(batch_size,  i))
 
     def forward(self, x, enc_, ci, style):
         for layer in self.layers:
