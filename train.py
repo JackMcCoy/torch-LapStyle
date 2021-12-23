@@ -489,9 +489,9 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i//10, args)
-        adjust_learning_rate(dec_optimizer, i//10, args)
-        adjust_learning_rate(opt_D, i//10, args, disc=True)
+        adjust_learning_rate(optimizer, i//5, args)
+        adjust_learning_rate(dec_optimizer, i//5, args)
+        adjust_learning_rate(opt_D, i//5, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -513,14 +513,14 @@ elif args.train_model == 'revlap':
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-                if i + 1 % 10 == 0:
+                if i + 1 % 5 == 0:
                     d_scaler.unscale_(opt_D)
                     torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_nonfinite=True)
                     d_scaler.step(opt_D)
                     d_scaler.update()
             else:
                 loss_D.backward()
-                if i + 1 % 10 == 0:
+                if i + 1 % 5 == 0:
                     opt_D.step()
                     opt_D.zero_grad()
             set_requires_grad(disc_, False)
@@ -567,13 +567,13 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i + 1 % 10 == 0 and rev_start:
+            if i + 1 % 5 == 0 and rev_start:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if (i + 6 % 10 == 0) or not rev_start:
+            if (i + 3 % 5 == 0) or not rev_start:
                 scaler.unscale_(dec_optimizer)
                 torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(dec_optimizer)
@@ -581,11 +581,11 @@ elif args.train_model == 'revlap':
                 dec_optimizer.zero_grad()
         else:
             loss.backward()
-            if i + 1 % 10 == 0 and rev_start:
+            if i + 1 % 5 == 0 and rev_start:
                 optimizer.step()
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 3 % 10 == 0:
+            if i + 3 % 5 == 0:
                 dec_optimizer.step()
                 scaler.update()
                 dec_optimizer.zero_grad()
