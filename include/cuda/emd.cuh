@@ -1,6 +1,8 @@
 #ifndef EMD_CUH_
 #define EMD_CUH_
 
+#include "cuda_helper.h"
+
 #define BLOCK_SIZE 512
 
 template <typename T>
