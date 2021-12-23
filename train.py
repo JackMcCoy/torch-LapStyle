@@ -446,7 +446,7 @@ elif args.train_model=='revision':
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
 
 elif args.train_model == 'revlap':
-    rev_start = False
+    rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
