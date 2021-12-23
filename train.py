@@ -571,7 +571,7 @@ elif args.train_model == 'revlap':
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 4 % 10 == 0:
+            if i + 6 % 10 == 0:
                 scaler.unscale_(dec_optimizer)
                 torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(dec_optimizer)
