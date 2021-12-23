@@ -409,7 +409,7 @@ class DecoderAdaConv(nn.Module):
         style = self.style_encoding(sF['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
+        style = style.reshape(b, self.s_d, 3, 3)
         adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'].detach(), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
