@@ -514,9 +514,9 @@ elif args.train_model == 'revlap':
                     loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
                 if ac_enabled:
                     d_scaler.scale(loss_D).backward()
-                    d_scaler.unscale_(opt_D)
-                    torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_nonfinite=True)
                     if i + 1 % 4 == 0:
+                        d_scaler.unscale_(opt_D)
+                        torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_nonfinite=True)
                         d_scaler.step(opt_D)
                         d_scaler.update()
                 else:
@@ -566,22 +566,15 @@ elif args.train_model == 'revlap':
                     loss = loss_small
             if ac_enabled:
                 scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                scaler.unscale_(dec_optimizer)
-                for name, p in dec_.named_parameters():
-                    if p.grad is None:
-                        continue
-                    else:
-                        print(name)
-                        print(p.grad)
-                torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=True)
-                torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
-
                 if i + 1 % 4 == 0 and rev_start:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
                     scaler.step(optimizer)
                     scaler.update()
                     optimizer.zero_grad()
                 if i + 3 % 4 == 0:
+                    scaler.unscale_(dec_optimizer)
+                    torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=True)
                     scaler.step(dec_optimizer)
                     scaler.update()
                     dec_optimizer.zero_grad()
