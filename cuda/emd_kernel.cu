@@ -259,8 +259,6 @@ at::Tensor MatchCostForward(
   CHECK_EQ(xyz2.size(0), b);
   CHECK_EQ(xyz1.size(2), 3);
   CHECK_EQ(xyz2.size(2), 3);
-  CHECK_INPUT(xyz1);
-  CHECK_INPUT(xyz2);
 
   auto cost = at::zeros({b}, xyz1.scalar_type());
 
@@ -376,8 +374,6 @@ std::vector<at::Tensor> MatchCostBackward(
   CHECK_EQ(xyz2.size(0), b);
   CHECK_EQ(xyz1.size(2), 3);
   CHECK_EQ(xyz2.size(2), 3);
-  CHECK_INPUT(xyz1);
-  CHECK_INPUT(xyz2);
 
   auto grad1 = at::zeros({b, n, 3}, xyz1.scalar_type());
   auto grad2 = at::zeros({b, m, 3}, xyz1.scalar_type());
