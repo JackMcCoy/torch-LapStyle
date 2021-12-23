@@ -20,23 +20,50 @@ class CalcStyleEmdLoss():
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
         return loss_remd
 
-def calc_emd_loss(pred, target):
-    """calculate emd loss.
+class EMDFunction(torch.autograd.Function):
+	@staticmethod
+	def forward(self, xyz1, xyz2):
+		cost, match = emd.emd_forward(xyz1, xyz2)
+		self.save_for_backward(xyz1, xyz2, match)
+		return cost
 
-    Args:
-        pred (Tensor): of shape (N, C, H, W). Predicted tensor.
-        target (Tensor): of shape (N, C, H, W). Ground truth tensor.
-    """
-    b, _, h, w = pred.shape
-    pred = pred.reshape([b, -1, w * h])
-    pred_norm = torch.nan_to_num(torch.sqrt((pred**2).sum(1).reshape([b, -1, 1])))
-    pred = torch.nan_to_num(pred.transpose(2, 1))
-    target_t = torch.nan_to_num(target.reshape([b, -1, w * h]))
-    target_norm = torch.nan_to_num(torch.sqrt((target**2).sum(1).reshape([b, 1, -1])))
-    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
-    dist = 1. - similarity
-    return dist
 
+	@staticmethod
+	def backward(self, grad_output):
+		xyz1, xyz2, match = self.saved_tensors
+		grad_xyz1, grad_xyz2 = emd.emd_backward(xyz1, xyz2, match)
+		return grad_xyz1, grad_xyz2
+
+
+
+
+class EMDLoss(nn.Module):
+	'''
+	Computes the (approximate) Earth Mover's Distance between two point sets.
+	IMPLEMENTATION LIMITATIONS:
+	- Double tensors must have <=11 dimensions
+	- Float tensors must have <=23 dimensions
+	This is due to the use of CUDA shared memory in the computation. This shared memory is limited by the hardware to 48kB.
+	'''
+
+	def __init__(self):
+		super(EMDLoss, self).__init__()
+
+	def forward(self, xyz1, xyz2):
+		'''
+		xyz1: B x N x D point set
+		xyz2: B x M x D point set
+		'''
+
+		assert xyz1.shape[-1] == xyz2.shape[-1], 'Both point sets must have the same dimensionality'
+		if xyz1.dtype == torch.float64 and xyz1.shape[-1] > 11:
+			error('Tensors of type double can have a maximum of 11 dimensions')
+		if xyz1.dtype == torch.float32 and xyz1.shape[-1] > 23:
+			error('Tensors of type float can have a maximum of 23 dimensions')
+
+		return EMDFunction.apply(xyz1, xyz2)
+
+calc_emd_loss = EMDLoss()
 
 class CalcContentReltLoss():
     """Calc Content Relt Loss.
