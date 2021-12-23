@@ -448,7 +448,6 @@ elif args.train_model=='revision':
 
 elif args.train_model == 'revlap':
     rev_start = True
-    downsample = nn.Upsample(scale_factor=.5, mode='nearest')
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
@@ -502,7 +501,7 @@ elif args.train_model == 'revlap':
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
 
-            stylized, style = dec_(downsample(sF), downsample(cF))
+            stylized, style = dec_(sF, cF)
             if rev_start:
                 rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
                 si_cropped = random_crop(si[-1])
@@ -527,6 +526,8 @@ elif args.train_model == 'revlap':
             loss_D = 0
 
         with autocast(enabled=ac_enabled):
+            cF = enc_(ci[-1])
+            sF = enc_(si[-1])
             losses_scaled = calc_losses(rev_stylized, ci[-1], si[-1], cF, enc_, dec_, None, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
