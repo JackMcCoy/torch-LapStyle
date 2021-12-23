@@ -556,7 +556,7 @@ elif args.train_model == 'revlap':
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
                 loss = loss*.25 + losses_scaled*.5 + loss_small
-            elif loss_c <= 1:
+            elif loss_c <= .6:
                 rev_start = True
                 print('=========== REV START =============')
                 optimizer.zero_grad()
@@ -588,7 +588,7 @@ elif args.train_model == 'revlap':
                 scaler.update()
                 dec_optimizer.zero_grad()
 
-        if (i + 1) % 10 == 0:
+        if (i + 1) % 100 == 0:
             loss_dict = {}
             for l, s in zip(
                     [loss_small, loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
@@ -605,7 +605,7 @@ elif args.train_model == 'revlap':
             print(f'{loss.item():.2f}')
 
         with torch.no_grad():
-            if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%150==0):
+            if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
                 stylized = stylized.float().to('cpu')
                 rev_stylized = rev_stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4)
