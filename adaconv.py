@@ -9,6 +9,7 @@ class AdaConv(nn.Module):
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d, batch_size)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.n_groups = ch_in//p
+        self.relu = nn.ReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -40,7 +41,7 @@ class AdaConv(nn.Module):
                                                          weight=pointwise_kn[idx],
                                                          bias=pointwise_bias[idx],
                                                          groups=self.n_groups))
-        conv_out = torch.cat(conv_out,0)
+        conv_out = self.relu(torch.cat(conv_out,0))
         return conv_out
 
 class KernelPredictor(nn.Module):
