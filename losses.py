@@ -20,7 +20,7 @@ class CalcStyleEmdLoss():
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
         return loss_remd
 
-cosinesimilarity = nn.CosineSimilarity(dim=2)
+cosinesimilarity = nn.CosineSimilarity()
 
 def calc_emd_loss(pred, target):
     """calculate emd loss.
@@ -51,9 +51,9 @@ class CalcContentReltLoss():
         """
         dM = 1.
         Mx = calc_emd_loss(pred, pred)
-        Mx = Mx / (Mx.sum(1, keepdim=True)+self.eps)
+        Mx = Mx / (Mx.sum(dim=(1,2), keepdim=True)+self.eps)
         My = calc_emd_loss(target, target)
-        My = My / (My.sum(1, keepdim=True)+self.eps)
+        My = My / (My.sum(dim=(1,2), keepdim=True)+self.eps)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
