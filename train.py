@@ -535,6 +535,8 @@ elif args.train_model == 'revlap':
             if rev_start:
                 cF = enc_(ci[-1])
                 sF = enc_(si[-1])
+                print(rev_stylized.shape)
+                print(si[-1].shape)
                 losses_scaled = calc_losses(rev_stylized, ci[-1], si[-1], cF, enc_, dec_, None, disc_,
                                      calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                      mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
