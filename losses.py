@@ -1,10 +1,6 @@
 import torch.nn as nn
 import torch
-import geomloss
-
 device = torch.device('cuda')
-
-
 class CalcStyleEmdLoss():
     """Calc Style Emd Loss.
     """
@@ -18,16 +14,28 @@ class CalcStyleEmdLoss():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        N,C,H,W = pred.shape
-        CX_M = calc_emd_loss(pred.view(N,C,-1), target.view(N,C,-1))
-        print(CX_M.shape)
-        print(CX_M)
-        m1, _ = CX_M.min(-1)
-        m2, _ = CX_M.min(0)
+        CX_M = calc_emd_loss(pred, target)
+        m1, _ = CX_M.min(2)
+        m2, _ = CX_M.min(1)
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
         return loss_remd
 
-calc_emd_loss = geomloss.SamplesLoss(loss="sinkhorn", p=2, blur=.05)
+cosinesimilarity = nn.CosineSimilarity()
+
+def calc_emd_loss(pred, target):
+    """calculate emd loss.
+
+    Args:
+        pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+        target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+    """
+    b, _, h, w = pred.shape
+    pred = pred.reshape([b, -1, w * h])
+    target_t = target.reshape([b, -1, w * h])
+    similarity = cosinesimilarity(pred, target_t)
+    dist = 1. - similarity
+    return dist
+
 
 class CalcContentReltLoss():
     """Calc Content Relt Loss.
@@ -44,10 +52,9 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         dM = 1.
-        N, C, H, W = pred.shape
-        Mx = calc_emd_loss(pred.view(N,C,-1), pred.view(N,C,-1))
+        Mx = calc_emd_loss(pred, pred)
         Mx = Mx / (Mx.sum(1, keepdim=True)+self.eps)
-        My = calc_emd_loss(target.view(N,C,-1), target.view(N,C,-1))
+        My = calc_emd_loss(target, target)
         My = My / (My.sum(1, keepdim=True)+self.eps)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
