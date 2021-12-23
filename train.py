@@ -573,7 +573,7 @@ elif args.train_model == 'revlap':
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 6 % 10 == 0:
+            if (i + 6 % 10 == 0) or not rev_start:
                 scaler.unscale_(dec_optimizer)
                 torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(dec_optimizer)
@@ -610,9 +610,9 @@ elif args.train_model == 'revlap':
             if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
                 stylized = stylized.float().to('cpu')
                 rev_stylized = rev_stylized.float().to('cpu')
-                draft_img_grid = make_grid(stylized, nrow=4)
+                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 if rev_start:
-                    styled_img_grid = make_grid(rev_stylized, nrow=4)
+                    styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
                 si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
                 ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
