@@ -20,8 +20,9 @@ class CalcStyleEmdLoss():
         """
         N,C,H,W = pred.shape
         CX_M = calc_emd_loss(pred.view(N,C,-1), target.view(N,C,-1))
-        m1, _ = CX_M.min(2)
-        m2, _ = CX_M.min(1)
+        print(CX_M.shape)
+        m1, _ = CX_M.min(-1)
+        m2, _ = CX_M.min(0)
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
         return loss_remd
 
