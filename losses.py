@@ -18,7 +18,8 @@ class CalcStyleEmdLoss():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        CX_M = calc_emd_loss(pred, target)
+        N,C,H,W = pred.shape
+        CX_M = calc_emd_loss(pred.view(N,C,-1), target.view(N,C,-1))
         m1, _ = CX_M.min(2)
         m2, _ = CX_M.min(1)
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
@@ -41,9 +42,10 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         dM = 1.
-        Mx = calc_emd_loss(pred, pred)
+        N, C, H, W = pred.shape
+        Mx = calc_emd_loss(pred.view(N,C,-1), pred.view(N,C,-1))
         Mx = Mx / (Mx.sum(1, keepdim=True)+self.eps)
-        My = calc_emd_loss(target, target)
+        My = calc_emd_loss(target.view(N,C,-1), target.view(N,C,-1))
         My = My / (My.sum(1, keepdim=True)+self.eps)
         loss_content = torch.abs(
             dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
