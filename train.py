@@ -568,13 +568,13 @@ elif args.train_model == 'revlap':
                 scaler.scale(loss).backward()
                 if i + 1 % 2 == 0 and rev_start:
                     scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
+                    torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                     scaler.step(optimizer)
                     scaler.update()
                     optimizer.zero_grad()
                 if i + 3 % 1 == 0:
                     scaler.unscale_(dec_optimizer)
-                    torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=True)
+                    torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
                     scaler.step(dec_optimizer)
                     scaler.update()
                     dec_optimizer.zero_grad()
