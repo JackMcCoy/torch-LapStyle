@@ -4,8 +4,6 @@
 #include <torch/extension.h>
 #include <vector>
 
-#include "cuda_helper.h"
-
 
 std::vector<at::Tensor> emd_forward_cuda(
 	at::Tensor xyz1,
