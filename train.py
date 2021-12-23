@@ -519,9 +519,8 @@ elif args.train_model == 'revlap':
                 d_scaler.update()
             else:
                 loss_D.backward()
-                if i + 1 % 5 == 0:
-                    opt_D.step()
-                    opt_D.zero_grad()
+                opt_D.step()
+                opt_D.zero_grad()
             set_requires_grad(disc_, False)
         else:
             loss_D = 0
