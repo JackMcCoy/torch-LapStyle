@@ -563,6 +563,11 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
+            for p in dec_.parameters():
+                if p.grad is None:
+                    continue
+                else:
+                    print(p.grad)
             if i + 1 % 4 == 0 and rev_start:
                 scaler.step(optimizer)
                 scaler.update()
