@@ -15,12 +15,12 @@ class CalcStyleEmdLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         CX_M = calc_emd_loss(pred, target)
-        m1, _ = CX_M.min(1)
-        m2, _ = CX_M.min(0)
+        m1, _ = CX_M.min(2)
+        m2, _ = CX_M.min(1)
         loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
         return loss_remd
 
-cosinesimilarity = nn.CosineSimilarity()
+cosinesimilarity = nn.CosineSimilarity(dim=2)
 
 def calc_emd_loss(pred, target):
     """calculate emd loss.
@@ -29,9 +29,7 @@ def calc_emd_loss(pred, target):
         pred (Tensor): of shape (N, C, H, W). Predicted tensor.
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
-    b, _, h, w = pred.shape
-    pred = pred.reshape([b, -1, w * h])
-    target_t = target.reshape([b, -1, w * h])
+
     similarity = cosinesimilarity(pred, target_t)
     dist = 1. - similarity
     return dist
