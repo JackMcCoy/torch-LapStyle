@@ -412,18 +412,18 @@ class DecoderAdaConv(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out['r4_1'] = self.kernel_1(style, self.noise_4(cF['r4_1'].detach()), norm=True)
+        adaconv_out['r4_1'] = self.kernel_1(style, cF['r4_1'].detach(), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
-        adaconv_out['r3_1'] =  self.kernel_2(style, self.noise_3(cF['r3_1'].detach()), norm=True)
+        adaconv_out['r3_1'] =  self.kernel_2(style, cF['r3_1'].detach(), norm=True)
         x = x + adaconv_out['r3_1']
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out['r2_1'] = self.kernel_3(style, self.noise_2(cF['r2_1'].detach()), norm=True)
+        adaconv_out['r2_1'] = self.kernel_3(style, cF['r2_1'].detach(), norm=True)
         x = x + adaconv_out['r2_1']
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out['r1_1'] = self.kernel_4(style, self.noise_1(cF['r1_1'].detach()), norm=True)
+        adaconv_out['r1_1'] = self.kernel_4(style, cF['r1_1'].detach(), norm=True)
         x = x + adaconv_out['r1_1']
         x = self.decoder_4(x)
         return x, style
