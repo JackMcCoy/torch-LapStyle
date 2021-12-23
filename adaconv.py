@@ -74,10 +74,14 @@ class KernelPredictor(nn.Module):
         N = style_encoding.shape[0]
 
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        self.depthwise = depthwise.view(N,self.c_out, self.c_in//self.n_groups, 3, 3).type_as(self.depthwise)
+        depthwise = depthwise.view(N,self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_1_kn = self.pw_cn_kn(s_d)
-        self.pw_kn = pointwise_1_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1).type_as(self.pw_kn)
+        pointwise_1_kn = pointwise_1_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d)
-        self.pw_bias = pointwise_bias.squeeze()
-        return self.depthwise, self.pw_kn, self.pw_bias.type_as(self.pw_bias)
+        pointwise_bias = pointwise_bias.squeeze()
+        with torch.no_grad():
+            self.depthwise.copy(depthwise)
+            self.pw_kn.copy_(pointwise_1_kn)
+            self.pw_bias.copy_(pointwise_bias)
+        return self.depthwise, self.pw_kn, self.pw_bias
