@@ -485,9 +485,9 @@ elif args.train_model == 'revlap':
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    dec_optimizer = torch.optim.SGD(dec_.parameters(), lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
     optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.disc_lr)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i//5, args)
         adjust_learning_rate(dec_optimizer, i//5, args)
