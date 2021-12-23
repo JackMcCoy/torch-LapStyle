@@ -75,6 +75,5 @@ class KernelPredictor(nn.Module):
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_1_kn = self.pw_cn_kn(s_d)
         pointwise_1_kn = pointwise_1_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d)
-        pointwise_bias = pointwise_bias.squeeze()
+        pointwise_bias = self.pw_cn_bias(s_d).view(N,c_out)
         return depthwise, pointwise_1_kn, pointwise_bias
