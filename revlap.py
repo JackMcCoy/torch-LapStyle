@@ -124,7 +124,7 @@ class RevisionNet(nn.Module):
 
     def generator(self, x, ci, style, enc_):
 
-        ci =  F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+        ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
         out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)
