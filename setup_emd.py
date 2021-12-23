@@ -16,14 +16,14 @@ setup(
 				'src/emd.cpp',
 				'src/cuda/emd.cu',
 			],
-			include_dirs=['pkg/include'],
+			include_dirs=['include'],
 		),
 	],
 	packages=[
 		'emd',
 	],
 	package_dir={
-		'emd' : 'pkg/layer'
+		'emd' : 'layer'
 	},
 	cmdclass={'build_ext': BuildExtension},
 )
