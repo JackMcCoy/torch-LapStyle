@@ -578,9 +578,19 @@ elif args.train_model == 'revlap':
                 dec_optimizer.zero_grad()
         else:
             loss.backward()
-            if i + 1 % 1 == 0:
-                dec_optimizer.step()
+            for p in dec_.parameters():
+                if p.grad is None:
+                    continue
+                else:
+                    print(p.grad)
+            if i + 1 % 10 == 0 and rev_start:
                 optimizer.step()
+                scaler.update()
+                optimizer.zero_grad()
+            if i + 5 % 10 == 0:
+                dec_optimizer.step()
+                scaler.update()
+                dec_optimizer.zero_grad()
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
