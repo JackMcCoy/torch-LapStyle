@@ -555,6 +555,7 @@ elif args.train_model == 'revlap':
                 loss = loss*.25 + losses_scaled*.5 + loss_small
             elif loss_c <= 1.2:
                 rev_start = True
+                print('=========== REV START =============')
                 optimizer.zero_grad()
                 loss = loss_small
             else:
