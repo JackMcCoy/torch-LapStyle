@@ -573,11 +573,11 @@ elif args.train_model == 'revlap':
                 dec_optimizer.zero_grad()
         else:
             loss.backward()
-            if i + 1 % 10 == 0 and rev_start:
+            if i + 1 % 4 == 0 and rev_start:
                 optimizer.step()
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 5 % 10 == 0:
+            if i + 3 % 4 == 0:
                 dec_optimizer.step()
                 scaler.update()
                 dec_optimizer.zero_grad()
