@@ -314,7 +314,7 @@ void match_cost(
 	const at::Tensor match,
 	at::Tensor out)
 {
-	AT_DISPATCH_FLOATING_TYPES(xyz1.options(), "match_cost_kernel", ([&] {
+	AT_DISPATCH_FLOATING_TYPES(xyz1.scalar_type(), "match_cost_kernel", ([&] {
 		unsigned shared_mem_size = (512+BLOCK_SIZE*d)*sizeof(scalar_t);
 		match_cost_kernel<<<32, 512, shared_mem_size>>>(
 			b, n, m, d,
@@ -429,7 +429,7 @@ void match_cost_grad(
 	at::Tensor grad1,
 	at::Tensor grad2)
 {
-	AT_DISPATCH_FLOATING_TYPES(xyz1.options(), "match_cost_grad1_kernel", ([&] {
+	AT_DISPATCH_FLOATING_TYPES(xyz1.scalar_type(), "match_cost_grad1_kernel", ([&] {
 		match_cost_grad1_kernel<<<32,512>>>(
 			b, n, m, d,
 			xyz1.data<scalar_t>(),
@@ -438,7 +438,7 @@ void match_cost_grad(
 			grad1.data<scalar_t>());
 	}));
 
-	AT_DISPATCH_FLOATING_TYPES(xyz1.options(), "match_cost_grad2_kernel", ([&] {
+	AT_DISPATCH_FLOATING_TYPES(xyz1.scalar_type(), "match_cost_grad2_kernel", ([&] {
 		match_cost_grad2_kernel<<<dim3(32,32),512,(512*d)*sizeof(scalar_t)>>>(
 			b, n, m, d,
 			xyz1.data<scalar_t>(),
