@@ -498,8 +498,8 @@ elif args.train_model == 'revlap':
             si = next(style_iter).to(device)
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-            cF = enc_(ci[-1])
-            sF = enc_(si[-1])
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
             if rev_start:
