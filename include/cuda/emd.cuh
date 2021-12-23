@@ -1,8 +1,6 @@
 #ifndef EMD_CUH_
 #define EMD_CUH_
 
-#include "cuda_helper.h"
-
 #define BLOCK_SIZE 512
 
 template <typename T>
@@ -244,7 +242,6 @@ void approx_match(
 			temp.data<scalar_t>());
 	}));
 	cudaDeviceSynchronize();
-	CUDA_CHECK(cudaGetLastError())
 }
 
 
@@ -324,7 +321,6 @@ void match_cost(
 			match.data<scalar_t>(),
 			out.data<scalar_t>());
 	}));
-	CUDA_CHECK(cudaGetLastError())
 }
 
 
@@ -439,7 +435,6 @@ void match_cost_grad(
 			match.data<scalar_t>(),
 			grad1.data<scalar_t>());
 	}));
-	CUDA_CHECK(cudaGetLastError())
 
 	AT_DISPATCH_FLOATING_TYPES(xyz1.options(), "match_cost_grad2_kernel", ([&] {
 		match_cost_grad2_kernel<<<dim3(32,32),512,(512*d)*sizeof(scalar_t)>>>(
@@ -449,7 +444,6 @@ void match_cost_grad(
 			match.data<scalar_t>(),
 			grad2.data<scalar_t>());
 	}));
-	CUDA_CHECK(cudaGetLastError())
 }
 
 
