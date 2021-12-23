@@ -116,6 +116,7 @@ parser.add_argument('--load_model', type=str, default='none')
 parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
+parser.add_argument('--accumulation_steps', type=int, default=1)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
@@ -489,9 +490,9 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i//3, args)
-        adjust_learning_rate(dec_optimizer, i//3, args)
-        adjust_learning_rate(opt_D, i//5, args, disc=True)
+        adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(dec_optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -513,7 +514,7 @@ elif args.train_model == 'revlap':
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-                if i + 1 % 3 == 0:
+                if i + 1 % args.accumulation_steps == 0:
                     d_scaler.step(opt_D)
                     d_scaler.update()
             else:
@@ -549,7 +550,7 @@ elif args.train_model == 'revlap':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i+1 % 3 == 0:
+            if i+1 % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
