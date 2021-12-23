@@ -11,6 +11,6 @@
 
 #define CHECK_CONTIGUOUS(x) AT_CHECK(x.is_contiguous(), \
 	#x " must be contiguous")
-#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+#define CHECK_INPUT(x); CHECK_CONTIGUOUS(x)
 
 #endif
