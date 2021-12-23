@@ -491,7 +491,7 @@ elif args.train_model == 'revlap':
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i//4, args)
         adjust_learning_rate(dec_optimizer, i//4, args)
-        adjust_learning_rate(opt_D, i, args//4, disc=True)
+        adjust_learning_rate(opt_D, i//4, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
