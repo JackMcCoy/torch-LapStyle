@@ -29,10 +29,10 @@ def calc_emd_loss(pred, target):
     """
     b, _, h, w = pred.shape
     pred = torch.nan_to_num(pred).reshape([b, -1, w * h])
-    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))+1e-15
+    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))+1e-9
     pred = pred.transpose(2, 1)
     target_t = target.reshape([b, -1, w * h])
-    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))+1e-15
+    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))+1e-9
     similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
     dist = 1. - similarity
     return dist
