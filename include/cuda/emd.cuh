@@ -234,7 +234,7 @@ void approx_match(
 	at::Tensor match,
 	at::Tensor temp)
 {
-	AT_DISPATCH_FLOATING_TYPES(match.options(), "approx_match_kernel", ([&] {
+	AT_DISPATCH_FLOATING_TYPES(match.scalar_type(), "approx_match_kernel", ([&] {
 		approx_match_kernel
 			<<<32, 512, BLOCK_SIZE*(d+1)*sizeof(scalar_t)>>>(
 			b, n, m, d,
