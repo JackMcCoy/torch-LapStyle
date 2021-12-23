@@ -489,9 +489,9 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i//5, args)
-        adjust_learning_rate(dec_optimizer, i//5, args)
-        adjust_learning_rate(opt_D, i//5, args, disc=True)
+        adjust_learning_rate(optimizer, i//3, args)
+        adjust_learning_rate(dec_optimizer, i//3, args)
+        adjust_learning_rate(opt_D, i//3, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -513,8 +513,9 @@ elif args.train_model == 'revlap':
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-                d_scaler.step(opt_D)
-                d_scaler.update()
+                if i + 1 % 3 == 0:
+                    d_scaler.step(opt_D)
+                    d_scaler.update()
             else:
                 loss_D.backward()
                 opt_D.step()
@@ -565,16 +566,17 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
-            scaler.unscale_(dec_optimizer)
-            torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
-            scaler.step(dec_optimizer)
-            scaler.update()
-            dec_optimizer.zero_grad()
+            if i+1 % 3 == 0:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+                scaler.unscale_(dec_optimizer)
+                torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
+                scaler.step(dec_optimizer)
+                scaler.update()
+                dec_optimizer.zero_grad()
         else:
             loss.backward()
             optimizer.step()
