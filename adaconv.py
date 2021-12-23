@@ -57,7 +57,7 @@ class KernelPredictor(nn.Module):
         self.pw_cn_bias = nn.Conv2d(s_d, c_out, 1)
         self.depthwise = nn.Parameter(torch.zeros(batch_size, self.c_out, self.c_in//self.n_groups, 3, 3))
         self.pw_kn = nn.Parameter(torch.zeros(batch_size, self.c_out, self.c_out//self.n_groups, 1, 1))
-        self.pw_bias =  nn.Parameter(torch.zeros(batch_size))
+        self.pw_bias =  nn.Parameter(torch.zeros(batch_size,c_out))
         self.apply(self._init_weights)
 
     @staticmethod
