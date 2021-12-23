@@ -368,7 +368,6 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.riemann_noise = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
@@ -413,7 +412,6 @@ class DecoderAdaConv(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        style = self.riemann_noise(style)
         adaconv_out['r4_1'] = self.kernel_1(style, self.noise_4(cF['r4_1'].detach()), norm=True)
         x = self.decoder_1(adaconv_out['r4_1'])
         x = self.upsample(x)
