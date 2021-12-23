@@ -621,6 +621,7 @@ elif args.train_model == 'revlap':
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
 
 
+
 elif args.train_model=='vqgan_pretrain':
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)
