@@ -57,8 +57,8 @@ class CalcContentReltLoss():
         Mx = torch.clamp(Mx / (Mx.sum(1, keepdim=True)+self.eps),1e-13,1e14)
         My = calc_emd_loss(target, target)
         My = torch.clamp(My / (My.sum(1, keepdim=True)+self.eps),1e-13,1e14)
-        loss_content = torch.abs(
-            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
+        loss_content = torch.clamp(torch.abs(
+            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3],1e-13,1e14)
         return loss_content
 
 
@@ -96,8 +96,8 @@ class CalcStyleLoss():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        pred_mean, pred_std = torch.clamp(calc_mean_std(pred),1e-13,1e14)
-        target_mean, target_std = torch.clamp(calc_mean_std(target),1e-13,1e14)
+        pred_mean, pred_std = calc_mean_std(pred)
+        target_mean, target_std = calc_mean_std(target)
         return torch.clamp(self.mse_loss(pred_mean, target_mean) + self.mse_loss(
             pred_std, target_std),1e-13,1e14)
 
@@ -203,7 +203,7 @@ def mean_variance_norm(feat):
     """
     size = feat.shape
     mean, std = calc_mean_std(feat)
-    normalized_feat = (feat - mean.expand(size)) / std.expand(size)
+    normalized_feat = torch.clamp((feat - mean.expand(size)) / std.expand(size),1e-13,1e14)
     return normalized_feat
 
 def calc_mean_std(feat, eps=1e-5):
@@ -221,8 +221,8 @@ def calc_mean_std(feat, eps=1e-5):
     assert (len(size) == 4)
     N, C = size[:2]
     feat_var = feat.reshape([N, C, -1])
-    feat_var = torch.var(feat_var, dim = 2) + eps
-    feat_std = torch.sqrt(feat_var)
+    feat_var = torch.clamp(torch.var(feat_var, dim = 2) + eps,1e-13,1e14)
+    feat_std = torch.clamp(torch.sqrt(feat_var),1e-13,1e14)
     feat_std = feat_std.reshape([N, C, 1, 1])
     feat_mean = feat.reshape([N, C, -1])
     feat_mean = feat_mean.mean(2)
