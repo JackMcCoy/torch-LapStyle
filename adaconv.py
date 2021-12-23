@@ -81,7 +81,7 @@ class KernelPredictor(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d)
         pointwise_bias = pointwise_bias.squeeze()
         with torch.no_grad():
-            self.depthwise.copy(depthwise)
+            self.depthwise.copy_(depthwise)
             self.pw_kn.copy_(pointwise_1_kn)
             self.pw_bias.copy_(pointwise_bias)
         return self.depthwise, self.pw_kn, self.pw_bias
