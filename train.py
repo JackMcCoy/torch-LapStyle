@@ -572,9 +572,9 @@ elif args.train_model == 'revlap':
         if (i + 1) % 10 == 0:
             loss_dict = {}
             for l, s in zip(
-                    [loss_small, loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
+                    [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
                      mdog],
-                    ['Loss Small','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Revision Disc. Loss', 'Discriminator Loss', 'example', 'Patch Loss', 'MXDOG Loss']):
                 if s == 'example':
                     loss_dict[s] = wandb.Image(l[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
