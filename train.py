@@ -450,7 +450,8 @@ elif args.train_model == 'revlap':
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
-    enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256)).half()), strict=False)
+    with autocast(enabled=ac_enabled):
+        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
