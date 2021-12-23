@@ -387,6 +387,12 @@ elif args.train_model=='revision':
 
         if ac_enabled:
             scaler.scale(loss).backward()
+            for p in optimizer.parameters():
+                if p.grad is None:
+                    continue
+                else:
+                    print(p.grad)
+
             if i + 1 % 2 == 0:
                 for optimizer in optimizers:
                     scaler.step(optimizer)

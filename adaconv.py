@@ -40,7 +40,6 @@ class AdaConv(nn.Module):
                                                          weight=pointwise_kn[idx],
                                                          bias=pointwise_bias[idx],
                                                          groups=self.n_groups))
-        print(pointwise_bias.grad)
         conv_out = torch.cat(conv_out,0)
         return conv_out
 
@@ -78,5 +77,4 @@ class KernelPredictor(nn.Module):
         pointwise_1_kn = pointwise_1_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d)
         pointwise_bias = pointwise_bias.squeeze()
-        print(pointwise_bias.grad)
         return depthwise, pointwise_1_kn, pointwise_bias
