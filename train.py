@@ -560,6 +560,8 @@ elif args.train_model == 'revlap':
                 rev_start = True
                 print('=========== REV START =============')
                 optimizer.zero_grad()
+                content_iter.batch_size =2
+                style_iter.batch_size = 2
                 loss = loss_small
             else:
                 loss = loss_small
