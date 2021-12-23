@@ -534,15 +534,6 @@ elif args.train_model == 'revlap':
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = loss_small
             loss_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog + l_identity1 *50 + l_identity2 + l_identity3*50 + l_identity4
             if rev_start:
-                cF = enc_(ci[-1])
-                sF = enc_(si[-1])
-                losses_scaled = calc_losses(rev_stylized, ci[-1], si[-1], cF, enc_, dec_, None, disc_,
-                                     calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
-                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                     patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
-                losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-
                 cF2 = enc_(ci[-1][:,:,-256:,-256:])
                 sF2 = enc_(si_cropped)
                 ci_patch = ci[-1][:,:,-256:,-256:]
@@ -554,7 +545,7 @@ elif args.train_model == 'revlap':
                                      patch_loss=True, GANLoss=ganloss, sF=sF2, split_style=args.split_style)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-                loss = loss + losses_scaled + loss_small*.5
+                loss = loss + losses_scaled
             elif loss_c <= .6:
                 rev_start = True
                 print('=========== REV START =============')
