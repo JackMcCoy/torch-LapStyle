@@ -485,13 +485,13 @@ elif args.train_model == 'revlap':
     d_scaler = GradScaler()
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr, weight_decay=.1)
-    optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr, weight_decay=.1)
-    opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.disc_lr, weight_decay=.1)
+    dec_optimizer = torch.optim.SGD(dec_.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
-        #adjust_learning_rate(optimizer, i, args)
-        #adjust_learning_rate(dec_optimizer, i, args)
-        #adjust_learning_rate(opt_D, i, args, disc=True)
+        adjust_learning_rate(optimizer, i//4, args)
+        adjust_learning_rate(dec_optimizer, i//4, args)
+        adjust_learning_rate(opt_D, i, args//4, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -513,12 +513,12 @@ elif args.train_model == 'revlap':
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-                if i + 1 % 2 == 0:
+                if i + 1 % 4 == 0:
                     d_scaler.step(opt_D)
                     d_scaler.update()
             else:
                 loss_D.backward()
-                if i + 1 % 1 == 0:
+                if i + 1 % 4 == 0:
                     opt_D.step()
                     opt_D.zero_grad()
             set_requires_grad(disc_, False)
@@ -554,7 +554,7 @@ elif args.train_model == 'revlap':
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
                 loss = loss*.25 + losses_scaled*.5 + loss_small
-            elif loss_c <= 1:
+            elif loss_c <= 1.25:
                 rev_start = True
                 print('=========== REV START =============')
                 optimizer.zero_grad()
@@ -563,11 +563,11 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i + 1 % 10 == 0 and rev_start:
+            if i + 1 % 4 == 0 and rev_start:
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if i + 5 % 10 == 0:
+            if i + 3 % 4 == 0:
                 scaler.step(dec_optimizer)
                 scaler.update()
                 dec_optimizer.zero_grad()
