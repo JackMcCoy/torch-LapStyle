@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch
+import _emd_ext._emd as emd
 device = torch.device('cuda')
+
+
 class CalcStyleEmdLoss():
     """Calc Style Emd Loss.
     """
