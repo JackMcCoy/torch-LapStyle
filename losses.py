@@ -28,7 +28,7 @@ def calc_emd_loss(pred, target):
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
     b, _, h, w = pred.shape
-    pred = pred.reshape([b, -1, w * h])
+    pred = torch.nan_to_num(pred).reshape([b, -1, w * h])
     pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))+1e-15
     pred = pred.transpose(2, 1)
     target_t = target.reshape([b, -1, w * h])
