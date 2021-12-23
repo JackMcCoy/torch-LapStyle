@@ -445,7 +445,7 @@ elif args.train_model=='revision':
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
 
 elif args.train_model == 'revlap':
-
+    rev_start = False
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
@@ -500,26 +500,29 @@ elif args.train_model == 'revlap':
             sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
-
-            rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
-            si_cropped = random_crop(si[-1])
-            stylized_crop = rev_stylized[:,:,-256:,-256:]
-
-
-        set_requires_grad(disc_, True)
-        with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
-        if ac_enabled:
-            d_scaler.scale(loss_D).backward()
-            if i + 1 % 2 == 0:
-                d_scaler.step(opt_D)
-                d_scaler.update()
+            if rev_start:
+                rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
+                si_cropped = random_crop(si[-1])
+                stylized_crop = rev_stylized[:,:,-256:,-256:]
+            else:
+                rev_stylized = stylized
+        if rev_start:
+            set_requires_grad(disc_, True)
+            with autocast(enabled=ac_enabled):
+                loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
+            if ac_enabled:
+                d_scaler.scale(loss_D).backward()
+                if i + 1 % 2 == 0:
+                    d_scaler.step(opt_D)
+                    d_scaler.update()
+            else:
+                loss_D.backward()
+                if i + 1 % 1 == 0:
+                    opt_D.step()
+                    opt_D.zero_grad()
+            set_requires_grad(disc_, False)
         else:
-            loss_D.backward()
-            if i + 1 % 1 == 0:
-                opt_D.step()
-                opt_D.zero_grad()
-        set_requires_grad(disc_, False)
+            loss_D = 0
 
         with autocast(enabled=ac_enabled):
             scaled_stylized=F.interpolate(rev_stylized,size=256,mode='bicubic')
@@ -530,30 +533,35 @@ elif args.train_model == 'revlap':
                                  patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = loss_small
             loss_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog + l_identity1 *50 + l_identity2 + l_identity3*50 + l_identity4
+            if rev_start:
+                losses_scaled = calc_losses(scaled_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                     calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
+                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
+                                     patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
+                losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
-            losses_scaled = calc_losses(scaled_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
-                                 mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                 patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
-            losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+                cF2 = enc_(ci[-1][:,:,-256:,-256:])
+                sF2 = enc_(si_cropped)
+                ci_patch = ci[-1][:,:,-256:,-256:]
+                patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
 
-            cF2 = enc_(ci[-1][:,:,-256:,-256:])
-            sF2 = enc_(si_cropped)
-            ci_patch = ci[-1][:,:,-256:,-256:]
-            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
-
-            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
-                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
-                                 mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                 patch_loss=True, GANLoss=ganloss, sF=sF2, split_style=args.split_style)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-            loss = loss*.25 + losses_scaled*.5 + loss_small
-
+                losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
+                                     calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
+                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
+                                     patch_loss=True, GANLoss=ganloss, sF=sF2, split_style=args.split_style)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+                loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+                loss = loss*.25 + losses_scaled*.5 + loss_small
+            elif loss_c <= 1.2:
+                rev_start = True
+                optimizer.zero_grad()
+                loss = loss_small
+            else:
+                loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i + 1 % 10 == 0:
+            if i + 1 % 10 == 0 and rev_start:
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
@@ -588,12 +596,14 @@ elif args.train_model == 'revlap':
                 stylized = stylized.float().to('cpu')
                 rev_stylized = rev_stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4)
-                styled_img_grid = make_grid(rev_stylized, nrow=4)
+                if rev_start:
+                    styled_img_grid = make_grid(rev_stylized, nrow=4)
                 si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
                 ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
+                if rev_start:
+                    save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
                 save_image(draft_img_grid.detach(),
                            args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
                 save_image(content_img_grid.detach(),
