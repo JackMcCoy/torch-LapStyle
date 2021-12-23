@@ -66,7 +66,7 @@ class RevisionNet(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(6, 256, kernel_size=3, groups=2),
+                                                    nn.Conv2d(6, 256, kernel_size=3),
                                                     nn.ReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
