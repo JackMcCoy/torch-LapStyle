@@ -326,8 +326,8 @@ elif args.train_model=='revision':
         rev_.to(device)
     wandb.watch((rev_,disc_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
-    scaler = GradScaler()
-    d_scaler = GradScaler()
+    scaler = GradScaler(init_scale=128)
+    d_scaler = GradScaler(init_scale=128)
     optimizers = []
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
@@ -450,39 +450,38 @@ elif args.train_model == 'revlap':
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
-    with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
-        disc_state = None
-        if args.load_rev == 1 or args.load_disc == 1:
-            path = args.load_model.split('/')
-            path_tokens = args.load_model.split('_')
-            new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-            if args.load_disc == 1:
-                disc_state = new_path_func('discriminator_')
-            if args.load_rev == 1:
-                rev_state = new_path_func('revisor_')
-        else:
-            rev_state = None
-        rev_ = build_revlap(args.revision_depth,
-                         rev_state, enc_)
+    enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256)).half()), strict=False)
+    dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
+    disc_state = None
+    if args.load_rev == 1 or args.load_disc == 1:
+        path = args.load_model.split('/')
+        path_tokens = args.load_model.split('_')
+        new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
+        if args.load_disc == 1:
+            disc_state = new_path_func('discriminator_')
+        if args.load_rev == 1:
+            rev_state = new_path_func('revisor_')
+    else:
+        rev_state = None
+    rev_ = build_revlap(args.revision_depth,
+                     rev_state, enc_)
 
-        disc_ = build_disc(disc_state)
-        ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
-        disc_.train()
-        if not disc_state is None:
-            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-        else:
-            init_weights(disc_)
-        init_weights(dec_)
-        init_weights(rev_)
-        dec_.train()
-        enc_.to(device)
-        dec_.to(device)
+    disc_ = build_disc(disc_state)
+    ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
+    disc_.train()
+    if not disc_state is None:
+        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+    else:
+        init_weights(disc_)
+    init_weights(dec_)
+    init_weights(rev_)
+    dec_.train()
+    enc_.to(device)
+    dec_.to(device)
     wandb.watch((rev_, dec_, disc_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss == 1 else False
-    scaler = GradScaler()
-    d_scaler = GradScaler()
+    scaler = GradScaler(init_scale=128)
+    d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     dec_optimizer = torch.optim.SGD(dec_.parameters(), lr=args.lr)
@@ -511,9 +510,10 @@ elif args.train_model == 'revlap':
             set_requires_grad(disc_, True)
             with autocast(enabled=ac_enabled):
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
-                loss_D = torch.clamp(loss_D, 2e-14, 2e15)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
+                d_scaler.unscale_(opt_D)
+                torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_non_finite=True)
                 if i + 1 % 4 == 0:
                     d_scaler.step(opt_D)
                     d_scaler.update()
@@ -555,7 +555,6 @@ elif args.train_model == 'revlap':
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
                 loss = loss*.25 + losses_scaled*.5 + loss_small
-                loss = torch.clamp(loss,1e-13,1e14)
             elif loss_c <= 1.5:
                 rev_start = True
                 print('=========== REV START =============')
@@ -565,6 +564,10 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            scaler.unscale_(dec_optimizer)
+            torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_non_finite=True)
+            torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_non_finite=True)
             for p in dec_.parameters():
                 if p.grad is None:
                     continue

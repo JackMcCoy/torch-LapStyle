@@ -29,11 +29,11 @@ def calc_emd_loss(pred, target):
     """
     b, _, h, w = pred.shape
     pred = pred.reshape([b, -1, w * h])
-    pred_norm = torch.clamp(torch.sqrt((pred**2).sum(1).reshape([b, -1, 1])),1e-13,1e14)
+    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))
     pred = pred.transpose(2, 1)
     target_t = target.reshape([b, -1, w * h])
-    target_norm = torch.clamp(torch.sqrt((target**2).sum(1).reshape([b, 1, -1])),1e-13,1e14)
-    similarity = torch.clamp(torch.bmm(pred, target_t) / pred_norm / target_norm,1e-13,1e14)
+    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))
+    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
     dist = 1. - similarity
     return dist
 
@@ -54,11 +54,11 @@ class CalcContentReltLoss():
         """
         dM = 1.
         Mx = calc_emd_loss(pred, pred)
-        Mx = torch.clamp(Mx / (Mx.sum(1, keepdim=True)+self.eps),1e-13,1e14)
+        Mx = Mx / (Mx.sum(1, keepdim=True)+self.eps)
         My = calc_emd_loss(target, target)
-        My = torch.clamp(My / (My.sum(1, keepdim=True)+self.eps),1e-13,1e14)
-        loss_content = torch.clamp(torch.abs(
-            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3],1e-13,1e14)
+        My = My / (My.sum(1, keepdim=True)+self.eps)
+        loss_content = torch.abs(
+            dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
         return loss_content
 
 
@@ -77,10 +77,10 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return torch.clamp(self.mse_loss(pred, target),1e-13,1e14)
+            return self.mse_loss(pred, target)
         else:
-            return torch.clamp(self.mse_loss(mean_variance_norm(pred),
-                                 mean_variance_norm(target)),1e-13,1e14)
+            return self.mse_loss(mean_variance_norm(pred),
+                                 mean_variance_norm(target))
 
 
 class CalcStyleLoss():
@@ -98,8 +98,8 @@ class CalcStyleLoss():
         """
         pred_mean, pred_std = calc_mean_std(pred)
         target_mean, target_std = calc_mean_std(target)
-        return torch.clamp(self.mse_loss(pred_mean, target_mean) + self.mse_loss(
-            pred_std, target_std),1e-13,1e14)
+        return self.mse_loss(pred_mean, target_mean) + self.mse_loss(
+            pred_std, target_std)
 
 
 class GANLoss(nn.Module):
@@ -164,7 +164,7 @@ class GANLoss(nn.Module):
             target_tensor = self.target_real
         else:
             target_tensor = self.target_fake
-        loss = torch.clamp(self.loss(prediction, target_tensor.detach()),1e-13,1e14)
+        loss = self.loss(prediction, target_tensor.detach())
         return loss
 
 class GramErrors():
@@ -203,7 +203,7 @@ def mean_variance_norm(feat):
     """
     size = feat.shape
     mean, std = calc_mean_std(feat)
-    normalized_feat = torch.clamp((feat - mean.expand(size)) / std.expand(size),1e-13,1e14)
+    normalized_feat = (feat - mean.expand(size)) / std.expand(size)
     return normalized_feat
 
 def calc_mean_std(feat, eps=1e-5):
@@ -221,8 +221,8 @@ def calc_mean_std(feat, eps=1e-5):
     assert (len(size) == 4)
     N, C = size[:2]
     feat_var = feat.reshape([N, C, -1])
-    feat_var = torch.clamp(torch.var(feat_var, dim = 2) + eps,1e-13,1e14)
-    feat_std = torch.clamp(torch.sqrt(feat_var),1e-13,1e14)
+    feat_var = torch.var(feat_var, dim = 2) + eps
+    feat_std = torch.sqrt(feat_var)
     feat_std = feat_std.reshape([N, C, 1, 1])
     feat_mean = feat.reshape([N, C, -1])
     feat_mean = feat_mean.mean(2)
