@@ -30,7 +30,7 @@ def calc_emd_loss(pred, target):
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
 
-    similarity = cosinesimilarity(pred, target_t)
+    similarity = cosinesimilarity(pred, target)
     dist = 1. - similarity
     return dist
 
