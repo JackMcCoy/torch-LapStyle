@@ -65,9 +65,8 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.ReLU(),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3, groups=2),
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(6, 256, kernel_size=3, groups=2),
                                                     nn.ReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -124,10 +123,9 @@ class RevisionNet(nn.Module):
 
 
     def generator(self, x, ci, style, enc_):
-        cF = enc_(ci)
-        sF = enc_(x)
-        ci = cF['r1_1']+self.content_adaconv(style, cF['r1_1'], norm=True)
-        out = torch.cat([sF['r1_1'], ci], dim=1)
+
+        ci =  F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+        out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)
         out = self.resblock(out)
