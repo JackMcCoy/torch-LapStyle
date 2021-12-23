@@ -565,7 +565,7 @@ elif args.train_model == 'revlap':
                 loss = loss_small
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i + 1 % 1 == 0 and rev_start:
+            if i + 1 % 2 == 0 and rev_start:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
                 scaler.step(optimizer)
