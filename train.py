@@ -590,7 +590,7 @@ elif args.train_model == 'revlap':
                 scaler.update()
                 dec_optimizer.zero_grad()
 
-        if (i + 1) % 100 == 0:
+        if (i + 1) % 10 == 0:
             loss_dict = {}
             for l, s in zip(
                     [loss_small, loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
