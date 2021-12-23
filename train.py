@@ -195,7 +195,7 @@ def build_rev(depth, state):
     return rev
 
 def build_revlap(depth, state, encoder):
-    rev = RevisorLap(levels=args.revision_depth).to(device)
+    rev = RevisorLap(args.batch_size, levels=args.revision_depth).to(device)
     if not state is None:
         state = torch.load(state)
         rev.load_state_dict(state, strict=False)
@@ -213,7 +213,7 @@ if args.train_model=='drafting':
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
         enc_.train(False)
-        dec_ = net.DecoderAdaConv()
+        dec_ = net.DecoderAdaConv(args.batch_size)
         if args.load_model == 'none':
             init_weights(dec_)
         else:

@@ -32,7 +32,7 @@ class RevisorLap(nn.Module):
         return x
 
 class RevisionNet(nn.Module):
-    def __init__(self, layer_num):
+    def __init__(self, layer_num, batch_size):
         super(RevisionNet, self).__init__()
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
@@ -41,13 +41,13 @@ class RevisionNet(nn.Module):
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
         s_d = 128
         self.s_d = 128
-        self.content_adaconv = AdaConv(64, 1, s_d=s_d)
+        self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d)])
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d)])
 
         self.relu = nn.ReLU()
         self.layer_num = layer_num
