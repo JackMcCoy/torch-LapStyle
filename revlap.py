@@ -39,8 +39,8 @@ class RevisionNet(nn.Module):
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-        s_d = 128
-        self.s_d = 128
+        s_d = 512
+        self.s_d = 512
         self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
         self.resblock = ResBlock(64)
         self.adaconvs = nn.ModuleList([
