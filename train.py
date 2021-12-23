@@ -567,10 +567,11 @@ elif args.train_model == 'revlap':
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             scaler.unscale_(dec_optimizer)
-            for p in dec_.parameters():
+            for name, p in dec_.named_parameters():
                 if p.grad is None:
                     continue
                 else:
+                    print(name)
                     print(p.grad)
             torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=True)
             torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
