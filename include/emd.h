@@ -24,8 +24,6 @@ std::vector<at::Tensor> emd_forward(
 	at::Tensor xyz1,
 	at::Tensor xyz2)
 {
-	CHECK_INPUT(xyz1);
-	CHECK_INPUT(xyz2);
 
 	return emd_forward_cuda(xyz1, xyz2);
 }
@@ -35,9 +33,6 @@ std::vector<at::Tensor> emd_backward(
 	at::Tensor xyz2,
 	at::Tensor match)
 {
-	CHECK_INPUT(xyz1);
-	CHECK_INPUT(xyz2);
-	CHECK_INPUT(match);
 
 	return emd_backward_cuda(xyz1, xyz2, match);
 }
