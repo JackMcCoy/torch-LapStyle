@@ -514,7 +514,7 @@ elif args.train_model == 'revlap':
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
                 d_scaler.unscale_(opt_D)
-                torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_non_finite=True)
+                torch.nn.utils.clip_grad_norm_(opt_D.parameters(), 1.0, error_if_nonfinite=True)
                 if i + 1 % 4 == 0:
                     d_scaler.step(opt_D)
                     d_scaler.update()
@@ -567,8 +567,8 @@ elif args.train_model == 'revlap':
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             scaler.unscale_(dec_optimizer)
-            torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_non_finite=True)
-            torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_non_finite=True)
+            torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=True)
+            torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=True)
             for p in dec_.parameters():
                 if p.grad is None:
                     continue
