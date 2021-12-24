@@ -73,7 +73,6 @@ class SpectralResBlock(nn.Module):
         self.conv_1 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
-        print('spectral- '+str(in_feat.shape))
         x = self.conv_1(in_feat)
         x = self.relu(x)
         x = self.conv_2(x)

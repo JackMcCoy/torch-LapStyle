@@ -676,7 +676,7 @@ class OptimizedBlock(nn.Module):
         self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
         self.relu = nn.LeakyReLU(0.2)
         self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
-        self.c_sc = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
+        self.c_sc = nn.Conv2d(in_channels, dim, kernel_size=1)
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
     def init_spectral_norm(self):
