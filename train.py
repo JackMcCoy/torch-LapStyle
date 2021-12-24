@@ -212,8 +212,7 @@ def build_disc(disc_state):
     disc.train()
     return disc
 
-if args.train_model=='drafting':
-
+def drafting_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
         enc_.train(False)
@@ -282,8 +281,7 @@ if args.train_model=='drafting':
                 state_dict = dec_.state_dict()
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
-elif args.train_model=='revision':
-
+def revision_train():
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
         random_crop_2 = transforms.RandomCrop(512)
@@ -448,7 +446,7 @@ elif args.train_model=='revision':
                 torch.save(state_dict, save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
 
-elif args.train_model == 'revlap':
+def revlap_train():
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
@@ -496,10 +494,9 @@ elif args.train_model == 'revlap':
 
     with torch.autograd.detect_anomaly():
         for i in tqdm(range(args.max_iter)):
-            warmup_lr_adjust(optimizer, i//args.accumulation_steps, args.lr, warmup_iters=args.warmup_iters)
-            warmup_lr_adjust(dec_optimizer, i // args.accumulation_steps, args.lr,
-                             warmup_iters=args.warmup_iters)
-            warmup_lr_adjust(opt_D, i//args.accumulation_steps, args.disc_lr, warmup_iters=args.warmup_iters)
+            adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
+            adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args.lr)
+            adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
             with autocast(enabled=ac_enabled):
                 ci = next(content_iter).to(device)
                 si = next(style_iter).to(device)
@@ -647,7 +644,7 @@ elif args.train_model == 'revlap':
 
 
 
-elif args.train_model=='vqgan_pretrain':
+def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)
     dec_.train()
@@ -682,3 +679,12 @@ elif args.train_model=='vqgan_pretrain':
             torch.save(state_dict, save_dir /
                        'vqgan{:d}.pth.tar'.format(i + 1))
     writer.close()
+
+if args.train_model == 'drafting':
+    drafting_train()
+elif args.train_model == 'revision':
+    revision_train()
+elif args.train_model == 'revlap':
+    revlap_train()
+elif args.train_model == 'vqvae_pretrain':
+    vq_train()
