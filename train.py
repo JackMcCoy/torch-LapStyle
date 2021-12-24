@@ -196,7 +196,10 @@ def build_rev(depth, state):
 
 def build_revlap(depth, state, encoder):
     rev = RevisorLap(args.batch_size, levels=args.revision_depth).to(device)
-    if not state is None:
+    if state is None:
+        init_weights(dec_)
+        init_weights(rev_)
+    else:
         state = torch.load(state)
         rev.load_state_dict(state, strict=False)
     rev.train()
@@ -279,7 +282,6 @@ if args.train_model=='drafting':
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
 elif args.train_model=='revision':
-
 
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
@@ -474,8 +476,7 @@ elif args.train_model == 'revlap':
         disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
     else:
         init_weights(disc_)
-    init_weights(dec_)
-    init_weights(rev_)
+
 
     dec_.train()
     enc_.to(device)
@@ -491,8 +492,8 @@ elif args.train_model == 'revlap':
     disc_.init_spectral_norm()
 
     for i in tqdm(range(args.max_iter)):
-        warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
-        warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
+        adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(opt_D, i//args.accumulation_steps, args,disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
