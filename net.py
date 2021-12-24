@@ -685,12 +685,13 @@ class OptimizedBlock(nn.Module):
         self.c_sc = spectral_norm(self.c_sc)
 
     def forward(self, in_feat):
-        x = self.conv_1(in_feat)
-        x = self.relu(x)
-        x = self.conv_2(torch.nan_to_num(x))
+
+        x = self.conv_1(torch.nan_to_num(in_feat))
+        x = torch.nan_to_num(self.relu(x))
+        x = torch.nan_to_num(self.conv_2(x))
         x = self.downsample(x)
         shortcut = self.downsample(in_feat)
-        shortcut = self.c_sc(torch.nan_to_num(shortcut))
+        shortcut = torch.nan_to_num(self.c_sc(torch.nan_to_num(shortcut)))
         x = x + shortcut
         return x
 
