@@ -164,7 +164,7 @@ class GANLoss(nn.Module):
         print(prediction)
         print(prediction.shape)
         print(target_tensor.shape)
-        loss = self.loss(prediction, target_tensor.detach())
+        loss = torch.nan_to_num(self.loss(prediction, target_tensor.detach()))
         return loss
 
 class GramErrors():
