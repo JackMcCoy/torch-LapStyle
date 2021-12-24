@@ -30,7 +30,7 @@ def calc_emd_loss(pred, target):
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
 
-    similarity = torch.nan_to_num(cosinesimilarity(torch.nan_to_num(pred), torch.nan_to_num(target)))
+    similarity = cosinesimilarity(pred, target)
     dist = 1. - similarity
     return dist
 
@@ -50,10 +50,10 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         dM = 1.
-        Mx = torch.nan_to_num(1-calc_emd_loss(pred, pred.transpose(3,2)))
-        Mx = torch.nan_to_num(Mx / torch.nan_to_num((Mx.sum(dim=(1,2), keepdim=True)+self.eps)))
-        My = torch.nan_to_num(1-calc_emd_loss(target, target.transpose(3,2)))
-        My = torch.nan_to_num(My / torch.nan_to_num((My.sum(dim=(1,2), keepdim=True)+self.eps)))
+        Mx = 1-calc_emd_loss(pred, pred.transpose(3,2))
+        Mx = Mx / (Mx.sum(dim=(1,2), keepdim=True)+self.eps)
+        My = 1-calc_emd_loss(target, target.transpose(3,2))
+        My = My / (My.sum(dim=(1,2), keepdim=True)+self.eps)
         loss_content = torch.abs(
             (My.mean(dim=1)-Mx.mean(dim=1))).sum() * 1/(pred.shape[2] * pred.shape[3])**2
         return loss_content
@@ -74,7 +74,7 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return self.mse_loss(torch.nan_to_num(pred), torch.nan_to_num(target))
+            return self.mse_loss(pred, target)
         else:
             return self.mse_loss(mean_variance_norm(pred),
                                  mean_variance_norm(target))
