@@ -55,7 +55,7 @@ class CalcContentReltLoss():
         My = calc_emd_loss(target, target.transpose(3,2))
         My = My / (My.sum(dim=(1,2), keepdim=True)+self.eps)
         loss_content = torch.abs(
-            ((My/My.mean()-Mx/Mx.mean()))) * 1/(pred.shape[2] * pred.shape[3])**2
+            (My.mean()-Mx/Mx.mean())) * 1/(pred.shape[2] * pred.shape[3])**2
         return loss_content
 
 
