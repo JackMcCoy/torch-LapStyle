@@ -473,11 +473,10 @@ elif args.train_model == 'revlap':
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
     disc_.train()
     if not disc_state is None:
-        disc_.init_spectral_norm()
         disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
     else:
         init_weights(disc_)
-        disc_.init_spectral_norm()
+    disc_.init_spectral_norm()
 
 
     dec_.train()
