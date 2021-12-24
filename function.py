@@ -7,8 +7,8 @@ def calc_mean_std(feat):
     size = feat.size()
     assert (len(size) == 4)
     N, C, H, W = size
-    feat_mean = feat.view(N, C, -1).mean(dim=2)
-    feat_var = torch.sum(torch.abs(feat-feat_mean.view(N,C,1,1).square()),(2,3))/(H*W)
+    feat_mean = feat.view(N, -1).mean(dim=1)
+    feat_var = torch.sum(torch.abs(feat-feat_mean.view(N,1,1,1).square()),(1,2,3))/(H*W)
     feat_std = torch.nan_to_num(feat_var.sqrt())
 
     return feat_mean, feat_std
