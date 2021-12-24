@@ -161,6 +161,9 @@ class GANLoss(nn.Module):
             target_tensor = self.target_real
         else:
             target_tensor = self.target_fake
+        print(prediction)
+        print(prediction.shape)
+        print(target_tensor.shape)
         loss = self.loss(prediction, target_tensor.detach())
         return loss
 
