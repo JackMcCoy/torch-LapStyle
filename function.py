@@ -2,7 +2,7 @@ import torch
 
 
 @torch.jit.script
-def calc_mean_std(feat, eps=1e-8):
+def calc_mean_std(feat):
     # eps is a small value added to the variance to avoid divide-by-zero.
     size = feat.size()
     assert (len(size) == 4)
@@ -12,7 +12,7 @@ def calc_mean_std(feat, eps=1e-8):
     feat_std = feat_var.sqrt()
     if torch.count_nonzero(feat_std) == 0:
         print('Standard deviation is zero.')
-        feat_std = feat_std + eps
+        feat_std = feat_std + 1e-8
 
     return feat_mean, feat_std
 
