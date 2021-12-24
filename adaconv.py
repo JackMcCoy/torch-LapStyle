@@ -41,15 +41,15 @@ class AdaConv(nn.Module):
             content_mean = content_mean.view(N, 1, 1, 1).expand(N, ch, h, w)
             content_std = content_std.view(N, 1, 1, 1).expand(N, ch, h, w)
             predicted = (predicted - content_mean) / content_std
-        predicted = predicted.view(N, 1, ch, h, w)
+        predicted = predicted.unbind(0)
+        depthwise = depthwise.unbind(0)
+        pointwise_kn = pointwise_kn.unbind(0)
+        pointwise_bias = pointwise_bias.unbind(0)
 
-        for idx in range(N):
-            depth = nn.functional.conv2d(self.pad(predicted[idx]),
-                                         weight=depthwise[idx],
+        depth = nn.functional.conv2d(self.pad(predicted),
+                                         weight=depthwise,
                                          groups=self.n_groups)
-            conv_out.append(nn.functional.conv2d(depth,
-                                                 weight=pointwise_kn[idx],
-                                                 bias=pointwise_bias[idx],
-                                                 groups=self.n_groups))
-        conv_out = torch.cat(conv_out, 0)
+        conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
+                                         bias=pointwise_bias,
+                                         groups=self.n_groups)
         return conv_out
