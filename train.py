@@ -490,7 +490,6 @@ elif args.train_model == 'revlap':
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
-        warmup_lr_adjust(dec_optimizer, i//args.accumulation_steps, max_lr=args.lr)
         warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -560,9 +559,7 @@ elif args.train_model == 'revlap':
             optimizer.step()
             scaler.update()
             optimizer.zero_grad()
-            dec_optimizer.step()
-            scaler.update()
-            dec_optimizer.zero_grad()
+
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
