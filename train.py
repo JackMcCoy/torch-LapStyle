@@ -477,7 +477,7 @@ elif args.train_model == 'revlap':
         init_weights(disc_)
     init_weights(dec_)
     init_weights(rev_)
-    disc_.init_spectral_norm()
+
     dec_.train()
     enc_.to(device)
     dec_.to(device)
@@ -489,11 +489,12 @@ elif args.train_model == 'revlap':
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
-    with torch.autograd.detect_anomaly():
-        for i in tqdm(range(args.max_iter)):
-            warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
-            warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
+    disc_.init_spectral_norm()
 
+    for i in tqdm(range(args.max_iter)):
+        warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
+        warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
+        with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
