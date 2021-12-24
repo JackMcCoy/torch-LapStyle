@@ -563,7 +563,8 @@ elif args.train_model == 'revlap':
 
         if (i + 1) % 10 == 0:
             for name,j in rev_.named_parameters():
-                print(name+' '+str(i.grad))
+                if type(j)==torch.Tensor:
+                    print(name+' '+str(i.grad))
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
