@@ -492,7 +492,7 @@ elif args.train_model == 'revlap':
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
         warmup_lr_adjust(dec_optimizer, i//args.accumulation_steps, max_lr=args.lr)
-        warmup_lr_adjust(opt_D, i//args.accumulation_steps, args, max_lr=args.disc_lr)
+        warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
