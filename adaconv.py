@@ -21,11 +21,11 @@ class AdaConv(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
             m.requires_grad=True
         elif isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1-e9)
 
     def forward(self, style_encoding, predicted, norm):
         N, ch, h, w = predicted.shape
@@ -40,7 +40,7 @@ class AdaConv(nn.Module):
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.view(N, 1, 1, 1).expand(N, ch, h, w)
             content_std = content_std.view(N, 1, 1, 1).expand(N, ch, h, w)
-            predicted = (predicted - content_mean) / (content_std + 1e-8)
+            predicted = (predicted - content_mean) / content_std
         predicted = predicted.view(N, 1, ch, h, w)
 
         for idx in range(N):
