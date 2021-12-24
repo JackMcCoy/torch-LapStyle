@@ -564,57 +564,57 @@ elif args.train_model == 'revlap':
             scaler.update()
             optimizer.zero_grad()
 
-            if (i + 1) % 10 == 0:
+        if (i + 1) % 10 == 0:
 
-                loss_dict = {}
-                for l, s in zip(
-                        [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
-                         mdog],
-                        ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                         'Revision Disc. Loss', 'Discriminator Loss', 'example', 'Patch Loss', 'MXDOG Loss']):
-                    if s == 'example':
-                        loss_dict[s] = wandb.Image(l[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
-                    elif type(l) == torch.Tensor:
-                        loss_dict[s] = l.item()
-                print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+            loss_dict = {}
+            for l, s in zip(
+                    [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
+                     mdog],
+                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                     'Revision Disc. Loss', 'Discriminator Loss', 'example', 'Patch Loss', 'MXDOG Loss']):
+                if s == 'example':
+                    loss_dict[s] = wandb.Image(l[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                elif type(l) == torch.Tensor:
+                    loss_dict[s] = l.item()
+            print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
-                wandb.log(loss_dict, step=i)
-                print(f'{loss.item():.2f}')
+            wandb.log(loss_dict, step=i)
+            print(f'{loss.item():.2f}')
 
-            with torch.no_grad():
-                if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
+        with torch.no_grad():
+            if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
 
-                    stylized = stylized.float().to('cpu')
-                    rev_stylized = rev_stylized.float().to('cpu')
-                    draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                    if rev_start:
-                        styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
-                    si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
-                    ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
-                    style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
-                    content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
-                    if rev_start:
-                        save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
-                    save_image(draft_img_grid.detach(),
-                               args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
-                    save_image(content_img_grid.detach(),
-                               args.save_dir + '/drafting_training_iter_ci' + str(
-                                   i + 1) + '.jpg')
-                    save_image(style_source_grid.detach(),
-                               args.save_dir + '/drafting_training_iter_si' + str(
-                                   i + 1) + '.jpg')
+                stylized = stylized.float().to('cpu')
+                rev_stylized = rev_stylized.float().to('cpu')
+                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                if rev_start:
+                    styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
+                si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
+                ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
+                style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
+                if rev_start:
+                    save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
+                save_image(draft_img_grid.detach(),
+                           args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
+                save_image(content_img_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_ci' + str(
+                               i + 1) + '.jpg')
+                save_image(style_source_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_si' + str(
+                               i + 1) + '.jpg')
 
-                if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-                    print(loss)
-                    state_dict = rev_.state_dict()
-                    torch.save(state_dict, save_dir /
-                               'revisor_iter_{:d}.pth.tar'.format(i + 1))
-                    state_dict = dec_.state_dict()
-                    torch.save(state_dict, save_dir /
-                               'decoder_iter_{:d}.pth.tar'.format(i + 1))
-                    state_dict = disc_.state_dict()
-                    torch.save(state_dict, save_dir /
-                               'discriminator_iter_{:d}.pth.tar'.format(i + 1))
+            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+                print(loss)
+                state_dict = rev_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'revisor_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = dec_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = disc_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'discriminator_iter_{:d}.pth.tar'.format(i + 1))
 
 
 
