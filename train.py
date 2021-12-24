@@ -546,9 +546,10 @@ elif args.train_model == 'revlap':
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
             loss = loss + losses_scaled
-
+        print(ac_enabled)
         if ac_enabled:
             scaler.scale(loss).backward()
+            print('accumulation steps='+str(args.accumulation_steps))
             if i+1 % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
