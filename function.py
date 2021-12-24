@@ -116,5 +116,5 @@ def init_weights(net,
             torch.nn.init.constant_(m.bias, 0.01)
         if 'pectral' in classname:
             print(m)
-            print(m.dir)
+            print(dir(m))
     net.apply(init_func)
