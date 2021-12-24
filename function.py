@@ -114,7 +114,9 @@ def init_weights(net,
         ) != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             torch.nn.init.normal_(m.weight, 1.0, init_gain)
             torch.nn.init.constant_(m.bias, 0.01)
-        if 'pectral' in classname:
-            print(m)
-            print(dir(m))
+        if classname == '_SpectralNorm':
+            for k,v in m._forward_pre_hooks.items():
+                print(k)
+                print(v)
+            print(m.parameters())
     net.apply(init_func)
