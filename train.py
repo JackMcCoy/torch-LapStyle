@@ -486,8 +486,8 @@ elif args.train_model == 'revlap':
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizer = torch.optim.AdamW(list(dec_.parameters())+list(rev_.parameters()), lr=args.lr)
-    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
+    optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
+    opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
         warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
@@ -547,11 +547,11 @@ elif args.train_model == 'revlap':
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            if i % args.accumulation_steps == 0:
+            if (i+1) % args.accumulation_steps == 0:
+                for name, j in rev_.named_parameters():
+                    if type(j)==torch.Tensor:
+                        print(name+' '+str(j))
                 scaler.unscale_(optimizer)
-                for name,j in rev_.named_parameters(recurse=True):
-                    if type(j) == torch.Tensor:
-                        print(name+' '+str(j.grad))
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
                 scaler.update()
