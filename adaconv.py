@@ -28,7 +28,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding, predicted, norm):
-        N = style_encoding.shape[0]
+        N, ch, h, w = style_encoding.shape
         conv_out = []
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N,self.c_out, self.c_in//self.n_groups, 3, 3)
