@@ -771,7 +771,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
         )
     else:
-        loss_D_real = disc.calc_loss(pred_real, True)
+        loss_D_real = disc_.calc_loss(pred_real, True)
         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
