@@ -67,24 +67,13 @@ class SpectralResBlock(nn.Module):
             self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
         else:
             self.c_sc = nn.Identity()
-    def residual(self, x):
-        x = self.conv_block(x)
-        if self.downsample:
-            x = nn.functional.avg_pool2d(x, 2)
-        return x
-
-    def shortcut(self, x):
-        if self.learnable_sc:
-            x = self.c_sc(torch.nan_to_num(x))
-            if self.downsample:
-                x = nn.functional.avg_pool2d(x, 2)
-        return x
 
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
         self.conv_1 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
+        print('spectral- '+str(in_feat.shape))
         x = self.conv_1(in_feat)
         x = self.relu(x)
         x = self.conv_2(x)
