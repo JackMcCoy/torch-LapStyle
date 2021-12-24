@@ -547,6 +547,8 @@ elif args.train_model == 'revlap':
 
         if ac_enabled:
             scaler.scale(loss).backward()
+            print(i)
+            print((i+1) % args.accumulation_steps == 0)
             if (i+1) % args.accumulation_steps == 0:
                 for name, j in rev_.named_parameters():
                     if type(j)==torch.Tensor:
