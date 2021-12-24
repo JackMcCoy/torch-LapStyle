@@ -34,6 +34,7 @@ class RevisorLap(nn.Module):
 class RevisionNet(nn.Module):
     def __init__(self, layer_num, batch_size):
         super(RevisionNet, self).__init__()
+        self.position_encoding = nn.Parameter(torch.rand(4,512,5,5))
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
@@ -105,15 +106,17 @@ class RevisionNet(nn.Module):
 
     def recursive_controller(self, x, ci, enc_, style):
         holder = []
+        idx = 0
         for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
             for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
                 #thumbnail_style = self.thumbnail_style_calc(j, enc_)
                 mini_holder = []
                 for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
                     for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(s2, cs2, style, enc_)))
+                        mini_holder.append((self.generator(s2, cs2, style, idx)))
                 holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
                             torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
+                idx += 1
         if len(holder)==1:
             return holder[0]
         holder = torch.cat((torch.cat([holder[0], holder[2]], dim=2),
@@ -122,13 +125,14 @@ class RevisionNet(nn.Module):
 
 
 
-    def generator(self, x, ci, style, enc_):
+    def generator(self, x, ci, style, idx):
 
         ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
         out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)
         out = self.resblock(out)
+        style = style + self.position_encoding[idx]
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
