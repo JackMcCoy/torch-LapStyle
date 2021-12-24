@@ -70,7 +70,7 @@ class SpectralResBlock(nn.Module):
 
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
-        self.conv_1 = spectral_norm(self.conv_2)
+        self.conv_2 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
