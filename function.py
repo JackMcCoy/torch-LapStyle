@@ -9,7 +9,7 @@ def calc_mean_std(feat):
     N, C, H, W = size
     feat_mean = feat.view(N, C, -1).mean(dim=2)
     feat_var = torch.sum(feat-feat_mean.view(N,C,1,1),(2,3))/square()/(H*W)
-    feat_std = feat_var.sqrt()
+    feat_std = (feat_var+1e-8).sqrt()
 
     return feat_mean, feat_std
 
