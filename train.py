@@ -490,9 +490,9 @@ elif args.train_model == 'revlap':
     optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
-        adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
-        adjust_learning_rate(dec_optimizer, i//args.accumulation_steps, args)
-        adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
+        warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
+        warmup_lr_adjust(dec_optimizer, i//args.accumulation_steps, max_lr=args.lr)
+        warmup_lr_adjust(opt_D, i//args.accumulation_steps, args, max_lr=args.disc_lr)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
