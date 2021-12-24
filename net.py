@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
-from torch.nn.utils.parametrizations import spectral_norm
+from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 import numpy as np
 
@@ -707,7 +707,7 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
-        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels*2, 3, 1, downsample=True),
+        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-1), 3, 3, 1, downsample=False)])
 
