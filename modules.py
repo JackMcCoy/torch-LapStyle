@@ -81,9 +81,14 @@ class SpectralResBlock(nn.Module):
         return x
 
     def forward(self, in_feat):
-        res = self.residual(in_feat)
-        shortcut = self.shortcut(in_feat)
-        out = res + shortcut
+        x = self.conv_block(in_feat)
+        if self.downsample:
+            x = nn.functional.avg_pool2d(x, 2)
+        if self.learnable_sc:
+            x2 = self.c_sc(torch.nan_to_num(in_feat))
+            if self.downsample:
+                x2 = nn.functional.avg_pool2d(x2, 2)
+        out = x+x2
         return out
 
 
