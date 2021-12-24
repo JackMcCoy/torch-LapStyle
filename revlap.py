@@ -132,7 +132,7 @@ class RevisionNet(nn.Module):
 
         out = self.DownBlock(out)
         out = self.resblock(out)
-        style = style + self.position_encoding[idx]
+        style = style * self.position_encoding[idx]
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
