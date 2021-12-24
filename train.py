@@ -477,7 +477,7 @@ elif args.train_model == 'revlap':
         init_weights(disc_)
     init_weights(dec_)
     init_weights(rev_)
-    disc_.init_spectral_norm()
+
     dec_.train()
     enc_.to(device)
     dec_.to(device)
@@ -511,8 +511,7 @@ elif args.train_model == 'revlap':
             if rev_start:
                 set_requires_grad(disc_, True)
                 with autocast(enabled=ac_enabled):
-                    print(si_cropped.shape)
-                    print(stylized_crop.shape)
+
                     loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
                 if ac_enabled:
                     d_scaler.scale(loss_D).backward()
@@ -564,7 +563,8 @@ elif args.train_model == 'revlap':
                 optimizer.step()
                 scaler.update()
                 optimizer.zero_grad()
-
+            if i == 5:
+                disc_.init_spectral_norm()
 
             if (i + 1) % 10 == 0:
 
