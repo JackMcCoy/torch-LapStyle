@@ -732,14 +732,11 @@ content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 def calc_GAN_loss(real, fake, disc_, ganloss):
-    pred_fake = disc_(fake)
+    pred_fake = torch.nan_to_num(disc_(fake))
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
-        if gan_first:
-            loss_D_fake = ganloss(pred_fake, True)
-        else:
-            loss_D_fake = ganloss(pred_fake, False)
+        loss_D_fake = ganloss(pred_fake, False)
     pred_real = disc_(real)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
@@ -748,8 +745,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
         )
     else:
-
-        loss_D_real = ganloss(pred_real, True)
+        loss_D_real = torch.nan_to_num(ganloss(pred_real, True))
         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
