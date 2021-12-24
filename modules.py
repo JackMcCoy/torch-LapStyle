@@ -58,9 +58,9 @@ class RiemannNoise(nn.Module):
 class SpectralResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()
-        self.conv_1 = spectral_norm(nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect'),eps=1e-10)
+        self.conv_1 = =nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
         self.relu = nn.LeakyReLU(0.2)
-        self.conv_2 = spectral_norm(nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect'),eps=1e-10)
+        self.conv_2 = =nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
         self.downsample = downsample
         self.learnable_sc = (in_ch != out_ch) or downsample
         if self.learnable_sc:
@@ -79,6 +79,10 @@ class SpectralResBlock(nn.Module):
             if self.downsample:
                 x = nn.functional.avg_pool2d(x, 2)
         return x
+
+    def init_spectral_norm(self):
+        self.conv_1 = spectral_norm(self.conv_1)
+        self.conv_1 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)

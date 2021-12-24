@@ -673,15 +673,21 @@ class SNLinear(nn.Linear):
 class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
-        self.conv_block = Sequential(spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')),
-                                        nn.LeakyReLU(0.2),
-                                        spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')))
+        self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
+        self.relu = nn.LeakyReLU(0.2)
+        self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
         self.c_sc = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=1))
-        self.c_sc.requires_grad = True
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
+    def init_spectral_norm(self):
+        self.conv_1 = spectral_norm(self.conv_1)
+        self.conv_2 = spectral_norm(self.conv_2)
+        self.c_sc = speectral_norm(self.c_sc)
+
     def forward(self, in_feat):
-        x = self.conv_block(in_feat)
+        x = self.conv_1(in_feat)
+        x = self.relu(x)
+        x = self.conv_2(x)
         x = self.downsample(x)
         shortcut = self.downsample(in_feat)
         shortcut = self.c_sc(shortcut)
@@ -701,15 +707,19 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
-        self.spectral_gan = Sequential(OptimizedBlock(3, num_channels, 3, 1, downsample=True),
+        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 5, 2, downsample=True) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False))
+                                          SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
         self.relgan = relgan
 
+    def init_spectral_norm(self):
+        for layer in self.spectral_gan:
+            layer.init_spectral_norm()
+
     def forward(self, x):
-        b = x.shape[0]
-        x = self.spectral_gan(x)
+        for layer in self.spectral_gan(x):
+            x = layer(x)
         return x
 
 mse_loss = GramErrors()

@@ -477,6 +477,7 @@ elif args.train_model == 'revlap':
         init_weights(disc_)
     init_weights(dec_)
     init_weights(rev_)
+    disc_.init_spectral_norm()
     dec_.train()
     enc_.to(device)
     dec_.to(device)
