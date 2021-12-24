@@ -544,7 +544,7 @@ elif args.train_model == 'revlap':
 
 
             losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
+                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=ganloss, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
