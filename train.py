@@ -486,8 +486,7 @@ elif args.train_model == 'revlap':
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(), lr=args.lr)
-    optimizer = torch.optim.AdamW(rev_.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(list(dec_.parameters())+list(rev_.parameters()), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr)
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
@@ -514,7 +513,7 @@ elif args.train_model == 'revlap':
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-                if i + 1 % args.accumulation_steps == 0:
+                if i % args.accumulation_steps == 0:
                     d_scaler.step(opt_D)
                     d_scaler.update()
             else:
@@ -546,30 +545,16 @@ elif args.train_model == 'revlap':
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
             loss = loss + losses_scaled
-        print(ac_enabled)
+
         if ac_enabled:
             scaler.scale(loss).backward()
-            print('accumulation steps='+str(args.accumulation_steps))
-            print((i+1) % args.accumulation_steps == 0)
-            print(i+1 % args.accumulation_steps == 0)
-            if (i+1) % args.accumulation_steps == 0:
+            if i % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
-                print('hello')
-                for i in rev_.parameters():
-                    print(i.grad)
-                print('OPTIMIZER')
-                for i in optimizer.parameters():
-                    print(i.grad)
-
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-                scaler.unscale_(dec_optimizer)
-                torch.nn.utils.clip_grad_norm_(dec_.parameters(), 1.0, error_if_nonfinite=False)
-                scaler.step(dec_optimizer)
-                scaler.update()
-                dec_optimizer.zero_grad()
+
         else:
             loss.backward()
             optimizer.step()
