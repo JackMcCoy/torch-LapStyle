@@ -718,7 +718,7 @@ class SpectralDiscriminator(nn.Module):
             layer.init_spectral_norm()
 
     def forward(self, x):
-        for layer in self.spectral_gan(x):
+        for layer in self.spectral_gan:
             x = layer(x)
         return x
 
