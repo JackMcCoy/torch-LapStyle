@@ -687,7 +687,7 @@ class OptimizedBlock(nn.Module):
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
         x = self.relu(x)
-        x = torch.nan_to_num(self.conv_2(x))
+        x = self.conv_2(torch.nan_to_num(x))
         x = self.downsample(x)
         shortcut = self.downsample(in_feat)
         shortcut = self.c_sc(torch.nan_to_num(shortcut))
