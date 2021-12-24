@@ -477,7 +477,7 @@ elif args.train_model == 'revlap':
         init_weights(disc_)
     init_weights(dec_)
     init_weights(rev_)
-
+    disc_.init_spectral_norm()
     dec_.train()
     enc_.to(device)
     dec_.to(device)
@@ -493,78 +493,76 @@ elif args.train_model == 'revlap':
         for i in tqdm(range(args.max_iter)):
             warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
             warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
-            with autocast(enabled=ac_enabled):
-                ci = next(content_iter).to(device)
-                si = next(style_iter).to(device)
-                ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
-                si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-                cF = enc_(ci[0])
-                sF = enc_(si[0])
 
-                stylized, style = dec_(sF, cF)
-                if rev_start:
-                    rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
-                    si_cropped = random_crop(si[-1])
-                    stylized_crop = rev_stylized[:,:,-256:,-256:]
-                else:
-                    rev_stylized = stylized
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+
+            stylized, style = dec_(sF, cF)
             if rev_start:
-                set_requires_grad(disc_, True)
-                with autocast(enabled=ac_enabled):
-
-                    loss_D = calc_GAN_loss(si_cropped, stylized_crop.clone().detach(), disc_, ganloss)
-                if ac_enabled:
-                    d_scaler.scale(loss_D).backward()
-                    if i % args.accumulation_steps == 0:
-                        d_scaler.step(opt_D)
-                        d_scaler.update()
-                else:
-                    loss_D.backward()
-                    opt_D.step()
-                    opt_D.zero_grad()
-                set_requires_grad(disc_, False)
+                rev_stylized = rev_(stylized, enc_, ci[-1].detach(), style)
+                si_cropped = random_crop(si[-1])
+                stylized_crop = rev_stylized[:,:,-256:,-256:]
             else:
-                loss_D = 0
-
+                rev_stylized = stylized
+        if rev_start:
+            set_requires_grad(disc_, True)
             with autocast(enabled=ac_enabled):
-                scale_stylized=F.interpolate(rev_stylized,size=256,mode='bicubic')
-                losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                     calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
-                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                     patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
-                losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
-                cF2 = enc_(ci[-1][:,:,-256:,-256:])
-                sF2 = enc_(si_cropped)
-                ci_patch = ci[-1][:,:,-256:,-256:]
-                patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
-
-                losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
-                                     calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
-                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                     patch_loss=True, GANLoss=ganloss, sF=sF2, split_style=args.split_style)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-                loss = loss + losses_scaled
-
+                loss_D = calc_GAN_loss(si_cropped, stylized_crop.clone().detach(), disc_, ganloss)
             if ac_enabled:
-                scaler.scale(loss).backward()
-
-                if (i+1) % args.accumulation_steps == 0:
-                    scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
-                    scaler.step(optimizer)
-                    scaler.update()
-                    optimizer.zero_grad()
-
+                d_scaler.scale(loss_D).backward()
+                if i % args.accumulation_steps == 0:
+                    d_scaler.step(opt_D)
+                    d_scaler.update()
             else:
-                loss.backward()
-                optimizer.step()
+                loss_D.backward()
+                opt_D.step()
+                opt_D.zero_grad()
+            set_requires_grad(disc_, False)
+        else:
+            loss_D = 0
+
+        with autocast(enabled=ac_enabled):
+            scale_stylized=F.interpolate(rev_stylized,size=256,mode='bicubic')
+            losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
+                                 mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
+                                 patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
+            losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+
+            cF2 = enc_(ci[-1][:,:,-256:,-256:])
+            sF2 = enc_(si_cropped)
+            ci_patch = ci[-1][:,:,-256:,-256:]
+            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
+
+            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
+                                 calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=True,
+                                 mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
+                                 patch_loss=True, GANLoss=ganloss, sF=sF2, split_style=args.split_style)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+            loss = loss + losses_scaled
+
+        if ac_enabled:
+            scaler.scale(loss).backward()
+
+            if (i+1) % args.accumulation_steps == 0:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
+                scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-            if i == 5:
-                disc_.init_spectral_norm()
+
+        else:
+            loss.backward()
+            optimizer.step()
+            scaler.update()
+            optimizer.zero_grad()
 
             if (i + 1) % 10 == 0:
 
