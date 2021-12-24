@@ -639,6 +639,9 @@ elif args.train_model == 'revlap':
                 state_dict = optimizer.state_dict()
                 torch.save(state_dict, save_dir /
                            'optimizer.pth.tar')
+                state_dict = dec_optimizer.state_dict()
+                torch.save(state_dict, save_dir /
+                           'dec_optimizer.pth.tar')
                 state_dict = opt_D.state_dict()
                 torch.save(state_dict, save_dir /
                            'disc_optimizer.pth.tar')
