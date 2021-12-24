@@ -44,10 +44,10 @@ class AdaConv(nn.Module):
 
         depth = nn.functional.conv2d(self.pad(predicted),
                                          weight=depthwise,
-                                         stride = torch.ones(N,1),
+                                         stride = (1,1,1),
                                          groups=self.n_groups)
         conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
                                          bias=pointwise_bias,
-                                         stride = torch.ones(N,1),
+                                         stride = (1,1,1),
                                          groups=self.n_groups)
         return conv_out
