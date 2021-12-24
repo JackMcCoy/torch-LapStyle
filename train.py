@@ -104,6 +104,7 @@ parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--disc_lr', type=float, default=1e-3)
 parser.add_argument('--lr_decay', type=float, default=5e-5)
 parser.add_argument('--max_iter', type=int, default=160000)
+parser.add_argument('--warmup_iters', type=int, default=1000)
 parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--style_weight', type=float, default=10.0)
 parser.add_argument('--content_weight', type=float, default=1.0)
@@ -492,8 +493,8 @@ elif args.train_model == 'revlap':
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
 
     for i in tqdm(range(args.max_iter)):
-        warmup_lr_adjust(optimizer, i//args.accumulation_steps, args.lr, warmup_iters=500)
-        warmup_lr_adjust(opt_D, i//args.accumulation_steps, args.disc_lr, warmup_iters=500)
+        warmup_lr_adjust(optimizer, i//args.accumulation_steps, args.lr, warmup_iters=args.warmup_iters)
+        warmup_lr_adjust(opt_D, i//args.accumulation_steps, args.disc_lr, warmup_iters=args.warmup_iters)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
