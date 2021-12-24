@@ -691,7 +691,7 @@ class OptimizedBlock(nn.Module):
         x = self.conv_2(x)
         x = self.downsample(x)
         shortcut = self.downsample(in_feat)
-        shortcut = self.c_sc(torch.nan_to_num(shortcut))
+        shortcut = self.c_sc(shortcut)
         x = x + shortcut
         return x
 

@@ -9,7 +9,7 @@ class ResBlock(nn.Module):
         super(ResBlock, self).__init__()
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim, dim, kernel_size=3),
-                                        nn.ReLU(),
+                                        nn.LeakyReLU(),
                                         nn.Conv2d(dim, dim, kernel_size=1))
         self.apply(self._init_weights)
 
@@ -17,11 +17,11 @@ class ResBlock(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
 
     def forward(self, x):
         out = x + self.conv_block(x)
@@ -99,11 +99,11 @@ class ConvBlock(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
 
     def forward(self, x):
         out = self.conv_block(x)
