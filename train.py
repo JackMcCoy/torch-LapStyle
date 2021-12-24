@@ -526,9 +526,8 @@ elif args.train_model == 'revlap':
             loss_D = 0
 
         with autocast(enabled=ac_enabled):
-            cF = enc_(ci[-1])
-            sF = enc_(si[-1])
-            losses_scaled = calc_losses(rev_stylized, ci[-1], si[-1], cF, enc_, dec_, None, disc_,
+            scale_stylized=F.interpolate(rev_stylized,size=256,mode='bicubic')
+            losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                  calc_content_style=args.content_style_loss, calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, GANLoss=False, sF=sF, split_style=args.split_style)
