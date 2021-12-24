@@ -518,7 +518,7 @@ def revlap_train():
                 for cs in (stylized, scale_stylized):
                     with autocast(enabled=ac_enabled):
 
-                        loss_D = calc_GAN_loss(si[0], cs.clone().detach(), disc_, ganloss)
+                        loss_D = calc_GAN_loss(si[0].detach(), cs.clone().detach(), disc_, ganloss)
                     if ac_enabled:
                         d_scaler.scale(loss_D).backward()
                         if i % args.accumulation_steps == 0:

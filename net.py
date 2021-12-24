@@ -713,10 +713,25 @@ class SpectralDiscriminator(nn.Module):
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
         self.relgan = relgan
+        c = 3
+        h = 32
+        self.target_real = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
+        self.target_fake = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
+        self.loss_weight = 1
+        self.loss = nn.MSELoss()
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
+
+    def calc_loss(self,prediction,
+                 target_is_real: bool):
+        if target_is_real:
+            target_tensor = self.target_real
+        else:
+            target_tensor = self.target_fake
+        loss = self.loss(prediction, target_tensor.detach())
+        return loss
 
     def forward(self, x):
         for layer in self.spectral_gan:
@@ -747,7 +762,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
-        loss_D_fake = ganloss(pred_fake, False)
+        loss_D_fake = disc_.calc_loss(pred_fake, False)
     pred_real = disc_(real)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
@@ -756,7 +771,7 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
         )
     else:
-        loss_D_real = ganloss(pred_real, True)
+        loss_D_real = disc.calc_loss(pred_real, True)
         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
@@ -836,7 +851,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = GANLoss(fake_loss, True)
+        loss_Gp_GAN = disc_.calc_loss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
