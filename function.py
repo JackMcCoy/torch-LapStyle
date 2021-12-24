@@ -118,5 +118,4 @@ def init_weights(net,
             for k,v in m._forward_pre_hooks.items():
                 print(k)
                 print(v)
-            print(m.parameters())
     net.apply(init_func)
