@@ -552,7 +552,7 @@ elif args.train_model == 'revlap':
             if i+1 % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
-                for name, i in optimizer.named_parameters():
+                for name, i in rev_.named_parameters():
                     print(f'{name} {str(i.grad)}')
 
                 scaler.step(optimizer)
