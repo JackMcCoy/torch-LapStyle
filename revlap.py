@@ -24,8 +24,6 @@ class RevisorLap(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic', align_corners='True')
         for i in range(levels):
             self.layers.append(RevisionNet(batch_size,  i))
-        self.register_full_backward_hook(lambda x: print(x[1]))
-
     def forward(self, x, enc_, ci, style):
         for layer in self.layers:
             x = layer(x, enc_, ci, style)
