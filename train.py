@@ -488,8 +488,7 @@ elif args.train_model == 'revlap':
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
-    dec_.register_full_backward_hook(lambda x,y,z: print(z))
-    rev_.register_full_backward_hook(lambda x,y,z: print(z[0].name))
+    dec_.kernel_4.register_backward_hook(lambda x,y,z: print(z))
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, max_lr=args.lr)
         warmup_lr_adjust(opt_D, i//args.accumulation_steps, max_lr=args.disc_lr)
