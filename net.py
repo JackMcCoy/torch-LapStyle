@@ -841,7 +841,7 @@ def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_=
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'].detach())
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     else:
         patch_loss = 0
 

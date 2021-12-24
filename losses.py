@@ -74,7 +74,7 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return torch.nan_to_num(self.mse_loss(pred, target))
+            return self.mse_loss(torch.nan_to_num(pred), torch.nan_to_num(target))
         else:
             return self.mse_loss(mean_variance_norm(pred),
                                  mean_variance_norm(target))
