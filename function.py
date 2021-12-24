@@ -6,13 +6,11 @@ def calc_mean_std(feat):
     # eps is a small value added to the variance to avoid divide-by-zero.
     size = feat.size()
     assert (len(size) == 4)
-    N, C = size[:2]
-    feat_var = feat.view(N, C, -1).var(dim=2) + 1e-5
+    N, C, H, W = size
+    feat_mean = feat.view(N, C, -1).mean(dim=2)
+    feat_var = torch.sum(feat-feat_mean.view(N,C,1,1),(2,3))/square()/(H*W)
     feat_std = feat_var.sqrt()
-    feat_std = feat_std.view(N, C, 1, 1)
-    feat_mean = feat.view(N, C, -1)
-    feat_mean = feat_mean.mean(dim=2)
-    feat_mean = feat_mean.view(N, C, 1, 1)
+
     return feat_mean, feat_std
 
 
