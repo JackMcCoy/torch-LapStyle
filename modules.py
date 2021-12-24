@@ -65,6 +65,8 @@ class SpectralResBlock(nn.Module):
         self.learnable_sc = (in_ch != out_ch) or downsample
         if self.learnable_sc:
             self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
+        else:
+            self.c_sc = nn.Identity()
     def residual(self, in_feat):
         x = in_feat
         x = self.conv_block(x)
