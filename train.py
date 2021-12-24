@@ -495,7 +495,7 @@ def revlap_train():
     with torch.autograd.detect_anomaly():
         for i in tqdm(range(args.max_iter)):
             adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
-            adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args.lr)
+            adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
             adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
             with autocast(enabled=ac_enabled):
                 ci = next(content_iter).to(device)
