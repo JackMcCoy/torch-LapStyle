@@ -736,7 +736,10 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
-        loss_D_fake = ganloss(pred_fake, False)
+        if gan_first:
+            loss_D_fake = ganloss(pred_fake, True)
+        else:
+            loss_D_fake = ganloss(pred_fake, False)
     pred_real = disc_(real)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
@@ -745,10 +748,8 @@ def calc_GAN_loss(real, fake, disc_, ganloss):
                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
         )
     else:
-        if gan_first:
-            loss_D_real = ganloss(pred_real, False)
-        else:
-            loss_D_real = ganloss(pred_real, True)
+
+        loss_D_real = ganloss(pred_real, True)
         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
