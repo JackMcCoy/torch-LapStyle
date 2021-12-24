@@ -73,14 +73,13 @@ class SpectralResBlock(nn.Module):
         self.conv_2 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
-        skip = in_feat.clone()
         x = self.conv_1(in_feat)
-        x = self.relu(x)
+        x = torch.nan_to_num(self.relu(x))
         x = self.conv_2(x)
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
         if self.learnable_sc:
-            x2 = self.c_sc(torch.nan_to_num(skip))
+            x2 = self.c_sc(torch.nan_to_num(in_feat))
             if self.downsample:
                 x2 = nn.functional.avg_pool2d(x2, 2)
         out = x+x2
