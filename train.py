@@ -572,8 +572,6 @@ elif args.train_model == 'revlap':
                 scaler.scale(loss).backward()
 
                 if (i+1) % args.accumulation_steps == 0:
-                    scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                     scaler.step(optimizer)
                     scaler.step(dec_optimizer)
                     scaler.update()
