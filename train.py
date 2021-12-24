@@ -579,6 +579,8 @@ elif args.train_model == 'revlap':
 
         with torch.no_grad():
             if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
+                for name, i in optimizer.named_parameters():
+                    print(name+' '+str(i.grad))
                 stylized = stylized.float().to('cpu')
                 rev_stylized = rev_stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
