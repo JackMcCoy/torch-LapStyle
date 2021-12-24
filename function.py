@@ -9,10 +9,7 @@ def calc_mean_std(feat):
     N, C, H, W = size
     feat_mean = feat.view(N, -1).mean(dim=1)
     feat_var = torch.sum(torch.abs(feat-feat_mean.view(N,1,1,1).square()),(1,2,3))/(H*W)
-    feat_std = feat_var.sqrt()
-    if torch.count_nonzero(feat_std) == 0:
-        print('Standard deviation is zero.')
-        feat_std = feat_std + 1e-8
+    feat_std = feat_var.sqrt() + 1e-8
 
     return feat_mean, feat_std
 
