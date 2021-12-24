@@ -28,7 +28,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.0)
 
     def forward(self, style_encoding, predicted, norm):
-        N, ch, h, w = style_encoding.shape
+        N, ch, h, w = predicted.shape
         conv_out = []
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N,self.c_out, self.c_in//self.n_groups, 3, 3)
@@ -38,14 +38,8 @@ class AdaConv(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d).view(N,self.c_out)
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
-            print(predicted.shape)
-            print(content_mean.shape)
-            print(content_std.shape)
             content_mean = content_mean.view(N, 1, 1, 1).expand(N, ch, h, w)
             content_std = content_std.view(N, 1, 1, 1).expand(N, ch, h, w)
-            print(predicted.shape)
-            print(content_mean.shape)
-            print(content_std.shape)
             predicted = (predicted - content_mean) / content_std
         predicted = predicted.view(N, 1, ch, h, w)
 
