@@ -82,7 +82,7 @@ class SpectralResBlock(nn.Module):
         return x
 
     def forward(self, in_feat):
-        res = self.residual(in_feat)
+        res = self.residual(in_feat.clone())
         shortcut = self.shortcut(in_feat)
         out = res + shortcut
         return out
