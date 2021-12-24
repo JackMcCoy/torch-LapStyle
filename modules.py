@@ -79,7 +79,7 @@ class SpectralResBlock(nn.Module):
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
         if self.learnable_sc:
-            x2 = torch.nan_to_num(self.c_sc(in_feat))
+            x2 = torch.nan_to_num(self.c_sc(torch.nan_to_num(in_feat)))
             if self.downsample:
                 x2 = nn.functional.avg_pool2d(x2, 2)
         out = x+x2
