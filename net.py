@@ -392,6 +392,7 @@ class DecoderAdaConv(nn.Module):
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
+        self.register_full_backward_hook(lambda x, y: print(y))
 
     @staticmethod
     def _init_weights(m):

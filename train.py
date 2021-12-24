@@ -549,11 +549,6 @@ elif args.train_model == 'revlap':
             scaler.scale(loss).backward()
 
             if (i+1) % args.accumulation_steps == 0:
-                print(list(rev_.named_parameters(recurse=True)))
-                print('hello')
-                for name, j in rev_.named_parameters():
-                    if type(j)==torch.Tensor:
-                        print(name+' '+str(j))
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
