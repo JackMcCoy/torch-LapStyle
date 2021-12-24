@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torch.nn.functional as F
-from adaconv import KernelPredictor
 import numpy as np
 from PIL import Image, ImageFile
 import wandb
