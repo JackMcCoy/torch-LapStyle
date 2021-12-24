@@ -549,6 +549,9 @@ elif args.train_model == 'revlap':
             scaler.scale(loss).backward()
             if i % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
+                for j in rev_.parameters():
+                    if type(j) == torch.Tensor:
+                        print(str(j.grad))
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
                 scaler.update()
@@ -562,9 +565,7 @@ elif args.train_model == 'revlap':
 
 
         if (i + 1) % 10 == 0:
-            for name,j in rev_.named_parameters():
-                if type(j)==torch.Tensor:
-                    print(name+' '+str(i.grad))
+
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, rev_stylized, patch_loss,
