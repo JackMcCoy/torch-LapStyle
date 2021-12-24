@@ -7,7 +7,7 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.n_groups = c_in//p
         self.pointwise_groups = s_d//p
-        self.c_out = c_out
+        self.c_out = c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
