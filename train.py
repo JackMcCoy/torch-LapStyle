@@ -490,10 +490,14 @@ elif args.train_model == 'revlap':
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(
+        list(rev_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
 
     for i in tqdm(range(args.max_iter)):
         warmup_lr_adjust(optimizer, i//args.accumulation_steps, args.lr, warmup_iters=args.warmup_iters)
+        warmup_lr_adjust(dec_optimizer, i // args.accumulation_steps, args.lr,
+                         warmup_iters=args.warmup_iters)
         warmup_lr_adjust(opt_D, i//args.accumulation_steps, args.disc_lr, warmup_iters=args.warmup_iters)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -570,8 +574,10 @@ elif args.train_model == 'revlap':
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 scaler.step(optimizer)
+                scaler.step(dec_optimizer)
                 scaler.update()
                 optimizer.zero_grad()
+                dec_optimizer.zero_grad()
 
         else:
             loss.backward()
