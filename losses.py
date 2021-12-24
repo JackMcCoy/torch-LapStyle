@@ -30,7 +30,7 @@ def calc_emd_loss(pred, target):
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
 
-    similarity = cosinesimilarity(pred, target)
+    similarity = torch.nan_to_num(cosinesimilarity(torch.nan_to_num(pred), torch.nan_to_num(target)))
     dist = 1. - similarity
     return dist
 
