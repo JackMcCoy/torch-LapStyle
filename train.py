@@ -550,7 +550,9 @@ elif args.train_model == 'revlap':
         if ac_enabled:
             scaler.scale(loss).backward()
             print('accumulation steps='+str(args.accumulation_steps))
-            if i+1 % args.accumulation_steps == 0:
+            print((i+1) % args.accumulation_steps == 0)
+            print(i+1 % args.accumulation_steps == 0)
+            if (i+1) % args.accumulation_steps == 0:
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(rev_.parameters(), 1.0, error_if_nonfinite=False)
                 print('hello')
