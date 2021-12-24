@@ -32,9 +32,13 @@ class RiemannNoise(nn.Module):
     def __init__(self, size):
         super(RiemannNoise, self).__init__()
         self.A = nn.Parameter(torch.rand(1,size,size))
+        self.A.requires_grad = True
         self.b = nn.Parameter(torch.rand(1,))
+        self.b.requires_grad = True
         self.alpha = nn.Parameter(torch.rand(1,))
+        self.alpha.requires_grad = True
         self.r = nn.Parameter(torch.rand(1,))
+        self.r.requires_grad = True
         self.noise = torch.Tensor([0]).to(torch.device('cuda'))
 
     def forward(self, x):

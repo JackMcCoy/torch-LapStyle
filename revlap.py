@@ -34,7 +34,8 @@ class RevisorLap(nn.Module):
 class RevisionNet(nn.Module):
     def __init__(self, layer_num, batch_size):
         super(RevisionNet, self).__init__()
-        self.position_encoding = nn.Parameter(torch.rand(4,512,5,5))
+        self.position_encoding = nn.Parameter(torch.randn(4,512,5,5))
+        self.position_encoding.requires_grad = True
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False

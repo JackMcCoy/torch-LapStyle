@@ -7,6 +7,7 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.s_d = s_d
         self.kernel_predictor = KernelPredictor(ch_in, ch_in, p, s_d, batch_size)
+        self.kernel_predictor.requires_grad = True
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.n_groups = ch_in//p
         self.apply(self._init_weights)
