@@ -73,7 +73,7 @@ class SpectralResBlock(nn.Module):
         self.conv_2 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
-        x = torch.nan_to_num(self.conv_1(in_feat))
+        x = self.conv_1(torch.nan_to_num(in_feat))
         x = torch.nan_to_num(self.relu(x))
         x = torch.nan_to_num(self.conv_2(x))
         if self.downsample:
