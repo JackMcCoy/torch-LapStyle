@@ -198,7 +198,6 @@ def build_rev(depth, state):
 def build_revlap(depth, state, encoder):
     rev = RevisorLap(args.batch_size, levels=args.revision_depth).to(device)
     if state is None:
-        init_weights(dec_)
         init_weights(rev)
     else:
         state = torch.load(state)
@@ -465,6 +464,7 @@ def revlap_train():
             rev_state = new_path_func('revisor_')
     else:
         rev_state = None
+        init_weights(dec_)
     rev_ = build_revlap(args.revision_depth,
                      rev_state, enc_)
 
