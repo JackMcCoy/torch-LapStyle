@@ -4,7 +4,7 @@ from function import calc_mean_std
 
 class AdaConv(nn.Module):
     def __init__(self, c_in, p, batch_size, s_d = 512):
-        super(KernelPredictor, self).__init__()
+        super(AdaConv, self).__init__()
         self.n_groups = c_in//p
         self.pointwise_groups = s_d//p
         self.c_out = c_out
