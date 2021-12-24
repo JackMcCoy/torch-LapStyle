@@ -473,9 +473,11 @@ elif args.train_model == 'revlap':
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
     disc_.train()
     if not disc_state is None:
+        disc_.init_spectral_norm()
         disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
     else:
         init_weights(disc_)
+        disc_.init_spectral_norm()
 
 
     dec_.train()
@@ -489,7 +491,6 @@ elif args.train_model == 'revlap':
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
-    disc_.init_spectral_norm()
 
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
