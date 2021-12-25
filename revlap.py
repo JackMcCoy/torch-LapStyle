@@ -108,7 +108,10 @@ class RevisionNet(nn.Module):
 
     def recursive_controller(self, x, ci, enc_, style):
         N,C,h,w = style.shape
-
+        print(x.shape)
+        print(ci.shape)
+        print(x.shape)
+        print(ci.shape)
         x = self.rearrange(x)
         ci = self.rearrange(ci)
         style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
@@ -144,7 +147,9 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        print(ci.shape)
         input = self.upsample(input)
         scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
+        print(ci.shape)
         out = self.recursive_controller(input, scaled_ci, enc_, style)
         return out
