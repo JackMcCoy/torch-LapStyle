@@ -168,7 +168,7 @@ with autocast(enabled=ac_enabled):
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(content_dataset),
-    num_workers=args.n_threads))
+    num_workers=args.n_threads,pin_memory=True))
 '''
 tmp_dataset_2 = iter(data.DataLoader(
     content_dataset, batch_size=args.batch_size,
@@ -178,7 +178,7 @@ tmp_dataset_2 = iter(data.DataLoader(
 style_iter = iter(data.DataLoader(
     style_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(style_dataset),
-    num_workers=args.n_threads))
+    num_workers=args.n_threads,pin_memory=True))
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
@@ -646,7 +646,7 @@ def revlap_train():
                 torch.save(state_dict, save_dir /
                            'disc_optimizer.pth.tar')
 
-        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
+        #del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
 
 
 def vq_train():
