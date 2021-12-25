@@ -30,7 +30,6 @@ class ResBlock(nn.Module):
 
 @torch.jit.ignore
 class RiemannNoise(nn.Module):
-    cuda_states: typing.List[torch.Tensor]
 
     def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
