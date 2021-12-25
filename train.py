@@ -457,7 +457,19 @@ def revlap_train():
         random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
+    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size), (
+        {k:v for k,v in zip(['r1_1','r2_1','r3_1',r4_1],
+                            [torch.rand(args.batch_size, 64, 256, 256),
+                             torch.rand(args.batch_size, 128, 128, 128),
+                             torch.rand(args.batch_size, 256, 64, 64),
+                             torch.rand(args.batch_size, 512, 32, 32)])},
+        {k: v for k, v in zip(['r1_1', 'r2_1', 'r3_1', r4_1],
+                              [torch.rand(args.batch_size, 64, 256, 256),
+                               torch.rand(args.batch_size, 128, 128, 128),
+                               torch.rand(args.batch_size, 256, 64, 64),
+                               torch.rand(args.batch_size, 512, 32, 32)])}
+    ),
+                           strict=False,check_trace=False)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -470,10 +482,12 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = torch.jit.script(build_revlap(args.revision_depth,
-                     rev_state))
+    rev_ = torch.jit.trace(build_revlap(args.revision_depth,
+                     rev_state),(torch.rand(args.batch_size, 3, 512, 512),
+                                 torch.rand(args.batch_size, 3, 512, 512),
+                                 torch.rand(args.batch_size, 512, 16)),check_trace=False)
 
-    disc_ = torch.jit.script(build_disc(disc_state))
+    disc_ = torch.jit.trace(build_disc(disc_state),torch.rand(args.batch_size, 3, 256, 256))
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
 
 

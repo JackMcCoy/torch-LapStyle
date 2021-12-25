@@ -672,7 +672,6 @@ class SNLinear(nn.Linear):
 
 
 class OptimizedBlock(nn.Module):
-    @torch.jit.script
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
         self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
@@ -681,13 +680,11 @@ class OptimizedBlock(nn.Module):
         self.c_sc = nn.Conv2d(in_channels, dim, kernel_size=1)
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
-    @torch.jit.script
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
         self.conv_2 = spectral_norm(self.conv_2)
         self.c_sc = spectral_norm(self.c_sc)
 
-    @torch.jit.script
     def forward(self, in_feat):
 
         x = self.conv_1(in_feat)
@@ -722,18 +719,6 @@ class SpectralDiscriminator(nn.Module):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
 
-    def calc_loss(self,prediction:torch.Tensor,
-                 target_is_real: bool):
-        batch_size=prediction.shape[0]
-        c = 3
-        h = 32
-        if target_is_real:
-            target_tensor = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
-        else:
-            target_tensor = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
-        loss = F.mse_loss(prediction, target_tensor.detach())
-        return loss
-
     def forward(self, x: torch.Tensor):
         for layer in self.spectral_gan:
             x = layer(x)
@@ -760,12 +745,24 @@ style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
+def calc_GAN_loss_from_pred(self, prediction: torch.Tensor,
+              target_is_real: bool):
+    batch_size = prediction.shape[0]
+    c = 3
+    h = 32
+    if target_is_real:
+        target_tensor = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
+    else:
+        target_tensor = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
+    loss = F.mse_loss(prediction, target_tensor.detach())
+    return loss
+
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
     pred_fake = disc_(fake)
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
-        loss_D_fake = disc_.calc_loss(pred_fake, False)
+        loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
     pred_real = disc_(real)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
@@ -774,7 +771,7 @@ def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
                 torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
         )
     else:
-        loss_D_real = disc_.calc_loss(pred_real, True)
+        loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
         loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
@@ -855,7 +852,7 @@ def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: 
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = disc_.calc_loss(fake_loss, True)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
