@@ -41,15 +41,16 @@ class RiemannNoise(nn.Module):
 
     def forward(self, x):
         N, c, h, w = x.shape
+        A, b, alpha, r = self.params
         mu = x.sum(1, keepdim=True)
         mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
         s = mu - mu_mean
         s = s / torch.abs(s).max()
-        sd = self.A * s + self.b
-        s = (self.alpha*sd + (1 - self.alpha)) + 1
+        sd = A * s + b
+        s = (alpha*sd + (1 - alpha)) + 1
         sigma = s / torch.linalg.vector_norm(s)
         noise = self.noise.repeat(x.shape)
-        out = self.r * sigma * x + self.r * sigma * noise.normal_()
+        out = r * sigma * x + r * sigma * self.noise.normal_()
         return out
 
 
