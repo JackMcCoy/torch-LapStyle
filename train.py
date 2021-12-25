@@ -485,7 +485,7 @@ def revlap_train():
     rev_ = torch.jit.trace(build_revlap(args.revision_depth,
                      rev_state),(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
                                  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                                 torch.rand(args.batch_size, 512, 16).to(torch.device('cuda'))),check_trace=False)
+                                 torch.rand(args.batch_size, 256, 16).to(torch.device('cuda'))),check_trace=False)
 
     disc_ = torch.jit.trace(build_disc(disc_state),torch.rand(args.batch_size, 3, 256, 256))
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
