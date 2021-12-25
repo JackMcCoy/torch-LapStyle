@@ -107,12 +107,12 @@ class RevisionNet(nn.Module):
     '''
 
     def recursive_controller(self, x, ci, enc_, style):
-        N,C,h,w = style
+        N,C,h = style
 
         x = self.rearrange(x)
         ci = self.rearrange(ci)
-        style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
-        style = style.reshape(4*N,C,h,w)
+        style = style.view(1,N,C,h).expand(4,N,C,h)
+        style = style.reshape(4*N,C,h)
         idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4)
         out = self.generator(x, ci, style, idx)
         out = self.unarrange(out)
@@ -127,8 +127,8 @@ class RevisionNet(nn.Module):
 
         out = self.DownBlock(out)
         out = self.resblock(out)
-        N,C,h,w = style.shape
-        style = style * self.position_encoding(idx).view(N,C,h,w)
+        N,C,h = style.shape
+        style = style * self.position_encoding(idx).view(N,C,h)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
