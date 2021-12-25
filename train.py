@@ -458,7 +458,8 @@ def revlap_train():
         random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(torch.device('cuda')), (
+    dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
+    '''
         {k:v for k,v in zip(['r1_1','r2_1','r3_1','r4_1'],
                             [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
                              torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
@@ -471,6 +472,7 @@ def revlap_train():
                                torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])}
     ),
                            strict=False,check_trace=False)
+    '''
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -483,10 +485,10 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = torch.jit.trace(build_revlap(args.revision_depth,
-                     rev_state),(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
-                                 torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                                 torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
+    rev_ = build_revlap(args.revision_depth,
+                     rev_state)#,(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
+                               #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                               #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
 
     disc_ = torch.jit.trace(build_disc(disc_state),torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')))
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
