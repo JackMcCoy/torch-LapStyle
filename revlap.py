@@ -52,7 +52,8 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.ReLU()
         self.layer_num = layer_num
-
+        with torch.random.fork_rng(self.cuda_devices):
+            torch.set_rng_state(self.cpu_state)
         self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.LeakyReLU(),
