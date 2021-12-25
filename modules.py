@@ -53,7 +53,7 @@ class RiemannNoise(nn.Module):
 
     def forward(self, x):
         self.cpu_state = torch.get_rng_state()
-        self.cuda_devices, self.cuda_states = torch.utils.checkpoint.get_device_states(*inp)
+        self.cuda_devices, self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
         mu = x.sum(1, keepdim=True)
