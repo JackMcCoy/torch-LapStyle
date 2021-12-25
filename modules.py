@@ -28,7 +28,7 @@ class ResBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
-
+@torch.jit.ignore
 class RiemannNoise(nn.Module):
     cuda_states: typing.List[torch.Tensor]
 
