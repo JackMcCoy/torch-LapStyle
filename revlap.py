@@ -92,7 +92,7 @@ class RevisionNet(nn.Module):
         N,C,h,w = x.shape
         x = x.view(N,C,2,h//2,2,w//2)
         x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
-        ci = c.view(N, C, 2, h // 2, 2, w // 2)
+        ci = ci.view(N, C, 2, h // 2, 2, w // 2)
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(-1, C, h // 2, w // 2)
         a,b,c = style.shape
         style = style.view(1,a,b,c).expand(4,a,b,c)
