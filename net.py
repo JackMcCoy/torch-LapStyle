@@ -744,7 +744,7 @@ style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
-def calc_GAN_loss_from_pred(self, prediction: torch.Tensor,
+def calc_GAN_loss_from_pred(prediction: torch.Tensor,
               target_is_real: bool):
     batch_size = prediction.shape[0]
     c = 3
