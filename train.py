@@ -214,6 +214,7 @@ def build_disc(disc_state):
     else:
         init_weights(disc)
     disc.init_spectral_norm()
+    disc.to(torch.device('cuda'))
     return disc
 
 def drafting_train():
