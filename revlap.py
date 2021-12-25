@@ -109,7 +109,7 @@ class RevisionNet(nn.Module):
         out = self.DownBlock(out)
         out = self.resblock(out)
         N,C,h = style.shape
-        style = style * self.position_encoding(idx).view(N,C,h)
+        style = style * self.position_encoding(idx).view(N*4,C,h)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
