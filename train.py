@@ -490,7 +490,7 @@ def revlap_train():
                                #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                                #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
 
-    disc_ = torch.jit.trace(build_disc(disc_state),torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')))
+    disc_ = torch.jit.trace(build_disc(disc_state),torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),check_trace=False)
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
 
 
@@ -533,7 +533,7 @@ def revlap_train():
             set_requires_grad(disc_, True)
             with autocast(enabled=ac_enabled):
 
-                loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_, ganloss)
+                loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
                 if i % args.accumulation_steps == 0:
