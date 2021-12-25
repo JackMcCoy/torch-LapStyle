@@ -706,6 +706,7 @@ class Sequential(nn.Sequential):
         return input
 
 class SpectralDiscriminator(nn.Module):
+    @torch.jit.script
     def __init__(self, depth:int=5, num_channels: int=64, relgan:bool=True, batch_size:int=5):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
@@ -715,7 +716,7 @@ class SpectralDiscriminator(nn.Module):
 
         self.relgan = relgan
 
-
+    @torch.jit.script
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
