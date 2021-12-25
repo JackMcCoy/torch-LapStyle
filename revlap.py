@@ -111,7 +111,7 @@ class RevisionNet(nn.Module):
         ci = self.rearrange(ci)
         style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
         style = style.reshape((4*N,C,h,w))
-        idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4)
+        idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4).to(torch.device('cuda'))
         out = self.generator(x, ci, style, idx)
         out = self.unarrange(out)
         return out
