@@ -121,7 +121,8 @@ class RevisionNet(nn.Module):
 
 
     def generator(self, x, ci, style, idx):
-
+        print(x.shape)
+        print(ci.shape)
         ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
         out = torch.cat([x, ci], dim=1)
 
