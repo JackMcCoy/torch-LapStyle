@@ -89,13 +89,14 @@ class RevisionNet(nn.Module):
 
 
     def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
-        N,C,h,w = style.shape
+        N,C,h,w = x.shape
         x = x.view(N,C,2,h//2,2,w//2)
         x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
         ci = c.view(N, C, 2, h // 2, 2, w // 2)
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(-1, C, h // 2, w // 2)
-        style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
-        style = style.reshape((4*N,C,h,w))
+        a,b,c = style.shape
+        style = style.view(1,a,b,c).expand(4,a,b,c)
+        style = style.reshape((4*a,b,c))
         idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4).to(torch.device('cuda'))
         out = self.generator(x, ci, style, idx)
         out = out.reshape((N*2,2,C,h//2,w//2)).reshape((N,2,2,C,h//2,w//2)).permute(0, 3, 1, 4, 2, 5).reshape(N,C,h,w)
