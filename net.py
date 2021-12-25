@@ -760,7 +760,7 @@ style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 @torch.jit.script
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:nn.Module):
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
     pred_fake = disc_(fake)
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
