@@ -457,7 +457,7 @@ def revlap_train():
         random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size), (
+    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(torch.device('cuda')), (
         {k:v for k,v in zip(['r1_1','r2_1','r3_1','r4_1'],
                             [torch.rand(args.batch_size, 64, 256, 256),
                              torch.rand(args.batch_size, 128, 128, 128),
