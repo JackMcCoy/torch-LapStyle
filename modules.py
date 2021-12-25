@@ -43,6 +43,7 @@ class RiemannNoise(nn.Module):
         self.noise = torch.Tensor([0.]).to(torch.device('cuda'))
         self.generator = torch.Generator(device='cuda')
 
+    @torch.jit.ignore
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
@@ -55,7 +56,7 @@ class RiemannNoise(nn.Module):
         s = (alpha*sd + (1 - alpha)) + 1
         sigma = s / torch.linalg.vector_norm(s)
         noise = self.noise.repeat(x.shape)
-        out = r * sigma * x + r * sigma * self.noise.normal_(generator=self.generator)
+        out = r * sigma * x + r * sigma * noise.normal_(generator=self.generator)
         return out
 
 
