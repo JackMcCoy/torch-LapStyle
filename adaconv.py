@@ -6,7 +6,7 @@ import typing
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512):
         super(AdaConv, self).__init__()
-        self.n_groups = torch.Tensor([c_in//p]).float().to(torch.device('cuda'))
+        self.n_groups = int(c_in//p)
         self.pointwise_groups = s_d//p
         self.c_out = c_in
         self.c_in = c_in
