@@ -90,8 +90,6 @@ class RevisionNet(nn.Module):
 
     def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
         N,C,h,w = x.shape
-        print(x.shape)
-        print(ci.shape)
         x = x.view(N,C,2,h//2,2,w//2)
         x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
         ci = ci.view(N, C, 2, h // 2, 2, w // 2)

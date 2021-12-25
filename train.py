@@ -483,7 +483,7 @@ def revlap_train():
         rev_state = None
         init_weights(dec_)
     rev_ = torch.jit.trace(build_revlap(args.revision_depth,
-                     rev_state),(torch.rand(args.batch_size, 3, 512, 512),
+                     rev_state),(torch.rand(args.batch_size, 3, 256, 256),
                                  torch.rand(args.batch_size, 3, 512, 512),
                                  torch.rand(args.batch_size, 512, 16)),check_trace=False)
 
