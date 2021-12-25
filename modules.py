@@ -37,7 +37,7 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)),
             nn.Parameter(nn.init.uniform_(w)),
             nn.Parameter(nn.init.uniform_(w))])
-        self.noise = torch.Tensor([0]).to(torch.device('cuda')
+        self.noise = torch.Tensor([0]).to(torch.device('cuda'))
 
     def forward(self, x):
         N, c, h, w = x.shape
