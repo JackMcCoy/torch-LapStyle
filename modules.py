@@ -42,13 +42,13 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
         self.cuda_devices = []
+        self.cuda: bool = torch.cuda._initialized
         self.noise = torch.Tensor([0]).to(torch.device('cuda'))
 
     def unpack(self, data):
         with torch.random.fork_rng(self.cuda_devices):
             torch.set_rng_state(self.cpu_state)
-            if self.cuda:
-                torch.utils.checkpoint.set_device_states(self.cuda_devices, self.cuda_states)
+            torch.utils.checkpoint.set_device_states(self.cuda_devices, self.cuda_states)
         return self.unpack(data)
 
     def forward(self, x):
