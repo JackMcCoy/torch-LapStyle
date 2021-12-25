@@ -22,7 +22,6 @@ class RevisorLap(nn.Module):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
-        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic', align_corners='True')
         for i in range(levels):
             self.layers.append(RevisionNet(batch_size,  i))
     def forward(self, x, enc_, ci, style):
@@ -106,7 +105,7 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci, enc_, style):
+    def recursive_controller(self, x, ci, style):
         N,C,h,w = style.shape
         print(x.shape)
         print(ci.shape)
@@ -139,7 +138,7 @@ class RevisionNet(nn.Module):
         out = out + x
         return out
 
-    def forward(self, input, enc_, ci, style):
+    def forward(self, input, ci, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -149,7 +148,10 @@ class RevisionNet(nn.Module):
         """
         print(ci.shape)
         input = self.upsample(input)
-        scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
+        if ci.shape[-1] != 512:
+            scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
+        else:
+            scaled_ci = ci
         print(ci.shape)
-        out = self.recursive_controller(input, scaled_ci, enc_, style)
+        out = self.recursive_controller(input, scaled_ci, style)
         return out

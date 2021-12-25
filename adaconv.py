@@ -28,7 +28,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 1-e9)
 
     def forward(self, style_encoding, predicted, norm):
-        N, ch, h, w = predicted.shape
+        N, ch, h, w = style_encoding.shape
         conv_out = []
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in//self.n_groups, 3, 3)
@@ -36,19 +36,21 @@ class AdaConv(nn.Module):
         pointwise_kn = self.pw_cn_kn(s_d)
         pointwise_kn = pointwise_kn.view(N*self.c_out, self.c_out//self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
+
+        a, b, c, d = predicted.shape
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
-            content_mean = content_mean.view(N, 1, 1, 1).expand(N, ch, h, w)
-            content_std = content_std.view(N, 1, 1, 1).expand(N, ch, h, w)
+            content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
+            content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
 
-        predicted = self.pad(predicted).view(1,N*ch,h+2,w+2)
+        predicted = self.pad(predicted).view(1,a*b,c+2dw+2)
         depth = nn.functional.conv2d(predicted,
                                          weight=depthwise,
-                                         groups=self.n_groups*N
+                                         groups=self.n_groups*a
                                          )
         conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
                                          bias=pointwise_bias,
-                                         groups=self.n_groups*N)
-        conv_out = conv_out.view(N,ch,h,w)
+                                         groups=self.n_groups*a)
+        conv_out = conv_out.view(a,b,c,d)
         return conv_out
