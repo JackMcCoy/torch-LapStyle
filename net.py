@@ -758,7 +758,9 @@ def identity_loss(i, F, encoder, decoder):
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
-def calc_GAN_loss(real, fake, disc_, ganloss):
+
+@torch.jit.script
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:SpectralDiscriminator):
     pred_fake = disc_(fake)
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
@@ -781,7 +783,9 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 tensor_true = torch.Tensor([True]).to(device)
-def calc_losses(stylized, ci, si, cF, encoder, decoder, patch_feats=None, disc_= None, disc_style=None, calc_content_style=True, calc_identity=True, mdog_losses = True, disc_loss=True, content_all_layers=False, remd_loss=True, patch_loss=False, sF=None, GANLoss=None, split_style=False):
+
+@torch.jit.script
+def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: typing.Dict[str,torch.Tensor], encoder:Encoder, decoder:DecoderAdaConv, patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None, disc_:SpectralDiscriminator= None, calc_identity: bool=True, mdog_losses: bool = True, disc_loss: bool=True, content_all_layers: bool=False, remd_loss: bool=True, patch_loss: bool=False, sF: typing.Dict[str,torch.Tensor]=None, split_style: bool=False):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)

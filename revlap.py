@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
+import typing
 from einops.layers.torch import Rearrange
 
 
@@ -109,6 +110,7 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
+    @torch.jit.script
     def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
         N,C,h,w = style.shape
         x = self.rearrange(x)
@@ -120,9 +122,8 @@ class RevisionNet(nn.Module):
         out = self.unarrange(out)
         return out
 
-
-
-    def generator(self, x, ci, style, idx):
+    @torch.jit.script
+    def generator(self, x:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, idx:torch.Tensor):
         ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
         out = torch.cat([x, ci], dim=1)
 

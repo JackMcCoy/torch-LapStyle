@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from function import calc_mean_std
+import typing
 
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512):
