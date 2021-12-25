@@ -120,6 +120,7 @@ parser.add_argument('--accumulation_steps', type=int, default=1)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
+parser.add_argument('--thumbnail_loss', type=float, default=.75)
 parser.add_argument('--load_rev', type=int, default=0)
 parser.add_argument('--load_disc', type=int, default=0)
 parser.add_argument('--disc_quantization', type=int, default=0)
@@ -567,7 +568,7 @@ def revlap_train():
                                  patch_loss=True, sF=sF2, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-            loss = loss + losses_scaled
+            loss = loss*args.thumbnail_loss + losses_scaled
 
         if ac_enabled:
             scaler.scale(loss).backward()
