@@ -112,7 +112,7 @@ class RevisionNet(nn.Module):
         x = self.rearrange(x)
         ci = self.rearrange(ci)
         style = style.view(1,N,C,h).expand(4,N,C,h)
-        style = style.reshape(4*N,C,h)
+        style = style.reshape((4*N,C,h))
         idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4)
         out = self.generator(x, ci, style, idx)
         out = self.unarrange(out)
