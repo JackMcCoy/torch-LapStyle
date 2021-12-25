@@ -195,7 +195,7 @@ def build_rev(depth, state):
             set_requires_grad(i, False)
     return rev
 
-def build_revlap(depth, state, encoder):
+def build_revlap(depth, state):
     rev = RevisorLap(args.batch_size, levels=args.revision_depth).to(device)
     if state is None:
         init_weights(rev)
@@ -208,7 +208,12 @@ def build_revlap(depth, state, encoder):
 def build_disc(disc_state):
     disc = net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
                                      batch_size=args.batch_size).to(device)
-    disc.train()
+    disc_.train()
+    if not disc_state is None:
+        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+    else:
+        init_weights(disc_)
+    disc_.init_spectral_norm()
     return disc
 
 def drafting_train():
@@ -452,7 +457,7 @@ def revlap_train():
         random_crop_2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
+    dec_ = torch.jit.script(net.DecoderAdaConv(batch_size=args.batch_size))
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -465,17 +470,12 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = build_revlap(args.revision_depth,
-                     rev_state, enc_)
+    rev_ = torch.jit.script(build_revlap(args.revision_depth,
+                     rev_state))
 
-    disc_ = build_disc(disc_state)
+    disc_ = torch.jit.script(build_disc(disc_state))
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
-    disc_.train()
-    if not disc_state is None:
-        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-    else:
-        init_weights(disc_)
-    disc_.init_spectral_norm()
+
 
 
     dec_.train()

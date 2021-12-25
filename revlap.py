@@ -18,19 +18,19 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class RevisorLap(nn.Module):
-    def __init__(self, batch_size,levels= 1):
+    def __init__(self, batch_size:int,levels:int= 1):
         super(RevisorLap, self).__init__()
         self.layers = nn.ModuleList([])
         self.levels = levels
         for i in range(levels):
             self.layers.append(RevisionNet(batch_size,  i))
-    def forward(self, x, ci, style):
+    def forward(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
         for layer in self.layers:
             x = layer(x, ci, style)
         return x
 
 class RevisionNet(nn.Module):
-    def __init__(self, layer_num, batch_size):
+    def __init__(self, layer_num:int, batch_size:int):
         super(RevisionNet, self).__init__()
         self.position_encoding = nn.Embedding(4,4096, max_norm=2)
         self.position_encoding.requires_grad = True
@@ -109,7 +109,7 @@ class RevisionNet(nn.Module):
         return holder
     '''
 
-    def recursive_controller(self, x, ci, style):
+    def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
         N,C,h,w = style.shape
         x = self.rearrange(x)
         ci = self.rearrange(ci)

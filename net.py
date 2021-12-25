@@ -725,7 +725,7 @@ class SpectralDiscriminator(nn.Module):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
 
-    def calc_loss(self,prediction,
+    def calc_loss(self,prediction:torch.Tensor,
                  target_is_real: bool):
         if target_is_real:
             target_tensor = self.target_real
@@ -734,7 +734,7 @@ class SpectralDiscriminator(nn.Module):
         loss = self.loss(prediction, target_tensor.detach())
         return loss
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         for layer in self.spectral_gan:
             x = layer(x)
         return x

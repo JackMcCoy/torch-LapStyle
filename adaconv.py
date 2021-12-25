@@ -3,7 +3,7 @@ from torch import nn
 from function import calc_mean_std
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in, p, batch_size, s_d = 512):
+    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512):
         super(AdaConv, self).__init__()
         self.n_groups = c_in//p
         self.pointwise_groups = s_d//p
@@ -27,7 +27,7 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 1-e9)
 
-    def forward(self, style_encoding, predicted, norm):
+    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, norm: bool):
         N, ch, h, w = style_encoding.shape
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in//self.n_groups, 3, 3)
