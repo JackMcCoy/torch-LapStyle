@@ -30,7 +30,6 @@ class ResBlock(nn.Module):
 
 
 class RiemannNoise(nn.Module):
-    cpu_state: torch.Tensor
     cuda_states: typing.List[torch.Tensor]
 
     def __init__(self, size:int):
@@ -41,19 +40,10 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
-        self.cuda_devices = []
-        self.cuda: bool = torch.cuda._initialized
-        self.noise = torch.Tensor([0]).to(torch.device('cuda'))
-
-    def unpack(self, data):
-        with torch.random.fork_rng(self.cuda_devices):
-            torch.set_rng_state(self.cpu_state)
-            torch.utils.checkpoint.set_device_states(self.cuda_devices, self.cuda_states)
-        return self.unpack(data)
+        self.generator = torch.Generator(device='cuda')
 
     def forward(self, x):
-        self.cpu_state = torch.get_rng_state()
-        self.cuda_devices, self.cuda_states = torch.utils.checkpoint.get_device_states(x)
+        #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
         mu = x.sum(1, keepdim=True)
@@ -64,7 +54,7 @@ class RiemannNoise(nn.Module):
         s = (alpha*sd + (1 - alpha)) + 1
         sigma = s / torch.linalg.vector_norm(s)
         noise = self.noise.repeat(x.shape)
-        out = r * sigma * x + r * sigma * self.noise.normal_()
+        out = r * sigma * x + r * sigma * self.noise.normal_(generator=self.generator)
         return out
 
 
