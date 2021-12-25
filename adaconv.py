@@ -37,7 +37,7 @@ class AdaConv(nn.Module):
         pointwise_kn = pointwise_kn.view(N*self.c_out, self.c_out//self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
-        a, b, c, d = predicted.shape
+        a, b, c, d = predicted.size()
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
