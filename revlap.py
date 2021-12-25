@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
+from einops.layers.torch import Rearrange
 
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
@@ -32,7 +33,7 @@ class RevisorLap(nn.Module):
 class RevisionNet(nn.Module):
     def __init__(self, layer_num, batch_size):
         super(RevisionNet, self).__init__()
-        self.position_encoding = nn.Parameter(torch.randn(4,512,5,5))
+        self.position_encoding = nn.Embedding(4,12800, max_norm=1)
         self.position_encoding.requires_grad = True
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
@@ -43,6 +44,8 @@ class RevisionNet(nn.Module):
         self.s_d = 512
         self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
         self.resblock = ResBlock(64)
+        self.rearrange = Rearrange('b c (p1 h) (p2 w) -> (b p1 p2) c h w',p1=2,p2=2)
+        self.unarrange = Rearrange('(b p1 p2) c h w -> b c (p1 h) (p2 w)', p1=2, p2=2)
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
@@ -104,23 +107,16 @@ class RevisionNet(nn.Module):
     '''
 
     def recursive_controller(self, x, ci, enc_, style):
-        holder = []
-        idx = 0
-        for i, c in zip(torch.split(x,512, dim=2), torch.split(ci,512, dim=2)):
-            for j, c2 in zip(torch.split(i, 512, dim=3), torch.split(c, 512, dim=3)):
-                #thumbnail_style = self.thumbnail_style_calc(j, enc_)
-                mini_holder = []
-                for s, cs in zip(torch.split(j,256,dim=2),torch.split(c2,256,dim=2)):
-                    for s2, cs2 in zip(torch.split(s,256,dim=3),torch.split(cs,256,dim=3)):
-                        mini_holder.append((self.generator(s2, cs2, style, idx)))
-                holder.append(torch.cat((torch.cat([mini_holder[0],mini_holder[2]],dim=2),
-                            torch.cat([mini_holder[1],mini_holder[3]],dim=2)),dim=3))
-                idx += 1
-        if len(holder)==1:
-            return holder[0]
-        holder = torch.cat((torch.cat([holder[0], holder[2]], dim=2),
-                                 torch.cat([holder[1], holder[3]], dim=2)), dim=3)
-        return holder
+        N,C,h,w = style
+
+        x = self.rearrange(x)
+        ci = self.rearrange(ci)
+        style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
+        style = style.reshape(4*N,C,h,w)
+        idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4)
+        out = self.generator(x, ci, style, idx)
+        out = self.unarrange(out)
+        return out
 
 
 
@@ -131,7 +127,8 @@ class RevisionNet(nn.Module):
 
         out = self.DownBlock(out)
         out = self.resblock(out)
-        style = style * self.position_encoding[idx]
+        N,C,h,w = style.shape
+        style = style * self.position_encoding(idx).view(N,C,h,w)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
