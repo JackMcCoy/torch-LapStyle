@@ -364,10 +364,11 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512),
             *style_encoder_block(512)
         )
-        self.s_d = 512
+        self.s_d = 256
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d*25)
+            nn.Linear(8192, self.s_d*16)
         )
+        self.style_noise = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             RiemannNoise(32),
@@ -397,11 +398,11 @@ class DecoderAdaConv(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.0)
+            nn.init.constant_(m.bias.data, 1e-9)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
@@ -409,7 +410,7 @@ class DecoderAdaConv(nn.Module):
         style = self.style_encoding(sF['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 5, 5)
+        style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out = self.kernel_1(style, cF['r4_1'].detach(), norm=True)
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)

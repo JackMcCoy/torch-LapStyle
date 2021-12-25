@@ -32,15 +32,15 @@ class RevisorLap(nn.Module):
 class RevisionNet(nn.Module):
     def __init__(self, layer_num, batch_size):
         super(RevisionNet, self).__init__()
-        self.position_encoding = nn.Embedding(4,12800, max_norm=1)
+        self.position_encoding = nn.Embedding(4,4096, max_norm=2)
         self.position_encoding.requires_grad = True
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-        s_d = 512
-        self.s_d = 512
+        s_d = 256
+        self.s_d = 256
         self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
         self.resblock = ResBlock(64)
         self.rearrange = Rearrange('b c (p1 h) (p2 w) -> (b p1 p2) c h w',p1=2,p2=2)
@@ -54,8 +54,7 @@ class RevisionNet(nn.Module):
         self.relu = nn.ReLU()
         self.layer_num = layer_num
 
-        self.DownBlock = nn.Sequential(RiemannNoise(256),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(6, 128, kernel_size=3),
             nn.LeakyReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -67,20 +66,25 @@ class RevisionNet(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, kernel_size=3, stride=2),
             nn.LeakyReLU(),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.UpBlock = nn.ModuleList([nn.Sequential(RiemannNoise(128),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
+                                                    RiemannNoise(256),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                      nn.Sequential(RiemannNoise(256),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 128, kernel_size=3),
                                                     nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                      nn.Sequential(RiemannNoise(256),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                      nn.Sequential(RiemannNoise(256),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
