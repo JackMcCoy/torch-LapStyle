@@ -36,7 +36,7 @@ class RevisionNet(nn.Module):
         self.position_encoding = nn.Embedding(4,4096, max_norm=2)
         self.position_encoding.requires_grad = True
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
+        self.lap_weight = torch.Tensor(self.lap_weight,device=torch.device('cuda:0'))
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
@@ -96,13 +96,13 @@ class RevisionNet(nn.Module):
         a,b,c,d = style.shape
         style = style.view(1,a,b,c,d).expand(4,a,b,c,d)
         style = style.reshape((4*a,b,c,d))
-        idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4).to(torch.device('cuda'))
+        idx = torch.arange(4,device=torch.device('cuda:0')).view(4,1).expand(4,N).reshape(N*4)
         out = self.generator(x, ci, style, idx)
         out = out.reshape((N*2,2,C,h//2,w//2)).reshape((N,2,2,C,h//2,w//2)).permute(0, 3, 1, 4, 2, 5).reshape(N,C,h,w)
         return out
 
     def generator(self, x:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, idx:torch.Tensor):
-        ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
+        ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([x, ci], dim=1)
 
         out = self.DownBlock(out)

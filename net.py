@@ -750,9 +750,9 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     c = 3
     h = 32
     if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
+        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
     else:
-        target_tensor = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
+        target_tensor = torch.zeros(batch_size, c, h, h, device=torch.device('cuda:0'))
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
@@ -778,7 +778,6 @@ def calc_patch_loss(stylized_feats, patch_feats):
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
 
-tensor_true = torch.Tensor([True]).to(device)
 
 def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: typing.Dict[str,torch.Tensor], encoder:nn.Module, decoder:nn.Module, patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None, disc_:nn.Module= None, calc_identity: bool=True, mdog_losses: bool = True, disc_loss: bool=True, content_all_layers: bool=False, remd_loss: bool=True, patch_loss: bool=False, sF: typing.Dict[str,torch.Tensor]=None, split_style: bool=False):
     stylized_feats = encoder(stylized)
