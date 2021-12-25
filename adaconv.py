@@ -31,28 +31,24 @@ class AdaConv(nn.Module):
         N, ch, h, w = predicted.shape
         conv_out = []
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N,self.c_out, self.c_in//self.n_groups, 3, 3)
+        depthwise = depthwise.view(N*self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d)
-        pointwise_kn = pointwise_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d).view(N,self.c_out)
+        pointwise_kn = pointwise_kn.view(N*self.c_out, self.c_out//self.n_groups, 1, 1)
+        pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.view(N, 1, 1, 1).expand(N, ch, h, w)
             content_std = content_std.view(N, 1, 1, 1).expand(N, ch, h, w)
             predicted = (predicted - content_mean) / content_std
 
-        depth = nn.functional.conv2d(self.pad(predicted),
+        predicted = self.pad(predicted).view(1,N*ch,h,w)
+        depth = nn.functional.conv2d(predicted,
                                          weight=depthwise,
-                                         stride=(1,)*3,
-                                         padding=(0,)*3,
-                                         dilation=(1,)*3,
-                                         groups=self.n_groups
+                                         groups=self.n_groups*N
                                          )
         conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
                                          bias=pointwise_bias,
-                                         stride = (1,)*3,
-                                         padding=(0,)*3,
-                                         dilation=(1,)*3,
-                                         groups=self.n_groups)
+                                         groups=self.n_groups*N)
+        conv_out = conv_out.view(N,ch,h,w)
         return conv_out
