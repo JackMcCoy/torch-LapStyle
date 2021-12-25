@@ -41,6 +41,7 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
         self.noise = torch.Tensor([0.]).to(torch.device('cuda'))
         self.generator = torch.Generator(device='cuda')
+        self.register_buffer('params', self.params)
 
     @torch.jit.ignore
     def forward(self, x):
@@ -86,6 +87,8 @@ class SpectralResBlock(nn.Module):
             x2 = self.c_sc(in_feat)
             if self.downsample:
                 x2 = nn.functional.avg_pool2d(x2, 2)
+        else:
+            x2=0
         out = x+x2
         return out
 
