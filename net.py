@@ -730,7 +730,7 @@ class SpectralDiscriminator(nn.Module):
             target_tensor = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
         else:
             target_tensor = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
-        loss = nn.MSELoss()(prediction, target_tensor.detach())
+        loss = F.mse_loss(prediction, target_tensor.detach())
         return loss
 
     @torch.jit.script
