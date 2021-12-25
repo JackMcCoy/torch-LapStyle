@@ -18,7 +18,6 @@ class AdaConv(nn.Module):
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, 1)
         self.apply(self._init_weights)
 
-    @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
