@@ -208,12 +208,12 @@ def build_revlap(depth, state):
 def build_disc(disc_state):
     disc = net.SpectralDiscriminator(depth=args.disc_depth, num_channels=args.disc_channels, relgan=False,
                                      batch_size=args.batch_size).to(device)
-    disc_.train()
+    disc.train()
     if not disc_state is None:
         disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
     else:
-        init_weights(disc_)
-    disc_.init_spectral_norm()
+        init_weights(disc)
+    disc.init_spectral_norm()
     return disc
 
 def drafting_train():
