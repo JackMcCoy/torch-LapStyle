@@ -122,7 +122,6 @@ class RevisionNet(nn.Module):
         out = self.unarrange(out)
         return out
 
-    @torch.jit.script
     def generator(self, x:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, idx:torch.Tensor):
         ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
         out = torch.cat([x, ci], dim=1)
@@ -137,7 +136,6 @@ class RevisionNet(nn.Module):
         out = out + x
         return out
 
-    @torch.jit.script
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
