@@ -646,7 +646,7 @@ def revlap_train():
                 torch.save(state_dict, save_dir /
                            'disc_optimizer.pth.tar')
 
-        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_path,scale_stylized,stylized_crop)
+        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
 
 
 def vq_train():
