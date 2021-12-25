@@ -94,9 +94,9 @@ class RevisionNet(nn.Module):
         x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
         ci = ci.view(N, C, 2, h // 2, 2, w // 2)
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(-1, C, h // 2, w // 2)
-        a,b,c = style.shape
-        style = style.view(1,a,b,c).expand(4,a,b,c)
-        style = style.reshape((4*a,b,c))
+        a,b,c,s = style.shape
+        style = style.view(1,a,b,c).expand(4,a,b,c,s)
+        style = style.reshape((4*a,b,c,s))
         idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4).to(torch.device('cuda'))
         out = self.generator(x, ci, style, idx)
         out = out.reshape((N*2,2,C,h//2,w//2)).reshape((N,2,2,C,h//2,w//2)).permute(0, 3, 1, 4, 2, 5).reshape(N,C,h,w)
@@ -108,8 +108,8 @@ class RevisionNet(nn.Module):
 
         out = self.DownBlock(out)
         out = self.resblock(out)
-        N,C,h = style.shape
-        style = style * self.position_encoding(idx).view(N,C,h)
+        N,C,h,w = style.shape
+        style = style * self.position_encoding(idx).view(N,C,h,w)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
