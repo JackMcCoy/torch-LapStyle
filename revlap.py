@@ -44,8 +44,6 @@ class RevisionNet(nn.Module):
         self.s_d = 256
         self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
         self.resblock = ResBlock(64)
-        self.rearrange = Rearrange('b c (p1 h) (p2 w) -> (b p1 p2) c h w',p1=2,p2=2)
-        self.unarrange = Rearrange('(b p1 p2) c h w -> b c (p1 h) (p2 w)', p1=2, p2=2)
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
@@ -90,36 +88,17 @@ class RevisionNet(nn.Module):
                                                     )])
 
 
-    '''
-    def recursive_controller(self, x, ci, thumbnail, enc_):
-        holder = []
-        base_case = False
-        thumbnail_style = None
-        if x.shape[-1] == 512:
-            base_case = True
-            thumbnail_style = self.thumbnail_style_calc(thumbnail, enc_)
-
-        for i, c in zip(x.chunk(2,dim=2), ci.chunk(2,dim=2)):
-            for j, c2 in zip(i.chunk(2,dim=3), c.chunk(2,dim=3)):
-                if not base_case:
-                    holder.append(self.recursive_controller(j, c2, j, enc_))
-                else:
-                    holder.append(self.generator(j, c2, thumbnail_style))
-        holder = torch.cat((torch.cat([holder[0],holder[2]],dim=2),
-                            torch.cat([holder[1],holder[3]],dim=2)),dim=3)
-        return holder
-    '''
-
-    @torch.jit.script
     def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
         N,C,h,w = style.shape
-        x = self.rearrange(x)
-        ci = self.rearrange(ci)
+        x = x.view(N,C,2,h//2,2,w//2)
+        x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
+        ci = c.view(N, C, 2, h // 2, 2, w // 2)
+        ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(-1, C, h // 2, w // 2)
         style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
         style = style.reshape((4*N,C,h,w))
         idx = torch.arange(4).view(4,1).expand(4,N).reshape(N*4).to(torch.device('cuda'))
         out = self.generator(x, ci, style, idx)
-        out = self.unarrange(out)
+        out = out.reshape((N*2,2,C,h//2,w//2)).reshape((N,2,2,C,h//2,w//2)).permute(0, 3, 1, 4, 2, 5).reshape(N,C,h,w)
         return out
 
     def generator(self, x:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, idx:torch.Tensor):
