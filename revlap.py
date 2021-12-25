@@ -137,7 +137,8 @@ class RevisionNet(nn.Module):
         out = out + x
         return out
 
-    def forward(self, input, ci, style):
+    @torch.jit.script
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
