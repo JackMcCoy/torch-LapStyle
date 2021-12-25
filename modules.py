@@ -29,6 +29,9 @@ class ResBlock(nn.Module):
 
 
 class RiemannNoise(nn.Module):
+    cpu_state: torch.Tensor
+    cuda_states: typing.List[torch.Tensor]
+
     def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
         wn = torch.empty(1,size,size).to(torch.device('cuda'))
@@ -38,10 +41,14 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
         self.cuda_devices = []
+        self.noise = torch.Tensor([0]).to(torch.device('cuda'))
+
+    def unpack(self, data):
         with torch.random.fork_rng(self.cuda_devices):
             torch.set_rng_state(self.cpu_state)
-            torch.utils.checkpoint.set_device_states(self.cuda_devices, self.cuda_states)
-        self.noise = torch.Tensor([0]).to(torch.device('cuda'))
+            if self.cuda:
+                torch.utils.checkpoint.set_device_states(self.cuda_devices, self.cuda_states)
+        return self.unpack(data)
 
     def forward(self, x):
         self.cpu_state = torch.get_rng_state()
