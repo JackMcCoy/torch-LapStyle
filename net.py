@@ -686,7 +686,8 @@ class OptimizedBlock(nn.Module):
         self.c_sc = spectral_norm(self.c_sc).to(device)
 
     def forward(self, in_feat):
-
+        print(in_feat.device)
+        print(self.conv_1.weight.device)
         x = self.conv_1(in_feat)
         x = self.relu(x)
         x = self.conv_2(x)
