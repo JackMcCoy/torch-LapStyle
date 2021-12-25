@@ -41,6 +41,7 @@ class RiemannNoise(nn.Module):
 
     def forward(self, x):
         N, c, h, w = x.shape
+        print(x.device)
         A, b, alpha, r = self.params
         for i in [A,b,alpha,r]:
             print(i.device)
