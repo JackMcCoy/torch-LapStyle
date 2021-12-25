@@ -725,6 +725,7 @@ class SpectralDiscriminator(nn.Module):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
 
+    @torch.jit.script
     def calc_loss(self,prediction:torch.Tensor,
                  target_is_real: bool):
         if target_is_real:
