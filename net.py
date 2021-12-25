@@ -714,12 +714,7 @@ class SpectralDiscriminator(nn.Module):
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
         self.relgan = relgan
-        c = 3
-        h = 32
-        self.target_real = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
-        self.target_fake = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
-        self.loss_weight = 1
-        self.loss = nn.MSELoss()
+
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
@@ -728,13 +723,17 @@ class SpectralDiscriminator(nn.Module):
     @torch.jit.script
     def calc_loss(self,prediction:torch.Tensor,
                  target_is_real: bool):
+        batch_size=prediction.shape[0]
+        c = 3
+        h = 32
         if target_is_real:
-            target_tensor = self.target_real
+            target_tensor = torch.ones(batch_size, c, h, h).to(torch.device('cuda'))
         else:
-            target_tensor = self.target_fake
-        loss = self.loss(prediction, target_tensor.detach())
+            target_tensor = torch.zeros(batch_size, c, h, h).to(torch.device('cuda'))
+        loss = nn.MSELoss()(prediction, target_tensor.detach())
         return loss
 
+    @torch.jit.script
     def forward(self, x: torch.Tensor):
         for layer in self.spectral_gan:
             x = layer(x)
