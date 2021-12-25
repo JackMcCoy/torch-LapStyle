@@ -36,7 +36,7 @@ class RevisionNet(nn.Module):
         self.position_encoding = nn.Embedding(4,4096, max_norm=2)
         self.position_encoding.requires_grad = True
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight,device=torch.device('cuda:0'))
+        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
         self.lap_weight.requires_grad = False
         self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
