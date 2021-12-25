@@ -46,13 +46,13 @@ class AdaConv(nn.Module):
                                          weight=depthwise,
                                          stride=(1,)*3,
                                          padding=(0,)*3,
-                                         dilation=(1,)*2,
+                                         dilation=(1,)*3,
                                          groups=self.n_groups
                                          )
         conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
                                          bias=pointwise_bias,
                                          stride = (1,)*3,
                                          padding=(0,)*3,
-                                         dilation=(1,)*2,
+                                         dilation=(1,)*3,
                                          groups=self.n_groups)
         return conv_out
