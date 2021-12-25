@@ -29,7 +29,6 @@ class AdaConv(nn.Module):
 
     def forward(self, style_encoding, predicted, norm):
         N, ch, h, w = style_encoding.shape
-        conv_out = []
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
@@ -44,7 +43,7 @@ class AdaConv(nn.Module):
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
 
-        predicted = self.pad(predicted).view(1,a*b,c+2dw+2)
+        predicted = self.pad(predicted).view(1,a*b,c+2,dw+2)
         depth = nn.functional.conv2d(predicted,
                                          weight=depthwise,
                                          groups=self.n_groups*a

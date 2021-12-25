@@ -107,10 +107,6 @@ class RevisionNet(nn.Module):
 
     def recursive_controller(self, x, ci, style):
         N,C,h,w = style.shape
-        print(x.shape)
-        print(ci.shape)
-        print(x.shape)
-        print(ci.shape)
         x = self.rearrange(x)
         ci = self.rearrange(ci)
         style = style.view(1,N,C,h,w).expand(4,N,C,h,w)
@@ -123,8 +119,6 @@ class RevisionNet(nn.Module):
 
 
     def generator(self, x, ci, style, idx):
-        print(x.shape)
-        print(ci.shape)
         ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(torch.device('cuda'))
         out = torch.cat([x, ci], dim=1)
 
@@ -146,12 +140,10 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        print(ci.shape)
         input = self.upsample(input)
         if ci.shape[-1] != 512:
             scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
         else:
             scaled_ci = ci
-        print(ci.shape)
         out = self.recursive_controller(input, scaled_ci, style)
         return out
