@@ -42,6 +42,8 @@ class RiemannNoise(nn.Module):
     def forward(self, x):
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
+        for i in [A,b,alpha,r]:
+            print(i.device)
         mu = x.sum(1, keepdim=True)
         mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
         s = mu - mu_mean
