@@ -567,9 +567,9 @@ def revlap_train():
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
             losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
-            cF2 = enc_(ci[-1][:,:,-256:,-256:])
+            cF2 = enc_(ci[-1][:,:,-384:-128,-256:])
             sF2 = enc_(si_cropped)
-            ci_patch = ci[-1][:,:,-256:,-256:]
+            ci_patch = ci[-1][:,:,-384:-128,-256:]
             patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='bicubic'))
 
             losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
