@@ -549,6 +549,14 @@ def revlap_train():
             loss_D = 0
 
         with autocast(enabled=ac_enabled):
+            losses_small = calc_losses(rev_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                        calc_identity=False, disc_loss=False,
+                                        mdog_losses=args.mdog_loss, content_all_layers=False,
+                                        remd_loss=remd_loss,
+                                        patch_loss=False, sF=sF, split_style=args.split_style)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
+            losses_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
+
             cF = enc_(ci[-1])
             sF = enc_(si[-1])
 
@@ -570,7 +578,7 @@ def revlap_train():
                                  patch_loss=True, sF=sF2, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-            loss = loss*args.thumbnail_loss + losses_scaled
+            loss = loss*args.thumbnail_loss + losses_scaled + losses_small
 
         if ac_enabled:
             scaler.scale(loss).backward()
