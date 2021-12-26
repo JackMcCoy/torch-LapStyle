@@ -549,7 +549,7 @@ def revlap_train():
             loss_D = 0
 
         with autocast(enabled=ac_enabled):
-            losses_small = calc_losses(rev_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+            losses_small = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                         calc_identity=False, disc_loss=False,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
                                         remd_loss=remd_loss,
