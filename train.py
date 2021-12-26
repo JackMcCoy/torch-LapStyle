@@ -549,8 +549,10 @@ def revlap_train():
             loss_D = 0
 
         with autocast(enabled=ac_enabled):
+            cF = enc_(ci[-1])
+            sF = enc_(si[-1])
 
-            losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+            losses_scaled = calc_losses(rev_stylized, ci[-1], si[-1], cF, enc_, dec_, None, disc_,
                                  calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
                                  patch_loss=False, sF=sF, split_style=args.split_style)
@@ -644,7 +646,7 @@ def revlap_train():
                 torch.save(state_dict, save_dir /
                            'disc_optimizer.pth.tar')
 
-        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
+        del(si,ci,sF,cF,cF2,sF2,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
 
 
 def vq_train():
