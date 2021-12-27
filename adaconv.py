@@ -41,6 +41,10 @@ class AdaConv(nn.Module):
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
 
+        print(predicted.shape)
+        print(depthwise.shape)
+        print(pointwise_kn.shape)
+        print(pointwise_bias.shape)
         for i in range(a):
             predicted[i] = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
