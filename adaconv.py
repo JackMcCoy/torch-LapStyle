@@ -42,9 +42,9 @@ class AdaConv(nn.Module):
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
-
+        content_out = predicted.clone()
         for i in range(a):
-            predicted[i] = nn.functional.conv2d(
+            content_out[i] = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
                                              weight=depthwise[i],
                                              stride=1,
@@ -54,4 +54,4 @@ class AdaConv(nn.Module):
                                  weight=pointwise_kn[i],
                                  bias=pointwise_bias[i],
                                  groups=self.n_groups).squeeze()
-        return predicted
+        return content_out
