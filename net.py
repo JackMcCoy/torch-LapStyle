@@ -394,6 +394,14 @@ class DecoderAdaConv(nn.Module):
         self.apply(self._init_weights)
 
     @staticmethod
+    def check_random(m):
+        if hasattr(m, 'set_random'):
+            m.set_random()
+
+    def set_random(self):
+        self.apply(self.check_random)
+
+    @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
