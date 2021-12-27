@@ -44,10 +44,10 @@ class AdaConv(nn.Module):
         for i in range(a):
             predicted[i] = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
-                                             weight=depthwise,
+                                             weight=depthwise[i],
                                              groups=self.n_groups
                                              ),
-                                 weight=pointwise_kn,
-                                 bias=pointwise_bias,
+                                 weight=pointwise_kn[i],
+                                 bias=pointwise_bias[i],
                                  groups=self.n_groups).squeeze()
         return predicted
