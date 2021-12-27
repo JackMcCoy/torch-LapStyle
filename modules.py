@@ -33,15 +33,49 @@ class RiemannNoise(nn.Module):
 
     def __init__(self, size:int, channels:int):
         super(RiemannNoise, self).__init__()
-        wn = torch.empty(1,1,size,size).to(torch.device('cuda'))
+        wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.empty(1, ).to(torch.device('cuda'))
+        b = torch.empty(size,size).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.normal_(w)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.normal_(w)).to(torch.device('cuda')),
+            nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
+            nn.Parameter(nn.init.constant_(.5, w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda'))])
         self.noise = torch.zeros(1,1,size,size,device=torch.device('cuda:0')).normal_()
         self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
         self.size=size
+        # noise_strength initializers=0
+        # alpha initializer = constant .5
+        # T initializer = constant 1
+        '''
+        # Eq. 13 + 14
+        def adjust_range(x):
+            assert len(x.shape) == 4
+            with tf.variable_scope('Adjust_range'):
+                orig_dtype = x.dtype
+                x = tf.cast(x, tf.float32)
+                x -= tf.reduce_mean(x, axis=[2, 3], keepdims=True)
+                x_max = tf.reduce_max(x, axis=(2, 3), keepdims=True)
+                x = x / (x_max + 1e-8)
+                x = tf.cast(x, orig_dtype)
+                return x
+        '''
+        '''
+        # Equation 15
+        x = (adjust_range(x) + 1.0) / 2.0
+        x_mask = get_weight(shape=[x.shape[2].value, x.shape[3].value], weight_var='x_mask')
+        b = get_weight(shape=[x.shape[2].value, x.shape[3].value], weight_var='bias')
+        att = x * x_mask + b
+        fmaps = x.shape[1].value
+        return tf.tile(att, [1, fmaps, 1, 1])
+        '''
+        '''
+        # Equation 16
+        alpha = tf.get_variable('alpha', shape=[], initializer=tf.initializers.constant(0.5))
+        sp_att_mask = alpha + (1-alpha) * spatial_att(x, clip_style)
+            sp_att_mask *= tf.rsqrt(tf.reduce_mean(tf.square(sp_att_mask), axis=[2, 3], keepdims=True) + 1e-8)
+            x += noise
+            x = x * sp_att_mask
+        '''
 
     def set_random(self):
         self.noise = self.zero_holder.normal_()
@@ -52,9 +86,10 @@ class RiemannNoise(nn.Module):
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
         mu = x.sum(1, keepdim=True)
-        mu_mean = mu.sum(dim=(2,3),keepdim=True)/(h*w)
+        mu_mean = mu.mean(dim=(2,3),keepdim=True)
         s = mu - mu_mean
-        s = s / torch.abs(s).max()
+        s_max = torch.max(torch.abs(s))
+        s = s / (s_max+ 1e-8)
         sd = A * s + b
         s = alpha*sd + (1 - alpha)*self.all_one
         sigma = s / torch.linalg.vector_norm(s)
