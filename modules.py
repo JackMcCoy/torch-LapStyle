@@ -35,11 +35,9 @@ class RiemannNoise(nn.Module):
         super(RiemannNoise, self).__init__()
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.empty(1, ).to(torch.device('cuda'))
-        b = torch.empty(size,size).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.constant_(.5, w)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda'))])
+            nn.Parameter(nn.init.constant_(.5, w)).to(torch.device('cuda'))])
         self.noise = torch.zeros(1,1,size,size,device=torch.device('cuda:0')).normal_()
         self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
         self.size=size
@@ -84,17 +82,20 @@ class RiemannNoise(nn.Module):
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
-        A, b, alpha, r = self.params
-        mu = x.sum(1, keepdim=True)
-        mu_mean = mu.mean(dim=(2,3),keepdim=True)
-        s = mu - mu_mean
-        s_max = torch.max(torch.abs(s))
-        s = s / (s_max+ 1e-8)
-        sd = A * s + b
-        s = alpha*sd + (1 - alpha)*self.all_one
-        sigma = s / torch.linalg.vector_norm(s)
-        out = torch.matmul(r,sigma) * x + torch.matmul(r,sigma) * self.noise.detach()
-        return out
+        A, b, alpha = self.params
+        s = x.sum(1, keepdim=True)
+        s -= s.mean(dim=(2,3),keepdim=True)
+        s_max = torch.abs(s).amax(dim=(2,3), keepdim=True)
+        s = s / (s_max + 1e-8)
+        s = A * s + b
+        s = (s + 1) / 2
+        print(s.shape)
+        sp_att_mask = alpha + (1 - alpha) * s
+        sp_att_mask *= torch.rsqrt(
+            torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
+        x += self.noise
+        x = x * sp_att_mask
+        return x
 
 
 class SpectralResBlock(nn.Module):
