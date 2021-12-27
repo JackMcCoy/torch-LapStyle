@@ -219,20 +219,19 @@ def build_disc(disc_state):
     return disc
 
 def drafting_train():
-    with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
-        enc_.train(False)
-        dec_ = net.DecoderAdaConv(args.batch_size)
-        if args.load_model == 'none':
-            init_weights(dec_)
-        else:
-            dec_.load_state_dict(torch.load(args.load_model), strict=False)
-        dec_.train()
-        #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
-        #disc_.train()
-        enc_.to(device)
-        dec_.to(device)
-        #disc_.to(device)
+    enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
+    enc_.train(False)
+    dec_ = net.DecoderAdaConv(args.batch_size)
+    if args.load_model == 'none':
+        init_weights(dec_)
+    else:
+        dec_.load_state_dict(torch.load(args.load_model), strict=False)
+    dec_.train()
+    #disc_ = net.Style_Guided_Discriminator(depth=9, num_channels=64)
+    #disc_.train()
+    enc_.to(device)
+    dec_.to(device)
+    #disc_.to(device)
 
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
@@ -247,12 +246,13 @@ def drafting_train():
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
+            optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
             l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
-        optimizer.zero_grad(set_to_none=True)
+
         if ac_enabled:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
