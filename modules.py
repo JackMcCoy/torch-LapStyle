@@ -39,9 +39,9 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(wn)).to(torch.device('cuda'))])
-        self.noise = torch.zeros(1,device=torch.device('cuda:0')).normal_()
+        self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
-        self.generator = torch.Generator()
+        self.generator = torch.Generator().to(torch.device('cuda'))
 
     @torch.jit.ignore
     def forward(self, x):
