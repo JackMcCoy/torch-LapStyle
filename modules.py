@@ -33,15 +33,14 @@ class RiemannNoise(nn.Module):
 
     def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
-        wn = torch.empty(1,size,size).to(torch.device('cuda'))
+        wn = torch.empty(1,1,size,size).to(torch.device('cuda'))
         w = torch.empty(1, ).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
-        self.noise = torch.zeros(1,size,size,device=torch.device('cuda:0')).normal_()
+        self.noise = torch.zeros(1,1,size,size,device=torch.device('cuda:0')).normal_()
         self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
-        self.generator = torch.Generator(device='cuda')
 
     @torch.jit.ignore
     def forward(self, x):
@@ -51,10 +50,10 @@ class RiemannNoise(nn.Module):
         mu = x.sum(1, keepdim=True)
         mu_mean = mu.sum(dim=(2,3),keepdim=True)/(h*w)
         s = mu - mu_mean
-        s = s / torch.abs(s).max()
+        s = s / torch.abs(s).max(dim=1)[0]
         sd = A * s + b
         s = alpha*sd + (1 - alpha)*self.all_one
-        sigma = s / torch.linalg.vector_norm(s)
+        sigma = s / torch.linalg.vector_norm(s,dim=1)
         out = r * sigma * x + r * sigma * self.noise
         return out
 
