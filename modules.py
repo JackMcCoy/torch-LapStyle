@@ -55,7 +55,13 @@ class RiemannNoise(nn.Module):
         sd = A * s + b
         s = alpha*sd + (1 - alpha)*self.all_one
         sigma = s / torch.linalg.vector_norm(s, dim=1)
-        out = r * sigma * x + r * sigma * self.noise
+        print(r.shape)
+        print(sigma.shape)
+        print(x.shape)
+        print(r.shape)
+        out_a = r * sigma * x
+        out_b =  r * sigma * self.noise
+        out = out_a + out_b
         return out
 
 
