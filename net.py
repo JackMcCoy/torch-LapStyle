@@ -394,12 +394,12 @@ class DecoderAdaConv(nn.Module):
         self.apply(self._init_weights)
 
     @staticmethod
-    def check_random(m):
+    def check_random(m, si):
         if hasattr(m, 'set_random'):
-            m.set_random()
+            m.set_random(si)
 
-    def set_random(self):
-        self.apply(self.check_random)
+    def set_random(self,si):
+        self.apply(self.check_random(si))
 
     @staticmethod
     def _init_weights(m):
