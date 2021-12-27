@@ -373,7 +373,6 @@ class DecoderAdaConv(nn.Module):
             ResBlock(512),
             RiemannNoise(32),
             ConvBlock(512, 256, noise=32))
-        self.noise_2 = RiemannNoise()
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
