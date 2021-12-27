@@ -39,7 +39,8 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda')),
             nn.Parameter(nn.init.uniform_(w)).to(torch.device('cuda'))])
-        self.noise = torch.zeros(1,device=torch.device('cuda:0'))
+        self.noise = torch.zeros(1,size,size,device=torch.device('cuda:0')).normal_()
+        self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
         self.generator = torch.Generator(device='cuda')
 
     @torch.jit.ignore
@@ -48,14 +49,13 @@ class RiemannNoise(nn.Module):
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
         mu = x.sum(1, keepdim=True)
-        mu_mean = mu.sum(dim=(2,3),keepdim=True)*(1/h*w)
+        mu_mean = mu.sum(dim=(2,3),keepdim=True)/(h*w)
         s = mu - mu_mean
-        s = s / torch.abs(s).max()
+        s, _ = s / torch.abs(s).max(dim=1)
         sd = A * s + b
-        s = (alpha*sd + (1 - alpha)) + 1
-        sigma = s / torch.linalg.vector_norm(s)
-        noise = self.noise.repeat(x.shape)
-        out = r * sigma * x + r * sigma * noise.normal_(generator=self.generator)
+        s = alpha*sd + (1 - alpha)*self.all_one
+        sigma = s / torch.linalg.vector_norm(s, dim=1)
+        out = r * sigma * x + r * sigma * self.noise
         return out
 
 
@@ -96,9 +96,12 @@ class ConvBlock(nn.Module):
 
     def __init__(self, dim1, dim2,noise=0):
         super(ConvBlock, self).__init__()
-        self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        nn.Conv2d(dim1, dim2, kernel_size=3),
-                                        nn.ReLU())
+        layers = [nn.ReflectionPad2d((1, 1, 1, 1)),
+                                        nn.Conv2d(dim1, dim2, kernel_size=3)]
+        if noise>0:
+            layers.append(RiemannNoise(noise))
+        layers.append(nn.LeakyReLU())
+        self.conv_block = nn.Sequential(*layers)
         self.apply(self._init_weights)
 
     @staticmethod
