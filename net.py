@@ -394,7 +394,6 @@ class DecoderAdaConv(nn.Module):
         self.apply(self._init_weights)
 
     def set_random(self,si):
-        @staticmethod
         def check_random(m):
             if hasattr(m, 'set_random'):
                 m.set_random(si)
