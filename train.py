@@ -246,9 +246,7 @@ def drafting_train():
             si = next(style_iter).to(device)
             cF = enc_(ci)
             sF = enc_(si)
-            for param in dec_.parameters():
-                if hasattr(param,'set_random'):
-                    param.set_random(si)
+            dec_.set_random()
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
