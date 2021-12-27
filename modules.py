@@ -43,6 +43,9 @@ class RiemannNoise(nn.Module):
         self.all_one = torch.ones(1, size,size,device=torch.device('cuda:0'))
         self.size=size
 
+    def set_random(self):
+        self.noise = self.zero_holder.normal_()
+
     @torch.jit.ignore
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
