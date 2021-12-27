@@ -42,7 +42,7 @@ class AdaConv(nn.Module):
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
-        content_out = predicted.clone()
+        content_out = torch.empty_like(predicted)
         for i in range(a):
             content_out[i] = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
