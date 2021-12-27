@@ -393,12 +393,6 @@ class DecoderAdaConv(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
-    def set_random(self,si):
-        def check_random(m):
-            if hasattr(m, 'set_random'):
-                m.set_random(si)
-        self.apply(check_random)
-
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
