@@ -247,10 +247,8 @@ def drafting_train():
             cF = enc_(ci)
             sF = enc_(si)
             for param in dec_.parameters():
-                if type(param) == torch.nn.Module:
-                    for p in param.parameters():
-                        if hasattr(p,'set_random'):
-                            p.set_random(si)
+                if hasattr(param,'set_random'):
+                    param.set_random(si)
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
