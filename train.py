@@ -239,7 +239,7 @@ def drafting_train():
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
 
     for i in tqdm(range(args.max_iter)):
-        #warmup_lr_adjust(optimizer, i)
+        adjust_learning_rate(optimizer, i, args)
         #warmup_lr_adjust(opt_D, i)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
