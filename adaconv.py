@@ -29,13 +29,10 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 1-e9)
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, norm: bool):
-        N, ch, h, w = style_encoding.shape
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N*self.c_out, self.c_in//self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d)
-        pointwise_kn = pointwise_kn.view(N*self.c_out, self.c_out//self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
+        pointwise_bias = self.pw_cn_bias(s_d)
 
         a, b, c, d = predicted.size()
         if norm:
@@ -44,14 +41,13 @@ class AdaConv(nn.Module):
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
 
-        predicted = predicted.view(1,a,b,c,d).view(1,a*b,c,d)
-        predicted = self.pad(predicted)
-        depth = nn.functional.conv2d(predicted,
-                                         weight=depthwise,
-                                         groups=self.n_groups*a
-                                         )
-        conv_out =nn.functional.conv2d(depth, weight=pointwise_kn,
-                                         bias=pointwise_bias,
-                                         groups=self.n_groups*a)
-        conv_out = conv_out.view(a*b,c,d).view(a,b,c,d)
-        return conv_out
+        for i in range(a):
+            predicted[i] = nn.functional.conv2d(
+                nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
+                                             weight=depthwise,
+                                             groups=self.n_groups
+                                             ),
+                                 weight=pointwise_kn,
+                                 bias=pointwise_bias,
+                                 groups=self.n_groups).squeeze()
+        return predicted
