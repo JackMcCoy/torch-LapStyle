@@ -52,7 +52,7 @@ class RiemannNoise(nn.Module):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
         A, b, alpha, r = self.params
-        s,_ = torch.max(x, dim=1, keepdim=True)
+        s,_ = torch.max(-x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2,3),keepdim=True)
         s_max = torch.abs(s).amax(dim=(2,3), keepdim=True)
         s = s / (s_max + 1e-8)
