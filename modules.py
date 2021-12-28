@@ -40,7 +40,7 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.constant_(w, .5)).to(torch.device('cuda')),
             nn.Parameter(nn.init.constant_(w, 0)).to(torch.device('cuda'))])
-        self.zero_holder = torch.zeros(8,1,size,size,device=torch.device('cuda:0'))
+        self.noise = torch.zeros(8,1,size,size,device=torch.device('cuda:0'))
         self.size=size
 
 
@@ -62,7 +62,7 @@ class RiemannNoise(nn.Module):
         sp_att_mask = alpha + (1 - alpha) * s
         sp_att_mask = sp_att_mask * torch.rsqrt(
             torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
-        x = x + (r*self.noise)
+        x = x + (r*self.noise.normal_())
         x = x * sp_att_mask
         return x
 
