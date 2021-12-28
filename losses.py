@@ -218,7 +218,7 @@ def calc_mean_std(feat, eps=1e-5):
     assert (len(size) == 4)
     N, C = size[:2]
     feat_var = feat.reshape([N, C, -1])
-    feat_var = torch.var(feat_var, dim = 2, unbiased=True) + eps
+    feat_var = torch.var(feat_var + eps, dim = 2, unbiased=True)
     feat_std = torch.sqrt(feat_var)
     feat_std = feat_std.reshape([N, C, 1, 1])
     feat_mean = feat.reshape([N, C, -1])
