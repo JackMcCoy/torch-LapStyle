@@ -36,7 +36,7 @@ class RiemannNoise(nn.Module):
         self.size = size
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.ones(1, ).to(torch.device('cuda'))
-        c = torch.ones(channels,).to(torch.device('cuda'))
+        c = torch.ones(channels,1,1).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.constant_(w, .5)).to(torch.device('cuda')),
