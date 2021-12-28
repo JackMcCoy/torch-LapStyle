@@ -6,6 +6,7 @@ from torchvision.transforms.functional import crop
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 import numpy as np
+from functorch import vmap
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -369,24 +370,24 @@ class DecoderAdaConv(nn.Module):
             nn.Linear(8192, self.s_d*16)
         )
         self.style_noise = RiemannNoise(4)
-        self.kernel_1 = torch.vmap(AdaConv(512, 8, batch_size, s_d = self.s_d, norm = False))
+        self.kernel_1 = vmap(AdaConv(512, 8, batch_size, s_d = self.s_d, norm = False))
         self.decoder_1 = nn.Sequential(
             RiemannNoise(32),
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = torch.vmap(AdaConv(256, 4, batch_size, s_d = self.s_d, norm = False))
+        self.kernel_2 = vmap(AdaConv(256, 4, batch_size, s_d = self.s_d, norm = False))
         self.decoder_2 = nn.Sequential(
             RiemannNoise(64),
             ResBlock(256),
             ConvBlock(256, 128),
         )
-        self.kernel_3 = torch.vmap(AdaConv(128, 2, batch_size, s_d = self.s_d, norm = False))
+        self.kernel_3 = vmap(AdaConv(128, 2, batch_size, s_d = self.s_d, norm = False))
         self.decoder_3 = nn.Sequential(
             RiemannNoise(128),
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = torch.vmap(AdaConv(64, 1, batch_size, s_d = self.s_d, norm = False))
+        self.kernel_4 = vmap(AdaConv(64, 1, batch_size, s_d = self.s_d, norm = False))
         self.decoder_4 = nn.Sequential(
             RiemannNoise(256),
             ConvBlock(64, 64),
