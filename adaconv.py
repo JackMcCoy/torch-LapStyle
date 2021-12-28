@@ -46,7 +46,7 @@ class AdaConv(nn.Module):
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
-        depth = nn.functional.conv2d(self.pad(predicted.unsqueeze(0)),
+        depth = nn.functional.conv2d(self.pad(predicted),
                                              weight=depthwise,
                                              stride=1,
                                              groups=self.n_groups
