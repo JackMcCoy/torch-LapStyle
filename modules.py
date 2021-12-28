@@ -31,27 +31,28 @@ class ResBlock(nn.Module):
 @torch.jit.ignore
 class RiemannNoise(nn.Module):
 
-    def __init__(self, size:int):
+    def __init__(self, size:int, channels:int):
         super(RiemannNoise, self).__init__()
         self.size = size
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.ones(1, ).to(torch.device('cuda'))
+        c = torch.ones(channels,).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
             nn.Parameter(nn.init.constant_(w, .5)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.constant_(w, 0)).to(torch.device('cuda'))])
+            nn.Parameter(nn.init.constant_(c, 0)).to(torch.device('cuda'))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
+        self.relu = nn.LeakyReLU()
 
 
     def set_random(self):
         self.noise = self.zero_holder.normal_()
 
-    @torch.jit.ignore
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
-        A, b, alpha, r = self.params
+        A, b, alpha,r = self.params
         s,_ = torch.max(-x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2,3),keepdim=True)
         s_max = torch.abs(s).amax(dim=(2,3), keepdim=True)
@@ -62,8 +63,10 @@ class RiemannNoise(nn.Module):
         sp_att_mask = alpha + (1 - alpha) * s
         sp_att_mask = sp_att_mask * torch.rsqrt(
             torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
-        x = x + (r*self.noise.repeat(*x.size()).normal_())
+        x = x + (self.noise.repeat(*x.size()).normal_())
         x = x * sp_att_mask
+        # bias and activation
+        x = self.relu(x + r)
         return x
 
 

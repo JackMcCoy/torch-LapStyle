@@ -30,15 +30,14 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 1-e9)
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
-        shape = style_encoding.shape
-        style_encoding=style_encoding.view(1,*shape)
+        style_encoding = style_encoding.view(1,*style_encoding.shape)
         predicted = predicted.view(1,*predicted.shape)
         N = style_encoding.shape[0]
+
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(self.c_out, self.c_in // self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_kn = self.pw_cn_kn(s_d).view(self.c_out, self.c_out//self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d).view(self.c_out)
+        pointwise_kn = self.pw_cn_kn(s_d)
+        pointwise_bias = self.pw_cn_bias(s_d)
 
         a, b, c, d = predicted.size()
         if self.norm:
@@ -46,14 +45,15 @@ class AdaConv(nn.Module):
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
-        depth = nn.functional.conv2d(self.pad(predicted),
-                                     stride = 1,
-                                     weight=depthwise,
-                                     groups=self.n_groups
-                                     )
-        out = nn.functional.conv2d(depth,
-                                stride=1,
+
+        content_out = nn.functional.conv2d(
+                nn.functional.conv2d(self.pad(predicted),
+                                             weight=depthwise,
+                                             stride=1,
+                                             groups=self.n_groups
+                                             ),
+                                 stride = 1,
                                  weight=pointwise_kn,
                                  bias=pointwise_bias,
-                                 groups=self.n_groups)
-        return out.squeeze()
+                                 groups=self.n_groups).squeeze()
+        return content_out
