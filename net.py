@@ -368,30 +368,47 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
-        self.style_noise = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
-            RiemannNoise(32),
-            ResBlock(512),
-            ConvBlock(512, 256))
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(512, 256, (3, 3), bias=False),
+            RiemannNoise(32,256),
+            nn.LeakyReLU())
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
-            RiemannNoise(64),
-            ResBlock(256),
-            ConvBlock(256, 128),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(256, 256, (3, 3)),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(256, 256, (3, 3)),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(256, 256, (3, 3)),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(256, 128, (3, 3),bias=False),
+            RiemannNoise(64, 128),
+            nn.LeakyReLU()
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
-            RiemannNoise(128),
-            ConvBlock(128, 128),
-            ConvBlock(128, 64)
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, (3, 3)),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 64, (3, 3),bias=False),
+            RiemannNoise(128,64),
+            nn.LeakyReLU()
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
-            RiemannNoise(256),
-            ConvBlock(64, 64),
+
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 3, kernel_size=3)
+            nn.Conv2d(64, 64, (3, 3),bias=False),
+            RiemannNoise(256, 64),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 3, (3, 3))
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -413,7 +430,6 @@ class DecoderAdaConv(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        style = self.style_noise(style)
         adaconv_out = self.kernel_1(style, cF['r4_1'], norm=False)
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
