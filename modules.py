@@ -31,7 +31,7 @@ class ResBlock(nn.Module):
 @torch.jit.ignore
 class RiemannNoise(nn.Module):
 
-    def __init__(self, size:int, channels:int):
+    def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
         self.size = size
         wn = torch.empty(size,size).to(torch.device('cuda'))
