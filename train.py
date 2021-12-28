@@ -239,56 +239,55 @@ def drafting_train():
     #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
 
     for i in tqdm(range(args.max_iter)):
-        with torch.autograd.detect_anomaly():
-            adjust_learning_rate(optimizer, i, args)
-            #warmup_lr_adjust(opt_D, i)
-            with autocast(enabled=ac_enabled):
-                ci = next(content_iter).to(device)
-                si = next(style_iter).to(device)
-                cF = enc_(ci)
-                sF = enc_(si)
-                #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
-                optimizer.zero_grad(set_to_none=True)
-                stylized, style = dec_(sF, cF)
-                losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
-                l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
+        adjust_learning_rate(optimizer, i, args)
+        #warmup_lr_adjust(opt_D, i)
+        with autocast(enabled=ac_enabled):
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            cF = enc_(ci)
+            sF = enc_(si)
+            #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
+            optimizer.zero_grad(set_to_none=True)
+            stylized, style = dec_(sF, cF)
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
+            l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
 
-            if ac_enabled:
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                loss.backward()
-                optimizer.step()
+        if ac_enabled:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
-            if (i + 1) % 10 == 0:
-                loss_dict = {}
-                for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized],
-                    ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example']):
-                    if s == 'example':
-                       loss_dict[s] = wandb.Image(l[0].transpose(2,0).transpose(1,0).detach().cpu().numpy())
-                    elif type(l)==torch.Tensor:
-                       loss_dict[s] = l.item()
-                print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
+        if (i + 1) % 10 == 0:
+            loss_dict = {}
+            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized],
+                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example']):
+                if s == 'example':
+                   loss_dict[s] = wandb.Image(l[0].transpose(2,0).transpose(1,0).detach().cpu().numpy())
+                elif type(l)==torch.Tensor:
+                   loss_dict[s] = l.item()
+            print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
 
-                wandb.log(loss_dict, step=i)
+            wandb.log(loss_dict, step=i)
 
-            with torch.no_grad():
-                if (i + 1) % 50 == 0:
-                    stylized = stylized.float().to('cpu')
-                    styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                    style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
-                    content_img_grid = make_grid(ci.float().to('cpu'), nrow=4, scale_each=True)
-                    out_images = make_grid([content_img_grid,style_source_grid,styled_img_grid], nrow=1)
-                    save_image(out_images.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
+        with torch.no_grad():
+            if (i + 1) % 50 == 0:
+                stylized = stylized.float().to('cpu')
+                styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci.float().to('cpu'), nrow=4, scale_each=True)
+                out_images = make_grid([content_img_grid,style_source_grid,styled_img_grid], nrow=1)
+                save_image(out_images.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
 
-                if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-                    print(loss)
-                    state_dict = dec_.state_dict()
-                    torch.save(state_dict, save_dir /
-                               'decoder_iter_{:d}.pth.tar'.format(i + 1))
+            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+                print(loss)
+                state_dict = dec_.state_dict()
+                torch.save(state_dict, save_dir /
+                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
 def revision_train():
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
