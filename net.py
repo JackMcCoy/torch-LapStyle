@@ -352,7 +352,7 @@ def style_encoder_block(ch):
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
         nn.ReLU(),
-        nn.AvgPool2d(3, padding=1, stride=2)
+        nn.AvgPool2d(3, count_include_pad=True,padding=1, stride=2)
     ]
 
 class DecoderAdaConv(nn.Module):
