@@ -351,7 +351,7 @@ def style_encoder_block(ch):
     return [
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
-        nn.ReLU(),
+        nn.LeakyReLU(),
         nn.AvgPool2d(3, count_include_pad=True,padding=1, stride=2)
     ]
 
@@ -369,24 +369,24 @@ class DecoderAdaConv(nn.Module):
             nn.Linear(8192, self.s_d*16)
         )
         self.style_noise = RiemannNoise(4)
-        self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
+        self.kernel_1 = torch.vmap(AdaConv(512, 8, batch_size, s_d = self.s_d, norm = False))
         self.decoder_1 = nn.Sequential(
             RiemannNoise(32),
             ResBlock(512),
             ConvBlock(512, 256))
-        self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
+        self.kernel_2 = torch.vmap(AdaConv(256, 4, batch_size, s_d = self.s_d, norm = False))
         self.decoder_2 = nn.Sequential(
             RiemannNoise(64),
             ResBlock(256),
             ConvBlock(256, 128),
         )
-        self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
+        self.kernel_3 = torch.vmap(AdaConv(128, 2, batch_size, s_d = self.s_d, norm = False))
         self.decoder_3 = nn.Sequential(
             RiemannNoise(128),
             ConvBlock(128, 128),
             ConvBlock(128, 64)
         )
-        self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
+        self.kernel_4 = torch.vmap(AdaConv(64, 1, batch_size, s_d = self.s_d, norm = False))
         self.decoder_4 = nn.Sequential(
             RiemannNoise(256),
             ConvBlock(64, 64),
@@ -414,18 +414,18 @@ class DecoderAdaConv(nn.Module):
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
         style = self.style_noise(style)
-        adaconv_out = self.kernel_1(style, cF['r4_1'], norm=False)
+        adaconv_out = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
-        adaconv_out =  self.kernel_2(style, cF['r3_1'], norm=False)
+        adaconv_out =  self.kernel_2(style, cF['r3_1'])
         x = x + adaconv_out
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out = self.kernel_3(style, cF['r2_1'], norm=False)
+        adaconv_out = self.kernel_3(style, cF['r2_1'])
         x = x + adaconv_out
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out = self.kernel_4(style, cF['r1_1'], norm=False)
+        adaconv_out = self.kernel_4(style, cF['r1_1'])
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style

@@ -4,7 +4,7 @@ from function import calc_mean_std
 import typing
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512):
+    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512, norm:bool = True):
         super(AdaConv, self).__init__()
         self.n_groups = int(c_in//p)
         self.pointwise_groups = s_d//p
@@ -28,7 +28,7 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 1-e9)
 
-    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, norm: bool):
+    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N, self.c_out, self.c_in // self.n_groups, 3, 3)
@@ -37,21 +37,18 @@ class AdaConv(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d).view(N,self.c_out)
 
         a, b, c, d = predicted.size()
-        if norm:
+        if self.norm:
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
             content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
-        content_out = torch.empty_like(predicted)
-        for i in range(a):
-            content_out[i] = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
-                                             weight=depthwise[i],
+        depth = nn.functional.conv2d(self.pad(predicted.unsqueeze(0)),
+                                             weight=depthwise,
                                              stride=1,
                                              groups=self.n_groups
-                                             ),
-                                 stride = 1,
-                                 weight=pointwise_kn[i],
-                                 bias=pointwise_bias[i],
-                                 groups=self.n_groups).squeeze()
-        return content_out
+                                             )
+        out = nn.functional.conv2d(depth, stride = 1,
+                                 weight=pointwise_kn,
+                                 bias=pointwise_bias,
+                                 groups=self.n_groups)
+        return out
