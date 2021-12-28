@@ -44,7 +44,7 @@ class RiemannNoise(nn.Module):
 
 
     def set_random(self):
-        self.noise = self.zero_holder.normal_().detach()
+        self.noise = self.noise.normal_().detach()
 
     @torch.jit.ignore
     def forward(self, x):
