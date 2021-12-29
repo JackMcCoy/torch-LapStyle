@@ -200,7 +200,7 @@ def mean_variance_norm(feat):
     """
     size = feat.shape
     mean, std = calc_mean_std(feat)
-    normalized_feat = (feat - mean.expand(size)) / std.expand(size)
+    normalized_feat = (feat - mean.expand(size)) / (std.expand(size)+1e-5)
     return normalized_feat
 
 def calc_mean_std(feat, eps=1e-5):
