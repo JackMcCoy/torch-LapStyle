@@ -371,8 +371,7 @@ class DecoderAdaConv(nn.Module):
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512, 256, (3, 3), bias=False),
-            RiemannNoise(32,256),
+            nn.Conv2d(512, 256, (3, 3)),
             nn.ReLU())
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
@@ -386,8 +385,7 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(256, 256, (3, 3)),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(256, 128, (3, 3),bias=False),
-            RiemannNoise(64, 128),
+            nn.Conv2d(256, 128, (3, 3)),
             nn.ReLU()
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
@@ -396,16 +394,14 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(128, 128, (3, 3)),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 64, (3, 3),bias=False),
-            RiemannNoise(128,64),
+            nn.Conv2d(128, 64, (3, 3)),
             nn.ReLU()
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
 
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, (3, 3),bias=False),
-            RiemannNoise(256, 64),
+            nn.Conv2d(64, 64, (3, 3)),
             nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, (3, 3))
