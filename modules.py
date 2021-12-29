@@ -37,6 +37,7 @@ class RiemannNoise(nn.Module):
         w = torch.ones(1, ).to(torch.device('cuda'))
         c = torch.ones(channels,1,1).to(torch.device('cuda'))
         self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size,size))),
+            nn.Parameter(nn.init.constant(torch.ones(channels, ),0))
             nn.Parameter(nn.init.normal_(torch.ones(size,size))),
             nn.Parameter(nn.init.constant_(torch.ones(1, ),.5)),
             nn.Parameter(nn.init.constant_(torch.ones(1,), .5)),
@@ -52,7 +53,7 @@ class RiemannNoise(nn.Module):
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
-        A, b, alpha,r, w = self.params
+        A, ch, b, alpha,r, w = self.params
         s,_ = torch.max(-x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2,3),keepdim=True)
         s_max = torch.abs(s).amax(dim=(2,3), keepdim=True)
@@ -64,10 +65,12 @@ class RiemannNoise(nn.Module):
         sp_att_mask = sp_att_mask * torch.rsqrt(
             torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
         sp_att_mask = r * sp_att_mask
-        x2 = x * sp_att_mask
-        x2 = x2 + (sp_att_mask * (self.noise.repeat(*x.size()).normal_()*w))
+        ch_att_mask = (1+ch+0.1).view(1,c,1,1)
+        ch_att_mask = ch_att_mask * 2 * torch.rsqrt(ch_att_mask.square().mean()+1e8)
+        x = x + (self.noise.repeat(*x.size()).normal_()*w)
+        x = x * sp_att_mask
         # bias and activation
-        x = x + x2
+        x = x * ch_att_mask
         return x
 
 
