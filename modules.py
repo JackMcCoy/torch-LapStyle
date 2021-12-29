@@ -40,8 +40,7 @@ class RiemannNoise(nn.Module):
             nn.Parameter(nn.init.normal_(torch.ones(size,size))),
             nn.Parameter(nn.init.constant_(torch.ones(1, ),.5)),
             nn.Parameter(nn.init.constant_(torch.ones(1,), .5)),
-            nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
-            nn.Parameter(nn.init.constant_(torch.ones(channels,1,1), 0))])
+            nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
         self.relu = nn.LeakyReLU()
@@ -53,7 +52,7 @@ class RiemannNoise(nn.Module):
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
-        A, b, alpha,r, w, b2 = self.params
+        A, b, alpha,r, w = self.params
         s,_ = torch.max(-x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2,3),keepdim=True)
         s_max = torch.abs(s).amax(dim=(2,3), keepdim=True)
@@ -68,8 +67,7 @@ class RiemannNoise(nn.Module):
         x2 = x * sp_att_mask
         x2 = x2 + (sp_att_mask * (self.noise.repeat(*x.size()).normal_()*w))
         # bias and activation
-        x = x + x2
-        x = x + b2
+        x = self.relu(x + x2)
         return x
 
 

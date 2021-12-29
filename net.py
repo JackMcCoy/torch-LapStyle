@@ -368,11 +368,13 @@ class DecoderAdaConv(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16)
         )
+        self.noise_1 = RiemannNoise(32, 512)
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 256, (3, 3)),
             nn.ReLU())
+        self.noise_2 = RiemannNoise(64, 256)
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -388,6 +390,7 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(256, 128, (3, 3)),
             nn.ReLU()
         )
+        self.noise_3 = RiemannNoise(128, 128)
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -397,6 +400,7 @@ class DecoderAdaConv(nn.Module):
             nn.Conv2d(128, 64, (3, 3)),
             nn.ReLU()
         )
+        self.noise_4 = RiemannNoise(256, 64)
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
 
@@ -427,18 +431,22 @@ class DecoderAdaConv(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out = self.kernel_1(style, cF['r4_1'], norm=True)
+        c4 = self.noise_1(cF['r4_1'])
+        adaconv_out = self.kernel_1(style, c4, norm=True)
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
-        adaconv_out =  self.kernel_2(style, cF['r3_1'], norm=True)
+        c3 = self.noise_2(cF['r3_1'])
+        adaconv_out =  self.kernel_2(style, c3, norm=True)
         x = x + adaconv_out
         x = self.decoder_2(x)
         x = self.upsample(x)
-        adaconv_out = self.kernel_3(style, cF['r2_1'], norm=True)
+        c2 = self.noise_3(cf['r2_1'])
+        adaconv_out = self.kernel_3(style, c2, norm=True)
         x = x + adaconv_out
         x = self.decoder_3(x)
         x = self.upsample(x)
-        adaconv_out = self.kernel_4(style, cF['r1_1'], norm=True)
+        c1 = self.noise_4(cf['r1_1'])
+        adaconv_out = self.kernel_4(style, c1, norm=True)
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style
