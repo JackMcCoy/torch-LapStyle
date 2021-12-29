@@ -235,8 +235,7 @@ def drafting_train():
 
     disc_quant = True if args.disc_quantization == 1 else False
     disc_state = None
-    disc_ = build_disc(disc_state,
-                       disc_quant)  # , torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
+    disc_ = build_disc(disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
     ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
     disc_.train()
     d_scaler = GradScaler(init_scale=128)
@@ -280,12 +279,12 @@ def drafting_train():
             set_requires_grad(disc_, False)
 
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
-                                        calc_identity=False, disc_loss=False,
+                                        calc_identity=False, disc_loss=True,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
                                         remd_loss=remd_loss,
-                                        patch_loss=False, sF=sF, split_style=args.split_style)
+                                        patch_loss=False, sF=sF, GANLoss=ganloss,split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            losses_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss
 
         if ac_enabled:
             scaler.scale(loss).backward()
