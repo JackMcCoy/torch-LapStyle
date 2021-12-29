@@ -233,18 +233,6 @@ def drafting_train():
     dec_.to(device)
     #disc_.to(device)
 
-    disc_quant = True if args.disc_quantization == 1 else False
-    disc_state = None
-    disc_ = build_disc(disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
-    ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
-    disc_.train()
-    d_scaler = GradScaler(init_scale=128)
-    if not disc_state is None:
-        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-    else:
-        init_weights(disc_)
-    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum=.9)
-
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
@@ -252,7 +240,6 @@ def drafting_train():
 
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
-        adjust_learning_rate(opt_D, i, args, disc=True)
         #warmup_lr_adjust(opt_D, i)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -263,23 +250,9 @@ def drafting_train():
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
-            set_requires_grad(disc_, True)
-            with autocast(enabled=ac_enabled):
 
-                loss_D = calc_GAN_loss(si.detach(), stylized.clone().detach(), disc_)
-            if ac_enabled:
-                d_scaler.scale(loss_D).backward()
-                if i % args.accumulation_steps == 0:
-                    d_scaler.step(opt_D)
-                    d_scaler.update()
-            else:
-                loss_D.backward()
-                opt_D.step()
-                opt_D.zero_grad()
-            set_requires_grad(disc_, False)
-
-            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
-                                        calc_identity=False, disc_loss=True,
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
+                                        calc_identity=False, disc_loss=False,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
                                         remd_loss=remd_loss,
                                         patch_loss=False, sF=sF, split_style=args.split_style)
