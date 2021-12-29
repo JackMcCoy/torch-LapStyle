@@ -60,7 +60,6 @@ class RiemannNoise(nn.Module):
         s = s / (s_max + 1e-8)
         s = (s + 1) / 2
         s = s * ch + b
-        s = torch.tile(s,(1,c,1,1))
         print(s.shape)
         ch_att_mask = alpha + (1 - alpha) * s
         ch_att_mask = ch_att_mask * torch.rsqrt(
