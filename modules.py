@@ -36,11 +36,11 @@ class RiemannNoise(nn.Module):
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.ones(1, ).to(torch.device('cuda'))
         c = torch.ones(channels,1,1).to(torch.device('cuda'))
-        self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size,size,dtype=torch.float, device="cuda"))),
-            nn.Parameter(nn.init.normal_(torch.ones(size,size,dtype=torch.float, device="cuda"))),
-            nn.Parameter(nn.init.constant_(torch.ones(1,dtype=torch.float, device="cuda"), .5)),
-            nn.Parameter(nn.init.constant_(torch.ones(1,dtype=torch.float, device="cuda"), .5)),
-            nn.Parameter(nn.init.constant_(torch.ones(channels,1,1,dtype=torch.float, device="cuda"), 0))])
+        self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size,size))),
+            nn.Parameter(nn.init.normal_(torch.ones(size,size))),
+            nn.Parameter(nn.init.constant_(torch.ones(1, ),.5)),
+            nn.Parameter(nn.init.constant_(torch.ones(1,), .5)),
+            nn.Parameter(nn.init.constant_(torch.ones(channels,1,1), 0))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
         self.relu = nn.LeakyReLU()
