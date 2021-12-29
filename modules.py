@@ -69,7 +69,6 @@ class RiemannNoise(nn.Module):
         ch_att_mask = ch_att_mask * 2 * torch.rsqrt(ch_att_mask.square().mean()+1e8)
         x = x + (self.noise.repeat(*x.size()).normal_()*w)
         x = x * sp_att_mask
-        # bias and activation
         x = x * ch_att_mask
         return x
 
