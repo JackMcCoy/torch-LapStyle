@@ -351,7 +351,7 @@ def style_encoder_block(ch):
     return [
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
-        nn.LeakyReLU(),
+        nn.ReLU(),
         nn.AvgPool2d(3, count_include_pad=True,padding=1, stride=2)
     ]
 
@@ -373,32 +373,32 @@ class DecoderAdaConv(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(512, 256, (3, 3), bias=False),
             RiemannNoise(32,256),
-            nn.LeakyReLU())
+            nn.ReLU())
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(256, 256, (3, 3)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(256, 256, (3, 3)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(256, 256, (3, 3)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(256, 128, (3, 3),bias=False),
             RiemannNoise(64, 128),
-            nn.LeakyReLU()
+            nn.ReLU()
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 128, (3, 3)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(128, 64, (3, 3),bias=False),
             RiemannNoise(128,64),
-            nn.LeakyReLU()
+            nn.ReLU()
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
@@ -406,7 +406,7 @@ class DecoderAdaConv(nn.Module):
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 64, (3, 3),bias=False),
             RiemannNoise(256, 64),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, (3, 3))
         )
