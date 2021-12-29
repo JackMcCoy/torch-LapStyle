@@ -67,7 +67,7 @@ class RiemannNoise(nn.Module):
         x2 = x * sp_att_mask
         x2 = x2 + (sp_att_mask * (self.noise.repeat(*x.size()).normal_()*w))
         # bias and activation
-        x = self.relu(x + x2)
+        x = x + x2
         return x
 
 
