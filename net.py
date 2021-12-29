@@ -444,7 +444,7 @@ class DecoderAdaConv(nn.Module):
         content = content.flatten(1)
         content = self.content_projection(content)
         content = content.reshape(b, self.s_d, 4, 4)
-        style = self.style_noise(style, content)
+        style = style + self.style_noise(style, content)
         adaconv_out = self.kernel_1(style, cF['r4_1'], norm=True)
         x = self.decoder_1(adaconv_out)
         x = self.upsample(x)
