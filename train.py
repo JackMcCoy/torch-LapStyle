@@ -253,6 +253,7 @@ def drafting_train():
 
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
+        adjust_learning_rate(opt_D, i, args.disc_lr)
         #warmup_lr_adjust(opt_D, i)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -262,6 +263,22 @@ def drafting_train():
             #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
+
+            set_requires_grad(disc_, True)
+            with autocast(enabled=ac_enabled):
+
+                loss_D = calc_GAN_loss(si.detach(), stylized.clone().detach(), disc_)
+            if ac_enabled:
+                d_scaler.scale(loss_D).backward()
+                if i % args.accumulation_steps == 0:
+                    d_scaler.step(opt_D)
+                    d_scaler.update()
+            else:
+                loss_D.backward()
+                opt_D.step()
+                opt_D.zero_grad()
+            set_requires_grad(disc_, False)
+
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
                                         calc_identity=False, disc_loss=False,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
