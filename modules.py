@@ -60,13 +60,10 @@ class RiemannNoise(nn.Module):
         s = s / (s_max + 1e-8)
         s = (s + 1) / 2
         s = s * ch + b
-        print(s.shape)
         ch_att_mask = alpha + (1 - alpha) * s
         ch_att_mask = ch_att_mask * torch.rsqrt(
             torch.mean(torch.square(ch_att_mask), axis=(0), keepdims=True) + 1e-8)
         ch_att_mask = r * ch_att_mask
-        print(ch_att_mask.shape)
-        print(x.shape)
         x = x + (self.noise.repeat(*x.size()).normal_()*w)
         x = x * ch_att_mask
         return x
