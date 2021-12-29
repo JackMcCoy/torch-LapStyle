@@ -279,7 +279,7 @@ def drafting_train():
             set_requires_grad(disc_, False)
 
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
-                                        calc_identity=False, disc_loss=True,
+                                        calc_identity=True, disc_loss=True,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
                                         remd_loss=remd_loss,
                                         patch_loss=False, sF=sF, split_style=args.split_style)
