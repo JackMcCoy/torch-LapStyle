@@ -28,7 +28,6 @@ class ResBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
-@torch.jit.ignore
 class RiemannNoise(nn.Module):
 
     def __init__(self, size:int, channels:int):
@@ -37,11 +36,11 @@ class RiemannNoise(nn.Module):
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.ones(1, ).to(torch.device('cuda'))
         c = torch.ones(channels,1,1).to(torch.device('cuda'))
-        self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.normal_(wn)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.constant_(w, .5)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.constant_(w, .5)).to(torch.device('cuda')),
-            nn.Parameter(nn.init.constant_(c, 0)).to(torch.device('cuda'))])
+        self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(wn)).clone().to(torch.device('cuda')),
+            nn.Parameter(nn.init.normal_(wn)).clone().to(torch.device('cuda')),
+            nn.Parameter(nn.init.constant_(w, .5)).clone().to(torch.device('cuda')),
+            nn.Parameter(nn.init.constant_(w, .5)).clone().to(torch.device('cuda')),
+            nn.Parameter(nn.init.constant_(c, 0)).clone().to(torch.device('cuda'))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
         self.relu = nn.LeakyReLU()
