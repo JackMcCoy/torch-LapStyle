@@ -233,6 +233,19 @@ def drafting_train():
     dec_.to(device)
     #disc_.to(device)
 
+    disc_quant = True if args.disc_quantization == 1 else False
+    disc_state = None
+    disc_ = build_disc(disc_state,
+                       disc_quant)  # , torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
+    ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
+    disc_.train()
+    d_scaler = GradScaler(init_scale=128)
+    if not disc_state is None:
+        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+    else:
+        init_weights(disc_)
+    opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum=.9)
+
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
@@ -249,10 +262,13 @@ def drafting_train():
             #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
-            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, calc_identity=args.identity_loss==1, disc_loss=False, mdog_losses=mdog_loss, remd_loss=remd_loss, sF=sF)
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
+                                        calc_identity=False, disc_loss=False,
+                                        mdog_losses=args.mdog_loss, content_all_layers=False,
+                                        remd_loss=remd_loss,
+                                        patch_loss=False, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd +\
-            l_identity1 * 50 + l_identity2 * 1 + l_identity3* 25 + l_identity4 * .5 + mdog * .33
+            losses_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss
 
         if ac_enabled:
             scaler.scale(loss).backward()
