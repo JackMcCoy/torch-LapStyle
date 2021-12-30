@@ -131,6 +131,7 @@ parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--fp16', type=int, default=0)
+parser.add_argument('--content_all_layers', type=int, default=0)
 parser.add_argument('--split_style', type=int, default=0)
 
 args = parser.parse_args()
@@ -139,6 +140,7 @@ if args.fp16 ==1:
     ac_enabled=True
 
 args.split_style = args.split_style == 1
+args.content_all_layers = args.content_all_layers == 1
 args.content_style_loss = args.content_style_loss == 1
 
 device = torch.device('cuda')
@@ -253,7 +255,7 @@ def drafting_train():
 
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
                                         calc_identity=False, disc_loss=False,
-                                        mdog_losses=args.mdog_loss, content_all_layers=False,
+                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                         remd_loss=remd_loss,
                                         patch_loss=False, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
