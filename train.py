@@ -237,7 +237,7 @@ def drafting_train():
     dec_.to(device)
     #disc_.to(device)
 
-    crop128 = transforms.RandomCrop(128)
+    crop128 = transforms.RandomCrop(64)
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
@@ -262,7 +262,7 @@ def drafting_train():
                 set_requires_grad(disc_, True)
                 with autocast(enabled=ac_enabled):
 
-                    loss_D = calc_GAN_loss(crop128(si_cropped.detach()), crop128(stylized_crop.clone().detach()), disc_)
+                    loss_D = calc_GAN_loss(crop128(si.detach()), crop128(stylized.clone().detach()), disc_)
                 if ac_enabled:
                     d_scaler.scale(loss_D).backward()
                     if i % args.accumulation_steps == 0:
