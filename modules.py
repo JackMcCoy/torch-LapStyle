@@ -33,9 +33,6 @@ class RiemannNoise(nn.Module):
     def __init__(self, size:int, channels:int):
         super(RiemannNoise, self).__init__()
         self.size = size
-        wn = torch.empty(size,size).to(torch.device('cuda'))
-        w = torch.ones(1, ).to(torch.device('cuda'))
-        c = torch.ones(channels,1,1).to(torch.device('cuda'))
         self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
@@ -49,13 +46,13 @@ class RiemannNoise(nn.Module):
     def set_random(self):
         self.noise = self.zero_holder.normal_()
 
-    def forward(self, x, x2):
+    def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
         A, b, alpha, r, w = self.spatial_params
 
 
-        s, _ = torch.max(torch.cat([x,x2],dim=1).abs(), dim=1, keepdim=True)
+        s, _ = torch.max(x.abs(), dim=1, keepdim=True)
         s = s - s.mean(dim=(2, 3), keepdim=True)
         s_max = torch.abs(s).amax(dim=(2, 3), keepdim=True)
         s = s / (s_max + 1e-8)
