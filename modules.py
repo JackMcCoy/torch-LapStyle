@@ -83,7 +83,8 @@ class RiemannNoise(nn.Module):
         sp_att_mask = r2 * sp_att_mask
 
         x = x + (self.noise.repeat(*x.size()).normal_()*w)
-        x = x * (ch_att_mask - sp_att_mask)
+        x = x * ch_att_mask
+        x = x * sp_att_mask
         return x
 
 
