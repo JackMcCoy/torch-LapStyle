@@ -58,7 +58,7 @@ class RiemannNoise(nn.Module):
         N, c, h, w = x.shape
         ch, b, alpha,r, w = self.params
         A2, b2, alpha2, r2 = self.spatial_params
-        s = torch.max(x2.abs(), dim=1, keepdim=True)
+        s, _ = torch.max(x2.abs(), dim=1, keepdim=True)
         s = s - s.mean(dim=(1),keepdim=True)
         s_max = torch.abs(s).amax(dim=(1), keepdim=True)
         s = s / (s_max + 1e-8)
