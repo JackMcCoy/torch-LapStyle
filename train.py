@@ -237,7 +237,7 @@ def drafting_train():
     dec_.to(device)
     #disc_.to(device)
 
-    crop128 = transforms.RandomCrop(64)
+    crop128 = transforms.RandomCrop(128)
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)

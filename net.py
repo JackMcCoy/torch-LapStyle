@@ -22,7 +22,7 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 device = torch.device('cuda')
 
 unfold = torch.nn.Unfold(256,stride=256)
-crop128 = RandomCrop(64)
+crop128 = RandomCrop(128)
 
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
