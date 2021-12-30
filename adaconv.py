@@ -40,7 +40,7 @@ class AdaConv(nn.Module):
         if norm:
             content_mean, content_std = calc_mean_std(predicted)
             content_mean = content_mean.view(a, 1, 1, 1).expand(a,b,c,d)
-            content_std = content_std.view(a, 1, 1, 1).expand(a,b,c,d)
+            content_std =predicted/ content_std.view(a, 1, 1, 1).expand(a,b,c,d)
             predicted = (predicted - content_mean) / content_std
         content_out = torch.empty_like(predicted)
         for i in range(a):
