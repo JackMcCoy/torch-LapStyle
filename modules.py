@@ -36,12 +36,15 @@ class RiemannNoise(nn.Module):
         wn = torch.empty(size,size).to(torch.device('cuda'))
         w = torch.ones(1, ).to(torch.device('cuda'))
         c = torch.ones(channels,1,1).to(torch.device('cuda'))
-        self.params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size,size))),
-            nn.Parameter(nn.init.constant(torch.ones(channels,1,1 ),0)),
+        self.params = nn.ParameterList([nn.Parameter(nn.init.constant(torch.ones(channels,1,1 ),0)),
             nn.Parameter(nn.init.normal_(torch.ones(size,size))),
             nn.Parameter(nn.init.constant_(torch.ones(1, ),.5)),
             nn.Parameter(nn.init.constant_(torch.ones(1,), .5)),
             nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
+        self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
+                                        nn.Parameter(nn.init.normal_(torch.ones(size, size))),
+                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
+                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
         self.relu = nn.LeakyReLU()
@@ -53,7 +56,8 @@ class RiemannNoise(nn.Module):
     def forward(self, x, x2):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
-        A, ch, b, alpha,r, w = self.params
+        ch, b, alpha,r, w = self.params
+        A2, b2, alpha2, r2 = self.spatial_params
         s = torch.sum(x2.abs(), dim=1, keepdim=True)
         s = s - s.mean(dim=(1),keepdim=True)
         s_max = torch.abs(s).amax(dim=(1), keepdim=True)
@@ -64,8 +68,23 @@ class RiemannNoise(nn.Module):
         ch_att_mask = ch_att_mask * torch.rsqrt(
             torch.mean(torch.square(ch_att_mask), axis=(0), keepdims=True) + 1e-8)
         ch_att_mask = r * ch_att_mask
+
+
+        s2 = torch.sum(x.abs(), dim=1, keepdim=True)
+        s2 = s2 - s2.mean(dim=(2, 3), keepdim=True)
+        s2_max = torch.abs(s2).amax(dim=(2, 3), keepdim=True)
+        s2 = s2 / (s2_max + 1e-8)
+        s2 = (s2 + 1) / 2
+        s2 = s2 * A2 + b2
+        s2 = torch.tile(s2, (1, c, 1, 1))
+        sp_att_mask = alpha2 + (1 - alpha2) * s2
+        sp_att_mask = sp_att_mask * torch.rsqrt(
+            torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
+        sp_att_mask = r2 * sp_att_mask
+
         x = x + (self.noise.repeat(*x.size()).normal_()*w)
         x = x * ch_att_mask
+        x = x * sp_att_mask
         return x
 
 
