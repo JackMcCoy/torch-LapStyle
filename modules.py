@@ -62,7 +62,7 @@ class RiemannNoise(nn.Module):
         s = (s + 1) / 2
         s = s * A + b
         s = torch.tile(s, (1, c, 1, 1))
-        sp_att_mask = alpha2 + (1 - alpha) * s
+        sp_att_mask = alpha + (1 - alpha) * s
         sp_att_mask = sp_att_mask * torch.rsqrt(
             torch.mean(torch.square(sp_att_mask), axis=(2, 3), keepdims=True) + 1e-8)
         sp_att_mask = r * sp_att_mask
