@@ -131,7 +131,7 @@ parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--fp16', type=int, default=0)
-parser.add_argument('--patch_disc', type=int, default=0)
+parser.add_argument('--draft_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
 parser.add_argument('--split_style', type=int, default=0)
 
@@ -140,7 +140,7 @@ args = parser.parse_args()
 if args.fp16 ==1:
     ac_enabled=True
 
-args.patch_disc = args.patch_disc == 1
+args.disc_disc = args.draft_disc == 1
 args.split_style = args.split_style == 1
 args.content_all_layers = args.content_all_layers == 1
 args.content_style_loss = args.content_style_loss == 1
