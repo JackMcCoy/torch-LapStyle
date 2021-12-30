@@ -47,7 +47,7 @@ class RiemannNoise(nn.Module):
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
 
 
     def set_random(self):
@@ -58,7 +58,7 @@ class RiemannNoise(nn.Module):
         N, c, h, w = x.shape
         ch, b, alpha,r, w = self.params
         A2, b2, alpha2, r2 = self.spatial_params
-        s = torch.sum(x2.abs(), dim=1, keepdim=True)
+        s = torch.max(x2.abs(), dim=1, keepdim=True)
         s = s - s.mean(dim=(1),keepdim=True)
         s_max = torch.abs(s).amax(dim=(1), keepdim=True)
         s = s / (s_max + 1e-8)
@@ -70,7 +70,7 @@ class RiemannNoise(nn.Module):
         ch_att_mask = r * ch_att_mask
 
 
-        s2, _ = torch.max(-x, dim=1, keepdim=True)
+        s2, _ = torch.max(x.abs(), dim=1, keepdim=True)
         s2 = s2 - s2.mean(dim=(2, 3), keepdim=True)
         s2_max = torch.abs(s2).amax(dim=(2, 3), keepdim=True)
         s2 = s2 / (s2_max + 1e-8)
