@@ -372,20 +372,24 @@ class DecoderAdaConv(nn.Module):
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256),
-            RiemannNoise(32, 256),)
+            RiemannNoise(32, 256),
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 256, 3, 2, 1, 1, padding_mode='reflect'))
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128),
             RiemannNoise(64, 128),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, 3, 2, 1, 1, padding_mode='reflect')
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64),
             RiemannNoise(128, 128),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, 3, 2, 1, 1, padding_mode='reflect')
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
@@ -416,15 +420,12 @@ class DecoderAdaConv(nn.Module):
         style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out = self.kernel_1(style, cF['r4_1'], norm=True)
         x = self.decoder_1(adaconv_out)
-        x = self.upsample(x)
         adaconv_out =  self.kernel_2(style, cF['r3_1'], norm=True)
         x = x + adaconv_out
         x = self.decoder_2(x)
-        x = self.upsample(x)
         adaconv_out = self.kernel_3(style, cF['r2_1'], norm=True)
         x = x + adaconv_out
         x = self.decoder_3(x)
-        x = self.upsample(x)
         adaconv_out = self.kernel_4(style, cF['r1_1'], norm=True)
         x = x + adaconv_out
         x = self.decoder_4(x)
