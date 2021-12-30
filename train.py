@@ -131,6 +131,7 @@ parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--fp16', type=int, default=0)
+parser.add_argument('--patch_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
 parser.add_argument('--split_style', type=int, default=0)
 
@@ -139,6 +140,7 @@ args = parser.parse_args()
 if args.fp16 ==1:
     ac_enabled=True
 
+args.patch_disc = args.patch_disc == 1
 args.split_style = args.split_style == 1
 args.content_all_layers = args.content_all_layers == 1
 args.content_style_loss = args.content_style_loss == 1
@@ -235,14 +237,18 @@ def drafting_train():
     dec_.to(device)
     #disc_.to(device)
 
+    crop128 = transforms.RandomCrop(128)
     wandb.watch(dec_, log='all', log_freq=10)
     scaler = GradScaler()
     optimizer = torch.optim.Adam(dec_.parameters(), lr=args.lr)
-    #opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
+    if args.draft_disc:
+        disc_ = build_disc(None)
+        opt_D = torch.optim.Adam(disc_.parameters(),lr=args.lr, weight_decay = .1)
 
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
-        #warmup_lr_adjust(opt_D, i)
+        if args.draft_disc:
+            adjust_learning_rate(opt_D, i)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
@@ -252,9 +258,26 @@ def drafting_train():
             optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
+            if args.draft_disc:
+                set_requires_grad(disc_, True)
+                with autocast(enabled=ac_enabled):
 
-            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
-                                        calc_identity=False, disc_loss=False,
+                    loss_D = calc_GAN_loss(crop128(si_cropped.detach()), crop128(stylized_crop.clone().detach()), disc_)
+                if ac_enabled:
+                    d_scaler.scale(loss_D).backward()
+                    if i % args.accumulation_steps == 0:
+                        d_scaler.step(opt_D)
+                        d_scaler.update()
+                else:
+                    loss_D.backward()
+                    opt_D.step()
+                    opt_D.zero_grad()
+                set_requires_grad(disc_, False)
+            else:
+                loss_D = 0
+
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_ if args.draft_disc else None,
+                                        calc_identity=False, disc_loss=args.draft_disc, patch_disc=True,
                                         mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                         remd_loss=remd_loss,
                                         patch_loss=False, sF=sF, split_style=args.split_style)
@@ -271,8 +294,8 @@ def drafting_train():
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized],
-                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example']):
+            for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized, loss_Gp_GAN, loss_D],
+                ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example', 'Decoder Disc. Loss','Discriminator Loss']):
                 if s == 'example':
                    loss_dict[s] = wandb.Image(l[0].transpose(2,0).transpose(1,0).detach().cpu().numpy())
                 elif type(l)==torch.Tensor:
@@ -500,9 +523,6 @@ def revlap_train():
                                #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
 
     disc_ = build_disc(disc_state)
-    ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
-
-
 
     dec_.train()
     enc_.to(device)

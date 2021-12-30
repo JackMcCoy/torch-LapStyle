@@ -22,6 +22,7 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 device = torch.device('cuda')
 
 unfold = torch.nn.Unfold(256,stride=256)
+crop128 = RandomCrop(128)
 
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
@@ -374,14 +375,16 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(512, 256),
             RiemannNoise(32, 256),
             nn.ReLU(),
-            nn.ConvTranspose2d(256, 256, 3, 2, 1, 1))
+            nn.ConvTranspose2d(256, 256, 3, 2, 1, 0),
+            nn.ReflectionPad2d((1, 1, 1, 1)),)
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128),
             RiemannNoise(64, 128),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 128, 3, 2, 1, 1)
+            nn.ConvTranspose2d(128, 128, 3, 2, 1, 0),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
@@ -389,7 +392,8 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(128, 64),
             RiemannNoise(128, 64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, 3, 2, 1, 1)
+            nn.ConvTranspose2d(64, 64, 3, 2, 1, 0),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
@@ -783,7 +787,7 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 
-def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: typing.Dict[str,torch.Tensor], encoder:nn.Module, decoder:nn.Module, patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None, disc_:nn.Module= None, calc_identity: bool=True, mdog_losses: bool = True, disc_loss: bool=True, content_all_layers: bool=False, remd_loss: bool=True, patch_loss: bool=False, sF: typing.Dict[str,torch.Tensor]=None, split_style: bool=False):
+def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: typing.Dict[str,torch.Tensor], encoder:nn.Module, decoder:nn.Module, patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None, disc_:nn.Module= None, calc_identity: bool=True, mdog_losses: bool = True, disc_loss: bool=True, patch_disc: bool=False, content_all_layers: bool=False, remd_loss: bool=True, patch_loss: bool=False, sF: typing.Dict[str,torch.Tensor]=None, split_style: bool=False):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -853,7 +857,10 @@ def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: 
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized)
+        if patch_disc:
+            fake_loss = disc_(crop128(stylized))
+        else:
+            fake_loss = disc_(stylized)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
