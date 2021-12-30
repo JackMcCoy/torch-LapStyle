@@ -248,7 +248,7 @@ def drafting_train():
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i, args)
         if args.draft_disc:
-            adjust_learning_rate(opt_D, i)
+            adjust_learning_rate(opt_D, i, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
