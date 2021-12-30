@@ -70,7 +70,7 @@ class RiemannNoise(nn.Module):
         ch_att_mask = r * ch_att_mask
 
 
-        s2 = torch.sum(x.abs(), dim=1, keepdim=True)
+        s2, _ = torch.max(-x, dim=1, keepdim=True)
         s2 = s2 - s2.mean(dim=(2, 3), keepdim=True)
         s2_max = torch.abs(s2).amax(dim=(2, 3), keepdim=True)
         s2 = s2 / (s2_max + 1e-8)
