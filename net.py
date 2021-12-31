@@ -375,14 +375,18 @@ class DecoderAdaConv(nn.Module):
             ResBlock(512),
             ConvBlock(512, 256, noise=32),
             ConvBlock(256, 1024, noise=32),
-            nn.PixelShuffle(2)
+            nn.PixelShuffle(2),
+            nn.Conv2d(256, 256, kernel_size=1),
+            nn.ReLU()
             )
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128, noise=64),
             ConvBlock(128, 512, noise=64),
-            nn.PixelShuffle(2)
+            nn.PixelShuffle(2).
+            nn.Conv2d(128, 128, kernel_size=1),
+            nn.ReLU()
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
@@ -390,11 +394,11 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(128, 64, noise=128),
             ConvBlock(64, 256, noise=128),
             nn.PixelShuffle(2)
+            nn.Conv2d(64, 64, kernel_size=1),
+            nn.ReLU()
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
-            nn.Conv2d(64,64,kernel_size=1),
-            nn.ReLU(),
             ConvBlock(64, 64),
             nn.ReflectionPad2d((1, 1, 1, 1)),
             nn.Conv2d(64, 3, kernel_size=3)
