@@ -10,7 +10,7 @@ class ResBlock(nn.Module):
         super(ResBlock, self).__init__()
         self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                         nn.Conv2d(dim, dim, kernel_size=3),
-                                        nn.LeakyReLU(),
+                                        nn.ReLU(),
                                         nn.Conv2d(dim, dim, kernel_size=1))
         self.apply(self._init_weights)
 
@@ -101,15 +101,22 @@ class SpectralResBlock(nn.Module):
         return out
 
 
+class Bias(nn.Module):
+    def __init__(self, channels):
+        self.bias = nn.Parameter(nn.init.normal_(torch.ones(channels,),.5))
+    def forward(self, x):
+        x = x+bias
+        return x
+
 class ConvBlock(nn.Module):
 
     def __init__(self, dim1, dim2,noise=0):
         super(ConvBlock, self).__init__()
         layers = [nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        nn.Conv2d(dim1, dim2, kernel_size=3)]
+                                        nn.Conv2d(dim1, dim2, kernel_size=3, bias=False)]
         if noise>0:
-            layers.append(RiemannNoise(noise))
-        layers.append(nn.LeakyReLU())
+            layers.append(RiemannNoise(noise, dim2))
+        layers.extend([Bias(dim2),nn.ReLU()])
         self.conv_block = nn.Sequential(*layers)
         self.apply(self._init_weights)
 
