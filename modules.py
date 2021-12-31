@@ -103,6 +103,7 @@ class SpectralResBlock(nn.Module):
 
 class Bias(nn.Module):
     def __init__(self, channels):
+        super(Bias, self).__init__()
         self.bias = nn.Parameter(nn.init.normal_(torch.ones(channels,),.5))
     def forward(self, x):
         x = x+bias
