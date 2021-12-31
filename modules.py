@@ -106,7 +106,7 @@ class Bias(nn.Module):
         super(Bias, self).__init__()
         self.bias = nn.Parameter(nn.init.normal_(torch.ones(channels,),.5))
     def forward(self, x):
-        x = x+bias
+        x = x+self.bias
         return x
 
 class ConvBlock(nn.Module):
