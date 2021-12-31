@@ -366,7 +366,7 @@ class DecoderAdaConv(nn.Module):
             *style_encoder_block(512)
         )
         self.s_d = 512
-        self.style_noise = RiemannNoise(4)
+        self.style_noise = RiemannNoise(4, self.s_d)
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16),
             nn.ReLU()
