@@ -393,7 +393,7 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(128, 128),
             ConvBlock(128, 64, noise=128),
             ConvBlock(64, 256, noise=128),
-            nn.PixelShuffle(2)
+            nn.PixelShuffle(2),
             nn.Conv2d(64, 64, kernel_size=1),
             nn.ReLU()
         )
