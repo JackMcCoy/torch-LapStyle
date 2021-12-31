@@ -74,8 +74,7 @@ class RiemannNoise(nn.Module):
     def __init__(self, size:int, channels:int):
         super(RiemannNoise, self).__init__()
         self.size = size
-        self.spatial_params = nn.ParameterList([
-                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
+        self.spatial_params = nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))
         self.noise = torch.zeros(1,device=torch.device('cuda:0'))
         self.size=size
         self.relu = nn.ReLU()
