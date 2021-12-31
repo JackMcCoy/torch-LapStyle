@@ -89,7 +89,6 @@ class RiemannNoise(nn.Module):
         w = self.spatial_params
 
         x = x + (self.noise.repeat(N,1,h,h).normal_()*w)
-        x = x * sp_att_mask
         return x
 
 
