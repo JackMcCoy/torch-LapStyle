@@ -374,8 +374,8 @@ class DecoderAdaConv(nn.Module):
         self.decoder_1 = nn.Sequential(
             ResBlock(512),
             ConvBlock(512, 256),
-            #RiemannNoise(32, 256),
-            #nn.ReLU(),
+            RiemannNoise(32, 256),
+            nn.ReLU(),
             nn.ConvTranspose2d(256, 256, 3, 2, 1, 1),
             nn.ReLU(),
             )
@@ -383,8 +383,8 @@ class DecoderAdaConv(nn.Module):
         self.decoder_2 = nn.Sequential(
             ResBlock(256),
             ConvBlock(256, 128),
-            #RiemannNoise(64, 128),
-            #nn.ReLU(),
+            RiemannNoise(64, 128),
+            nn.ReLU(),
             nn.ConvTranspose2d(128, 128, 3, 2, 1, 1),
             nn.ReLU(),
         )
@@ -392,8 +392,8 @@ class DecoderAdaConv(nn.Module):
         self.decoder_3 = nn.Sequential(
             ConvBlock(128, 128),
             ConvBlock(128, 64),
-            #RiemannNoise(128, 64),
-            #nn.ReLU(),
+            RiemannNoise(128, 64),
+            nn.ReLU(),
             nn.ConvTranspose2d(64, 64, 3, 2, 1, 1),
             nn.ReLU(),
         )

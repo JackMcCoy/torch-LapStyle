@@ -28,6 +28,7 @@ class ResBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
+'''
 class RiemannNoise(nn.Module):
 
     def __init__(self, size:int, channels:int):
@@ -62,6 +63,31 @@ class RiemannNoise(nn.Module):
         sp_att_mask = sp_att_mask * torch.rsqrt(
             torch.mean(torch.square(sp_att_mask), dim=(2, 3), keepdims=True) + 1e-8)
         sp_att_mask = sp_att_mask
+
+        x = x + (self.noise.repeat(N,1,h,h).normal_()*w)
+        x = x * sp_att_mask
+        return x
+'''
+
+class RiemannNoise(nn.Module):
+
+    def __init__(self, size:int, channels:int):
+        super(RiemannNoise, self).__init__()
+        self.size = size
+        self.spatial_params = nn.ParameterList([
+                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
+        self.noise = torch.zeros(1,device=torch.device('cuda:0'))
+        self.size=size
+        self.relu = nn.ReLU()
+
+
+    def set_random(self):
+        self.noise = self.zero_holder.normal_()
+
+    def forward(self, x):
+        #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
+        N, c, h, w = x.shape
+        w = self.spatial_params
 
         x = x + (self.noise.repeat(N,1,h,h).normal_()*w)
         x = x * sp_att_mask
