@@ -61,7 +61,7 @@ class RiemannNoise(nn.Module):
         sp_att_mask = (1 - alpha) + alpha * s
         sp_att_mask = (sp_att_mask / torch.linalg.norm(sp_att_mask, dim=(2, 3), keepdims=True) + 1e-8)
 
-        x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,c,h,h).normal_())
+        x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,1,h,h).normal_())
         return x
 
 
