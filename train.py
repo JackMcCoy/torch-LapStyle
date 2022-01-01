@@ -195,9 +195,7 @@ def build_rev(depth, state):
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
     rev.train()
-    if args.revision_depth > 1:
-        for i in rev.layers[:-1]:
-            set_requires_grad(i, False)
+
     return rev
 
 def build_revlap(depth, state):
