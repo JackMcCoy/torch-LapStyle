@@ -390,7 +390,10 @@ def revision_train():
 
             rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
 
-            patch_feats = []
+            rev_outputs = [stylized, *rev_outputs]
+            ci_patches = [ci[0], *ci_patches]
+            patches = [None, *patches]
+            patch_feats = [None]
             with torch.no_grad():
                 cropped_si = []
                 for e in range(args.revision_depth):
@@ -399,7 +402,7 @@ def revision_train():
                     patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        for si_cropped,rev_stylized in zip([si[0]]+cropped_si,[stylized]+rev_outputs):
+        for si_cropped,rev_stylized in zip(cropped_si,rev_outputs):
             with autocast(enabled=ac_enabled):
                 loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
             if ac_enabled:
@@ -415,22 +418,19 @@ def revision_train():
         set_requires_grad(disc_, False)
 
 
-        for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
+        for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_features)):
             ploss = False if idx==0 else True
             if idx != 0:
                 with torch.no_grad():
                     cF = enc_(ci_patch)
                     sF = enc_(si_cropped)
-                patch_feats = enc_(patch.float())
-            else:
-                patch_feats = None
 
             with autocast(enabled=ac_enabled):
                 losses = calc_losses(styled,
                                      ci_patch,
                                      si_cropped,
                                      cF, enc_, dec_,
-                                     patch_feats,
+                                     patch_f,
                                      disc_,
                                      calc_identity=False, disc_loss=True,
                                      mdog_losses=args.mdog_loss,
