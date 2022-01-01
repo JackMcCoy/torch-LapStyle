@@ -440,7 +440,7 @@ def revision_train():
                 if idx != 0:
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
-                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)*2
+                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)*5
 
         if ac_enabled:
             scaler.scale(loss).backward()
@@ -475,7 +475,7 @@ def revision_train():
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
-                rev_outputs = torch.vstack([i.float().to('cpu') for i in [stylized] + rev_outputs])
+                rev_outputs = torch.vstack([i.float().to('cpu') for i in rev_outputs])
 
                 draft_img_grid = make_grid(rev_outputs, nrow=args.batch_size, scale_each=True)
                 si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
