@@ -181,7 +181,7 @@ class Revisors(nn.Module):
         self.levels = levels
         self.size=256
         for i in range(levels):
-            self.layers.append(RevisionNet(s_d=128, first_layer= i == 0, batch_size=batch_size))
+            self.layers.append(RevisionNet(s_d=512, first_layer= i == 0, batch_size=batch_size))
 
     def load_states(self, state_string):
         states = state_string.split(',')
