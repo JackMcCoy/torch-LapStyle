@@ -432,7 +432,6 @@ def revision_train():
                                      cF, enc_, dec_,
                                      patch_feats,
                                      disc_,
-                                     calc_content_style = args.content_style_loss,
                                      calc_identity=False, disc_loss=True,
                                      mdog_losses=args.mdog_loss,
                                      content_all_layers=args.content_all_layers,
