@@ -370,8 +370,8 @@ def revision_train():
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .5)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
-            adjust_learning_rate(optimizer, i, args)
-        adjust_learning_rate(opt_D, i, args, disc=True)
+            adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
