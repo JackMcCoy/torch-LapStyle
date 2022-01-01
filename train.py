@@ -380,9 +380,6 @@ def revision_train():
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-            opt_D.zero_grad(set_to_none=True)
-            for optimizer in optimizers:
-                optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
             crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
@@ -415,6 +412,8 @@ def revision_train():
                 loss_D.backward()
                 if i + 1 % 2 == 0:
                     opt_D.step()
+            opt_D.zero_grad(set_to_none=True)
+
         set_requires_grad(disc_, False)
 
 
@@ -457,6 +456,9 @@ def revision_train():
                 if i + 1 % 2 == 0:
                     for optimizer in optimizers:
                         optimizer.step()
+            for optimizer in optimizers:
+                optimizer.zero_grad(set_to_none=True)
+
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
