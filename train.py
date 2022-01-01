@@ -381,13 +381,13 @@ def revision_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
             opt_D.zero_grad(set_to_none=True)
+            for optimizer in optimizers:
+                optimizer.zero_grad(set_to_none=True)
             stylized, style = dec_(sF, cF)
 
             crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
             crop_marks.requires_grad = False
 
-            for optimizer in optimizers:
-                optimizer.zero_grad(set_to_none=True)
             rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
 
             patch_feats = []
