@@ -121,7 +121,7 @@ class RevisionNet(nn.Module):
 
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconvs = AdaConv(256, 6, s_d=s_d)
+        self.adaconvs = AdaConv(256, 6, batch_size=batch_size,s_d=s_d)
 
         self.relu = nn.ReLU()
         self.learnable = nn.Sequential(#Downblock
