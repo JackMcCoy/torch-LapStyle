@@ -108,10 +108,10 @@ class Bias(nn.Module):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,noise=0):
+    def __init__(self, dim1, dim2,groups=1):
         super(ConvBlock, self).__init__()
         layers = [nn.ReflectionPad2d((1, 1, 1, 1)),
-                  nn.Conv2d(dim1, dim2, kernel_size=3),
+                  nn.Conv2d(dim1, dim2, kernel_size=3, groups=groups),
                   nn.ReLU()]
 
         self.conv_block = nn.Sequential(*layers)
