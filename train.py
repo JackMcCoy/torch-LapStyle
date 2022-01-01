@@ -393,8 +393,8 @@ def revision_train():
             patch_feats = []
             with torch.no_grad():
                 cropped_si = []
-                for i in range(args.revision_depth):
-                    cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**i)))
+                for e in range(args.revision_depth):
+                    cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**e)))
                 for stylized_patch in patches:
                     patch_feats.append(enc_(stylized_patch))
 

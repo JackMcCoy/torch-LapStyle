@@ -208,8 +208,8 @@ class Revisors(nn.Module):
                 bl = (crop_marks[i][1] * 2**(idx-i)).int()
                 br = (bl + (512*2**(idx-1-i))).int()
                 scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
-                ci_patches.append(scaled_ci)
                 size_diff = size_diff *.5
+            ci_patches.append(scaled_ci)
             patches.append(input[:, :, tl:tr, bl:br])
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
