@@ -204,9 +204,9 @@ class Revisors(nn.Module):
 
             for i in range(idx+1):
                 tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                tr = (tl + (256*2**(idx-1-i))).int()
+                tr = (tl + (2048//2**(i+1))).int()
                 bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                br = (bl + (256*2**(idx-1-i))).int()
+                br = (bl + (2048//2**(i+1))).int()
                 scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
 
             ci_patches.append(scaled_ci)
