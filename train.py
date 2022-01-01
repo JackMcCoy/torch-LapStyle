@@ -364,9 +364,9 @@ def revision_train():
     scaler = GradScaler(init_scale=128)
     d_scaler = GradScaler(init_scale=128)
     optimizers = [torch.optim.AdamW(list(dec_.parameters()), lr=args.lr)]
-    for i in rev_.layers:
-        optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    #optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
+    #for i in rev_.layers:
+    #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
+    optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .5)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
