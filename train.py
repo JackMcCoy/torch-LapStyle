@@ -369,91 +369,90 @@ def revision_train():
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .9)
-    with torch.autograd.detect_anomaly():
-        for i in tqdm(range(args.max_iter)):
+    for i in tqdm(range(args.max_iter)):
+        for optimizer in optimizers:
+            adjust_learning_rate(optimizer, i, args)
+        adjust_learning_rate(opt_D, i, args, disc=True)
+        with autocast(enabled=ac_enabled):
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+            opt_D.zero_grad(set_to_none=True)
+            stylized, style = dec_(sF, cF)
+
+            crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
+            crop_marks.requires_grad = False
+
             for optimizer in optimizers:
-                adjust_learning_rate(optimizer, i, args)
-            adjust_learning_rate(opt_D, i, args, disc=True)
+                optimizer.zero_grad(set_to_none=True)
+            rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
+
+            patch_feats = []
+            with torch.no_grad():
+                cropped_si = []
+                for i in range(args.revision_depth):
+                    cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**i)))
+                for stylized_patch in patches:
+                    patch_feats.append(enc_(stylized_patch))
+
+        set_requires_grad(disc_, True)
+        for si_cropped,rev_stylized in zip([si[0]]+cropped_si,[stylized]+rev_outputs):
             with autocast(enabled=ac_enabled):
-                ci = next(content_iter).to(device)
-                si = next(style_iter).to(device)
-                ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
-                si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
-                cF = enc_(ci[0])
-                sF = enc_(si[0])
-                opt_D.zero_grad(set_to_none=True)
-                stylized, style = dec_(sF, cF)
+                loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
+            if ac_enabled:
+                d_scaler.scale(loss_D).backward()
+        if ac_enabled:
+            d_scaler.step(opt_D)
+            d_scaler.update()
+        else:
+            loss_D.backward()
+            if i + 1 % 2 == 0:
+                opt_D.step()
+        set_requires_grad(disc_, False)
 
-                crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
-                crop_marks.requires_grad = False
 
-                for optimizer in optimizers:
-                    optimizer.zero_grad(set_to_none=True)
-                rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
-
-                patch_feats = []
+        for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
+            ploss = False if idx==0 else True
+            if idx != 0:
                 with torch.no_grad():
-                    cropped_si = []
-                    for i in range(args.revision_depth):
-                        cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**i)))
-                    for stylized_patch in patches:
-                        patch_feats.append(enc_(stylized_patch))
-
-            set_requires_grad(disc_, True)
-            for si_cropped,rev_stylized in zip([si[0]]+cropped_si,[stylized]+rev_outputs):
-                with autocast(enabled=ac_enabled):
-                    loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
-                if ac_enabled:
-                    d_scaler.scale(loss_D).backward()
-            if ac_enabled:
-                d_scaler.step(opt_D)
-                d_scaler.update()
+                    cF = enc_(ci_patch)
+                    sF = enc_(si_cropped)
+                patch_feats = enc_(patch.float())
             else:
-                loss_D.backward()
-                if i + 1 % 2 == 0:
-                    opt_D.step()
-            set_requires_grad(disc_, False)
+                patch_feats = None
 
-
-            for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
-                ploss = False if idx==0 else True
+            with autocast(enabled=ac_enabled):
+                losses = calc_losses(styled,
+                                     ci_patch,
+                                     si_cropped,
+                                     cF, enc_, dec_,
+                                     patch_feats,
+                                     disc_,
+                                     calc_identity=False, disc_loss=True,
+                                     mdog_losses=args.mdog_loss,
+                                     content_all_layers=args.content_all_layers,
+                                     remd_loss=remd_loss, patch_loss=ploss,
+                                     sF=sF, split_style = args.split_style)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 if idx != 0:
-                    with torch.no_grad():
-                        cF = enc_(ci_patch)
-                        sF = enc_(si_cropped)
-                    patch_feats = enc_(patch.float())
+                    loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
-                    patch_feats = None
-
-                with autocast(enabled=ac_enabled):
-                    losses = calc_losses(styled,
-                                         ci_patch,
-                                         si_cropped,
-                                         cF, enc_, dec_,
-                                         patch_feats,
-                                         disc_,
-                                         calc_identity=False, disc_loss=True,
-                                         mdog_losses=args.mdog_loss,
-                                         content_all_layers=args.content_all_layers,
-                                         remd_loss=remd_loss, patch_loss=ploss,
-                                         sF=sF, split_style = args.split_style)
-                    loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                    if idx != 0:
-                        loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
-                    else:
-                        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+                    loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
 
-            if ac_enabled:
-                scaler.scale(loss).backward()
+        if ac_enabled:
+            scaler.scale(loss).backward()
+            for optimizer in optimizers:
+                scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            if i + 1 % 2 == 0:
                 for optimizer in optimizers:
-                    scaler.step(optimizer)
-                scaler.update()
-            else:
-                loss.backward()
-                if i + 1 % 2 == 0:
-                    for optimizer in optimizers:
-                        optimizer.step()
+                    optimizer.step()
 
         if (i + 1) % 10 == 0:
             loss_dict = {}

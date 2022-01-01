@@ -192,28 +192,27 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style, crop_marks):
-        with torch.no_grad():
-            outputs = []
-            patches = []
-            ci_patches = []
-            device = torch.device("cuda")
-            size=256
-            for idx, layer in enumerate(self.layers):
-                input = self.upsample(input)
-                size *= 2
-                scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
-                size_diff = self.size//256
-                for i in range(idx+1):
-                    tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                    tr = (tl + (512*2**(idx-1-i))).int()
-                    bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                    br = (bl + (512*2**(idx-1-i))).int()
-                    scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
-                    ci_patches.append(scaled_ci)
-                    size_diff = size_diff *.5
-                patches.append(input[:, :, tl:tr, bl:br])
-                lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-                x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
+        outputs = []
+        patches = []
+        ci_patches = []
+        device = torch.device("cuda")
+        size=256
+        for idx, layer in enumerate(self.layers):
+            input = self.upsample(input)
+            size *= 2
+            scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
+            size_diff = self.size//256
+            for i in range(idx+1):
+                tl = (crop_marks[i][0] * 2**(idx-i)).int()
+                tr = (tl + (512*2**(idx-1-i))).int()
+                bl = (crop_marks[i][1] * 2**(idx-i)).int()
+                br = (bl + (512*2**(idx-1-i))).int()
+                scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
+                ci_patches.append(scaled_ci)
+                size_diff = size_diff *.5
+            patches.append(input[:, :, tl:tr, bl:br])
+            lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+            x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
             input = layer(x2, style)
             outputs.append(input)
         return outputs, ci_patches, patches
