@@ -388,7 +388,7 @@ def revision_train():
 
             for optimizer in optimizers:
                 optimizer.zero_grad(set_to_none=True)
-            rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), enc_, crop_marks)
+            rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
 
             patch_feats = []
             with torch.no_grad():
