@@ -441,14 +441,12 @@ def revision_train():
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
                     loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
-                print(loss)
 
         if ac_enabled:
             scaler.scale(loss).backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 for idx, optimizer in enumerate(optimizers):
-                    print(idx)
                     scaler.step(optimizer)
                 scaler.update()
             else:
