@@ -191,9 +191,9 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 def build_rev(depth, state):
     rev = net.Revisors(levels=args.revision_depth, batch_size=args.batch_size).to(device)
-    if not state is None:
-        state = torch.load(state)
-        rev.load_state_dict(state, strict=False)
+    #if not state is None:
+    #    state = torch.load(state)
+    #    rev.load_state_dict(state, strict=False)
     rev.train()
     if args.revision_depth > 1:
         for i in rev.layers[:-1]:
