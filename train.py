@@ -392,7 +392,7 @@ def revision_train():
 
             rev_outputs = [stylized, *rev_outputs]
             ci_patches = [ci[0], *ci_patches]
-            patches = [None, *patches]
+            patches = [torch.zeros(1,device='cuda:0'), *patches]
             patch_feats = [torch.zeros(1,device='cuda:0')]
             with torch.no_grad():
                 cropped_si = []
