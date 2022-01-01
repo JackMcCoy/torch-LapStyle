@@ -318,8 +318,7 @@ def drafting_train():
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
 def revision_train():
     random_crop = transforms.RandomCrop(256)
-    if args.split_style:
-        random_crop_2 = transforms.RandomCrop(512)
+    random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -394,7 +393,7 @@ def revision_train():
             patch_feats = [torch.zeros(1,device='cuda:0')]
             with torch.no_grad():
                 for e in range(args.revision_depth):
-                    cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**e)))
+                    cropped_si.append(random_crop2(F.interpolate(si[-1],size=256*2**e)))
                 for stylized_patch in patches[1:]:
                     patch_feats.append(enc_(stylized_patch))
 
