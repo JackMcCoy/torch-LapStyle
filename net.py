@@ -138,9 +138,9 @@ class RevisionNet(nn.Module):
                         RiemannNoise(128, 64),
         )
 
+        self.adaconv = AdaConv(64, 1, batch_size=batch_size, s_d=s_d)
                         # Upbloack
         self.learnable_2= nn.Sequential(
-                        AdaConv(64, 1, batch_size=batch_size, s_d=s_d),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 256, kernel_size=3),
                         nn.LeakyReLU(),
@@ -167,7 +167,8 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.learnable_1(input)
-        out = self.learnable_2((style, out, True))
+        out = self.adaconv(style, out, norm=True)
+        out = self.learnable_2(out)
         out = (out + input[:,:3,:,:])
         return out
 
