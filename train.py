@@ -413,9 +413,7 @@ def revision_train():
                 opt_D.step()
         set_requires_grad(disc_, False)
 
-        with autocast(enabled=ac_enabled):
-            loss = torch.zeros(1, device='cuda:0')
-            loss.requires_grad = True
+
         for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
             ploss = False if idx==0 else True
             if idx != 0:
@@ -439,7 +437,11 @@ def revision_train():
                                      remd_loss=remd_loss, patch_loss=ploss,
                                      sF=sF, split_style = args.split_style)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
+                if idx != 0:
+                    loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
+                else:
+                    loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+
 
         if ac_enabled:
             scaler.scale(loss).backward()
