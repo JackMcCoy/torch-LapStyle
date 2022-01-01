@@ -166,7 +166,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        out = self.learnable(input)
+        out = self.learnable_1(input)
         out = self.learnable_2(style, out, norm=True)
         out = (out + input[:,:3,:,:])
         return out
