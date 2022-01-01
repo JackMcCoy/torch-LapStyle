@@ -119,10 +119,8 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
-        self.adaconv = AdaConv(256, 6, batch_size=batch_size,s_d=s_d)
-
         self.relu = nn.ReLU()
-        self.learnable = nn.Sequential(#Downblock
+        self.learnable_1 = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(6, 128, kernel_size=3),
                         nn.LeakyReLU(),
@@ -137,8 +135,12 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         # Resblock Middle
                         ResBlock(64),
-                        # Upbloack
                         RiemannNoise(128, 64),
+        )
+
+                        # Upbloack
+        self.learnable_2= nn.Sequential(
+                        AdaConv(64, 1, batch_size=batch_size, s_d=s_d),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 256, kernel_size=3),
                         nn.LeakyReLU(),
@@ -164,9 +166,8 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        b = input.shape[0]
-        out = self.adaconv(style, input, norm=True)
-        out = self.learnable(out)
+        out = self.learnable(input)
+        out = self.learnable_2(style, out, norm=True)
         out = (out + input[:,:3,:,:])
         return out
 
