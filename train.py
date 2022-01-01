@@ -348,7 +348,7 @@ def revision_train():
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = build_disc(disc_state, disc_quant)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
+        disc_ = build_disc(disc_state)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
         disc_.train()
         if not disc_state is None:
             disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
