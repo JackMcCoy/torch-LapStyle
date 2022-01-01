@@ -418,7 +418,7 @@ def revision_train():
         set_requires_grad(disc_, False)
 
 
-        for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_features)):
+        for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
                 with torch.no_grad():
