@@ -448,7 +448,8 @@ def revision_train():
             scaler.scale(loss).backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
-                for optimizer in optimizers:
+                for idx, optimizer in enumerate(optimizers):
+                    print(idx)
                     scaler.step(optimizer)
                 scaler.update()
             else:
