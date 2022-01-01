@@ -326,7 +326,7 @@ def revision_train():
         init_weights(dec_)
         #dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
-        set_requires_grad(dec_, False)
+        set_requires_grad(dec_, True)
         disc_state = None
         if args.load_rev == 1 or args.load_disc == 1:
             path = args.load_model.split('/')
