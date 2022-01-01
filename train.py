@@ -398,7 +398,7 @@ def revision_train():
                 cropped_si = []
                 for e in range(args.revision_depth):
                     cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**e)))
-                for stylized_patch in patches:
+                for stylized_patch in patches[1:]:
                     patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
