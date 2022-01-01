@@ -213,6 +213,7 @@ class Revisors(nn.Module):
             patches.append(input[:, :, tl:tr, bl:br])
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
+            print(x2.shape)
             input = layer(x2, style)
             outputs.append(input)
         return outputs, ci_patches, patches
