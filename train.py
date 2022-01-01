@@ -428,7 +428,7 @@ def revision_train():
             with autocast(enabled=ac_enabled):
                 losses = calc_losses(styled,
                                      ci_patch,
-                                     si_cropped_patch,
+                                     si_cropped,
                                      cF, enc_, dec_,
                                      patch_feats,
                                      disc_,
