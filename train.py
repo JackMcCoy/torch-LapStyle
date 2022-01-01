@@ -414,7 +414,7 @@ def revision_train():
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
-            loss = torch.Tensor([0.]).to(device)
+            loss = torch.Tensor([0.], requires_grad=True,device='cuda:0')
         for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
             ploss = False if idx==0 else True
             if idx != 0:
