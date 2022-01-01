@@ -421,7 +421,7 @@ def revision_train():
                 with torch.no_grad():
                     cF = enc_(ci_patch)
                     sF = enc_(si_cropped)
-                patch_feats = enc_(patch)
+                patch_feats = enc_(patch.float())
             else:
                 patch_feats = None
 
