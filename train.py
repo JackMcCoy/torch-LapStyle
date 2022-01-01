@@ -393,7 +393,7 @@ def revision_train():
             rev_outputs = [stylized, *rev_outputs]
             ci_patches = [ci[0], *ci_patches]
             patches = [None, *patches]
-            patch_feats = [None]
+            patch_feats = [tensor.zeros(1,device='cuda:0')]
             with torch.no_grad():
                 cropped_si = []
                 for e in range(args.revision_depth):
