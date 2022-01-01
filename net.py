@@ -119,75 +119,46 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
 
-        self.style_encoding = nn.Sequential(
-            *style_encoder_block(512),
-            *style_encoder_block(512),
-            *style_encoder_block(512)
-        )
-        self.s_d = 128
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16)
-        )
-        self.style_riemann_noise = RiemannNoise(4)
-
         self.resblock = ResBlock(64)
         self.first_layer = first_layer
-        self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d)])
+        self.adaconvs = AdaConv(256, 6, s_d=s_d)
 
         self.relu = nn.ReLU()
-        '''
-        self.style_reprojection = nn.Sequential(
-            nn.Conv2d(s_d, s_d, kernel_size=1),
-            nn.LeakyReLU()
-        )
-        '''
+        self.learnable = nn.Sequential(#Downblock
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(6, 128, kernel_size=3),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(128, 128, kernel_size=3, stride=1),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(128, 64, kernel_size=3, stride=1),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=2),
+                        nn.LeakyReLU(),
+                        # Resblock Middle
+                        ResBlock(64),
+                        # Upbloack
+                        RiemannNoise(128, 64),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(64, 256, kernel_size=3),
+                        nn.LeakyReLU(),
+                        nn.PixelShuffle(2),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(64, 64, kernel_size=3),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(64, 128, kernel_size=3),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(128, 128, kernel_size=3),
+                        nn.LeakyReLU(),
+                        nn.ReflectionPad2d((1, 1, 1, 1)),
+                        nn.Conv2d(128, 3, kernel_size=3)
+                        )
 
-
-        self.riemann_style_noise = RiemannNoise(4)
-        self.DownBlock = nn.Sequential(SwitchableNoise(256, first_layer),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(6, 128, kernel_size=3),
-            nn.ReLU(),
-            SwitchableNoise(256, first_layer),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.ReLU(),
-            SwitchableNoise(256, first_layer),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1),
-            nn.ReLU(),
-            SwitchableNoise(256, first_layer),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.ReLU(),
-            SwitchableNoise(128, first_layer),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(SwitchableNoise(128, first_layer),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
-                                                    nn.ReLU(),
-                                                    SwitchableNoise(128, first_layer),
-                                                    nn.PixelShuffle(2),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 64, kernel_size=3),
-                                                    nn.ReLU(),
-                                                    SwitchableNoise(256, first_layer)),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 128, kernel_size=3),
-                                                    nn.ReLU(),
-                                                    SwitchableNoise(256, first_layer)),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.ReLU(),
-                                                    SwitchableNoise(256, first_layer)),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3)
-                                                    )])
-
-    def forward(self, input, stylized_feats):
+    def forward(self, input, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -196,18 +167,9 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         b = input.shape[0]
-        style = self.style_encoding(stylized_feats['r4_1'])
-        style = style.flatten(1)
-        style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
-        style = self.riemann_style_noise(style)
-
-        out = self.DownBlock(input.clone().detach())
-        out = self.resblock(out)
-        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
-            out = out + adaconv(style, out, norm=True)
-            out = learnable(out)
-        out = (out + input.clone().detach()[:,:3,:,:])
+        out = self.adaconv(style, input)
+        out = self.learnable(out)
+        out = (out + input[:,:3,:,:])
         return out
 
 class Revisors(nn.Module):
@@ -219,6 +181,7 @@ class Revisors(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
         self.levels = levels
+        self.size=256
         for i in range(levels):
             self.layers.append(RevisionNet(s_d=128, first_layer= i == 0, batch_size=batch_size))
 
@@ -228,32 +191,32 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, enc_, crop_marks):
-        device = torch.device("cuda")
-        idx = 0
-        size = 256
-        for layer in self.layers:
-            stylized_feats = enc_(input)
-            input = self.upsample(input)
-            size *= 2
-            scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
-            size_diff = size//256
-            for i in range(idx+1):
-                tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                tr = (tl + (512*2**(idx-1-i))).int()
-                bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                br = (bl + (512*2**(idx-1-i))).int()
-                scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
-                size_diff = size_diff *.5
-            patch = input[:, :, tl:tr, bl:br]
-            lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            x2 = torch.cat([patch, lap_pyr], dim = 1)
-            #if idx == self.levels-1:
-            #    for optimizer in optimizers:
-            #        optimizer.zero_grad(set_to_none=True)
-            input = layer(x2, stylized_feats)
-            idx += 1
-        return input, scaled_ci, patch
+    def forward(self, input, ci, style, crop_marks):
+        with torch.no_grad():
+            outputs = []
+            patches = []
+            ci_patches = []
+            device = torch.device("cuda")
+            size=256
+            for idx, layer in enumerate(self.layers):
+                input = self.upsample(input)
+                size *= 2
+                scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
+                size_diff = self.size//256
+                for i in range(idx+1):
+                    tl = (crop_marks[i][0] * 2**(idx-i)).int()
+                    tr = (tl + (512*2**(idx-1-i))).int()
+                    bl = (crop_marks[i][1] * 2**(idx-i)).int()
+                    br = (bl + (512*2**(idx-1-i))).int()
+                    scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
+                    ci_patches.append(scaled_ci)
+                    size_diff = size_diff *.5
+                patches.append(input[:, :, tl:tr, bl:br])
+                lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
+                x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
+            input = layer(x2, style)
+            outputs.append(input)
+        return outputs, ci_patches, patches
 
 class SingleTransDecoder(nn.Module):
     def __init__(self):
@@ -376,7 +339,10 @@ class DecoderAdaConv(nn.Module):
             RiemannNoise(32, 512),
             ConvBlock(512, 256),
             RiemannNoise(32, 256),
-            nn.Upsample(scale_factor=2, mode='nearest')
+            ConvBlock(256, 1024),
+            nn.PixelShuffle(2),
+            nn.Conv2d(256, 256, kernel_size=1),
+            nn.ReLU(),
 
             )
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
@@ -385,7 +351,10 @@ class DecoderAdaConv(nn.Module):
             RiemannNoise(64, 256),
             ConvBlock(256, 128),
             RiemannNoise(64, 128),
-            nn.Upsample(scale_factor=2, mode='nearest')
+            ConvBlock(128, 512),
+            nn.PixelShuffle(2),
+            nn.Conv2d(128, 128, kernel_size=1),
+            nn.ReLU(),
 
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
@@ -394,7 +363,10 @@ class DecoderAdaConv(nn.Module):
             RiemannNoise(128, 128),
             ConvBlock(128, 64),
             RiemannNoise(128, 64),
-            nn.Upsample(scale_factor=2, mode='nearest')
+            ConvBlock(64, 256),
+            nn.PixelShuffle(2),
+            nn.Conv2d(64, 64, kernel_size=1),
+            nn.ReLU(),
 
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)

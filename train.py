@@ -325,7 +325,8 @@ def revision_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
-        dec_.load_state_dict(torch.load(args.load_model))
+        init_weights(dec_)
+        #dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         set_requires_grad(dec_, False)
         disc_state = None
@@ -350,14 +351,13 @@ def revision_train():
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
         disc_ = build_disc(disc_state, disc_quant)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
-        ganloss = GANLoss('lsgan', depth=args.disc_depth, conv_ch=args.disc_channels, batch_size=args.batch_size)
         disc_.train()
         if not disc_state is None:
             disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         else:
             init_weights(disc_)
         rev_.train()
-        dec_.eval()
+        dec_.train()
         enc_.to(device)
         dec_.to(device)
         disc_.to(device)
@@ -369,7 +369,7 @@ def revision_train():
     optimizers = []
     #for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizers.append(torch.optim.AdamW(rev_.parameters(), lr=args.lr))
+    optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .9)
     for i in tqdm(range(args.max_iter)):
         for optimizer in optimizers:
@@ -390,18 +390,25 @@ def revision_train():
 
             for optimizer in optimizers:
                 optimizer.zero_grad(set_to_none=True)
-            rev_stylized, ci_patch, stylized_patch = rev_(stylized, ci[-1].detach(), enc_, crop_marks)
-            si_cropped = random_crop(si[-1])
-            patch_feats = enc_(stylized_patch)
+            rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), enc_, crop_marks)
+
+            patch_feats = []
+            with torch.no_grad():
+                cropped_si = []
+                for i in range(args.revision_depth):
+                    cropped_si.append(random_crop(F.interpolate(si[-1],size=256*2**i)))
+                for stylized_patch in patches:
+                    patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
+        for si_cropped,rev_stylized in zip([si[0]]+cropped_si,[stylized]+rev_outputs):
+            with autocast(enabled=ac_enabled):
+                loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_, ganloss)
+            if ac_enabled:
+                d_scaler.scale(loss_D).backward()
         if ac_enabled:
-            d_scaler.scale(loss_D).backward()
-            if i+1 % 2 == 0:
-                d_scaler.step(opt_D)
-                d_scaler.update()
+            d_scaler.step(opt_D)
+            d_scaler.update()
         else:
             loss_D.backward()
             if i + 1 % 2 == 0:
@@ -409,27 +416,38 @@ def revision_train():
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
-            if args.content_style_loss:
-                cF = enc_(ci_patch)
-                if args.split_style:
-                    si_cropped = random_crop_2(si[-1])
-                    sF = None
-                else:
+            loss = torch.Tensor([0.]).to(device)
+        for idx, (styled,ci_patch,si_cropped,patch) in enumerate(zip([stylized]+rev_outputs,[ci[0]]+ci_patches,[si[0]]+cropped_si,[None]+patches)):
+            ploss = False if idx==0 else True
+            if idx != 0:
+                with torch.no_grad():
+                    cF = enc_(ci_patch)
                     sF = enc_(si_cropped)
+                patch_feats = enc_(patch)
             else:
-                cF = None
-                sF = None
-            losses = calc_losses(rev_stylized, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_, calc_content_style = args.content_style_loss, calc_identity=False, disc_loss=True, mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss, patch_loss=True, GANLoss=ganloss, sF=sF, split_style = args.split_style)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+                patch_feats = None
+
+            with autocast(enabled=ac_enabled):
+                losses = calc_losses(styled,
+                                     ci_patch,
+                                     si_cropped_patch,
+                                     cF, enc_, dec_,
+                                     patch_feats,
+                                     disc_,
+                                     calc_content_style = args.content_style_loss,
+                                     calc_identity=False, disc_loss=True,
+                                     mdog_losses=args.mdog_loss,
+                                     content_all_layers=args.content_all_layers,
+                                     remd_loss=remd_loss, patch_loss=ploss,
+                                     sF=sF, split_style = args.split_style)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+                loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
 
         if ac_enabled:
             scaler.scale(loss).backward()
-
-            if i + 1 % 2 == 0:
-                for optimizer in optimizers:
-                    scaler.step(optimizer)
-                scaler.update()
+            for optimizer in optimizers:
+                scaler.step(optimizer)
+            scaler.update()
         else:
             loss.backward()
             if i + 1 % 2 == 0:
@@ -438,7 +456,7 @@ def revision_train():
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN,loss_D, rev_stylized,patch_loss, mdog],
+            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN,loss_D, stylized,patch_loss, mdog],
                             ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                             'Revision Disc. Loss','Discriminator Loss','example','Patch Loss', 'MXDOG Loss']):
                 if s == 'example':
@@ -453,17 +471,15 @@ def revision_train():
 
         with torch.no_grad():
             if (i + 1) % 50 == 0:
-                stylized = stylized.float().to('cpu')
-                rev_stylized = rev_stylized.float().to('cpu')
-                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                styled_img_grid = make_grid(rev_stylized, nrow=4, scale_each=True)
+                rev_outputs = torch.vstack([i.float().to('cpu') for i in [stylized] + rev_outputs])
+
+                draft_img_grid = make_grid(rev_outputs, nrow=args.batch_size, scale_each=True)
                 si[-1] = F.interpolate(si[-1], size=256, mode='bicubic')
                 ci[-1] = F.interpolate(ci[-1], size=256, mode='bicubic')
                 style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir+'/drafting_revision_iter'+str(i+1)+'.jpg')
                 save_image(draft_img_grid.detach(),
-                           args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
+                           args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
                 save_image(content_img_grid.detach(),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                i + 1) + '.jpg')
