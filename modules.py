@@ -53,7 +53,7 @@ class RiemannNoise(nn.Module):
 
         s = torch.sum(x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2, 3), keepdim=True)
-        s_max = torch.abs(s).amax(dim=(2, 3), keepdim=True)
+        s_max = s.abs_().amax(dim=(2, 3), keepdim=True)
         s = s / (s_max + 1e-8)
         s = (s + 1) / 2
         s = s * A + b
