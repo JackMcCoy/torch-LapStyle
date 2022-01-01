@@ -404,13 +404,14 @@ def revision_train():
                 loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
-        if ac_enabled:
-            d_scaler.step(opt_D)
-            d_scaler.update()
-        else:
-            loss_D.backward()
-            if i + 1 % 2 == 0:
-                opt_D.step()
+        if i % args.accumulation_steps == 0:
+            if ac_enabled:
+                d_scaler.step(opt_D)
+                d_scaler.update()
+            else:
+                loss_D.backward()
+                if i + 1 % 2 == 0:
+                    opt_D.step()
         set_requires_grad(disc_, False)
 
 
@@ -445,14 +446,16 @@ def revision_train():
 
         if ac_enabled:
             scaler.scale(loss).backward()
-            for optimizer in optimizers:
-                scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            if i + 1 % 2 == 0:
+        if i % args.accumulation_steps == 0:
+            if ac_enabled:
                 for optimizer in optimizers:
-                    optimizer.step()
+                    scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                if i + 1 % 2 == 0:
+                    for optimizer in optimizers:
+                        optimizer.step()
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
