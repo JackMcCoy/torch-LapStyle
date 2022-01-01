@@ -165,7 +165,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         b = input.shape[0]
-        out = self.adaconv(style, input)
+        out = self.adaconv(style, input, norm=True)
         out = self.learnable(out)
         out = (out + input[:,:3,:,:])
         return out
