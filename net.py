@@ -278,9 +278,9 @@ class Revisors(nn.Module):
             ci_patches.append(scaled_ci)
             patches.append(input[:, :, tl:tr, bl:br])
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
+            input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
-            out = self.downblocks[idx](x2)
+            out = self.downblocks[idx](input)
             style_2 = style * self.embedding_scales[idx].view(1, C, h, w)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 out = out + adaconv(style_2, out, norm=True)
