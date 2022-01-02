@@ -236,8 +236,6 @@ class RevisionNet(nn.Module):
 class Revisors(nn.Module):
     def __init__(self, levels= 1, state_string = None, batch_size=8):
         super(Revisors, self).__init__()
-        self.layers = nn.ModuleList([])
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.crop = RandomCrop(256)
@@ -249,6 +247,7 @@ class Revisors(nn.Module):
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(self.s_d*16, device='cuda:0'))) for i in range(levels)])
+        self.upsamples = nn.ModuleList([PixelShuffleUp(6) for i in range(levels)])
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -264,7 +263,7 @@ class Revisors(nn.Module):
         size=256
         N, C, h, w = style.shape
         for idx in range(self.levels):
-            input = self.upsample(input)
+            input = self.upsamples[idx](input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
 
