@@ -397,9 +397,9 @@ def revision_train():
                     scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
                                               align_corners=False).detach()
                     for j in range(idx + 1):
-                        tl = (crop_marks[i][0] * 2 ** (idx - j)).int()
+                        tl = (crop_marks[j][0] * 2 ** (idx - j)).int()
                         tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
-                        bl = (crop_marks[i][1] * 2 ** (idx - j)).int()
+                        bl = (crop_marks[j][1] * 2 ** (idx - j)).int()
                         br = (bl + (512 * 2 ** (idx - 1 - j))).int()
                         scaled_si = scaled_si[:, :, tl:tr, bl:br]
                     cropped_si.append(scaled_si)
