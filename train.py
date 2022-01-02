@@ -396,11 +396,11 @@ def revision_train():
                     size *= 2
                     scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
                                               align_corners=False).detach()
-                    for i in range(idx + 1):
-                        tl = (crop_marks[i][0] * 2 ** (idx - i)).int()
-                        tr = (tl + (512 * 2 ** (idx - 1 - i))).int()
-                        bl = (crop_marks[i][1] * 2 ** (idx - i)).int()
-                        br = (bl + (512 * 2 ** (idx - 1 - i))).int()
+                    for j in range(idx + 1):
+                        tl = (crop_marks[i][0] * 2 ** (idx - j)).int()
+                        tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
+                        bl = (crop_marks[i][1] * 2 ** (idx - j)).int()
+                        br = (bl + (512 * 2 ** (idx - 1 - j))).int()
                         scaled_si = scaled_si[:, :, tl:tr, bl:br]
                     cropped_si.append(scaled_si)
                 for stylized_patch in patches[1:]:
