@@ -120,6 +120,7 @@ class RevisionNet(nn.Module):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.ReLU()
+        self.embedding_scale = Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(6, 128, kernel_size=3),
@@ -170,6 +171,8 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.Downblock(input)
+        N, C, h, w = style.shape
+        style = style * self.embedding_scale.view(N,C,h,w)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)

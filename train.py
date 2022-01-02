@@ -509,6 +509,12 @@ def revision_train():
                 state_dict = disc_.state_dict()
                 torch.save(state_dict, save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = optimizers[0].state_dict()
+                torch.save(state_dict, save_dir /
+                           'optimizer.pth.tar')
+                state_dict = opt_D.state_dict()
+                torch.save(state_dict, save_dir /
+                           'disc_optimizer.pth.tar')
 
 def revlap_train():
     rev_start = True
