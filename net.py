@@ -710,7 +710,7 @@ class SpectralDiscriminator(nn.Module):
 
 class ResDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64):
-        super(SpectralDiscriminator, self).__init__()
+        super(ResDiscriminator, self).__init__()
         ch = num_channels
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.spectral_gan = nn.ModuleList([[nn.Sequential(
