@@ -729,7 +729,7 @@ class ResDiscriminator(nn.Module):
                 l.init_spectral_norm()
 
     def forward(self, x: torch.Tensor, depth):
-        x = self.layers[depth](x)
+        x = self.spectral_gan[depth](x)
         return pred
 
 mse_loss = GramErrors()
