@@ -805,8 +805,6 @@ class ResDiscriminator(nn.Module):
                 br = (bl + 256).int()
                 pred = pred[:, :, tl:tr, bl:br]
                 pred = layer(x[idx]) + pred
-            if idx + 1 == len(x):
-                return pred
         return pred
 
 mse_loss = GramErrors()
