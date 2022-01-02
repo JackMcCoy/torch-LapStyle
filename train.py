@@ -325,7 +325,7 @@ def revision_train():
         init_weights(dec_)
         #dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
-        set_requires_grad(dec_, True)
+        #set_requires_grad(dec_, True)
         disc_state = None
         if args.load_rev == 1 or args.load_disc == 1:
             path = args.load_model.split('/')
@@ -403,14 +403,14 @@ def revision_train():
                 loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
             if ac_enabled:
                 d_scaler.scale(loss_D).backward()
+            else:
+                loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
                 d_scaler.update()
             else:
-                loss_D.backward()
-                if i + 1 % 2 == 0:
-                    opt_D.step()
+                opt_D.step()
             opt_D.zero_grad(set_to_none=True)
 
         set_requires_grad(disc_, False)
@@ -419,9 +419,8 @@ def revision_train():
         for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
-                with torch.no_grad():
-                    cF = enc_(ci_patch)
-                    sF = enc_(si_cropped)
+                cF = enc_(ci_patch)
+                sF = enc_(si_cropped)
 
             with autocast(enabled=ac_enabled):
                 losses = calc_losses(styled,
@@ -443,16 +442,16 @@ def revision_train():
 
         if ac_enabled:
             scaler.scale(loss).backward()
+        else:
+            loss.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 for idx, optimizer in enumerate(optimizers):
                     scaler.step(optimizer)
                 scaler.update()
             else:
-                loss.backward()
-                if i + 1 % 2 == 0:
-                    for optimizer in optimizers:
-                        optimizer.step()
+                for optimizer in optimizers:
+                    optimizer.step()
             for optimizer in optimizers:
                 optimizer.zero_grad(set_to_none=True)
 
