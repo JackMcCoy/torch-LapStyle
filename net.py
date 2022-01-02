@@ -172,7 +172,7 @@ class RevisionNet(nn.Module):
         """
         out = self.Downblock(input)
         N, C, h, w = style.shape
-        style = style * self.embedding_scale.view(N,C,h,w)
+        style = style * self.embedding_scale.view(1,C,h,w)
         for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
             out = out + adaconv(style, out, norm=True)
             out = learnable(out)
