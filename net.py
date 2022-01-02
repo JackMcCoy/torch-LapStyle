@@ -149,6 +149,8 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
+                                                    nn.Conv2d(64, 64, kernel_size=1),
+                                                    nn.ReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.LeakyReLU(),),
