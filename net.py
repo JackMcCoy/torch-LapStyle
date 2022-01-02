@@ -775,20 +775,10 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
     pred_fake = disc_(fake, crop_marks)
-    if disc_.relgan:
-        pred_fake = pred_fake.view(-1)
-    else:
-        loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
+    loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
     pred_real = disc_(real, crop_marks)
-    if disc_.relgan:
-        pred_real = pred_real.view(-1)
-        loss_D = (
-                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-        )
-    else:
-        loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
-        loss_D = ((loss_D_real + loss_D_fake) * 0.5)
+    loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
+    loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
 def calc_patch_loss(stylized_feats, patch_feats):
