@@ -733,9 +733,9 @@ class ResDiscriminator(nn.Module):
                 pred = layer(x[idx])
             else:
                 pred = self.upsample(pred)
-                tl = (crop_marks[idx][0]).int()
+                tl = (crop_marks[idx-1][0]).int()
                 tr = (tl + 256).int()
-                bl = (crop_marks[idx][1]).int()
+                bl = (crop_marks[idx-1][1]).int()
                 br = (bl + 256).int()
                 pred = pred[:, :, tl:tr, bl:br]
                 pred = layer(x[idx]) + pred
