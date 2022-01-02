@@ -243,9 +243,10 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.levels = levels
         self.size=256
+        self.s_d = 512
 
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
-        self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512) for i in range(levels)])
+        self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0'))) for i in range(levels)])
 
