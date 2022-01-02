@@ -248,7 +248,7 @@ class Revisors(nn.Module):
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
-        self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0'))) for i in range(levels)])
+        self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(self.s_d*16, device='cuda:0'))) for i in range(levels)])
 
     def load_states(self, state_string):
         states = state_string.split(',')
