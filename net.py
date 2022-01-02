@@ -721,7 +721,8 @@ class ResDiscriminator(nn.Module):
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
-            layer.init_spectral_norm()
+            for l in layer:
+                l.init_spectral_norm()
 
     def forward(self, x: torch.Tensor, crop_marks):
         for idx, layer in enumerate(self.spectral_gan):
