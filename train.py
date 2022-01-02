@@ -392,19 +392,28 @@ def revision_train():
             patches = [torch.zeros(1,device='cuda:0'), *patches]
             patch_feats = [torch.zeros(1,device='cuda:0')]
             with torch.no_grad():
-                for e in range(args.revision_depth):
-                    cropped_si.append(random_crop2(F.interpolate(si[-1],size=256*2**e)))
+                size = 256
+                for idx in range(args.revision_depth):
+                    size *= 2
+                    scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
+                                              align_corners=False).detach()
+                    for i in range(idx + 1):
+                        tl = (crop_marks[i][0] * 2 ** (idx - i)).int()
+                        tr = (tl + (512 * 2 ** (idx - 1 - i))).int()
+                        bl = (crop_marks[i][1] * 2 ** (idx - i)).int()
+                        br = (bl + (512 * 2 ** (idx - 1 - i))).int()
+                        scaled_si = scaled_si[:, :, tl:tr, bl:br]
+                    cropped_si.append(scaled_si)
                 for stylized_patch in patches[1:]:
                     patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        for si_cropped,rev_stylized in zip(cropped_si,rev_outputs):
-            with autocast(enabled=ac_enabled):
-                loss_D = calc_GAN_loss(si_cropped.detach(), rev_stylized.clone().detach(), disc_)
-            if ac_enabled:
-                d_scaler.scale(loss_D).backward()
-            else:
-                loss_D.backward()
+        with autocast(enabled=ac_enabled):
+            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach() for i in rev_outputs], crop_marks, disc_)
+        if ac_enabled:
+            d_scaler.scale(loss_D).backward()
+        else:
+            loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
@@ -415,7 +424,7 @@ def revision_train():
 
         set_requires_grad(disc_, False)
 
-
+        args.split_style = False # Haven't re-implemented this yet
         for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
@@ -433,7 +442,8 @@ def revision_train():
                                      mdog_losses=args.mdog_loss,
                                      content_all_layers=args.content_all_layers,
                                      remd_loss=remd_loss, patch_loss=ploss,
-                                     sF=sF, split_style = args.split_style)
+                                     sF=sF, split_style = args.split_style,
+                                     crop_marks = crop_marks, rev_depth=idx)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 if idx != 0:
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)

@@ -708,6 +708,37 @@ class SpectralDiscriminator(nn.Module):
             x = layer(x)
         return x
 
+class ResDiscriminator(nn.Module):
+    def __init__(self, depth:int=5, num_channels: int=64):
+        super(SpectralDiscriminator, self).__init__()
+        ch = num_channels
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.spectral_gan = nn.ModuleList([[nn.Sequential(
+            OptimizedBlock(3, num_channels, 3, 1, downsample=False),
+            SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False)) for i in range(depth)]
+                                          ])
+
+
+    def init_spectral_norm(self):
+        for layer in self.spectral_gan:
+            layer.init_spectral_norm()
+
+    def forward(self, x: torch.Tensor, crop_marks):
+        for idx, layer in enumerate(self.spectral_gan):
+            if idx == 0:
+                pred = layer(x[idx])
+            else:
+                pred = self.upsample(pred)
+                tl = (crop_marks[idx][0]).int()
+                tr = (tl + 256).int()
+                bl = (crop_marks[idx][1]).int()
+                br = (bl + 256).int()
+                pred = pred[:, :, tl:tr, bl:br]
+                pred = layer(x[idx]) + pred
+            if idx+1 == len(x):
+                return pred
+        return pred
+
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
 content_emd_loss = CalcContentReltLoss()
@@ -741,13 +772,13 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
-    pred_fake = disc_(fake)
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
+    pred_fake = disc_(fake, crop_marks)
     if disc_.relgan:
         pred_fake = pred_fake.view(-1)
     else:
         loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
-    pred_real = disc_(real)
+    pred_real = disc_(real, crop_marks)
     if disc_.relgan:
         pred_real = pred_real.view(-1)
         loss_D = (
@@ -764,8 +795,26 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 
-def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: typing.Dict[str,torch.Tensor], encoder:nn.Module, decoder:nn.Module, patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None, disc_:nn.Module= None, calc_identity: bool=True, mdog_losses: bool = True, disc_loss: bool=True, patch_disc: bool=False, content_all_layers: bool=False, remd_loss: bool=True, patch_loss: bool=False, sF: typing.Dict[str,torch.Tensor]=None, split_style: bool=False):
-    stylized_feats = encoder(stylized)
+def calc_losses(stylized: torch.Tensor,
+                ci: torch.Tensor,
+                si: torch.Tensor,
+                cF: typing.Dict[str,torch.Tensor],
+                encoder:nn.Module,
+                decoder:nn.Module,
+                patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None,
+                disc_:nn.Module= None,
+                calc_identity: bool=True,
+                mdog_losses: bool = True,
+                disc_loss: bool=True,
+                patch_disc: bool=False,
+                content_all_layers: bool=False,
+                remd_loss: bool=True,
+                patch_loss: bool=False,
+                sF: typing.Dict[str,torch.Tensor]=None,
+                split_style: bool=False,
+                crop_marks = None,
+                rev_depth:int = None):
+    stylized_feats = encoder(stylized[rev_depth])
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
@@ -825,7 +874,7 @@ def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: 
         sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cXF = encoder(cX)
         sXF = encoder(sX)
-        stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        stylized_dog,_ = xdog(torch.clip(stylized[rev_depth],min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cdogF = encoder(stylized_dog)
 
         mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])
@@ -839,7 +888,7 @@ def calc_losses(stylized: torch.Tensor, ci: torch.Tensor, si: torch.Tensor, cF: 
         if patch_disc:
             fake_loss = disc_(crop128(stylized))
         else:
-            fake_loss = disc_(stylized)
+            fake_loss = disc_(stylized[:rev_depth+1], crop_marks)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
