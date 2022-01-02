@@ -114,6 +114,58 @@ class SwitchableNoise(nn.Module):
     def forward(self, x):
         return self.noise_or_ident(x)
 
+def PixelShuffleUp(channels):
+    return nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                         nn.Conv2d(channels, channels*4, kernel_size=3),
+                         nn.PixelShuffle(2),
+                         nn.Conv2d(channels, channels, kernel_size=1)
+                         )
+
+def Downblock():
+    return nn.Sequential(  # Downblock
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(6, 128, kernel_size=3),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(128, 128, kernel_size=3, stride=1),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(128, 64, kernel_size=3, stride=1),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(64, 64, kernel_size=3, stride=2),
+        nn.LeakyReLU(),
+        # Resblock Middle
+        ResBlock(64),
+        RiemannNoise(128, 64),
+    )
+
+def adaconvs(batch_size,s_d):
+    return nn.ModuleList([
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d)])
+
+def Upblock():
+    nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(64, 256, kernel_size=3),
+                                 nn.LeakyReLU(),
+                                 nn.PixelShuffle(2),
+                                 nn.Conv2d(64, 64, kernel_size=1),
+                                 nn.ReLU(),
+                                 nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(64, 64, kernel_size=3),
+                                 nn.LeakyReLU(), ),
+                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(64, 128, kernel_size=3),
+                                 nn.LeakyReLU(), ),
+                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(128, 128, kernel_size=3),
+                                 nn.LeakyReLU(), ),
+                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(128, 3, kernel_size=3)
+                                 )])
 
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
@@ -191,8 +243,11 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.levels = levels
         self.size=256
-        for i in range(levels):
-            self.layers.append(RevisionNet(s_d=512, first_layer= i == 0, batch_size=batch_size))
+
+        self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
+        self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512) for i in range(levels)])
+        self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
+        self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0'))) for i in range(levels)])
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -206,7 +261,8 @@ class Revisors(nn.Module):
         ci_patches = []
         device = torch.device("cuda")
         size=256
-        for idx, layer in enumerate(self.layers):
+        N, C, h, w = style.shape
+        for idx in range(self.levels):
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
@@ -222,7 +278,13 @@ class Revisors(nn.Module):
             patches.append(input[:, :, tl:tr, bl:br])
             lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
             x2 = torch.cat([patches[-1], lap_pyr], dim = 1)
-            input = layer(x2, style)
+
+            out = self.downblocks[idx](x2)
+            style_2 = style * self.embedding_scales[idx].view(1, C, h, w)
+            for adaconv, learnable in zip(self.adaconvs[idx], self.upblock[idx]):
+                out = out + adaconv(style_2, out, norm=True)
+                out = learnable(out)
+            input = (out + input[:, :3, :, :])
             outputs.append(input)
         return outputs, ci_patches, patches
 
