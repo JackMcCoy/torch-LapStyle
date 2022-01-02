@@ -148,7 +148,7 @@ def adaconvs(batch_size,s_d):
             AdaConv(128, 2, batch_size, s_d=s_d)])
 
 def Upblock():
-    nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+    return nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(64, 256, kernel_size=3),
                                  nn.LeakyReLU(),
                                  nn.PixelShuffle(2),
@@ -247,7 +247,7 @@ class Revisors(nn.Module):
 
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
-        self.upblocks = nn.ModuleList([*Upblock() for i in range(levels)])
+        self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(self.s_d*16, device='cuda:0'))) for i in range(levels)])
 
     def load_states(self, state_string):
