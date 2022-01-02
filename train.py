@@ -19,7 +19,7 @@ import net
 from function import init_weights
 from losses import GANLoss
 from modules import RiemannNoise
-from net import calc_losses, calc_patch_loss, calc_GAN_loss
+from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
 
@@ -407,13 +407,12 @@ def revision_train():
                     patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        for j in range(args.revision_depth+1):
-            with autocast(enabled=ac_enabled):
-                loss_D = calc_GAN_loss(cropped_si[j], rev_outputs[j].clone().detach(), j, disc_)
-            if ac_enabled:
-                d_scaler.scale(loss_D).backward()
-            else:
-                loss_D.backward()
+        with autocast(enabled=ac_enabled):
+            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach() for i in rev_outputs], crop_marks, disc_)
+        if ac_enabled:
+            d_scaler.scale(loss_D).backward()
+        else:
+            loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
@@ -437,8 +436,8 @@ def revision_train():
                                      si_cropped,
                                      cF, enc_, dec_,
                                      patch_f,
-                                     disc_,
-                                     calc_identity=False, disc_loss=True,
+                                     None,
+                                     calc_identity=False, disc_loss=False,
                                      mdog_losses=args.mdog_loss,
                                      content_all_layers=args.content_all_layers,
                                      remd_loss=remd_loss, patch_loss=ploss,
@@ -449,6 +448,10 @@ def revision_train():
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
                     loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+        pred_fake = disc_(rev_outputs, crop_marks)
+        loss_D_fake = calc_GAN_loss_from_pred(pred_fake, True)
+
+        loss = loss + loss_D_fake * args.gan_loss
 
         if ac_enabled:
             scaler.scale(loss).backward()
@@ -468,7 +471,7 @@ def revision_train():
 
         if (i + 1) % 10 == 0:
             loss_dict = {}
-            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN,loss_D, stylized,patch_loss, mdog],
+            for l, s in zip([loss, loss_c, loss_s, style_remd, content_relt, loss_D_fake,loss_D, stylized,patch_loss, mdog],
                             ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                             'Revision Disc. Loss','Discriminator Loss','example','Patch Loss', 'MXDOG Loss']):
                 if s == 'example':

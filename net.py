@@ -793,9 +793,21 @@ class ResDiscriminator(nn.Module):
             for l in layer:
                 l.init_spectral_norm()
 
-    def forward(self, x: torch.Tensor, depth):
-        x = self.spectral_gan[depth](x)
-        return x
+    def forward(self, x: torch.Tensor, crop_marks):
+        for idx, layer in enumerate(self.spectral_gan):
+            if idx == 0:
+                pred = layer(x[idx])
+            else:
+                pred = self.upsample(pred)
+                tl = (crop_marks[idx][0]).int()
+                tr = (tl + 256).int()
+                bl = (crop_marks[idx][1]).int()
+                br = (bl + 256).int()
+                pred = pred[:, :, tl:tr, bl:br]
+                pred = layer(x[idx]) + pred
+            if idx + 1 == len(x):
+                return pred
+        return pred
 
 mse_loss = GramErrors()
 style_remd_loss = CalcStyleEmdLoss()
@@ -830,10 +842,10 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, iteration_num, disc_:torch.nn.Module):
-    pred_fake = disc_(fake, iteration_num)
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
+    pred_fake = disc_(fake, crop_marks)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
-    pred_real = disc_(real, iteration_num)
+    pred_real = disc_(real, crop_marks)
     loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
