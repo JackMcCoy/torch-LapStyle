@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.ReLU()
-        self.embedding_scale = Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
+        self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(6, 128, kernel_size=3),
