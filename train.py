@@ -407,12 +407,13 @@ def revision_train():
                     patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach() for i in rev_outputs], crop_marks, disc_)
-        if ac_enabled:
-            d_scaler.scale(loss_D).backward()
-        else:
-            loss_D.backward()
+        for j in range(args.revision_depth+1):
+            with autocast(enabled=ac_enabled):
+                loss_D = calc_GAN_loss(cropped_si[j], rev_outputs[j].clone().detach, j, disc_)
+            if ac_enabled:
+                d_scaler.scale(loss_D).backward()
+            else:
+                loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
@@ -442,7 +443,7 @@ def revision_train():
                                      content_all_layers=args.content_all_layers,
                                      remd_loss=remd_loss, patch_loss=ploss,
                                      sF=sF, split_style = args.split_style,
-                                     crop_marks = crop_marks, rev_depth=idx)
+                                     rev_depth=idx)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 if idx != 0:
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
