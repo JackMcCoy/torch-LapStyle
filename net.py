@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.ReLU()
-        self.learnable_1 = nn.Sequential(#Downblock
+        self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(6, 128, kernel_size=3),
                         nn.LeakyReLU(),
@@ -138,29 +138,32 @@ class RevisionNet(nn.Module):
                         RiemannNoise(128, 64),
         )
 
-        self.adaconv = AdaConv(64, 1, batch_size=batch_size, s_d=s_d)
-                        # Upbloack
-        self.learnable_2= nn.Sequential(
-                        nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(64, 256, kernel_size=3),
-                        nn.LeakyReLU(),
-                        nn.PixelShuffle(2),
-                        RiemannNoise(256, 64),
-                        nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(64, 64, kernel_size=3),
-                        nn.LeakyReLU(),
-                        RiemannNoise(256, 64),
-                        nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(64, 128, kernel_size=3),
-                        nn.LeakyReLU(),
-                        RiemannNoise(256, 128),
-                        nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(128, 128, kernel_size=3),
-                        nn.LeakyReLU(),
-                        RiemannNoise(256, 128),
-                        nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(128, 3, kernel_size=3)
-                        )
+        self.adaconvs = nn.ModuleList([
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d)])
+
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 256, kernel_size=3),
+                                                    nn.LeakyReLU(),
+                                                    nn.PixelShuffle(2),
+                                                    RiemannNoise(256, 64),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
+                                                    nn.LeakyReLU(),
+                                                    RiemannNoise(256, 64),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 128, kernel_size=3),
+                                                    nn.LeakyReLU(),
+                                                    RiemannNoise(256, 128),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 128, kernel_size=3),
+                                                    nn.LeakyReLU(),
+                                                    RiemannNoise(256, 128),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 3, kernel_size=3)
+                                                    )])
 
     def forward(self, input, style):
         """
@@ -170,9 +173,10 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        out = self.learnable_1(input)
-        out = self.adaconv(style, out, norm=True)
-        out = self.learnable_2(out)
+        out = self.Downblock(input)
+        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
+            out = out + adaconv(style, out, norm=True)
+            out = learnable(out)
         out = (out + input[:,:3,:,:])
         return out
 

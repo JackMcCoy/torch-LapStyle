@@ -52,7 +52,34 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.ReLU()
         self.layer_num = layer_num
-
+        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(6, 128, kernel_size=3),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1),
+            nn.LeakyReLU(),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2),
+            nn.LeakyReLU(),)
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 256, kernel_size=3),
+                                                    nn.LeakyReLU(),
+                                                    nn.PixelShuffle(2),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
+                                                    nn.LeakyReLU(),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(64, 128, kernel_size=3),
+                                                    nn.LeakyReLU(),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 128, kernel_size=3),
+                                                    nn.LeakyReLU(),),
+                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Conv2d(128, 3, kernel_size=3)
+                                                    )])
 
 
     def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
