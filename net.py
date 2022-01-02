@@ -247,7 +247,7 @@ class Revisors(nn.Module):
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.embedding_scales = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(self.s_d*16))) for i in range(levels)])
-        self.upsamples = nn.ModuleList([PixelShuffleUp(3) for i in range(levels)])
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -263,7 +263,7 @@ class Revisors(nn.Module):
         size=256
         N, C, h, w = style.shape
         for idx in range(self.levels):
-            input = self.upsamples[idx](input)
+            input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
 
