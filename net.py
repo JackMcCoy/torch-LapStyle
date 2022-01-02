@@ -280,9 +280,9 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
-
+            style_ = style * self.embedding_scales[idx].view(1, C, h, w)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
-                out = out + adaconv(style * self.embedding_scales[idx].view(1, C, h, w), out, norm=True)
+                out = out + adaconv(style_, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
