@@ -424,14 +424,14 @@ def revision_train():
         set_requires_grad(disc_, False)
 
         args.split_style = False # Haven't re-implemented this yet
-        for idx, (styled,ci_patch,si_cropped,patch, patch_f) in enumerate(zip(rev_outputs,ci_patches,cropped_si,patches, patch_feats)):
+        for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
                 cF = enc_(ci_patch)
                 sF = enc_(si_cropped)
 
             with autocast(enabled=ac_enabled):
-                losses = calc_losses(styled,
+                losses = calc_losses(rev_outputs,
                                      ci_patch,
                                      si_cropped,
                                      cF, enc_, dec_,
