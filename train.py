@@ -353,7 +353,7 @@ def revision_train():
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,2048,2048),torch.rand(args.batch_size,512*16,4,4,device='cuda:0'),torch.randint(256, (args.revision_depth, 2),device='cuda:0',dtype='int')), check_trace=False)
+        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,2048,2048),torch.rand(args.batch_size,512*16,4,4,device='cuda:0'),torch.randint(256, (args.revision_depth, 2),device='cuda:0',dtype=torch.int32)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
