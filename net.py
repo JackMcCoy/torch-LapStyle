@@ -243,6 +243,7 @@ class Revisors(nn.Module):
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
+        self.embedding_scales = nn.ModuleList([nn.Sequential(nn.Conv2d(self.s_d,self.s_d, kernel_size=1),nn.ReLU()) for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def load_states(self, state_string):
@@ -276,6 +277,7 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
+            style = self.embedding_scales[idx](style)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 out = out + adaconv(style, out, norm=True)
                 out = learnable(out)
