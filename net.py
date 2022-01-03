@@ -257,8 +257,8 @@ class Revisors(nn.Module):
 
     def forward(self, input, ci, style, crop_marks):
         outputs = [input]
-        patches = []
-        ci_patches = []
+        patches = [input]
+        ci_patches = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False)]
         device = torch.device("cuda")
         size=256
         N, C, h, w = style.shape
