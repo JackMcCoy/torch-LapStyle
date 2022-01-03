@@ -874,6 +874,7 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 rev_depth:int = None):
+    print(stylized.shape)
     stylized_feats = encoder(stylized[rev_depth])
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
