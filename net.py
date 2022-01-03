@@ -782,7 +782,6 @@ class ResDiscriminator(nn.Module):
         self.spectral_gan = nn.ModuleList([*[nn.Sequential(
             OptimizedBlock(3, num_channels, 1, 0, downsample=False),
             SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False),
-            SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False)) for i in range(depth+1)]
                                           ])
 
 
