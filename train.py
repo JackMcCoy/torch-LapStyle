@@ -401,10 +401,13 @@ def revision_train():
                 crop_marks.requires_grad = False
 
                 rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
-
-                ci_patches = [ci[0], *ci_patches]
+                N, C, h, w = ci[0].shape
+                ci_patches = ci_patches.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
                 cropped_si = [si[0]]
-                patches = [torch.zeros(1,device='cuda:0'), *patches]
+                p = torch.zeros_like(patches)[0]
+                N,C,h,w = p.shape
+                patches=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
+
                 patch_feats = [torch.zeros(1,device='cuda:0')]
 
                 size = 256

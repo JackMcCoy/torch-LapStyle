@@ -286,7 +286,9 @@ class Revisors(nn.Module):
             input = (out + input[:, :3, :, :])
             outputs.append(input)
         outputs = torch.stack(outputs)
-        return (outputs, tuple(ci_patches), tuple(patches))
+        patches = torch.stack(patches)
+        ci_patches = torch.stack(ci_patches)
+        return (outputs, ci_patches, patches)
 
 class SingleTransDecoder(nn.Module):
     def __init__(self):
