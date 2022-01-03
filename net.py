@@ -243,7 +243,6 @@ class Revisors(nn.Module):
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
-        self.embedding_scales = nn.ModuleList([nn.Sequential(nn.Linear(self.s_d*16,self.s_d*16),nn.ReLU()) for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
     def load_states(self, state_string):
@@ -277,9 +276,8 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
-            style_ = self.embedding_scales[idx](style.view(N,-1)).reshape(N,C,h,w)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
-                out = out + adaconv(style_, out, norm=True)
+                out = out + adaconv(style, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
@@ -781,6 +779,7 @@ class ResDiscriminator(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.spectral_gan = nn.ModuleList([*[nn.Sequential(
             OptimizedBlock(3, num_channels, 1, 0, downsample=False),
+            SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False),
             SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False)) for i in range(depth+1)]
                                           ])
 
