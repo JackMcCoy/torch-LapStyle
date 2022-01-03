@@ -212,7 +212,8 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.LeakyReLU(),),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3)
+                                                    nn.Conv2d(128, 3, kernel_size=3),
+                                                    nn.ReLU()
                                                     )])
 
     def forward(self, input, style):
@@ -447,7 +448,8 @@ class DecoderAdaConv(nn.Module):
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
-            nn.Conv2d(64, 3, kernel_size=1)
+            nn.Conv2d(64, 3, kernel_size=1),
+            nn.ReLU()
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -874,8 +876,6 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 rev_depth:int = None):
-    print(stylized[rev_depth].shape)
-    print(stylized[rev_depth])
     stylized_feats = encoder(stylized[rev_depth])
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
