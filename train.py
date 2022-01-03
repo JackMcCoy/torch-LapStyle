@@ -320,18 +320,19 @@ def revision_train():
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,device='cuda:0'),
-                                                                                'r3_1': torch.rand(args.batch_size,256,64,64,device='cuda:0'),
-                                                                                'r2_1': torch.rand(args.batch_size,128,128,128,device='cuda:0'),
-                                                                                'r1_1': torch.rand(args.batch_size,64,256,256,device='cuda:0'),},
+        dtype = torch.cuda.HalfTensor if args.fp16 else torch.float
+        dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,dtype=dtype,device='cuda:0'),
+                                                                                'r3_1': torch.rand(args.batch_size,256,64,64,dtype=dtype,device='cuda:0'),
+                                                                                'r2_1': torch.rand(args.batch_size,128,128,128,dtype=dtype,device='cuda:0'),
+                                                                                'r1_1': torch.rand(args.batch_size,64,256,256,dtype=dtype,device='cuda:0'),},
                                                                                {'r4_1': torch.rand(args.batch_size, 512,
-                                                                                                   32, 32,device='cuda:0'),
+                                                                                                   32, 32,dtype=dtype,device='cuda:0'),
                                                                                 'r3_1': torch.rand(args.batch_size, 256,
-                                                                                                   64, 64,device='cuda:0'),
+                                                                                                   64, 64,dtype=dtype,device='cuda:0'),
                                                                                 'r2_1': torch.rand(args.batch_size, 128,
-                                                                                                   128, 128,device='cuda:0'),
+                                                                                                   128, 128,dtype=dtype,device='cuda:0'),
                                                                                 'r1_1': torch.rand(args.batch_size, 64,
-                                                                                                   256, 256,device='cuda:0'), }
+                                                                                                   256, 256,dtype=dtype,device='cuda:0'), }
                                                                                ), check_trace=False)
         init_weights(dec_)
         #dec_.load_state_dict(torch.load(args.load_model))
@@ -353,7 +354,8 @@ def revision_train():
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,2048,2048,device='cuda:0'),torch.rand(args.batch_size,512,4,4,device='cuda:0'),torch.randint(256, (args.revision_depth, 2),device='cuda:0',dtype=torch.int32)), check_trace=False)
+
+        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256,dtype=dtype,device='cuda:0'),torch.rand(args.batch_size,3,2048,2048,dtype=dtype,device='cuda:0'),torch.rand(args.batch_size,512,4,4,dtype=dtype,device='cuda:0'),torch.randint(256, (args.revision_depth, 2),device='cuda:0',dtype=torch.int32)), check_trace=False)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
