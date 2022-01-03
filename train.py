@@ -403,6 +403,9 @@ def revision_train():
             N, C, h, w = ci[0].shape
             ci_patches = torch.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
             cropped_si = [si[0]]
+            p = torch.zeros_like(patches)[0]
+            N,C,h,w = p.shape
+            patches=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
 
             patch_feats = [torch.zeros(1,device='cuda:0')]
 

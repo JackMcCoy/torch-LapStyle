@@ -212,8 +212,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.LeakyReLU(),),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3),
-                                                    nn.ReLU()
+                                                    nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
     def forward(self, input, style):
@@ -257,8 +256,8 @@ class Revisors(nn.Module):
 
     def forward(self, input, ci, style, crop_marks):
         outputs = [input]
-        patches = [input]
-        ci_patches = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False)]
+        patches = []
+        ci_patches = []
         device = torch.device("cuda")
         size=256
         N, C, h, w = style.shape
@@ -448,8 +447,7 @@ class DecoderAdaConv(nn.Module):
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
             ConvBlock(64, 64),
-            nn.Conv2d(64, 3, kernel_size=1),
-            nn.ReLU()
+            nn.Conv2d(64, 3, kernel_size=1)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
