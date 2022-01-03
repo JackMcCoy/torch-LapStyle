@@ -370,7 +370,7 @@ def revision_train():
         dec_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.to(device)
+        disc_.half().to(device)
         rev_.to(device)
     wandb.watch((rev_,disc_,dec_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
