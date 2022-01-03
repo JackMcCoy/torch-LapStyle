@@ -123,8 +123,7 @@ def PixelShuffleUp(channels):
 
 def Downblock():
     return nn.Sequential(  # Downblock
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(6, 128, kernel_size=3),
+        nn.Conv2d(6, 128, kernel_size=1),
         nn.LeakyReLU(),
         nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(128, 128, kernel_size=3, stride=1),
@@ -148,8 +147,7 @@ def adaconvs(batch_size,s_d):
             AdaConv(128, 2, batch_size, s_d=s_d)])
 
 def Upblock():
-    return nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                 nn.Conv2d(64, 256, kernel_size=3),
+    return nn.ModuleList([nn.Sequential(nn.Conv2d(64, 256, kernel_size=1),
                                  nn.LeakyReLU(),
                                  nn.PixelShuffle(2),
                                  nn.Conv2d(64, 64, kernel_size=1),
@@ -163,8 +161,7 @@ def Upblock():
                    nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(128, 128, kernel_size=3),
                                  nn.LeakyReLU(), ),
-                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                 nn.Conv2d(128, 3, kernel_size=3)
+                   nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
                                  )])
 
 class RevisionNet(nn.Module):
@@ -781,7 +778,7 @@ class ResDiscriminator(nn.Module):
         ch = num_channels
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.spectral_gan = nn.ModuleList([*[nn.Sequential(
-            OptimizedBlock(3, num_channels, 3, 1, downsample=False),
+            OptimizedBlock(3, num_channels, 1, 0, downsample=False),
             SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False),
             SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False)) for i in range(depth+1)]
                                           ])
