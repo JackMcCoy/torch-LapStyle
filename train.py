@@ -320,7 +320,23 @@ def revision_train():
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
+        dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size),({'r4_1': torch.rand(args.batch_size,512,32,32, device='cuda:0'),
+                                                                                'r3_1': torch.rand(args.batch_size,256,64,64, device='cuda:0'),
+                                                                                'r2_1': torch.rand(args.batch_size,128,128,128, device='cuda:0'),
+                                                                                'r1_1': torch.rand(args.batch_size,64,256,256, device='cuda:0'),},
+                                                                               {'r4_1': torch.rand(args.batch_size, 512,
+                                                                                                   32, 32,
+                                                                                                   device='cuda:0'),
+                                                                                'r3_1': torch.rand(args.batch_size, 256,
+                                                                                                   64, 64,
+                                                                                                   device='cuda:0'),
+                                                                                'r2_1': torch.rand(args.batch_size, 128,
+                                                                                                   128, 128,
+                                                                                                   device='cuda:0'),
+                                                                                'r1_1': torch.rand(args.batch_size, 64,
+                                                                                                   256, 256,
+                                                                                                   device='cuda:0'), }
+                                                                               ), check_trace=False)
         init_weights(dec_)
         #dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
