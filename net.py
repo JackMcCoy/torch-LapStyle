@@ -256,7 +256,7 @@ class Revisors(nn.Module):
                 self.layers[idx].load_state_dict(torch.load(i))
 
     def forward(self, input, ci, style, crop_marks):
-        outputs = []
+        outputs = [input]
         patches = []
         ci_patches = []
         device = torch.device("cuda")
@@ -286,6 +286,7 @@ class Revisors(nn.Module):
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
+        outputs = torch.stack(outputs)
         return outputs, ci_patches, patches
 
 class SingleTransDecoder(nn.Module):

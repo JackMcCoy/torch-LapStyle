@@ -401,7 +401,6 @@ def revision_train():
 
             rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
 
-            rev_outputs = [stylized, *rev_outputs]
             ci_patches = [ci[0], *ci_patches]
             cropped_si = [si[0]]
             patches = [torch.zeros(1,device='cuda:0'), *patches]
@@ -421,10 +420,12 @@ def revision_train():
                 cropped_si.append(scaled_si.detach())
             for stylized_patch in patches[1:]:
                 patch_feats.append(enc_(stylized_patch))
+        cropped_si = torch.stack(cropped_si)
+
 
         with autocast(enabled=ac_enabled):
             set_requires_grad(disc_, True)
-            loss_D = calc_GAN_loss([j.detach().float() for j in cropped_si], [j.clone().detach().float() for j in rev_outputs], crop_marks, disc_)
+            loss_D = calc_GAN_loss(cropped_si, rev_outputs.clone().detach(), crop_marks, disc_)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
         else:
