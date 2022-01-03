@@ -279,7 +279,7 @@ class Revisors(nn.Module):
             out = self.downblocks[idx](input)
             style = self.embedding_scales[idx](style.view(N,-1)).reshape(N,C,h,w)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
-                out = out + adaconv(style_, out, norm=True)
+                out = out + adaconv(style, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
