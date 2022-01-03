@@ -287,7 +287,7 @@ class Revisors(nn.Module):
             input = (out + input[:, :3, :, :])
             outputs.append(input)
         outputs = torch.stack(outputs)
-        return outputs, ci_patches, patches
+        return (outputs, tuple(ci_patches), tuple(patches))
 
 class SingleTransDecoder(nn.Module):
     def __init__(self):
@@ -575,7 +575,7 @@ class DecoderVQGAN(nn.Module):
         quantized = self.transformer_res(quantized)
         quantized = self.transformer_conv(quantized)
         t += quantized.data
-        return t, cb_loss
+        return (t, cb_loss)
 
 
 class Style_Guided_Discriminator(nn.Module):
