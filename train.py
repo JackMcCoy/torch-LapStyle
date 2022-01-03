@@ -318,6 +318,8 @@ def drafting_train():
 def revision_train():
     random_crop = transforms.RandomCrop(256)
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
+    dtype = torch.half if args.fp16 else torch.float
+
     dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),
                            ({'r4_1': torch.rand(args.batch_size, 512, 32, 32, dtype=dtype, device='cuda:0'),
                              'r3_1': torch.rand(args.batch_size, 256, 64, 64, dtype=dtype, device='cuda:0'),
@@ -333,7 +335,6 @@ def revision_train():
                                                 256, 256, dtype=dtype, device='cuda:0'), }
                             ), check_trace=False)
     init_weights(dec_)
-    dtype = torch.half if args.fp16 else torch.float
     rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state), (
         torch.rand(args.batch_size, 3, 256, 256, dtype=dtype, device='cuda:0'),
         torch.rand(args.batch_size, 3, 2048, 2048, dtype=dtype, device='cuda:0'),
