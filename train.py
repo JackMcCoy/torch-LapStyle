@@ -428,7 +428,7 @@ def revision_train():
 
 
         set_requires_grad(disc_, True)
-        loss_D = calc_GAN_loss(cropped_si.detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
+        loss_D = calc_GAN_loss(cropped_si.clone().detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
         loss_D.backward()
         if i % args.accumulation_steps == 0:
             opt_D.step()
