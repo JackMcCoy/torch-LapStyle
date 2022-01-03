@@ -402,7 +402,7 @@ def revision_train():
 
                 rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
                 N, C, h, w = ci[0].shape
-                ci_patches = ci_patches.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
+                ci_patches = torch.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
                 cropped_si = [si[0]]
                 p = torch.zeros_like(patches)[0]
                 N,C,h,w = p.shape
