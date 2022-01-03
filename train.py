@@ -422,12 +422,8 @@ def revision_train():
                 patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
-        with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss([j.detach().float() for j in cropped_si], [j.clone().detach().float() for j in rev_outputs], crop_marks, disc_)
-        if ac_enabled:
-            d_scaler.scale(loss_D).backward()
-        else:
-            loss_D.backward()
+        loss_D = calc_GAN_loss([j.detach().float() for j in cropped_si], [j.clone().detach().float() for j in rev_outputs], crop_marks, disc_)
+        loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
