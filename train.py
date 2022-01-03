@@ -405,21 +405,21 @@ def revision_train():
             cropped_si = [si[0]]
             patches = [torch.zeros(1,device='cuda:0'), *patches]
             patch_feats = [torch.zeros(1,device='cuda:0')]
-            with torch.no_grad():
-                size = 256
-                for idx in range(args.revision_depth):
-                    size *= 2
-                    scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
-                                              align_corners=False).detach()
-                    for j in range(idx + 1):
-                        tl = (crop_marks[j][0] * 2 ** (idx - j)).int()
-                        tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
-                        bl = (crop_marks[j][1] * 2 ** (idx - j)).int()
-                        br = (bl + (512 * 2 ** (idx - 1 - j))).int()
-                        scaled_si = scaled_si[:, :, tl:tr, bl:br]
-                    cropped_si.append(scaled_si)
-                for stylized_patch in patches[1:]:
-                    patch_feats.append(enc_(stylized_patch))
+
+            size = 256
+            for idx in range(args.revision_depth):
+                size *= 2
+                scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
+                                          align_corners=False).detach()
+                for j in range(idx + 1):
+                    tl = (crop_marks[j][0] * 2 ** (idx - j)).int()
+                    tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
+                    bl = (crop_marks[j][1] * 2 ** (idx - j)).int()
+                    br = (bl + (512 * 2 ** (idx - 1 - j))).int()
+                    scaled_si = scaled_si[:, :, tl:tr, bl:br]
+                cropped_si.append(scaled_si.detach())
+            for stylized_patch in patches[1:]:
+                patch_feats.append(enc_(stylized_patch))
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
