@@ -318,23 +318,40 @@ def drafting_train():
 def revision_train():
     random_crop = transforms.RandomCrop(256)
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
+    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),
+                           ({'r4_1': torch.rand(args.batch_size, 512, 32, 32, dtype=dtype, device='cuda:0'),
+                             'r3_1': torch.rand(args.batch_size, 256, 64, 64, dtype=dtype, device='cuda:0'),
+                             'r2_1': torch.rand(args.batch_size, 128, 128, 128, dtype=dtype, device='cuda:0'),
+                             'r1_1': torch.rand(args.batch_size, 64, 256, 256, dtype=dtype, device='cuda:0'), },
+                            {'r4_1': torch.rand(args.batch_size, 512,
+                                                32, 32, dtype=dtype, device='cuda:0'),
+                             'r3_1': torch.rand(args.batch_size, 256,
+                                                64, 64, dtype=dtype, device='cuda:0'),
+                             'r2_1': torch.rand(args.batch_size, 128,
+                                                128, 128, dtype=dtype, device='cuda:0'),
+                             'r1_1': torch.rand(args.batch_size, 64,
+                                                256, 256, dtype=dtype, device='cuda:0'), }
+                            ), check_trace=False)
+    init_weights(dec_)
+    dtype = torch.half if args.fp16 else torch.float
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state), (
+        torch.rand(args.batch_size, 3, 256, 256, dtype=dtype, device='cuda:0'),
+        torch.rand(args.batch_size, 3, 2048, 2048, dtype=dtype, device='cuda:0'),
+        torch.rand(args.batch_size, 512, 4, 4, dtype=dtype, device='cuda:0'),
+        torch.randint(256, (args.revision_depth, 2), device='cuda:0', dtype=torch.int32)), check_trace=False)
+    disc_ = build_disc(disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
+    disc_.train()
+    init_weights(disc_)
+    rev_.train()
+    dec_.train()
+
+    dec_.to(device)
+    disc_.to(device)
+    rev_.to(device)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
-        dtype = torch.half if args.fp16 else torch.float
-        dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,dtype=dtype,device='cuda:0'),
-                                                                                'r3_1': torch.rand(args.batch_size,256,64,64,dtype=dtype,device='cuda:0'),
-                                                                                'r2_1': torch.rand(args.batch_size,128,128,128,dtype=dtype,device='cuda:0'),
-                                                                                'r1_1': torch.rand(args.batch_size,64,256,256,dtype=dtype,device='cuda:0'),},
-                                                                               {'r4_1': torch.rand(args.batch_size, 512,
-                                                                                                   32, 32,dtype=dtype,device='cuda:0'),
-                                                                                'r3_1': torch.rand(args.batch_size, 256,
-                                                                                                   64, 64,dtype=dtype,device='cuda:0'),
-                                                                                'r2_1': torch.rand(args.batch_size, 128,
-                                                                                                   128, 128,dtype=dtype,device='cuda:0'),
-                                                                                'r1_1': torch.rand(args.batch_size, 64,
-                                                                                                   256, 256,dtype=dtype,device='cuda:0'), }
-                                                                               ), check_trace=False)
-        init_weights(dec_)
+
+
         #dec_.load_state_dict(torch.load(args.load_model))
         disc_quant = True if args.disc_quantization == 1 else False
         #set_requires_grad(dec_, True)
@@ -354,25 +371,17 @@ def revision_train():
             rev_state = new_path_func('revisor_')
         else:
             rev_state = None
-
-        rev_ = torch.jit.trace(build_rev(args.revision_depth, rev_state),(torch.rand(args.batch_size,3,256,256,dtype=dtype,device='cuda:0'),torch.rand(args.batch_size,3,2048,2048,dtype=dtype,device='cuda:0'),torch.rand(args.batch_size,512,4,4,dtype=dtype,device='cuda:0'),torch.randint(256, (args.revision_depth, 2),device='cuda:0',dtype=torch.int32)), check_trace=False)
+        enc_.to(device)
         #disc_inputs = {'forward': (
         #torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size, 320, 4, 4).to(device)),
         #'losses': (torch.rand(args.batch_size, 3, 512, 512).to(device), torch.rand(args.batch_size, 3, 256, 256).to(device), torch.rand(args.batch_size,320,4,4).to(device)),
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
-        disc_ = build_disc(disc_state)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
-        disc_.train()
+
 
         #if not disc_state is None:
         #    disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
         #else:
-        init_weights(disc_)
-        rev_.train()
-        dec_.train()
-        enc_.to(device)
-        dec_.to(device)
-        disc_.to(device)
-        rev_.to(device)
+
     wandb.watch((rev_,disc_,dec_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler(init_scale=128)
@@ -423,9 +432,16 @@ def revision_train():
 
         set_requires_grad(disc_, True)
         loss_D = calc_GAN_loss([j.detach().float() for j in cropped_si], [j.clone().detach().float() for j in rev_outputs], crop_marks, disc_)
-        loss_D.backward()
+        if ac_enabled:
+            d_scaler.scale(loss_D).backward()
+        else:
+            loss_D.backward()
         if i % args.accumulation_steps == 0:
-            opt_D.step()
+            if ac_enabled:
+                d_scaler.step(opt_D)
+                d_scaler.update()
+            else:
+                opt_D.step()
             opt_D.zero_grad(set_to_none=True)
 
         set_requires_grad(disc_, False)
