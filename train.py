@@ -455,7 +455,7 @@ def revision_train():
                                      calc_identity=False, disc_loss=False,
                                      mdog_losses=args.mdog_loss,
                                      content_all_layers=args.content_all_layers,
-                                     remd_loss=remd_loss, patch_loss=ploss,
+                                     remd_loss=remd_loss if idx != 0 else False, patch_loss=ploss,
                                      sF=sF, split_style = args.split_style,
                                      rev_depth=idx)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
