@@ -162,8 +162,7 @@ def Upblock():
                                  RiemannNoise(256,128)),
                    nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(128, 128, kernel_size=3),
-                                 nn.LeakyReLU(),
-                                 RiemannNoise(256,128)),
+                                 nn.LeakyReLU()),
                    nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
                                  )])
 
