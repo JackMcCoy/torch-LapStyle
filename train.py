@@ -447,7 +447,7 @@ def revision_train():
                 if idx != 0:
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
-                    loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog) * 5
         pred_fake = disc_(rev_outputs, crop_marks)
         loss_D_fake = calc_GAN_loss_from_pred(pred_fake, True)
 
