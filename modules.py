@@ -37,7 +37,8 @@ class RiemannNoise(nn.Module):
                                         nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
-        self.noise = torch.zeros(1,device=torch.device('cuda:0'))
+        self.noise = nn.Parameter(nn.init.constant_(torch.zeros(1),0))
+        self.noise.requires_grad = False
         self.size=size
         self.relu = nn.ReLU()
 
