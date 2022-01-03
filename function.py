@@ -91,26 +91,26 @@ def init_weights(net,
         if hasattr(m, 'weight') and (classname.find('Conv') != -1
                                      or classname.find('Linear') != -1):
             if init_type == 'normal':
-                torch.nn.init.normal_(m.weight, 0.0, init_gain)
+                torch.nn.init.normal_(m.weight, 0.0, init_gain).to(type=torch.half)
             elif init_type == 'xavier':
                 if distribution == 'normal':
-                    torch.nn.init.xavier_normal_(m.weight, gain=init_gain)
+                    torch.nn.init.xavier_normal_(m.weight, gain=init_gain).to(type=torch.half)
                 else:
-                    torch.nn.init.xavier_uniform_(m.weight, gain=init_gain)
+                    torch.nn.init.xavier_uniform_(m.weight, gain=init_gain).to(type=torch.half)
 
             elif init_type == 'kaiming':
                 if distribution == 'normal':
-                    torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
+                    torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in').to(type=torch.half)
                 else:
-                    torch.nn.init.kaiming_uniform_(m.weight, a=0, mode='fan_in')
+                    torch.nn.init.kaiming_uniform_(m.weight, a=0, mode='fan_in').to(type=torch.half)
             else:
                 raise NotImplementedError(
                     'initialization method [%s] is not implemented' % init_type)
             if hasattr(m, 'bias') and m.bias is not None:
-                torch.nn.init.constant_(m.bias, 1e-9)
+                torch.nn.init.constant_(m.bias, 1e-9).to(type=torch.half)
         elif classname.find(
                 'BatchNorm'
         ) != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
-            torch.nn.init.normal_(m.weight, 1.0, init_gain)
-            torch.nn.init.constant_(m.bias, 1e-9)
+            torch.nn.init.normal_(m.weight, 1.0, init_gain).to(type=torch.half)
+            torch.nn.init.constant_(m.bias, 1e-9).to(type=torch.half)
     net.apply(init_func)
