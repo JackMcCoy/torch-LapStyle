@@ -423,13 +423,10 @@ def revision_train():
         cropped_si = torch.stack(cropped_si)
 
 
-        with autocast(enabled=ac_enabled):
-            set_requires_grad(disc_, True)
-            loss_D = calc_GAN_loss(cropped_si.detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
-        if ac_enabled:
-            d_scaler.scale(loss_D).backward()
-        else:
-            loss_D.backward()
+
+        set_requires_grad(disc_, True)
+        loss_D = calc_GAN_loss(cropped_si.detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
+        loss_D.backward()
         if i % args.accumulation_steps == 0:
             if ac_enabled:
                 d_scaler.step(opt_D)
