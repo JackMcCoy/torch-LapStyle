@@ -16,7 +16,7 @@ import re, os
 import math
 import vgg
 import net
-from function import init_weights
+from function import init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
@@ -320,6 +320,7 @@ def revision_train():
     random_crop = transforms.RandomCrop(256)
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
+        pos_embeddings = PositionalEncoding2D(4)
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dtype = torch.half if args.fp16 else torch.float
         dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,dtype=dtype,device='cuda:0'),
@@ -398,6 +399,7 @@ def revision_train():
 
             crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
             crop_marks.requires_grad = False
+            embeddings = get_embeddings(pos_embeddings, crop_marks)
 
             rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
             N, C, h, w = ci[0].shape
@@ -460,7 +462,7 @@ def revision_train():
                 if idx != 0:
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
-                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog) * 5
+                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * 16 + style_remd * 10 + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog) * 10
         pred_fake = disc_(rev_outputs.float(), crop_marks)
         loss_D_fake = calc_GAN_loss_from_pred(pred_fake, True)
 

@@ -1,5 +1,53 @@
 import torch
+import torch.nn as nn
+import numpy as np
 
+
+class PositionalEncoding2D(nn.Module):
+    def __init__(self, channels):
+        """
+        :param channels: The last dimension of the tensor you want to apply pos emb to.
+        """
+        super(PositionalEncoding2D, self).__init__()
+        channels = int(np.ceil(channels / 4) * 2)
+        self.channels = channels
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, channels, 2).float() / channels))
+        self.register_buffer("inv_freq", inv_freq)
+
+    def forward(self, tensor):
+        """
+        :param tensor: A 4d tensor of size (batch_size, x, y, ch)
+        :return: Positional Encoding Matrix of size (batch_size, x, y, ch)
+        """
+        if len(tensor.shape) != 4:
+            raise RuntimeError("The input tensor has to be 4d!")
+        batch_size, x, y, orig_ch = tensor.shape
+        pos_x = torch.arange(x, device=tensor.device).type(self.inv_freq.type())
+        pos_y = torch.arange(y, device=tensor.device).type(self.inv_freq.type())
+        sin_inp_x = torch.einsum("i,j->ij", pos_x, self.inv_freq)
+        sin_inp_y = torch.einsum("i,j->ij", pos_y, self.inv_freq)
+        emb_x = torch.cat((sin_inp_x.sin(), sin_inp_x.cos()), dim=-1).unsqueeze(1)
+        emb_y = torch.cat((sin_inp_y.sin(), sin_inp_y.cos()), dim=-1)
+        emb = torch.zeros((x, y, self.channels * 2), device=tensor.device).type(
+            tensor.type()
+        )
+        emb[:, :, : self.channels] = emb_x
+        emb[:, :, self.channels : 2 * self.channels] = emb_y
+
+        return emb[None, :, :, :orig_ch].repeat(batch_size, 1, 1, 1)
+
+
+def get_embeddings(pos_embeddings,crop_marks):
+    size = 256
+    embeddings = []
+    for idx in range(len(crop_marks)):
+        size *= 2
+        tl_sum = crop_marks[:idx+1,0].sum()
+        bl_sum = crop_marks[:idx+1,1].sum()
+        emb = torch.empty(1, size, size, 4)
+        emb = pos_embeddings(emb)
+        embeddings.append(emb[:, tl_sum.to(dtype=torch.long), bl_sum.to(dtype=torch.long), :])
+    return embeddings
 
 @torch.jit.script
 def calc_mean_std(feat):
