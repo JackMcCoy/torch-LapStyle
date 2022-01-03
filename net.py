@@ -154,13 +154,16 @@ def Upblock():
                                  nn.ReLU(),
                                  nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(64, 64, kernel_size=3),
-                                 nn.LeakyReLU(), ),
+                                 nn.LeakyReLU(),
+                                 RiemannNoise(256,64)),
                    nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(64, 128, kernel_size=3),
-                                 nn.LeakyReLU(), ),
+                                 nn.LeakyReLU(),
+                                 RiemannNoise(256,128)),
                    nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                  nn.Conv2d(128, 128, kernel_size=3),
-                                 nn.LeakyReLU(), ),
+                                 nn.LeakyReLU(),
+                                 RiemannNoise(256,128)),
                    nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
                                  )])
 
