@@ -209,14 +209,15 @@ def build_revlap(depth, state):
     return rev
 
 def build_disc(disc_state):
-    disc = net.ResDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
-    disc.train()
-    if not disc_state is None:
-        disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-    else:
-        init_weights(disc)
-    disc.init_spectral_norm()
-    disc.to(torch.device('cuda'))
+    with autocast(enabled=ac_enabled):
+        disc = net.ResDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
+        disc.train()
+        if not disc_state is None:
+            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+        else:
+            init_weights(disc)
+        disc.init_spectral_norm()
+        disc.to(torch.device('cuda'))
     return disc
 
 def drafting_train():
