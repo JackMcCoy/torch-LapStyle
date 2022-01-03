@@ -835,9 +835,9 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     c = 64
     h = 256
     if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
+        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'), dtype=torch.float)
     else:
-        target_tensor = torch.zeros(batch_size, c, h, h,device=torch.device('cuda:0'))
+        target_tensor = torch.zeros(batch_size, c, h, h,device=torch.device('cuda:0'), dtype=torch.float)
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
