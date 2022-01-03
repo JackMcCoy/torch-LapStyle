@@ -422,7 +422,7 @@ def revision_train():
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach().to(dtype=dtype) for i in rev_outputs], crop_marks, disc_)
+            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach().float() for i in rev_outputs], crop_marks, disc_)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
         else:
