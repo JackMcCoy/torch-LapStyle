@@ -383,104 +383,103 @@ def revision_train():
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .5)
-    with torch.autograd.detect_anomaly():
-        for i in tqdm(range(args.max_iter)):
-            for optimizer in optimizers:
-                adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
-            adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
+    for i in tqdm(range(args.max_iter)):
+        for optimizer in optimizers:
+            adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
+        with autocast(enabled=ac_enabled):
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+            stylized, style = dec_(sF, cF)
+
+            crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
+            crop_marks.requires_grad = False
+
+            rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
+            N, C, h, w = ci[0].shape
+            ci_patches = torch.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
+            cropped_si = [si[0]]
+            p = torch.zeros_like(patches)[0]
+            N,C,h,w = p.shape
+            patches=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
+
+            patch_feats = [torch.zeros(1,device='cuda:0')]
+
+            size = 256
+            for idx in range(args.revision_depth):
+                size *= 2
+                scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
+                                          align_corners=False).detach()
+                for j in range(idx + 1):
+                    tl = (crop_marks[j][0] * 2 ** (idx - j)).int()
+                    tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
+                    bl = (crop_marks[j][1] * 2 ** (idx - j)).int()
+                    br = (bl + (512 * 2 ** (idx - 1 - j))).int()
+                    scaled_si = scaled_si[:, :, tl:tr, bl:br]
+                cropped_si.append(scaled_si.detach())
+            for stylized_patch in patches[1:]:
+                patch_feats.append(enc_(stylized_patch))
+        cropped_si = torch.stack(cropped_si)
+
+
+
+        set_requires_grad(disc_, True)
+        loss_D = calc_GAN_loss(cropped_si.detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
+        loss_D.backward()
+        if i % args.accumulation_steps == 0:
+            opt_D.step()
+            opt_D.zero_grad(set_to_none=True)
+
+        set_requires_grad(disc_, False)
+
+        args.split_style = False # Haven't re-implemented this yet
+        for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
+            ploss = False if idx==0 else True
+            if idx != 0:
+                cF = enc_(ci_patch)
+                sF = enc_(si_cropped)
+
             with autocast(enabled=ac_enabled):
-                ci = next(content_iter).to(device)
-                si = next(style_iter).to(device)
-                ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=False), ci]
-                si = [F.interpolate(si, size=256, mode='bicubic', align_corners=False), si]
-                cF = enc_(ci[0])
-                sF = enc_(si[0])
-                stylized, style = dec_(sF, cF)
-
-                crop_marks = torch.randint(256, (args.revision_depth, 2)).int().to(device)
-                crop_marks.requires_grad = False
-
-                rev_outputs, ci_patches, patches = rev_(stylized, ci[-1].detach(), style, crop_marks)
-                N, C, h, w = ci[0].shape
-                ci_patches = torch.cat([ci[0].view(1,N,C,h,w), ci_patches],dim=0)
-                cropped_si = [si[0]]
-                p = torch.zeros_like(patches)[0]
-                N,C,h,w = p.shape
-                patches=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
-
-                patch_feats = [torch.zeros(1,device='cuda:0')]
-
-                size = 256
-                for idx in range(args.revision_depth):
-                    size *= 2
-                    scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
-                                              align_corners=False).detach()
-                    for j in range(idx + 1):
-                        tl = (crop_marks[j][0] * 2 ** (idx - j)).int()
-                        tr = (tl + (512 * 2 ** (idx - 1 - j))).int()
-                        bl = (crop_marks[j][1] * 2 ** (idx - j)).int()
-                        br = (bl + (512 * 2 ** (idx - 1 - j))).int()
-                        scaled_si = scaled_si[:, :, tl:tr, bl:br]
-                    cropped_si.append(scaled_si.detach())
-                for stylized_patch in patches[1:]:
-                    patch_feats.append(enc_(stylized_patch))
-            cropped_si = torch.stack(cropped_si)
-
-
-
-            set_requires_grad(disc_, True)
-            loss_D = calc_GAN_loss(cropped_si.detach().float(), rev_outputs.clone().detach().float(), crop_marks, disc_)
-            loss_D.backward()
-            if i % args.accumulation_steps == 0:
-                opt_D.step()
-                opt_D.zero_grad(set_to_none=True)
-
-            set_requires_grad(disc_, False)
-
-            args.split_style = False # Haven't re-implemented this yet
-            for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
-                ploss = False if idx==0 else True
+                losses = calc_losses(rev_outputs,
+                                     ci_patch,
+                                     si_cropped,
+                                     cF, enc_, dec_,
+                                     patch_f,
+                                     None,
+                                     calc_identity=False, disc_loss=False,
+                                     mdog_losses=args.mdog_loss,
+                                     content_all_layers=args.content_all_layers,
+                                     remd_loss=remd_loss, patch_loss=ploss,
+                                     sF=sF, split_style = args.split_style,
+                                     rev_depth=idx)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 if idx != 0:
-                    cF = enc_(ci_patch)
-                    sF = enc_(si_cropped)
-
-                with autocast(enabled=ac_enabled):
-                    losses = calc_losses(rev_outputs,
-                                         ci_patch,
-                                         si_cropped,
-                                         cF, enc_, dec_,
-                                         patch_f,
-                                         None,
-                                         calc_identity=False, disc_loss=False,
-                                         mdog_losses=args.mdog_loss,
-                                         content_all_layers=args.content_all_layers,
-                                         remd_loss=remd_loss, patch_loss=ploss,
-                                         sF=sF, split_style = args.split_style,
-                                         rev_depth=idx)
-                    loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                    if idx != 0:
-                        loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
-                    else:
-                        loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog) * 5
-            pred_fake = disc_(rev_outputs.float(), crop_marks)
-            loss_D_fake = calc_GAN_loss_from_pred(pred_fake, True)
-
-            loss = loss + loss_D_fake * args.gan_loss
-
-            if ac_enabled:
-                scaler.scale(loss).backward()
-            else:
-                loss.backward()
-            if i % args.accumulation_steps == 0:
-                if ac_enabled:
-                    for idx, optimizer in enumerate(optimizers):
-                        scaler.step(optimizer)
-                    scaler.update()
+                    loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)
                 else:
-                    for optimizer in optimizers:
-                        optimizer.step()
+                    loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog) * 5
+        pred_fake = disc_(rev_outputs.float(), crop_marks)
+        loss_D_fake = calc_GAN_loss_from_pred(pred_fake, True)
+
+        loss = loss + loss_D_fake * args.gan_loss
+
+        if ac_enabled:
+            scaler.scale(loss).backward()
+        else:
+            loss.backward()
+        if i % args.accumulation_steps == 0:
+            if ac_enabled:
+                for idx, optimizer in enumerate(optimizers):
+                    scaler.step(optimizer)
+                scaler.update()
+            else:
                 for optimizer in optimizers:
-                    optimizer.zero_grad(set_to_none=True)
+                    optimizer.step()
+            for optimizer in optimizers:
+                optimizer.zero_grad(set_to_none=True)
 
 
         if (i + 1) % 10 == 0:
