@@ -405,7 +405,7 @@ def revision_train():
             cropped_si = [si[0]]
             p = torch.zeros_like(patches)[0]
             N,C,h,w = p.shape
-            patches=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
+            p=torch.cat([p.view(1,N,C,h,w),patches],dim=0)
 
             patch_feats = [torch.zeros(1,device='cuda:0')]
 
@@ -421,7 +421,7 @@ def revision_train():
                     br = (bl + (512 * 2 ** (idx - 1 - j))).int()
                     scaled_si = scaled_si[:, :, tl:tr, bl:br]
                 cropped_si.append(scaled_si.detach())
-            for stylized_patch in patches[1:]:
+            for stylized_patch in p[1:]:
                 patch_feats.append(enc_(stylized_patch))
         cropped_si = torch.stack(cropped_si)
 
@@ -437,7 +437,7 @@ def revision_train():
         set_requires_grad(disc_, False)
 
         args.split_style = False # Haven't re-implemented this yet
-        for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
+        for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,p, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
                 cF = enc_(ci_patch)
