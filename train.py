@@ -370,7 +370,7 @@ def revision_train():
         dec_.train()
         enc_.to(device)
         dec_.to(device)
-        disc_.half().to(device)
+        disc_.to(device)
         rev_.to(device)
     wandb.watch((rev_,disc_,dec_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
@@ -422,7 +422,7 @@ def revision_train():
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach() for i in rev_outputs], crop_marks, disc_)
+            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach().to(dtype=dtype) for i in rev_outputs], crop_marks, disc_)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
         else:
