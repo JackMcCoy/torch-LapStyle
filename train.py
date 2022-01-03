@@ -362,10 +362,11 @@ def revision_train():
         #'get_ganloss': (torch.rand(args.batch_size,1,256,256).to(device),torch.Tensor([True]).to(device))}
         disc_ = build_disc(disc_state)#, torch.rand(args.batch_size, 3, 256, 256).to(device).detach(), strict=False)
         disc_.train()
-        if not disc_state is None:
-            disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
-        else:
-            init_weights(disc_)
+
+        #if not disc_state is None:
+        #    disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+        #else:
+        init_weights(disc_)
         rev_.train()
         dec_.train()
         enc_.to(device)
@@ -422,7 +423,7 @@ def revision_train():
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
-            loss_D = calc_GAN_loss([j.detach().float() for j in scaled_si], [j.clone().detach().float() for j in rev_outputs], crop_marks, disc_)
+            loss_D = calc_GAN_loss(cropped_si, [i.clone().detach() for i in rev_outputs], crop_marks, disc_)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
         else:
