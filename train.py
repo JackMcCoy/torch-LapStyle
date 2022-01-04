@@ -464,7 +464,7 @@ def revision_train():
                                      mdog_losses=args.mdog_loss,
                                      content_all_layers=args.content_all_layers,
                                      remd_loss=remd_loss if idx != 0 else False, patch_loss=ploss,
-                                     sF=sF, split_style = args.split_style,
+                                     sF=sF, split_style = args.split_style if idx != 0 else False,
                                      rev_depth=idx)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                 if idx != 0:
