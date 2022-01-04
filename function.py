@@ -44,7 +44,7 @@ def get_embeddings(pos_embeddings,crop_marks):
         size *= 2
         tl_sum = crop_marks[:idx+1,0].sum()
         bl_sum = crop_marks[:idx+1,1].sum()
-        emb = torch.empty(1, size, size, 4)
+        emb = torch.empty(1, size, size, 4, device='cuda:0')
         emb = pos_embeddings(emb)
         embeddings.append(emb[:, tl_sum.to(dtype=torch.long), bl_sum.to(dtype=torch.long), :])
     return embeddings
