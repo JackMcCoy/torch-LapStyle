@@ -320,7 +320,7 @@ def revision_train():
     random_crop = transforms.RandomCrop(256)
     random_crop2 = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
-        #pos_embeddings = PositionalEncoding2D(4)
+        pos_embeddings = PositionalEncoding2D(4)
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dtype = torch.half if args.fp16 else torch.float
         dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,dtype=dtype,device='cuda:0'),
@@ -438,7 +438,16 @@ def revision_train():
 
         set_requires_grad(disc_, False)
 
-        args.split_style = False # Haven't re-implemented this yet
+        if args.split_style:
+            del(cropped_si[1:])
+            size = 512
+            for i in range(args.revision_depth):
+                scaled_si = F.interpolate(si[-1], size=size, mode='bicubic',
+                                          align_corners=False).detach()
+                if size != 512:
+                    scaled_si = random_crop(scaled_si)
+                cropped_si.append(scaled_si)
+
         for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
             ploss = False if idx==0 else True
             if idx != 0:
