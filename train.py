@@ -319,7 +319,7 @@ def drafting_train():
 def revision_train():
     random_crop = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
-        pos_embeddings = PositionalEncoding2D(4)
+
         enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,256,256))), strict=False)
         dtype = torch.half if args.fp16 else torch.float
         dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size).to(device),({'r4_1': torch.rand(args.batch_size,512,32,32,dtype=dtype,device='cuda:0'),

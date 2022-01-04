@@ -9,6 +9,7 @@ import numpy as np
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
+from function import PositionalEncoding2D, get_embeddings
 from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
@@ -242,8 +243,8 @@ class Revisors(nn.Module):
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
-        self.embedding_scales = nn.ModuleList([nn.Sequential(nn.Conv2d(self.s_d,self.s_d, kernel_size=1),nn.ReLU()) for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.pos_embeddings = PositionalEncoding2D(4)
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -257,6 +258,7 @@ class Revisors(nn.Module):
         ci_patches = []
         device = torch.device("cuda")
         size=256
+        pos_embeddings = get_embeddings(self.pos_embeddings, crop_marks)
         N, C, h, w = style.shape
         for idx in range(self.levels):
             input = self.upsample(input)
@@ -276,9 +278,9 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
-            style = self.embedding_scales[idx](style)
+            style_ = style * pos_embeddings[idx].detach()
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
-                out = out + adaconv(style, out, norm=True)
+                out = out + adaconv(style_, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
