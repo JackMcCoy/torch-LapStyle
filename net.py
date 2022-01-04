@@ -136,7 +136,6 @@ def Downblock():
         nn.LeakyReLU(),
         # Resblock Middle
         ResBlock(64),
-        RiemannNoise(128, 64),
     )
 
 def adaconvs(batch_size,s_d):
