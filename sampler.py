@@ -3,7 +3,8 @@ from torch.utils import data
 from torch import nn
 import torch
 import tqdm
-from function import init_weights, calc_mean_std
+from function import init_weights
+from losses import calc_mean_std
 
 def InfiniteSampler(n):
     # i = 0
