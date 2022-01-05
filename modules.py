@@ -2,7 +2,7 @@ import torch.nn as nn
 from torch.nn.utils import spectral_norm
 import torch
 import typing
-from function import normalized_feat, calc_mean_std
+from function import normalized_feat
 
 
 class ResBlock(nn.Module):
@@ -161,7 +161,7 @@ class Attention(nn.Module):
         Output = Output.view(batch_size, channels, height_c, width_c)
         return Output
 
-
+'''
 class SAFIN(nn.Module):
     def __init__(self, num_features):
         super().__init__()
@@ -238,6 +238,7 @@ def get_wav(in_channels, pool=True):
     HL.weight.data = filter_HL.float().unsqueeze(0).expand(in_channels, -1, -1, -1)
     HH.weight.data = filter_HH.float().unsqueeze(0).expand(in_channels, -1, -1, -1)
     return LL, LH, HL, HH
+'''
 
 
 class WavePool(nn.Module):

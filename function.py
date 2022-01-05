@@ -49,17 +49,6 @@ def get_embeddings(pos_embeddings,crop_marks):
         embeddings.append(emb[:, tl_sum.to(dtype=torch.long), bl_sum.to(dtype=torch.long), :])
     return embeddings
 
-@torch.jit.script
-def calc_mean_std(feat):
-    # eps is a small value added to the variance to avoid divide-by-zero.
-    size = feat.size()
-    assert (len(size) == 4)
-    N, C, H, W = size
-    feat_mean = feat.view(N, -1).mean(dim=1)
-    feat_var = torch.sum(torch.abs(feat-feat_mean.view(N,1,1,1).square()),(1,2,3))/(H*W)
-    feat_std = feat_var.sqrt()
-    return feat_mean, feat_std
-
 
 def adaptive_instance_normalization(content_feat, style_feat):
     assert (content_feat.size()[:2] == style_feat.size()[:2])

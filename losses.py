@@ -198,9 +198,8 @@ def mean_variance_norm(feat):
     Return:
         Normalized feat with shape (N, C, H, W)
     """
-    size = feat.shape
     mean, std = calc_mean_std(feat)
-    normalized_feat = (feat - mean.expand(size)) / (std.expand(size)+1e-5)
+    normalized_feat = (feat - mean) / std
     return normalized_feat
 
 def calc_mean_std(feat, eps=1e-5):
@@ -216,11 +215,7 @@ def calc_mean_std(feat, eps=1e-5):
     """
     size = feat.shape
     assert (len(size) == 4)
-    N, C = size[:2]
-    feat_var = feat.reshape([N, C, -1])
-    feat_std = torch.std(feat_var, dim = 2, unbiased=True)
-    feat_std = feat_std.reshape([N, C, 1, 1])
-    feat_mean = feat.reshape([N, C, -1])
-    feat_mean = feat_mean.mean(dim=2)
-    feat_mean = feat_mean.reshape([N, C, 1, 1])
+    # Not real standard deviation, but StyleGan's adjusted norm denominator
+    feat_std = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
+    feat_mean = feat.mean(dim=(2, 3), keepdim=True)
     return feat_mean, feat_std
