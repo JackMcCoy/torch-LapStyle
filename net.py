@@ -244,7 +244,7 @@ class Revisors(nn.Module):
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.pos_embeddings = PositionalEncoding2D(4)
+        self.pos_embeddings = PositionalEncoding2D(16)
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -278,7 +278,7 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
-            style_ = style * pos_embeddings[idx]
+            style_ = style * pos_embeddings[idx].view(-1,1,4,4)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 out = out + adaconv(style_, out, norm=True)
                 out = learnable(out)
