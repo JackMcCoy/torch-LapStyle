@@ -215,6 +215,6 @@ def calc_mean_std(feat, eps=1e-5):
     """
     size = feat.shape
     assert (len(size) == 4)
-    feat_std = torch.std(feat_var, dim = (2,3), keepdim=True, unbiased=True)
-    feat_mean = feat_mean.mean(dim= (2,3), keepdim=True)
+    feat_std = torch.std(feat, dim = (2,3), keepdim=True, unbiased=True)
+    feat_mean = feat.mean(dim= (2,3), keepdim=True)
     return feat_mean, feat_std
