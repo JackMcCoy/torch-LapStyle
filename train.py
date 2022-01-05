@@ -450,8 +450,8 @@ def revision_train():
         for idx in [0,-1]:
             ploss = False if idx==0 else True
             if idx != 0:
-                cF = enc_(ci_patch)
-                sF = enc_(si_cropped)
+                cF = enc_(ci_patches[idx])
+                sF = enc_(cropped_si[idx])
 
             with autocast(enabled=ac_enabled):
                 losses = calc_losses(rev_outputs,
