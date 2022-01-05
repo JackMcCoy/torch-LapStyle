@@ -246,11 +246,11 @@ class Revisors(nn.Module):
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.style_embedding = nn.ModuleList([sequential_to_momentum_net(nn.Sequential(
-            *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d))) for i in range(levels - 1)]
+            StyleEncoderBlock(self.s_d), nn.Identity(),
+            StyleEncoderBlock(self.s_d), nn.Identity(),
+            StyleEncoderBlock(self.s_d), nn.Identity(),
+            StyleEncoderBlock(self.s_d), nn.Identity(),
+            StyleEncoderBlock(self.s_d), nn.Identity(),)) for i in range(levels - 1)]
         )
         self.style_projection = nn.ModuleList([nn.Sequential(
             nn.Linear(1024, self.s_d * 16),
@@ -404,6 +404,20 @@ class VQGANTrain(nn.Module):
         t, l = self.vqgan(ci, si)
         return t, l
 
+
+class StyleEncoderBlock(nn.Module):
+    def __init__(self, ch):
+        super(StyleEncoderBlock, self).__init__()
+        self.net = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(ch, ch, kernel_size=3),
+        nn.ReLU(),
+        nn.AvgPool2d(2, stride=2),
+        nn.Conv2d(ch, ch, kernel_size=1),
+        nn.ReLU())
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
 def style_encoder_block(ch):
     return [
         nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -419,9 +433,9 @@ class DecoderAdaConv(nn.Module):
         super(DecoderAdaConv, self).__init__()
 
         self.style_encoding = sequential_to_momentum_net(nn.Sequential(
-            *style_encoder_block(512),
-            *style_encoder_block(512),
-            *style_encoder_block(512)
+            StyleEncoderBlock(512), nn.Identity(),
+            StyleEncoderBlock(512), nn.Identity(),
+            StyleEncoderBlock(512), nn.Identity()
         ))
         self.s_d = 512
         self.style_projection = nn.Sequential(
