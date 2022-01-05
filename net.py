@@ -285,7 +285,7 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
-            if idx < len(self.layers):
+            if idx < self.levels:
                 style_ = self.style_embedding[idx](input)
                 style_ = style_.flatten(1)
                 style_ = self.style_projection[idx](style_)
