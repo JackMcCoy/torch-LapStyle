@@ -10,7 +10,7 @@ import numpy as np
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import ResBlock, ConvBlock, SAFIN, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise
+from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
