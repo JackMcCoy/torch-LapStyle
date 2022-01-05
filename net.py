@@ -6,6 +6,7 @@ from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
+from revlib.utils import sequential_to_momentum_net
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -244,12 +245,12 @@ class Revisors(nn.Module):
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512 if i==0 else self.s_d) for i in range(levels)])
         self.upblocks = nn.ModuleList([Upblock() for i in range(levels)])
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.style_embedding = nn.ModuleList([nn.Sequential(
+        self.style_embedding = nn.ModuleList([sequential_to_momentum_net(nn.Sequential(
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d)) for i in range(levels - 1)]
+            *style_encoder_block(self.s_d))) for i in range(levels - 1)]
         )
         self.style_projection = nn.ModuleList([nn.Sequential(
             nn.Linear(1024, self.s_d * 16),
@@ -294,7 +295,8 @@ class Revisors(nn.Module):
                 else:
                     out = out + adaconv(style, out, norm=True)
                 if idx < self.levels and i ==0:
-                    style_ = self.style_embedding[idx - 1](out)
+                    style_ = out.repeat(1,2,1,1)
+                    style_ = self.style_embedding[idx - 1](style_)
                     style_ = style_.flatten(1)
                     style_ = self.style_projection[idx - 1](style_)
                     style_ = style_.reshape(N, self.s_d, 4, 4)
@@ -405,17 +407,19 @@ def style_encoder_block(ch):
         nn.Conv2d(ch, ch, kernel_size=3),
         nn.ReLU(),
         nn.AvgPool2d(3, count_include_pad=True,padding=1, stride=2)
+        nn.Conv2d(ch, ch, kernel_size=1),
+        nn.ReLU()
     ]
 
 class DecoderAdaConv(nn.Module):
     def __init__(self, batch_size = 8):
         super(DecoderAdaConv, self).__init__()
 
-        self.style_encoding = nn.Sequential(
+        self.style_encoding = sequential_to_momentum_net(nn.Sequential(
             *style_encoder_block(512),
             *style_encoder_block(512),
             *style_encoder_block(512)
-        )
+        ))
         self.s_d = 512
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16),
@@ -482,7 +486,8 @@ class DecoderAdaConv(nn.Module):
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
         adaconv_out = {}
-        style = self.style_encoding(sF['r4_1'])
+        style = sF['r4_1'].repeat(1,2,1,1)
+        style = self.style_encoding(style)
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
