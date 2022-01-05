@@ -289,7 +289,7 @@ class Revisors(nn.Module):
                 style_ = self.style_embedding[idx](out)
                 style_ = style_.flatten(1)
                 style_ = self.style_projection[idx](style_)
-                style_ = style_.reshape(b, self.s_d, 4, 4)
+                style_ = style_.reshape(N, self.s_d, 4, 4)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 if idx > 0:
                     out = out + adaconv(style, out, norm=True)
