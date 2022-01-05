@@ -286,7 +286,7 @@ class Revisors(nn.Module):
 
             out = self.downblocks[idx](input)
             if idx < self.levels:
-                style_ = self.style_embedding[idx](input)
+                style_ = self.style_embedding[idx](out)
                 style_ = style_.flatten(1)
                 style_ = self.style_projection[idx](style_)
                 style_ = style_.reshape(b, self.s_d, 4, 4)
