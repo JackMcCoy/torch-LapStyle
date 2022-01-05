@@ -216,6 +216,6 @@ def calc_mean_std(feat, eps=1e-5):
     size = feat.shape
     assert (len(size) == 4)
     # Not real standard deviation, but StyleGan's adjusted norm denominator
-    feat_std = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
+    feat_std = torch.rsqrt(feat.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
     feat_mean = feat.mean(dim=(2, 3), keepdim=True)
     return feat_mean, feat_std
