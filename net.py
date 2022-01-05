@@ -293,7 +293,8 @@ class Revisors(nn.Module):
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 if idx > 0:
                     out = out + adaconv(style, out, norm=True)
-                out = out + adaconv(style_, out, norm=True)
+                else:
+                    out = out + adaconv(style_, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
             outputs.append(input)
