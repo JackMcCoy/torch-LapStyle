@@ -238,7 +238,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.levels = levels
         self.size=256
-        self.s_d = 512
+        self.s_d = 64
 
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512 if i==0 else self.s_d) for i in range(levels)])
