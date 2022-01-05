@@ -238,7 +238,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.levels = levels
         self.size=256
-        self.s_d = 512
+        self.s_d = 64
 
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512 if i==0 else self.s_d) for i in range(levels)])
@@ -247,11 +247,12 @@ class Revisors(nn.Module):
         self.style_embedding = nn.ModuleList([nn.Sequential(
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d)) for i in range(levels)]
+            *style_encoder_block(self.s_d),
+            *style_encoder_block(self.s_d)) for i in range(levels-1)]
         )
         self.style_projection = nn.ModuleList([nn.Sequential(
             nn.Linear(8192, self.s_d*16),
-            nn.ReLU()) for i in range(levels)])
+            nn.ReLU()) for i in range(levels-1)])
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -267,10 +268,6 @@ class Revisors(nn.Module):
         size=256
         N, C, h, w = style.shape
         for idx in range(self.levels):
-            style_ = self.style_embedding[idx-1](input)
-            style_ = style_.flatten(1)
-            style_ = self.style_projection[idx-1](style_)
-            style_ = style_.reshape(b, self.s_d, 4, 4)
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
@@ -288,8 +285,14 @@ class Revisors(nn.Module):
             input = torch.cat([patches[-1], lap_pyr], dim = 1)
 
             out = self.downblocks[idx](input)
+            if idx < len(self.layers):
+                style_ = self.style_embedding[idx](input)
+                style_ = style_.flatten(1)
+                style_ = self.style_projection[idx](style_)
+                style_ = style_.reshape(b, self.s_d, 4, 4)
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
-                out = out + adaconv(style, out, norm=True)
+                if idx > 0:
+                    out = out + adaconv(style, out, norm=True)
                 out = out + adaconv(style_, out, norm=True)
                 out = learnable(out)
             input = (out + input[:, :3, :, :])
