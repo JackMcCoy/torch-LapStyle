@@ -265,7 +265,6 @@ class Revisors(nn.Module):
         ci_patches = []
         device = torch.device("cuda")
         size=256
-        pos_embeddings = get_embeddings(self.pos_embeddings, crop_marks)
         N, C, h, w = style.shape
         for idx in range(self.levels):
             style_ = self.style_embedding[idx-1](input)
