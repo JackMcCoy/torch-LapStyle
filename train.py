@@ -447,7 +447,7 @@ def revision_train():
                     scaled_si = random_crop(scaled_si)
                 cropped_si.append(scaled_si)
 
-        for idx, (ci_patch,si_cropped,patch, patch_f) in enumerate(zip(ci_patches,cropped_si,patches, patch_feats)):
+        for idx, (ci_patch,si_cropped,patch, patch_f) in [0,-1]:
             ploss = False if idx==0 else True
             if idx != 0:
                 cF = enc_(ci_patch)
@@ -455,10 +455,10 @@ def revision_train():
 
             with autocast(enabled=ac_enabled):
                 losses = calc_losses(rev_outputs,
-                                     ci_patch,
-                                     si_cropped,
+                                     ci_patches[idx],
+                                     cropped_si[idx],
                                      cF, enc_, dec_,
-                                     patch_f,
+                                     patch_feats[idx],
                                      None,
                                      calc_identity=False, disc_loss=False,
                                      mdog_losses=args.mdog_loss,
