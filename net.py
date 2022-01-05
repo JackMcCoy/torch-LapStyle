@@ -288,9 +288,9 @@ class Revisors(nn.Module):
 
             for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
                 if idx > 0:
-                    out = out + adaconv(style, out, norm=True)
-                else:
                     out = out + adaconv(style_, out, norm=True)
+                else:
+                    out = out + adaconv(style, out, norm=True)
                 if idx < self.levels:
                     style_ = self.style_embedding[idx](out)
                     style_ = style_.flatten(1)
