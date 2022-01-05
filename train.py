@@ -16,6 +16,7 @@ import re, os
 import math
 import vgg
 import net
+import random
 from function import init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
@@ -447,7 +448,7 @@ def revision_train():
                     scaled_si = random_crop(scaled_si)
                 cropped_si.append(scaled_si)
 
-        for idx in [-1]:
+        for idx in [random.choose(list(range(args.revision_depth+1)))]:
             ploss = False if idx==0 else True
             if idx != 0:
                 cF = enc_(ci_patches[idx])
