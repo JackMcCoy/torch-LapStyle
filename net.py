@@ -249,11 +249,10 @@ class Revisors(nn.Module):
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d)) for i in range(levels-1)]
         )
         self.style_projection = nn.ModuleList([nn.Sequential(
-            nn.Linear(4096, self.s_d*16),
+            nn.Linear(512, self.s_d*16),
             nn.ReLU()) for i in range(levels-1)])
 
     def load_states(self, state_string):
