@@ -238,7 +238,7 @@ class Revisors(nn.Module):
         self.crop = RandomCrop(256)
         self.levels = levels
         self.size=256
-        self.s_d = 64
+        self.s_d = 512
 
         self.downblocks = nn.ModuleList([Downblock() for i in range(levels)])
         self.adaconvs = nn.ModuleList([adaconvs(batch_size, s_d=512 if i==0 else self.s_d) for i in range(levels)])
@@ -249,11 +249,11 @@ class Revisors(nn.Module):
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
             *style_encoder_block(self.s_d),
-            *style_encoder_block(self.s_d)) for i in range(levels-1)]
+            *style_encoder_block(self.s_d)) for i in range(levels - 1)]
         )
         self.style_projection = nn.ModuleList([nn.Sequential(
-            nn.Linear(1024, self.s_d*16),
-            nn.ReLU()) for i in range(levels-1)])
+            nn.Linear(1024, self.s_d * 16),
+            nn.ReLU()) for i in range(levels - 1)])
 
     def load_states(self, state_string):
         states = state_string.split(',')
@@ -266,38 +266,39 @@ class Revisors(nn.Module):
         patches = []
         ci_patches = []
         device = torch.device("cuda")
-        size=256
+        size = 256
         N, C, h, w = style.shape
         for idx in range(self.levels):
             input = self.upsample(input)
             size *= 2
             scaled_ci = F.interpolate(ci, size=size, mode='bicubic', align_corners=False)
 
-            for i in range(idx+1):
-                tl = (crop_marks[i][0] * 2**(idx-i)).int()
-                tr = (tl + (512*2**(idx-1-i))).int()
-                bl = (crop_marks[i][1] * 2**(idx-i)).int()
-                br = (bl + (512*2**(idx-1-i))).int()
+            for i in range(idx + 1):
+                tl = (crop_marks[i][0] * 2 ** (idx - i)).int()
+                tr = (tl + (512 * 2 ** (idx - 1 - i))).int()
+                bl = (crop_marks[i][1] * 2 ** (idx - i)).int()
+                br = (bl + (512 * 2 ** (idx - 1 - i))).int()
                 scaled_ci = scaled_ci[:, :, tl:tr, bl:br]
 
             ci_patches.append(scaled_ci)
             patches.append(input[:, :, tl:tr, bl:br])
-            lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3).to(device)
-            input = torch.cat([patches[-1], lap_pyr], dim = 1)
+            lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+                               groups=3).to(device)
+            input = torch.cat([patches[-1], lap_pyr], dim=1)
 
             out = self.downblocks[idx](input)
 
-            for adaconv, learnable in zip(self.adaconvs[idx], self.upblocks[idx]):
+            for i, (adaconv, learnable) in enumerate(zip(self.adaconvs[idx], self.upblocks[idx])):
                 if idx > 0:
                     out = out + adaconv(style_, out, norm=True)
                 else:
                     out = out + adaconv(style, out, norm=True)
                 print(out.shape)
-                if idx < self.levels:
-                    style_ = self.style_embedding[idx-1](out)
+                if idx < self.levels and i ==0:
+                    style_ = self.style_embedding[idx - 1](out)
                     style_ = style_.flatten(1)
                     print(style_.shape)
-                    style_ = self.style_projection[idx-1](style_)
+                    style_ = self.style_projection[idx - 1](style_)
                     style_ = style_.reshape(N, self.s_d, 4, 4)
                     print(style_.shape)
                 out = learnable(out)
