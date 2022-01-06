@@ -100,6 +100,9 @@ class LayerHolders(nn.Module):
     def forward(self, x, ci, style):
         out = resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(torch.device('cuda:0'))
         ci = resize_to_res(ci, self.layer_num).to(torch.device('cuda:0'))
+        print(x)
+        print(ci)
+        print(style)
         style = style.to(torch.device('cuda:0'))
         out = self.module_patches(out, ci, style)
         out = self.return_to_full_res(out)
@@ -125,5 +128,8 @@ class LapRev(nn.Module):
         input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).to(torch.device('cuda:0'))
         ci = ci.to(torch.device('cuda:0'))
         style = style.to(torch.device('cuda:0'))
+        print(input)
+        print(ci)
+        print(style)
         out = self.layers(input, ci, style)
         return out
