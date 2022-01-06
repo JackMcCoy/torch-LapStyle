@@ -87,7 +87,7 @@ class LayerHolders(nn.Module):
         self.working_res = working_res
         self.layer_num = layer_num
         self.internal_layer_res = working_res*2**layer_num
-        self.num_layers_per_side = internal_layer_res // working_res
+        self.num_layers_per_side = self.internal_layer_res // self.working_res
         self.worker = Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d)
         self.module_patches = sequential_to_momentum_net(nn.Sequential(*[self.worker for i in range(num_layers_per_side**2)]), target_device='cuda:0')
         self.internal_canvass = torch.zeros(1,6,internal_layer_res,internal_layer_res, device='cuda:0')
