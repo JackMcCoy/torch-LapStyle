@@ -102,7 +102,7 @@ class LayerHolders(nn.Module):
             yield i
 
     def forward(self, x, ci, style):
-        out = resize_to_res(x, self.layer_num)
+        out = resize_to_res(x, self.layer_num).repeat(1,2,1,1)
         ci = resize_to_res(ci, self.layer_num)
         iteration = num_layers_per_side**2
         out = self.module_patches(out, ci, style, next(iteration))
@@ -126,6 +126,6 @@ class LapRev(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = F.interpolate(input, self.max_res, mode='nearest')
+        input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1)
         out = self.layers(input, ci, style)
         return out
