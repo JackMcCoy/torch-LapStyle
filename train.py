@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from revlap import RevisorLap
+from revlap import LapRev
 
 import torch
 import torch.nn as nn
