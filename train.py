@@ -576,7 +576,7 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = LapRev(args.crop_size, 256).to(device)
+    rev_ = LapRev(args.crop_size, 256, args.batch_size, 512).to(device)
     rev_.train()
     #,(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
     #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),

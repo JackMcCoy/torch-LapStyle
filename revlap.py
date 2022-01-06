@@ -113,7 +113,7 @@ class LayerHolders(nn.Module):
 
 
 class LapRev(nn.Module):
-    def __init__(self, max_res, working_res):
+    def __init__(self, max_res, working_res, batch_size, s_d):
         super(LapRev, self).__init__()
         self.max_res = max_res
         self.working_res = working_res
