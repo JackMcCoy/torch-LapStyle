@@ -127,5 +127,7 @@ class LapRev(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).to(torch.device('cuda:0'))
+        ci = ci.to(torch.device('cuda:0'))
+        style = style.to(torch.device('cuda:0'))
         out = self.layers(input, ci, style)
         return out
