@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 import typing, math
 from einops.layers.torch import Rearrange
-
+from revlib import sequential_to_momentum_net
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
     return upsample(other_stream),  + fn_out
@@ -117,8 +117,8 @@ class LapRev(nn.Module):
         super(LapRev, self).__init__()
         self.max_res = max_res
         self.working_res = working_res
-        layers =
-
+        num_layers = max_res//working_res//2
+        self.layers = sequential_to_momentum_net(nn.Sequential(*[LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)]))
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
@@ -128,10 +128,6 @@ class LapRev(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = self.upsample(input)
-        if ci.shape[-1] != 512:
-            scaled_ci = F.interpolate(ci, size=512*2**self.layer_num, mode='bicubic', align_corners=True).detach()
-        else:
-            scaled_ci = ci
-        out = self.recursive_controller(input, scaled_ci, style)
+        input = F.interpolate(input, self.max_res, mode='nearest')
+        out = self.layers(input, ci, style)
         return out

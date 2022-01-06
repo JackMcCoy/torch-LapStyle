@@ -211,7 +211,7 @@ def build_revlap(depth, state):
 
 def build_disc(disc_state):
     with autocast(enabled=ac_enabled):
-        disc = net.ResDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
+        disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
         if not disc_state is None:
             disc_.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
@@ -576,10 +576,11 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = build_revlap(args.revision_depth,
-                     rev_state)#,(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
-                               #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                               #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
+    rev_ = LapRev(args.crop_size, 256).to(device)
+    rev_.train()
+    #,(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
+    #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+    #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
 
     disc_ = build_disc(disc_state)
 
@@ -592,9 +593,8 @@ def revlap_train():
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(rev_.parameters(recurse=True)), lr=args.lr)
-    dec_optimizer = torch.optim.AdamW(
-        list(rev_.parameters(recurse=True)), lr=args.lr)
+    optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
 
     for i in tqdm(range(args.max_iter)):
@@ -610,30 +610,25 @@ def revlap_train():
             sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
-            if rev_start:
-                rev_stylized = rev_(stylized, ci[-1].detach(), style)
-                si_cropped = random_crop(si[-1])
-                stylized_crop = rev_stylized[:,:,-256:,-256:]
-                scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
-            else:
-                rev_stylized = stylized
-        if rev_start:
-            set_requires_grad(disc_, True)
-            with autocast(enabled=ac_enabled):
+            rev_stylized = rev_(stylized, ci[-1].detach(), style)
+            si_cropped = random_crop(si[-1])
+            stylized_crop = rev_stylized[:,:,-256:,-256:]
+            scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
 
-                loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_)
-            if ac_enabled:
-                d_scaler.scale(loss_D).backward()
-                if i % args.accumulation_steps == 0:
-                    d_scaler.step(opt_D)
-                    d_scaler.update()
-            else:
-                loss_D.backward()
-                opt_D.step()
-                opt_D.zero_grad()
-            set_requires_grad(disc_, False)
+        set_requires_grad(disc_, True)
+        with autocast(enabled=ac_enabled):
+
+            loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_)
+        if ac_enabled:
+            d_scaler.scale(loss_D).backward()
+            if i % args.accumulation_steps == 0:
+                d_scaler.step(opt_D)
+                d_scaler.update()
         else:
-            loss_D = 0
+            loss_D.backward()
+            opt_D.step()
+            opt_D.zero_grad()
+        set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
             losses_small = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
@@ -672,13 +667,17 @@ def revlap_train():
 
             if (i+1) % args.accumulation_steps == 0:
                 scaler.step(optimizer)
+                scaler.step(dec_optimizer)
                 scaler.update()
                 optimizer.zero_grad()
+                dec_optimizer.zero_grad()
 
         else:
             loss.backward()
             optimizer.step()
+            dec_optimizer.step()
             optimizer.zero_grad()
+            dec_optimizer.zero_grad()
 
         if (i + 1) % 10 == 0:
 
