@@ -99,12 +99,12 @@ class LayerHolders(nn.Module):
 
     def patch_iterator(self):
         for i in range(self.num_layers_per_side**2):
-            yield torch.Tensor([i]).to(device)
+            yield i
 
     def forward(self, x, ci, style):
         out = resize_to_res(x, self.layer_num).repeat(1,2,1,1)
         ci = resize_to_res(ci, self.layer_num)
-        iteration = num_layers_per_side**2
+        iteration = self.patch_iterator()
         out = self.module_patches(out, ci, style, next(iteration))
         out = self.return_to_full_res(out)
         return out

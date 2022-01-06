@@ -610,7 +610,9 @@ def revlap_train():
             sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
-            rev_stylized = rev_(stylized, ci[-1].detach(), style)
+            rev_in = stylized.clone()
+            style_in = style.clone()
+            rev_stylized = rev_(rev_in, ci[-1].detach(), style_in)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
             scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
