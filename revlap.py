@@ -102,7 +102,7 @@ class LayerHolders(nn.Module):
             yield i
 
     def forward(self, x, ci, style):
-        out = resize_to_res(x, self.layer_num).repeat(1,2,1,1)
+        out = resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(device)
         ci = resize_to_res(ci, self.layer_num)
         iteration = self.patch_iterator()
         out = self.module_patches(out, ci, style, next(iteration))
