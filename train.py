@@ -610,8 +610,6 @@ def revlap_train():
             sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
-            rev_in = stylized.clone().to(device)
-            style_in = style.clone().to(device)
             rev_stylized = rev_(rev_in, ci[-1].detach(), style_in)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
