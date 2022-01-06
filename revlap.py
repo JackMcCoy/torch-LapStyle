@@ -126,6 +126,6 @@ class LapRev(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1)
+        input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).to(device)
         out = self.layers(input, ci, style)
         return out
