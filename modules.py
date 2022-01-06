@@ -3,6 +3,7 @@ from torch.nn.utils import spectral_norm
 import torch
 import typing
 from function import normalized_feat
+from adaconv import AdaConv
 
 
 class ResBlock(nn.Module):
@@ -239,6 +240,56 @@ def get_wav(in_channels, pool=True):
     HH.weight.data = filter_HH.float().unsqueeze(0).expand(in_channels, -1, -1, -1)
     return LL, LH, HL, HH
 '''
+
+def PixelShuffleUp(channels):
+    return nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                         nn.Conv2d(channels, channels*4, kernel_size=3),
+                         nn.PixelShuffle(2),
+                         nn.Conv2d(channels, channels, kernel_size=1)
+                         )
+
+def Downblock():
+    return nn.Sequential(  # Downblock
+        nn.Conv2d(6, 128, kernel_size=1),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(128, 128, kernel_size=3, stride=1),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(128, 64, kernel_size=3, stride=1),
+        nn.LeakyReLU(),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(64, 64, kernel_size=3, stride=2),
+        nn.LeakyReLU(),
+        # Resblock Middle
+        ResBlock(64),
+        RiemannNoise(128, 64)
+    )
+
+def adaconvs(batch_size,s_d):
+    return nn.ModuleList([
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(64, 1, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d)])
+
+def Upblock():
+    return nn.ModuleList([nn.Sequential(nn.Conv2d(64, 256, kernel_size=1),
+                                 nn.LeakyReLU(),
+                                 nn.PixelShuffle(2),
+                                 nn.Conv2d(64, 64, kernel_size=1),
+                                 nn.ReLU(),
+                                 nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(64, 64, kernel_size=3),
+                                 nn.LeakyReLU()),
+                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(64, 128, kernel_size=3),
+                                 nn.LeakyReLU()),
+                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+                                 nn.Conv2d(128, 128, kernel_size=3),
+                                 nn.LeakyReLU()),
+                   nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
+                                 )])
 
 
 class WavePool(nn.Module):

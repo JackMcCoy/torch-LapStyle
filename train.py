@@ -385,6 +385,7 @@ def revision_train():
     optimizers.append(torch.optim.AdamW(list(rev_.parameters())+list(dec_.parameters()), lr=args.lr))
     opt_D = torch.optim.SGD(disc_.parameters(), lr=args.disc_lr, momentum = .5)
     for i in tqdm(range(args.max_iter)):
+        choice = random.randrange(args.revision_depth+1)
         for optimizer in optimizers:
             adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
         adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)

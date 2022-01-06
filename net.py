@@ -11,7 +11,7 @@ import numpy as np
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise
+from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -116,56 +116,6 @@ class SwitchableNoise(nn.Module):
     def forward(self, x):
         return self.noise_or_ident(x)
 
-def PixelShuffleUp(channels):
-    return nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                         nn.Conv2d(channels, channels*4, kernel_size=3),
-                         nn.PixelShuffle(2),
-                         nn.Conv2d(channels, channels, kernel_size=1)
-                         )
-
-def Downblock():
-    return nn.Sequential(  # Downblock
-        nn.Conv2d(6, 128, kernel_size=1),
-        nn.LeakyReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(128, 128, kernel_size=3, stride=1),
-        nn.LeakyReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(128, 64, kernel_size=3, stride=1),
-        nn.LeakyReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(64, 64, kernel_size=3, stride=2),
-        nn.LeakyReLU(),
-        # Resblock Middle
-        ResBlock(64),
-        RiemannNoise(128, 64)
-    )
-
-def adaconvs(batch_size,s_d):
-    return nn.ModuleList([
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d)])
-
-def Upblock():
-    return nn.ModuleList([nn.Sequential(nn.Conv2d(64, 256, kernel_size=1),
-                                 nn.LeakyReLU(),
-                                 nn.PixelShuffle(2),
-                                 nn.Conv2d(64, 64, kernel_size=1),
-                                 nn.ReLU(),
-                                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                                 nn.Conv2d(64, 64, kernel_size=3),
-                                 nn.LeakyReLU()),
-                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                 nn.Conv2d(64, 128, kernel_size=3),
-                                 nn.LeakyReLU()),
-                   nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                 nn.Conv2d(128, 128, kernel_size=3),
-                                 nn.LeakyReLU()),
-                   nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
-                                 )])
-
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
@@ -263,7 +213,7 @@ class Revisors(nn.Module):
             if idx < len(states)-1:
                 self.layers[idx].load_state_dict(torch.load(i))
 
-    def forward(self, input, ci, style, crop_marks):
+    def forward(self, input, ci, style, crop_marksw):
         outputs = [input]
         patches = []
         ci_patches = []

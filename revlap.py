@@ -1,12 +1,12 @@
 import copy
 from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
-from modules import RiemannNoise
+from modules import RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs
 import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
-import typing
+import typing, math
 from einops.layers.torch import Rearrange
 
 
@@ -30,85 +30,95 @@ class RevisorLap(nn.Module):
             x = layer(x, ci, style)
         return x
 
-class RevisionNet(nn.Module):
-    def __init__(self, layer_num:int, batch_size:int):
-        super(RevisionNet, self).__init__()
-        self.position_encoding = nn.Embedding(4,4096, max_norm=2)
-        self.position_encoding.requires_grad = True
+
+class Sequential_Worker(nn.Module):
+    def __init__(self, working_res, layer_res, batch_size,s_d):
+        super(Sequential_Worker, self).__init__()
+        self.layer_num = 0
+        self.working_res = working_res
+        self.layer_res = layer_res
+        self.s_d = s_d
+        self.downblock = nn.Sequential(*Downblock())
+        self.adaconvs = nn.ModuleList(*adaconvs(batch_size, s_d=self.s_d))
+        self.upblock = nn.ModuleList(*Upblock())
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
         self.lap_weight.requires_grad = False
-        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
-        self.downsample = nn.Upsample(scale_factor=.5, mode='bicubic')
-        s_d = 256
-        self.s_d = 256
-        self.content_adaconv = AdaConv(64, 1, batch_size, s_d=s_d)
-        self.resblock = ResBlock(64)
-        self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d)])
+        # row_num == col_num, as these are squares
+        set_layer_rows()
 
-        self.relu = nn.ReLU()
-        self.layer_num = layer_num
-        self.DownBlock = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(6, 128, kernel_size=3),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2),
-            nn.LeakyReLU(),)
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
-                                                    nn.LeakyReLU(),
-                                                    nn.PixelShuffle(2),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 64, kernel_size=3),
-                                                    nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 128, kernel_size=3),
-                                                    nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.LeakyReLU(),),
-                                      nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3)
-                                                    )])
+    def get_layer_rows(self, layer_num):
+        row_num = self.layer_res // self.working_res
+        layer_row = math.ceil(layer_num / row_num) - 1
+        layer_col = self.layer_num % row_num
+        return layer_row, layer_col
 
+    def crop_to_working_area(self, x, layer_row, layer_col):
+        return x[:,:,self.working_res*layer_col:working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
-    def recursive_controller(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
-        N,C,h,w = x.shape
-        x = x.view(N,C,2,h//2,2,w//2)
-        x = torch.permute(x,(0, 2, 4, 1, 3, 5)).reshape(-1,C,h//2,w//2)
-        ci = ci.view(N, C, 2, h // 2, 2, w // 2)
-        ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(-1, C, h // 2, w // 2)
-        a,b,c,d = style.shape
-        style = style.view(1,a,b,c,d).expand(4,a,b,c,d)
-        style = style.reshape((4*a,b,c,d))
-        idx = torch.arange(4,device=torch.device('cuda:0')).view(4,1).expand(4,N).reshape(N*4)
-        out = self.generator(x, ci, style, idx)
-        out = out.reshape((N*2,2,C,h//2,w//2)).reshape((N,2,2,C,h//2,w//2)).permute(0, 3, 1, 4, 2, 5).reshape(N,C,h,w)
-        return out
+    def reinsert_work(self, x, out, layer_row, layer_col):
+        x[:, :, self.working_res * layer_col:working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        return x
 
-    def generator(self, x:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, idx:torch.Tensor):
-        ci =  F.conv2d(F.pad(ci.detach(), (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
-        out = torch.cat([x, ci], dim=1)
+    def forward(self, x, ci, style, num):
+        # x = input in color space
+        # out = laplacian (residual) space
+        row, col = self.get_layer_rows(num)
+        out = crop_to_working_area(x, row, col)
+        lap = crop_to_working_area(ci, row, col)
+        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
+        out = torch.cat([out, lap], dim=0)
 
-        out = self.DownBlock(out)
-        out = self.resblock(out)
-        N,C,h,w = style.shape
-        style = style * self.position_encoding(idx).view(N,C,h,w)
-        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
-            out = out + adaconv(style, out, norm=True)
+        out = self.downblock(out)
+        for ada, learnable in zip(self.adaconvs, self.upblock):
+            out = ada(style, out)
             out = learnable(out)
-        out = out + x
+
+        out = reinsert_work(x, out, row, col)
         return out
+
+
+class LayerHolders(nn.Module):
+    def __init__(self, max_res: int, working_res: int, layer_num: int, batch_size: int, s_d: int):
+        """Uses square-valued resolutions"""
+        super(LayerHolders, self).__init__()
+        self.max_res = max_res
+        self.working_res = working_res
+        self.layer_num = layer_num
+        self.internal_layer_res = working_res*2**layer_num
+        self.num_layers_per_side = internal_layer_res // working_res
+        self.worker = Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d)
+        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[self.worker for i in range(num_layers_per_side**2)]), target_device='cuda:0')
+        self.internal_canvass = torch.zeros(1,6,internal_layer_res,internal_layer_res, device='cuda:0')
+
+    def resize_to_res(self, x, layer_num):
+        intermediate_size = self.working_res*2**layer_num
+        return F.interpolate(x, intermediate_size, mode='nearest')
+
+    def return_to_full_res(self, x):
+        return F.interpolate(x, self.max_res, mode='nearest')
+
+    def patch_iterator(self):
+        for i in range(self.num_layers_per_side**2):
+            yield i
+
+    def forward(self, x, ci, style):
+        out = resize_to_res(x, self.layer_num)
+        ci = resize_to_res(ci, self.layer_num)
+        iteration = num_layers_per_side**2
+        out = self.module_patches(out, ci, style, next(iteration))
+        out = self.return_to_full_res(out)
+        return out
+
+
+class LapRev(nn.Module):
+    def __init__(self, max_res, working_res):
+        super(LapRev, self).__init__()
+        self.max_res = max_res
+        self.working_res = working_res
+        layers =
+
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
