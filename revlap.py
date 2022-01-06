@@ -45,7 +45,6 @@ class Sequential_Worker(nn.Module):
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
         self.lap_weight.requires_grad = False
         # row_num == col_num, as these are squares
-        set_layer_rows()
 
     def get_layer_rows(self, layer_num):
         row_num = self.layer_res // self.working_res
