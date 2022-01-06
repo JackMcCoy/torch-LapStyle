@@ -32,12 +32,13 @@ class RevisorLap(nn.Module):
 
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, working_res, layer_res, batch_size,s_d):
+    def __init__(self, working_res, layer_res, batch_size,s_d, layer_num):
         super(Sequential_Worker, self).__init__()
         self.layer_num = 0
         self.working_res = working_res
         self.layer_res = layer_res
         self.s_d = s_d
+        self.layer_num = layer_num
         self.downblock = nn.Sequential(*Downblock())
         self.adaconvs = nn.ModuleList(adaconvs(batch_size, s_d=self.s_d))
         self.upblock = nn.ModuleList(Upblock())
@@ -60,10 +61,10 @@ class Sequential_Worker(nn.Module):
         self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return x
 
-    def forward(self, x, ci, style, num):
+    def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
-        row, col = self.get_layer_rows(num)
+        row, col = self.get_layer_rows(self.layer_num)
         out = crop_to_working_area(x, row, col)
         lap = crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
@@ -88,7 +89,7 @@ class LayerHolders(nn.Module):
         self.internal_layer_res = working_res*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
         self.worker = Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d)
-        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[self.worker for i in range(self.num_layers_per_side**2)]))
+        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]))
 
     def resize_to_res(self, x, layer_num):
         intermediate_size = self.working_res*2**layer_num
@@ -97,15 +98,10 @@ class LayerHolders(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def patch_iterator(self):
-        for i in range(self.num_layers_per_side**2):
-            yield i
-
     def forward(self, x, ci, style):
         out = resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(torch.device('cuda:0'))
         ci = resize_to_res(ci, self.layer_num)
-        iteration = self.patch_iterator()
-        out = self.module_patches(out, ci, style, next(iteration))
+        out = self.module_patches(out, ci, style)
         out = self.return_to_full_res(out)
         return out
 
