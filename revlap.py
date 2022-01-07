@@ -79,7 +79,7 @@ class Sequential_Worker(nn.Module):
         out = self.reinsert_work(x, out, row, col)
 
         print(out.shape)
-        return out
+        return out, ci, style
 
 
 class LayerHolders(nn.Module):
