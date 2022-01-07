@@ -75,7 +75,7 @@ class Sequential_Worker(nn.Module):
         print(out.shape)
         out = self.downblock(out)
         for ada, learnable in zip(self.adaconvs, self.upblock):
-            out = ada(style, out)
+            out = ada(style, out, norm=True)
             out = learnable(out)
 
         out = reinsert_work(x, out, row, col)
