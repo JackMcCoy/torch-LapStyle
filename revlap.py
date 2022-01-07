@@ -128,8 +128,5 @@ class LapRev(nn.Module):
         input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         input.requires_grad = True
         ci = ci.to(torch.device('cuda:0'))
-        print(input)
-        print(ci)
-        print(style)
         out = self.layers(input, ci, style)
         return out
