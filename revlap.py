@@ -67,11 +67,12 @@ class Sequential_Worker(nn.Module):
         row, col = self.get_layer_rows(self.layer_num)
         print(row)
         print(col)
+        print(self.working_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
-
+        print(out.shape)
         out = self.downblock(out)
         for ada, learnable in zip(self.adaconvs, self.upblock):
             out = ada(style, out)
