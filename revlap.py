@@ -100,13 +100,15 @@ class LayerHolders(nn.Module):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
+        print('x in')
+        print(x.shape)
         out = self.resize_to_res(x).repeat(1,2,1,1).data
         out.requires_grad=True
         ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
         style = style.to(torch.device('cuda:0'))
         out = self.module_patches(out, ci, style)
-        out = self.return_to_full_res(out)
+        out = self.return_to_full_res(out)[:,:3,:,:]
         print('to out')
         print(out.shape)
         return out
