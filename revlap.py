@@ -77,6 +77,7 @@ class Sequential_Worker(nn.Module):
             out = learnable(out)
         print(out.shape)
         out = self.reinsert_work(x, out, row, col)
+
         print(out.shape)
         return out
 
@@ -99,7 +100,7 @@ class LayerHolders(nn.Module):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
-        out = self.resize_to_res(x).data
+        out = self.resize_to_res(x).repeat(1,2,1,1).data
         out.requires_grad=True
         ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
