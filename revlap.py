@@ -49,8 +49,8 @@ class Sequential_Worker(nn.Module):
 
     def get_layer_rows(self, layer_num):
         row_num = self.layer_res // self.working_res
-        layer_row = math.ceil(layer_num / row_num) - 1
-        layer_col = (self.layer_num % row_num) - 1
+        layer_row = math.floor(layer_num / row_num)
+        layer_col = self.layer_num % row_num
         return layer_row, layer_col
 
     def crop_to_working_area(self, x, layer_row, layer_col):
@@ -65,6 +65,8 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(self.layer_num)
+        print(row)
+        print(col)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
@@ -86,9 +88,9 @@ class LayerHolders(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         self.layer_num = layer_num
-        self.internal_layer_res = working_res*2*2**layer_num
+        self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
-        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
+        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res//2, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
