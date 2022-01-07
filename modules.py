@@ -31,7 +31,7 @@ class ResBlock(nn.Module):
 
 class RiemannNoise(nn.Module):
 
-    def __init__(self, size:int, channels:int):
+    def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
         self.size = size
         self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
@@ -263,7 +263,7 @@ def Downblock():
         nn.LeakyReLU(),
         # Resblock Middle
         ResBlock(64),
-        RiemannNoise(128, 64)
+        RiemannNoise(128)
     )
 
 def adaconvs(batch_size,s_d):
