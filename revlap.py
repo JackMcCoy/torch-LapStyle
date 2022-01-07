@@ -50,7 +50,7 @@ class Sequential_Worker(nn.Module):
     def get_layer_rows(self, layer_num):
         row_num = self.layer_res // self.working_res
         layer_row = math.ceil(layer_num / row_num) - 1
-        layer_col = self.layer_num % row_num
+        layer_col = (self.layer_num % row_num) - 1
         return layer_row, layer_col
 
     def crop_to_working_area(self, x, layer_row, layer_col):
