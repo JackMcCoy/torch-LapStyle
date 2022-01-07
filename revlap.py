@@ -65,8 +65,8 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(self.layer_num)
-        out = crop_to_working_area(x, row, col)
-        lap = crop_to_working_area(ci, row, col)
+        out = self.crop_to_working_area(x, row, col)
+        lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=0)
 
@@ -98,11 +98,10 @@ class LayerHolders(nn.Module):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
-        out = self.resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(torch.device('cuda:0'))
+        out = self.resize_to_res(x, self.layer_num).repeat(1,2,1,1).data
+        out.requires_grad=True
         ci = self.resize_to_res(ci, self.layer_num).to(torch.device('cuda:0'))
-        print(x)
-        print(ci)
-        print(style)
+
         style = style.to(torch.device('cuda:0'))
         out = self.module_patches(out, ci, style)
         out = self.return_to_full_res(out)
