@@ -98,8 +98,8 @@ class LayerHolders(nn.Module):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
-        out = resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(torch.device('cuda:0'))
-        ci = resize_to_res(ci, self.layer_num).to(torch.device('cuda:0'))
+        out = self.resize_to_res(x, self.layer_num).repeat(1,2,1,1).to(torch.device('cuda:0'))
+        ci = self.resize_to_res(ci, self.layer_num).to(torch.device('cuda:0'))
         print(x)
         print(ci)
         print(style)
