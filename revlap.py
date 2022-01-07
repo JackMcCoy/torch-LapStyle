@@ -91,7 +91,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
-        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res//2, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),residual=False,target_device='cuda')
+        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res//2, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
