@@ -111,7 +111,7 @@ class LayerHolders(nn.Module):
         out = self.return_to_full_res(out)[:,:3,:,:]
         print('to out')
         print(out.shape)
-        return out
+        return out, ci, style
 
 
 class LapRev(nn.Module):
