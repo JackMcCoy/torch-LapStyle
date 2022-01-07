@@ -88,7 +88,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = working_res*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
-        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]))
+        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
 
     def resize_to_res(self, x, layer_num):
         intermediate_size = self.working_res*2**layer_num
@@ -115,7 +115,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         num_layers = max_res//working_res//2
-        self.layers = sequential_to_momentum_net(nn.Sequential(*[LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)]))
+        self.layers = sequential_to_momentum_net(nn.Sequential(*[LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)]), target_device='cuda')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
