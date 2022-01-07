@@ -57,8 +57,6 @@ class Sequential_Worker(nn.Module):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
     def reinsert_work(self, x, out, layer_row, layer_col):
-        print(f'{self.working_res * layer_col}:{working_res * (layer_col + 1)}')
-        print(f'{self.working_res * layer_row}:{working_res * (layer_row + 1)}')
         x[:, :, self.working_res * layer_col:working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return x
@@ -88,21 +86,20 @@ class LayerHolders(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         self.layer_num = layer_num
-        self.internal_layer_res = working_res*2**layer_num
+        self.internal_layer_res = working_res*2*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
         self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
 
-    def resize_to_res(self, x, layer_num):
-        intermediate_size = self.working_res*2**layer_num
-        return F.interpolate(x, intermediate_size, mode='nearest')
+    def resize_to_res(self, x):
+        return F.interpolate(x, self.internal_layer_res, mode='nearest')
 
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
-        out = self.resize_to_res(x, self.layer_num).repeat(1,2,1,1).data
+        out = self.resize_to_res(x).repeat(1,2,1,1).data
         out.requires_grad=True
-        ci = self.resize_to_res(ci, self.layer_num).to(torch.device('cuda:0'))
+        ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
         style = style.to(torch.device('cuda:0'))
         out = self.module_patches(out, ci, style)
