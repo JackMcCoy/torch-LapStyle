@@ -107,6 +107,7 @@ class LayerHolders(nn.Module):
         style = style.to(torch.device('cuda:0'))
         out = self.module_patches(out, ci, style)
         out = self.return_to_full_res(out)
+        print('to out')
         return out
 
 
