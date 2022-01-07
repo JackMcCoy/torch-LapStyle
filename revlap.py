@@ -76,7 +76,8 @@ class Sequential_Worker(nn.Module):
             out = ada(style, out, norm=True)
             out = learnable(out)
         print(out.shape)
-        out = self.reinsert_work(x, out, row, col).repeat(1,2,1,1)
+        out = self.reinsert_work(x, out, row, col)
+        out = out.repeat(1,2,1,1)
         print(out.shape)
         return out
 
