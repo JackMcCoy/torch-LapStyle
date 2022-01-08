@@ -107,7 +107,7 @@ class LayerHolders(nn.Module):
         ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
         style = style.to(torch.device('cuda:0'))
-        out = self.module_patches(out, ci, style)
+        out, _, _ = self.module_patches(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
         print('to out')
         print(out.shape)
