@@ -41,6 +41,14 @@ class Sequential_Worker(nn.Module):
             nn.Conv2d(32, 64, kernel_size=3),
             nn.ReLU(),
             nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(64, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(128, 256, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
         )
         self.style_projection = nn.Sequential(
             nn.Linear(1024, self.s_d * 16),
