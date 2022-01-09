@@ -52,6 +52,7 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(num)
         print(x.shape)
+        print(self.layer_res)
         print(str(num)+' '+str(int(row))+ ' '+str(int(col)))
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
