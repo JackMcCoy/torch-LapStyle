@@ -20,7 +20,6 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 class Sequential_Worker(nn.Module):
     def __init__(self, working_res, layer_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
-        self.layer_num = 0
         self.working_res = working_res
         self.layer_res = layer_res
         self.s_d = s_d
@@ -35,7 +34,7 @@ class Sequential_Worker(nn.Module):
     def get_layer_rows(self, layer_num):
         row_num = self.layer_res // self.working_res
         layer_row = math.floor(layer_num / row_num)
-        layer_col = self.layer_num % row_num
+        layer_col = layer_num % row_num
         return layer_row, layer_col
 
     def crop_to_working_area(self, x, layer_row, layer_col):
