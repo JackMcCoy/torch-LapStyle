@@ -98,7 +98,7 @@ class LayerHolders(nn.Module):
     def forward(self, x, ci, style):
 
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
-        out.requires_grad=True
+        out = x
         ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
         style = style.to(torch.device('cuda:0'))
