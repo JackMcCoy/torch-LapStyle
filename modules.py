@@ -278,10 +278,8 @@ class StyleEncoderBlock(nn.Module):
         super(StyleEncoderBlock, self).__init__()
         self.net = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(ch, ch, kernel_size=3),
-        nn.ReLU(),
         nn.AvgPool2d(2, stride=2),
-        nn.Conv2d(ch, ch, kernel_size=1),
-        nn.ReLU())
+        nn.LeakyReLU())
     def forward(self, x):
         x = self.net(x)
         return x
