@@ -587,7 +587,7 @@ def revlap_train():
     dec_.train()
     enc_.to(device)
     dec_.to(device)
-    wandb.watch((rev_, dec_, disc_), log='none', log_freq=5)
+    wandb.watch((rev_, dec_, disc_), log_freq=10)
     remd_loss = True if args.remd_loss == 1 else False
     scaler = GradScaler(init_scale=128)
     d_scaler = GradScaler(init_scale=128)
