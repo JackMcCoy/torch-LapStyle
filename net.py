@@ -934,7 +934,7 @@ def calc_losses(stylized: torch.Tensor,
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
+        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'], norm=True)
     else:
         patch_loss = 0
 
