@@ -1,4 +1,3 @@
-import copy
 from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
 from modules import RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs
@@ -86,9 +85,7 @@ class LayerHolders(nn.Module):
 
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
         out = x
-        ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
-
-        style = style.to(torch.device('cuda:0'))
+        ci = self.resize_to_res(ci)
         for idx, layer in enumerate(self.module_patches):
             out = layer(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
@@ -114,7 +111,6 @@ class LapRev(nn.Module):
         """
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
-        ci = ci.to(torch.device('cuda:0'))
         out = input
         for idx, layer in enumerate(self.layers):
             out = layer(out, ci, style)
