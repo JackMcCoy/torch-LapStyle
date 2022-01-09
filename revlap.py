@@ -57,7 +57,7 @@ class Sequential_Worker(nn.Module):
         layer_res = 512*2**layer_height
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
-        row, col = self.get_layer_rows(layer_res,num)
+        row, col = self.get_layer_rows(num,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
