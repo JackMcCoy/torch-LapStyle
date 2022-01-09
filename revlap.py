@@ -17,6 +17,7 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
     return output - downsample(fn_out)
 
 
+blank_canvas = torch.zeros(4,3,512,512)
 class Sequential_Worker(nn.Module):
     def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
@@ -41,9 +42,9 @@ class Sequential_Worker(nn.Module):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
     def reinsert_work(self, x, out, layer_row, layer_col):
-        x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out + x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)]
+        z = blank_canvas.clone()
+        z[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return x
 
     def resize_to_res(self, x, layer_res):
