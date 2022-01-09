@@ -107,7 +107,7 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res//2
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, batch_size, s_d) for i in self.num_layers]))
+        self.layers = nn.ModuleList([Sequential_Worker(256, batch_size, s_d) for i in range(height)])
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
@@ -121,7 +121,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = input
         out = F.interpolate(out, self.max_res, mode='nearest')
-        for idx, layer in zip(self.num_layers,self.layers):
-            height, patch_num = idx
-            out = layer(out, ci, style, height, patch_num)
+        for idx, layer in enumerate(self.layers):
+            for i in range(int((2 ** idx) / .25):
+                out = layer(out, ci, style, idx, i)
         return out
