@@ -34,9 +34,7 @@ class Sequential_Worker(nn.Module):
         # row_num == col_num, as these are squares
 
     def get_layer_rows(self, layer_num):
-        print(str(self.layer_res)+' '+str(self.working_res))
         row_num = self.layer_res // self.working_res
-        print(row_num)
         layer_row = math.floor(layer_num / row_num)
         layer_col = self.layer_num % row_num
         return layer_row, layer_col
@@ -89,7 +87,6 @@ class LayerHolders(nn.Module):
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
         out = x
         ci = self.resize_to_res(ci)
-        print(len(self.module_patches))
         for idx, layer in enumerate(self.module_patches):
             out = layer(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
