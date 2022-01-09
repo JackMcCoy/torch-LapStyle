@@ -1,6 +1,6 @@
 from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
-from modules import RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs
+from modules import RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -24,7 +24,20 @@ class Sequential_Worker(nn.Module):
         self.working_res = working_res
         self.s_d = s_d
         self.max_res =max_res
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(self.s_d),
+            StyleEncoderBlock(self.s_d),
+            StyleEncoderBlock(self.s_d),
+            StyleEncoderBlock(self.s_d),
+            StyleEncoderBlock(self.s_d)
+        )
+        self.style_projection = nn.Sequential(
+            nn.Linear(1024, self.s_d * 16),
+            nn.ReLU()
+        )
         self.downblock = nn.Sequential(*Downblock())
+
+
         self.adaconvs = nn.ModuleList(adaconvs(batch_size, s_d=self.s_d))
         self.upblock = nn.ModuleList(Upblock())
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
@@ -36,7 +49,7 @@ class Sequential_Worker(nn.Module):
         row_num = layer_res // self.working_res
         layer_row = math.floor(layer_num / row_num)
         layer_col = layer_num % row_num
-        return layer_row, layer_col
+        return layer_row, layer_col, row_num
 
     def crop_to_working_area(self, x, layer_row, layer_col):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
@@ -50,21 +63,39 @@ class Sequential_Worker(nn.Module):
     def resize_to_res(self, x, layer_res):
         return F.interpolate(x, layer_res, mode='nearest')
 
+    def crop_style_thumb(self, x, layer_res, row, col, row_num):
+        style_col = col if col % 2 == 0 else col - 1
+        style_row = row
+        if row + 1 > row_num:
+            style_row -= 1
+        scaled = F.interpolate(x, layer_res//2, mode='nearest')
+        scaled = scaled[:,:,self.working_res*style_col:self.working_res*(style_col+1),self.working_res*style_row:self.working_res*(style_row+1)]
+        return scaled
+
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, ci, style, layer_height, num):
+    def forward(self, x, ci, layer_height, num):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**layer_height
+        row, col, row_num = self.get_layer_rows(num, layer_res)
+        thumb = crop_style_thumb(x, layer_res, row, col, row_num)
+
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
-        row, col = self.get_layer_rows(num,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
+
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
+
+        style = self.style_embedding(out)
+        style = style.flatten(1)
+        style = self.style_projection(style)
+        style = style.reshape(N, self.s_d, 4, 4)
+
         for ada, learnable in zip(self.adaconvs, self.upblock):
             out = ada(style, out, norm=True)
             out = learnable(out)
@@ -125,5 +156,5 @@ class LapRev(nn.Module):
         out = F.interpolate(out, self.max_res, mode='nearest')
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(out, ci, style.data, height, num)
+            out = layer(out, ci, height, num)
         return out

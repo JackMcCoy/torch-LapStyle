@@ -11,7 +11,7 @@ import numpy as np
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs
+from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -350,20 +350,6 @@ class VQGANTrain(nn.Module):
     def forward(self, ci, si):
         t, l = self.vqgan(ci, si)
         return t, l
-
-
-class StyleEncoderBlock(nn.Module):
-    def __init__(self, ch):
-        super(StyleEncoderBlock, self).__init__()
-        self.net = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(ch, ch, kernel_size=3),
-        nn.ReLU(),
-        nn.AvgPool2d(2, stride=2),
-        nn.Conv2d(ch, ch, kernel_size=1),
-        nn.ReLU())
-    def forward(self, x):
-        x = self.net(x)
-        return x
 
 def style_encoder_block(ch):
     return [
