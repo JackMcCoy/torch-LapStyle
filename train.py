@@ -593,13 +593,11 @@ def revlap_train():
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    optimizer = torch.optim.AdamW(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
 
     for i in tqdm(range(args.max_iter)):
         adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
-        adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
         adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -667,17 +665,13 @@ def revlap_train():
 
             if (i+1) % args.accumulation_steps == 0:
                 scaler.step(optimizer)
-                scaler.step(dec_optimizer)
                 scaler.update()
                 optimizer.zero_grad()
-                dec_optimizer.zero_grad()
 
         else:
             loss.backward()
             optimizer.step()
-            dec_optimizer.step()
             optimizer.zero_grad()
-            dec_optimizer.zero_grad()
 
         if (i + 1) % 1 == 0:
 
