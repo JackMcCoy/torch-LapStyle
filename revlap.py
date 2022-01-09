@@ -31,7 +31,7 @@ class Sequential_Worker(nn.Module):
             StyleEncoderBlock(self.s_d)
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(192, self.s_d * 16),
+            nn.Linear(768, self.s_d * 16),
             nn.ReLU()
         )
         self.downblock = nn.Sequential(*Downblock())
