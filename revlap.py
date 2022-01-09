@@ -50,13 +50,8 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(num)
-        print(x.shape)
-        print(self.layer_res)
-        print(str(num)+' '+str(int(row))+ ' '+str(int(col)))
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        print(out.shape)
-        print(lap.shape)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
@@ -64,7 +59,6 @@ class Sequential_Worker(nn.Module):
             out = ada(style, out, norm=True)
             out = learnable(out)
         out = self.reinsert_work(x, out, row, col)
-
         return out
 
 
@@ -93,6 +87,7 @@ class LayerHolders(nn.Module):
         for i in range(self.num_layers_per_side**2):
             out = self.module_patches(out, ci, style, i)
         out = self.return_to_full_res(out)
+        print(out.shape)
         return out
 
 
