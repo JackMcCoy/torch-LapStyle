@@ -51,7 +51,7 @@ class Sequential_Worker(nn.Module):
             nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(1024, self.s_d * 16),
+            nn.Linear(4096, self.s_d * 16),
             nn.ReLU()
         )
         self.downblock = nn.Sequential(*Downblock())
