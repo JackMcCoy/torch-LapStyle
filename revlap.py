@@ -55,8 +55,8 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**layer_height
-        x = resize_to_res(x, layer_res)
-        ci = resize_to_res(ci,layer_res)
+        x = self.resize_to_res(x, layer_res)
+        ci = self.resize_to_res(ci,layer_res)
         row, col = self.get_layer_rows(layer_res,num)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
@@ -67,7 +67,7 @@ class Sequential_Worker(nn.Module):
             out = ada(style, out, norm=True)
             out = learnable(out)
         out = self.reinsert_work(x, out, row, col)
-        out = return_to_full_res(out)
+        out = self.return_to_full_res(out)
         return out
 
 
