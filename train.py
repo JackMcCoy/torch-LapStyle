@@ -299,6 +299,7 @@ def drafting_train():
                    loss_dict[s] = wandb.Image(l[0].transpose(2,0).transpose(1,0).detach().cpu().numpy())
                 elif type(l)==torch.Tensor:
                    loss_dict[s] = l.item()
+            print('\n')
             print('\t'.join([str(k)+': '+str(v) for k,v in loss_dict.items()]))
 
             wandb.log(loss_dict, step=i)
@@ -313,7 +314,6 @@ def drafting_train():
                 save_image(out_images.detach(), args.save_dir+'/drafting_training_iter'+str(i+1)+'.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-                print(loss)
                 state_dict = dec_.state_dict()
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
