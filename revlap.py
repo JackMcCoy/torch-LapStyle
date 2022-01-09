@@ -18,19 +18,6 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
     return output - downsample(fn_out)
 
 
-class RevisorLap(nn.Module):
-    def __init__(self, batch_size:int,levels:int= 1):
-        super(RevisorLap, self).__init__()
-        self.layers = nn.ModuleList([])
-        self.levels = levels
-        for i in range(levels):
-            self.layers.append(RevisionNet(batch_size,  i))
-    def forward(self, x: torch.Tensor, ci: torch.Tensor, style: torch.Tensor):
-        for layer in self.layers:
-            x = layer(x, ci, style)
-        return x
-
-
 class Sequential_Worker(nn.Module):
     def __init__(self, working_res, layer_res, batch_size,s_d, layer_num):
         super(Sequential_Worker, self).__init__()
