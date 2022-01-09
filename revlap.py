@@ -89,6 +89,7 @@ class LayerHolders(nn.Module):
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
         out = x
         ci = self.resize_to_res(ci)
+        print(len(self.module_patches))
         for idx, layer in enumerate(self.module_patches):
             out = layer(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
