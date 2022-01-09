@@ -92,6 +92,7 @@ class LayerHolders(nn.Module):
         ci = self.resize_to_res(ci)
         for i in range(self.num_layers_per_side**2):
             out = self.module_patches(out, ci, style, i)
+        out = self.return_to_full_res(out)
         return out
 
 
