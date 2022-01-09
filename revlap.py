@@ -22,7 +22,7 @@ class Sequential_Worker(nn.Module):
     def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
-        self.s_d = s_d
+        self.s_d = 3
         self.max_res =max_res
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(self.s_d),
