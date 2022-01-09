@@ -622,7 +622,7 @@ def revlap_train():
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
 
-            loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), disc_)
+            loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), None,disc_)
         if ac_enabled:
             d_scaler.scale(loss_D).backward()
             if i % args.accumulation_steps == 0:

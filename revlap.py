@@ -103,7 +103,6 @@ class LayerHolders(nn.Module):
 
         style = style.to(torch.device('cuda:0'))
         for idx, layer in enumerate(self.module_patches):
-            print('inner '+str(idx))
             out = layer(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
 
@@ -131,6 +130,5 @@ class LapRev(nn.Module):
         ci = ci.to(torch.device('cuda:0'))
         out = input
         for idx, layer in enumerate(self.layers):
-            print('outer '+str(idx))
             out = layer(out, ci, style)
         return out
