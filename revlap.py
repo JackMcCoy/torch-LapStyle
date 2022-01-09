@@ -54,6 +54,8 @@ class Sequential_Worker(nn.Module):
         print(str(self.layer_num)+' '+str(int(row))+ ' '+str(int(col)))
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
+        print(out.shape)
+        print(lap.shape)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
