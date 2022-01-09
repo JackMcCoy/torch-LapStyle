@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 import typing, math
 from einops.layers.torch import Rearrange
-from revlib.utils import sequential_to_momentum_net
+from revlib.utils import module_list_to_momentum_net
 
 def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
     return upsample(other_stream),  + fn_out
