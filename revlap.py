@@ -122,6 +122,6 @@ class LapRev(nn.Module):
         out = input
         out = F.interpolate(out, self.max_res, mode='nearest')
         for idx, layer in enumerate(self.layers):
-            for i in range(int((2 ** idx) / .25):
+            for i in range(int((2 ** idx) / .25)):
                 out = layer(out, ci, style, idx, i)
         return out
