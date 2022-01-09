@@ -124,5 +124,5 @@ class LapRev(nn.Module):
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
             print(f'{height} {num}')
-            out = layer(out, ci, style, height, num)
+            out = layer(out, ci, style.data, height, num)
         return out
