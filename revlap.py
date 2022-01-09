@@ -91,7 +91,7 @@ class Sequential_Worker(nn.Module):
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
 
-        style = self.style_embedding(thumb)
+        style = self.style_encoding(thumb)
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
