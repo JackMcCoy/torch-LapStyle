@@ -827,9 +827,9 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     return loss
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
-    pred_fake = disc_(fake, crop_marks)
+    pred_fake = disc_(fake)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
-    pred_real = disc_(real, crop_marks)
+    pred_real = disc_(real)
     loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
