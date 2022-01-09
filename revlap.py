@@ -18,11 +18,11 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, working_res, batch_size,s_d):
+    def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
         self.s_d = s_d
-        self.max_res =2048
+        self.max_res =max_res
         self.downblock = nn.Sequential(*Downblock())
         self.adaconvs = nn.ModuleList(adaconvs(batch_size, s_d=self.s_d))
         self.upblock = nn.ModuleList(Upblock())
@@ -107,7 +107,7 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
