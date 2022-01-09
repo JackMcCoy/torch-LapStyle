@@ -106,7 +106,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         height = max_res//working_res//2
-        self.num_layers = [(h,i) for h in height for i in range(int((2**h)/.25))]
+        self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, batch_size, s_d) for i in self.num_layers]))
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
