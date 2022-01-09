@@ -66,7 +66,7 @@ class Sequential_Worker(nn.Module):
         style_col = col if col % 2 == 0 else col - 1
         style_row = row
         print(f'{style_col} {style_row}')
-        if row + 1 > row_num:
+        if row + 1 >= row_num:
             style_row -= 1
         scaled = F.interpolate(x, layer_res//2, mode='nearest')
         scaled = scaled[:,:,self.working_res*style_col:self.working_res*(style_col+1),self.working_res*style_row:self.working_res*(style_row+1)]
