@@ -44,7 +44,8 @@ class Sequential_Worker(nn.Module):
 
     def reinsert_work(self, x, out, layer_row, layer_col):
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] + out
         return x
 
     def forward(self, x, ci, style):
@@ -91,8 +92,6 @@ class LayerHolders(nn.Module):
         ci = self.resize_to_res(ci)
         for idx, layer in enumerate(self.module_patches):
             out = layer(out, ci, style)
-        out = self.return_to_full_res(out)[:,:3,:,:]
-
         return out
 
 
