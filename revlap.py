@@ -22,16 +22,28 @@ class Sequential_Worker(nn.Module):
     def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
-        self.s_d = 3
+        self.s_d = 64
         self.max_res =max_res
         self.style_encoding = nn.Sequential(
-            StyleEncoderBlock(self.s_d),
-            StyleEncoderBlock(self.s_d),
-            StyleEncoderBlock(self.s_d),
-            StyleEncoderBlock(self.s_d)
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(3, 8, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(8, 16, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(16, 32, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
+            nn.ReflectionPad2d((1, 1, 1, 1)),
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(768, self.s_d * 16),
+            nn.Linear(1024, self.s_d * 16),
             nn.ReLU()
         )
         self.downblock = nn.Sequential(*Downblock())
