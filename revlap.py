@@ -34,6 +34,7 @@ class Sequential_Worker(nn.Module):
         # row_num == col_num, as these are squares
 
     def get_layer_rows(self, layer_num):
+        print(str(self.layer_res)+' '+str(self.working_res))
         row_num = self.layer_res // self.working_res
         layer_row = math.floor(layer_num / row_num)
         layer_col = self.layer_num % row_num
