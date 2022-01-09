@@ -80,7 +80,7 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
-        thumb = crop_style_thumb(x, layer_res, row, col, row_num)
+        thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
 
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
@@ -91,7 +91,7 @@ class Sequential_Worker(nn.Module):
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
 
-        style = self.style_embedding(out)
+        style = self.style_embedding(thumb)
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
