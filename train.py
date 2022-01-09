@@ -673,7 +673,7 @@ def revlap_train():
                 dec_optimizer.zero_grad()
 
         else:
-            loss.backward()
+            loss.backward(retain_graph=True)
             optimizer.step()
             dec_optimizer.step()
             optimizer.zero_grad()
