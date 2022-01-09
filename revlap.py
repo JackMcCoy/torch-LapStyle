@@ -51,7 +51,7 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(self.layer_num)
-        print(str(int(row))+ ' '+str(int(col)))
+        print(str(self.layer_num)+' '+str(int(row))+ ' '+str(int(col)))
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
