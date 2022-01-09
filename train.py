@@ -684,10 +684,10 @@ def revlap_train():
                     loss_dict[s] = l.item()
             if(i +1) % 10 ==0:
                 loss_dict['example'] = wandb.Image(rev_stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+            print('\n')
             print('\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
             wandb.log(loss_dict, step=i)
-            print(f'{loss.item():.2f}')
 
         with torch.no_grad():
             if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
