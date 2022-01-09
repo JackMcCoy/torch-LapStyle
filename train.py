@@ -688,6 +688,8 @@ def revlap_train():
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Revision Disc. Loss', 'Discriminator Loss', 'Patch Loss', 'MXDOG Loss']):
                 if type(l) == torch.Tensor:
+                    print(s)
+                    print(l)
                     loss_dict[s] = l.item()
             if(i +1) % 10 ==0:
                 loss_dict['example'] = wandb.Image(rev_stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
