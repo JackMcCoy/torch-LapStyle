@@ -65,6 +65,7 @@ class Sequential_Worker(nn.Module):
     def crop_style_thumb(self, x, layer_res, row, col, row_num):
         style_col = col if col % 2 == 0 else col - 1
         style_row = row
+        print(f'{style_col} {style_row}')
         if row + 1 > row_num:
             style_row -= 1
         scaled = F.interpolate(x, layer_res//2, mode='nearest')
