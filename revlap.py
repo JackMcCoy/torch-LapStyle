@@ -103,7 +103,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         num_layers = max_res//working_res//2
-        self.layers = nn.ModuleList([LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)])
+        self.layers = nn.ModuleList([LayerHolders(max_res, 256, i, batch_size, s_d) for i in range(num_layers)])
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
