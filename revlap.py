@@ -18,11 +18,11 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, working_res, layer_res, batch_size,s_d):
+    def __init__(self, working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
-        self.layer_res = layer_res
         self.s_d = s_d
+        self.max_res =2048
         self.downblock = nn.Sequential(*Downblock())
         self.adaconvs = nn.ModuleList(adaconvs(batch_size, s_d=self.s_d))
         self.upblock = nn.ModuleList(Upblock())
@@ -31,8 +31,8 @@ class Sequential_Worker(nn.Module):
         self.lap_weight.requires_grad = False
         # row_num == col_num, as these are squares
 
-    def get_layer_rows(self, layer_num):
-        row_num = self.layer_res // self.working_res
+    def get_layer_rows(self, layer_num, layer_res):
+        row_num = layer_res // self.working_res
         layer_row = math.floor(layer_num / row_num)
         layer_col = layer_num % row_num
         return layer_row, layer_col
@@ -42,14 +42,22 @@ class Sequential_Worker(nn.Module):
 
     def reinsert_work(self, x, out, layer_row, layer_col):
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] + out
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return x
 
-    def forward(self, x, ci, style, num):
+    def resize_to_res(self, x, layer_res):
+        return F.interpolate(x, layer_res, mode='nearest')
+
+    def return_to_full_res(self, x):
+        return F.interpolate(x, self.max_res, mode='nearest')
+
+    def forward(self, x, ci, style, layer_height, num):
         # x = input in color space
         # out = laplacian (residual) space
-        row, col = self.get_layer_rows(num)
+        layer_res = 512*2**layer_height
+        x = resize_to_res(x, layer_res)
+        ci = resize_to_res(ci,layer_res)
+        row, col = self.get_layer_rows(layer_res,num)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
@@ -59,6 +67,7 @@ class Sequential_Worker(nn.Module):
             out = ada(style, out, norm=True)
             out = learnable(out)
         out = self.reinsert_work(x, out, row, col)
+        out = return_to_full_res(out)
         return out
 
 
@@ -71,7 +80,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // 256
-        self.module_patches = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, self.internal_layer_res, batch_size,s_d)]))
+        self.module_patches = Sequential_Worker(256, self.internal_layer_res, batch_size,s_d)
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
@@ -85,7 +94,7 @@ class LayerHolders(nn.Module):
         out = self.resize_to_res(x)
         ci = self.resize_to_res(ci)
         for i in range(self.num_layers_per_side**2):
-            out = self.module_patches[0](out, ci, style, i)
+            out = self.module_patches(out, ci, style, i)
         out = self.return_to_full_res(out)
         print(out.shape)
         return out
@@ -96,8 +105,9 @@ class LapRev(nn.Module):
         super(LapRev, self).__init__()
         self.max_res = max_res
         self.working_res = working_res
-        num_layers = max_res//working_res//2
-        self.layers = module_list_to_momentum_net(nn.ModuleList([LayerHolders(max_res, 512, i, batch_size, s_d) for i in range(num_layers)]))
+        height = max_res//working_res//2
+        self.num_layers = [(h,i) for h in height for i in range(int((2**h)/.25))]
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, batch_size, s_d) for i in self.num_layers]))
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
@@ -111,6 +121,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = input
         out = F.interpolate(out, self.max_res, mode='nearest')
-        for idx, layer in enumerate(self.layers):
-            out = layer(out, ci, style)
+        for idx, layer in zip(self.num_layers,self.layers):
+            height, patch_num = idx
+            out = layer(out, ci, style, height, patch_num)
         return out
