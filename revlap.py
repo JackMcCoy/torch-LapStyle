@@ -91,6 +91,7 @@ class Sequential_Worker(nn.Module):
         out = torch.cat([out, lap], dim=1)
         out = self.downblock(out)
 
+        N,C,h,w = thumb.shape
         style = self.style_encoding(thumb)
         style = style.flatten(1)
         style = self.style_projection(style)
