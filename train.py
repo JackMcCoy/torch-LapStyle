@@ -626,7 +626,7 @@ def revlap_train():
                 d_scaler.step(opt_D)
                 d_scaler.update()
         else:
-            loss_D.backward()
+            loss_D.backward(retain_graph=True)
             opt_D.step()
             opt_D.zero_grad()
         set_requires_grad(disc_, False)
@@ -673,7 +673,7 @@ def revlap_train():
                 dec_optimizer.zero_grad()
 
         else:
-            loss.backward(retain_graph=True)
+            loss.backward()
             optimizer.step()
             dec_optimizer.step()
             optimizer.zero_grad()
