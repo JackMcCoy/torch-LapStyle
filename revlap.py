@@ -18,13 +18,12 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
 
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, working_res, layer_res, batch_size,s_d, layer_num):
+    def __init__(self, working_res, layer_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.layer_num = 0
         self.working_res = working_res
         self.layer_res = layer_res
         self.s_d = s_d
-        self.layer_num = layer_num
         self.downblock = nn.Sequential(*Downblock())
         self.adaconvs = nn.ModuleList(adaconvs(batch_size, s_d=self.s_d))
         self.upblock = nn.ModuleList(Upblock())
@@ -48,12 +47,12 @@ class Sequential_Worker(nn.Module):
         self.working_res * layer_row:self.working_res * (layer_row + 1)] + out
         return x
 
-    def forward(self, x, ci, style):
+    def forward(self, x, ci, style, num):
         # x = input in color space
         # out = laplacian (residual) space
-        row, col = self.get_layer_rows(self.layer_num)
+        row, col = self.get_layer_rows(num)
         print(x.shape)
-        print(str(self.layer_num)+' '+str(int(row))+ ' '+str(int(col)))
+        print(str(num)+' '+str(int(row))+ ' '+str(int(col)))
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         print(out.shape)
@@ -78,7 +77,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // 256
-        self.module_patches = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(256, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]))
+        self.module_patches = Sequential_Worker(256, self.internal_layer_res, batch_size,s_d)
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
@@ -91,8 +90,8 @@ class LayerHolders(nn.Module):
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
         out = self.resize_to_res(x)
         ci = self.resize_to_res(ci)
-        for idx, layer in enumerate(self.module_patches):
-            out = layer(out, ci, style)
+        for i in range(self.num_layers_per_side**2):
+            out = self.module_patches(out, ci, style, i)
         return out
 
 
