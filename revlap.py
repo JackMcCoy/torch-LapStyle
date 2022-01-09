@@ -28,7 +28,6 @@ class Sequential_Worker(nn.Module):
             StyleEncoderBlock(self.s_d),
             StyleEncoderBlock(self.s_d),
             StyleEncoderBlock(self.s_d),
-            StyleEncoderBlock(self.s_d),
             StyleEncoderBlock(self.s_d)
         )
         self.style_projection = nn.Sequential(
