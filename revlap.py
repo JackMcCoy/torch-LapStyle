@@ -65,21 +65,17 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
         row, col = self.get_layer_rows(self.layer_num)
-        print(x.shape)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
-        print(out.shape)
         out = self.downblock(out)
         for ada, learnable in zip(self.adaconvs, self.upblock):
             out = ada(style, out, norm=True)
             out = learnable(out)
-        print(out.shape)
         out = self.reinsert_work(x, out, row, col)
 
-        print(out.shape)
-        return out, ci, style
+        return out
 
 
 class LayerHolders(nn.Module):
@@ -91,7 +87,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // self.working_res
-        self.module_patches = sequential_to_momentum_net(nn.Sequential(*[Sequential_Worker(working_res//2, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
+        self.module_patches = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(working_res//2, self.internal_layer_res, batch_size,s_d, i) for i in range(self.num_layers_per_side**2)]),target_device='cuda')
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
@@ -100,19 +96,18 @@ class LayerHolders(nn.Module):
         return F.interpolate(x, self.max_res, mode='nearest')
 
     def forward(self, x, ci, style):
-        print('x in')
-        print(x.shape)
+
         out = self.resize_to_res(x).repeat(1,2,1,1).data
         out.requires_grad=True
         ci = self.resize_to_res(ci).to(torch.device('cuda:0'))
 
         style = style.to(torch.device('cuda:0'))
-        out, _ = self.module_patches(out, ci, style)
-        print(type(_))
+        for idx, layer in enumerate(self.module_patches):
+            print('inner '+str(idx))
+            out = layer(out, ci, style)
         out = self.return_to_full_res(out)[:,:3,:,:]
-        print('to out')
-        print(out.shape)
-        return out, ci, style
+
+        return out
 
 
 class LapRev(nn.Module):
@@ -121,7 +116,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         num_layers = max_res//working_res//2
-        self.layers = sequential_to_momentum_net(nn.Sequential(*[LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)]), target_device='cuda')
+        self.layers = nn.ModuleList([LayerHolders(max_res, working_res, i, batch_size, s_d) for i in range(num_layers)])
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
@@ -134,5 +129,7 @@ class LapRev(nn.Module):
         input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         input.requires_grad = True
         ci = ci.to(torch.device('cuda:0'))
-        out = self.layers(input, ci, style)
+        for idx, layer in enumerate(self.layers):
+            print('outer '+str(idx))
+            out = layer(out, ci, style)
         return out
