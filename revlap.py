@@ -71,7 +71,7 @@ class LayerHolders(nn.Module):
         self.layer_num = layer_num
         self.internal_layer_res = 512*2**layer_num
         self.num_layers_per_side = self.internal_layer_res // 256
-        self.module_patches = Sequential_Worker(256, self.internal_layer_res, batch_size,s_d)
+        self.module_patches = module_list_to_momentum_net(nn.ModuleList(Sequential_Worker(256, self.internal_layer_res, batch_size,s_d)))
 
     def resize_to_res(self, x):
         return F.interpolate(x, self.internal_layer_res, mode='nearest')
@@ -85,7 +85,7 @@ class LayerHolders(nn.Module):
         out = self.resize_to_res(x)
         ci = self.resize_to_res(ci)
         for i in range(self.num_layers_per_side**2):
-            out = self.module_patches(out, ci, style, i)
+            out = self.module_patches[0](out, ci, style, i)
         out = self.return_to_full_res(out)
         print(out.shape)
         return out
