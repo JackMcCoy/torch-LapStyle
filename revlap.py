@@ -89,7 +89,7 @@ class LayerHolders(nn.Module):
     def forward(self, x, ci, style):
 
         #out = self.resize_to_res(x).repeat(1,2,1,1).data
-        out = x
+        out = self.resize_to_res(x)
         ci = self.resize_to_res(ci)
         for idx, layer in enumerate(self.module_patches):
             out = layer(out, ci, style)
