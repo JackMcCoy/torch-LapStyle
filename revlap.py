@@ -157,6 +157,7 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
+        coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),
                                                   beta=.5,
