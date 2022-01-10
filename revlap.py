@@ -132,7 +132,7 @@ class LapRev(nn.Module):
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d)]) for h in range(height)])
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),beta=.5,target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
