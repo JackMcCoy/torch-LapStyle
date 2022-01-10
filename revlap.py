@@ -77,9 +77,9 @@ class Sequential_Worker(nn.Module):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
     def reinsert_work(self, x, out, layer_row, layer_col):
-        z = blank_canvas.clone()
-        z[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out + z[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)]
         return x
 
     def resize_to_res(self, x, layer_res):
