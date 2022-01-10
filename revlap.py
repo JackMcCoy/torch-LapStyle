@@ -73,8 +73,8 @@ class Sequential_Worker(nn.Module):
     def crop_to_working_area(self, x, layer_row, layer_col):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
-    def reinsert_work(self, out, layer_row, layer_col):
-        blank_canvas = torch.zeros(4, 3, 512, 512, device='cuda:0')
+    def reinsert_work(self, out, blank_canvas, layer_row, layer_col):
+
         blank_canvas[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return out
@@ -94,7 +94,7 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, layer_height, num, style):
+    def forward(self, x, blank_canvas, params, ci, layer_height, num, style):
         # x = input in color space
         # out = laplacian (residual) space
         style_projection,down_and_up,adaconvs = params
@@ -119,7 +119,7 @@ class Sequential_Worker(nn.Module):
                 out = ada(style, out)
             out = learnable(out)
         out = down_and_up[-1](out)
-        out = self.reinsert_work(out, row, col)
+        out = self.reinsert_work(out, blank_canvas row, col)
         out = self.return_to_full_res(out)
         return out
 
@@ -144,9 +144,9 @@ class LapRev(nn.Module):
         """
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
-        out = input
-        out = F.interpolate(out, self.max_res, mode='nearest')
+        input = F.interpolate(input, self.max_res, mode='nearest')
+        out = torch.zeros(4, 3, 512, 512, device='cuda:0')
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(out, self.params[height],ci, height, num, style.data)
+            out = layer(input, out, self.params[height],ci, height, num, style.data)
         return out
