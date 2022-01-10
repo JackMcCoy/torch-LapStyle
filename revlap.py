@@ -22,36 +22,15 @@ class Sequential_Worker(nn.Module):
     def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
-        self.s_d = 64
+        self.s_d = 512
         self.max_res =max_res
         self.style_encoding = nn.Sequential(
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(3, 8, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(8, 16, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(16, 32, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(32, 64, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(64, 128, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(128, 256, kernel_size=3),
-            nn.AvgPool2d(2, stride=2),
-            nn.LeakyReLU(),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(4096, self.s_d * 16),
+            nn.Linear(8192, self.s_d * 16),
             nn.ReLU()
         )
         self.downblock = nn.Sequential(*Downblock())
@@ -94,12 +73,13 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, ci, layer_height, num):
+    def forward(self, x, ci, layer_height, num, enc_):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
         thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
+        thumb = enc_(thumb, return_4_only=True)
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
@@ -161,7 +141,7 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.nn.Module):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -175,5 +155,5 @@ class LapRev(nn.Module):
         out = F.interpolate(out, self.max_res, mode='nearest')
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(out, ci, height, num)
+            out = layer(out, ci, height, num, enc_)
         return out
