@@ -52,12 +52,14 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     lr = math.floor(layer_num / row_num)
     lc = layer_num % row_num
 
+    combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
+               + fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
+    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
     if isinstance(fn_out, torch.Tensor):
-        return other_stream + fn_out
-    combined = other_stream[:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]\
-            + fn_out[0][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]= combined
-    return [combined]\
+        return other_stream
+
+
+    return [other_stream]\
            + fn_out[1]
 
 
