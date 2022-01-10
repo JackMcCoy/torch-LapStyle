@@ -31,9 +31,10 @@ class ResBlock(nn.Module):
 
 
 class FusedConvNoiseBias(nn.Module):
-    def __init__(self, ch_in, ch_out, hw, scale_change):
+    def __init__(self, ch_in, ch_out, hw, scale_change, noise = True):
         super(FusedConvNoiseBias, self).__init__()
         self.resize = nn.Identity()
+        self.noise = nn.Identity()
         self.ch_in = ch_in
         self.ch_out = ch_out
         self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False)
@@ -41,7 +42,8 @@ class FusedConvNoiseBias(nn.Module):
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
             self.resize = nn.AvgPool2d(2, stride=2)
-        self.noise = RiemannNoise(hw)
+        if noise==True:
+            self.noise = RiemannNoise(hw)
         self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
         self.act = nn.LeakyReLU()
         self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))

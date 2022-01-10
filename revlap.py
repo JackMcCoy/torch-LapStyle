@@ -28,15 +28,17 @@ def style_encoder_block(s_d):
 
 
 def Down_and_Up():
-    return nn.ModuleList([FusedConvNoiseBias(6, 128, 256, 'none'),
+    return nn.ModuleList([FusedConvNoiseBias(6, 128, 256, 'none', noise=False),
                           FusedConvNoiseBias(128, 128, 256, 'none'),
-                          FusedConvNoiseBias(128, 64, 256, 'none'),
-                          FusedConvNoiseBias(64, 64, 128, 'down'),
+                          FusedConvNoiseBias(128, 64, 256, 'none', noise=False),
+                          FusedConvNoiseBias(64, 64, 128, 'down', noise=False),
                           ResBlock(64),
                           FusedConvNoiseBias(64, 64, 256, 'up'),
-                          FusedConvNoiseBias(64, 128, 256, 'none'),
+                          FusedConvNoiseBias(64, 128, 256, 'none', noise=False),
                           FusedConvNoiseBias(128, 128, 256, 'none'),
-                          nn.Conv2d(128, 3, kernel_size=3,padding=1,padding_mode='reflect')
+                          nn.Sequential(
+                              FusedConvNoiseBias(128, 3, 256, 'none', noise=False),
+                              nn.Conv2d(3, 3, kernel_size=1)
                       ]
     )
 
