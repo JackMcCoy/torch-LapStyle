@@ -78,7 +78,7 @@ class Sequential_Worker(nn.Module):
 
     def reinsert_work(self, x, out, layer_row, layer_col):
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out + z[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out + x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)]
         return x
 
