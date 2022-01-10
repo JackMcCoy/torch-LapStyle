@@ -76,11 +76,7 @@ class Sequential_Worker(nn.Module):
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
-        self.style_encoding = params[0]
-        self.style_projection = params[1]
-        self.down_and_up = params[2]
-        self.adaconvs = params[3]
-        self.lap_weight = params[4]
+
 
         # row_num == col_num, as these are squares
 
@@ -114,9 +110,10 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, ci, layer_height, num, enc_):
+    def forward(self, params, x, ci, layer_height, num, enc_):
         # x = input in color space
         # out = laplacian (residual) space
+        style_encoding,style_projection,down_and_up,adaconvs,lap_weight = params
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
         thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
@@ -126,16 +123,16 @@ class Sequential_Worker(nn.Module):
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
 
-        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
+        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = thumb.shape
-        style = self.style_encoding(thumb)
+        style = style_encoding(thumb)
         style = style.flatten(1)
-        style = self.style_projection(style)
+        style = style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
 
-        for ada, learnable in zip(self.adaconvs, self.down_and_up):
+        for ada, learnable in zip(adaconvs, down_and_up):
             out = ada(style, out)
             out = learnable(out)
         out = self.reinsert_work(x, out, row, col)
