@@ -46,24 +46,26 @@ def adaconvs(batch_size,s_d):
 def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    layer_res = 512*2**height
-    up_f = 256*2**((total_height-1)-height)
-    row_num = layer_res // 256
-    lr = math.floor(layer_num / row_num)
-    lc = layer_num % row_num
+    layer_res = 512*2**height # 512
+    up_f = 256*2**((total_height-1)-height) #256
+    row_num = layer_res // 256 # 2
+    lr = math.floor(layer_num / row_num) # 0 -> 0
+    # 1 -> 0    2->1    3 ->
+    lc = layer_num % row_num # 0 -> 0   1 -> 1
+    # 2 -> 0    3 -> 1
 
     if isinstance(fn_out, torch.Tensor):
         combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                    + fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
+        fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
 
         return other_stream
 
     combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                + fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
+    fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
 
-    return [other_stream]\
+    return [fn_out[0]]\
            + fn_out[1]
 
 
@@ -77,13 +79,13 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     lc = layer_num % row_num
     diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
            - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+    fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
     if isinstance(fn_out, torch.Tensor):
-        return output
+        return fn_out
     diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
            - fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
-    return [output]\
+    fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+    return [fn_out[0]]\
            + fn_out[1]
 
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
@@ -167,7 +169,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         height = max_res//working_res
-        print(height)
+
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
