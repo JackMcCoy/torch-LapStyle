@@ -97,7 +97,7 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         style_projection,downblock, upblock,adaconvs = params
         layer_res = 512*2**self.layer_height
-        row, col, row_num = self.get_layer_rows(self.num, layer_res)
+        row, col, row_num = self.get_layer_rows(layer_res)
 
         print(f'{row} {col} {layer_res}')
         x = self.resize_to_res(x, layer_res)
