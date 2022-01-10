@@ -34,6 +34,8 @@ class FusedConvNoiseBias(nn.Module):
     def __init__(self, ch_in, ch_out, hw, scale_change):
         super(FusedConvNoiseBias, self).__init__()
         self.resize = nn.Identity()
+        self.ch_in = ch_in
+        self.ch_out = ch_out
         if scale_change == 'up':
             self.conv = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
                                  nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False))
@@ -63,7 +65,8 @@ class FusedConvNoiseBias(nn.Module):
         out = self.noise(out)
         out = out + self.bias
         out = self.act(out)
-        out = (x + out) * self.res_scale
+        if self.ch_in == self.ch_out:
+            out = (x + out) * self.res_scale
         return out
 
 
