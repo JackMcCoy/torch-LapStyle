@@ -11,7 +11,7 @@ import numpy as np
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock
+from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -376,40 +376,24 @@ class DecoderAdaConv(nn.Module):
             nn.LeakyReLU()
         )
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
-        self.decoder_1 = nn.Sequential(
-            ResBlock(512),
-            RiemannNoise(32),
-            ConvBlock(512, 256),
-            RiemannNoise(32),
-            nn.Conv2d(256, 1024, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.PixelShuffle(2),
-            nn.Conv2d(256, 256, kernel_size=1),
-            nn.LeakyReLU(),
-
-            )
+        self.decoder_1 = FusedConvNoiseBias(512, 256, 32, 'none')
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
-            ResBlock(256),
-            RiemannNoise(64),
-            ConvBlock(256, 128),
-            RiemannNoise(64),
-
-            nn.Upsample(scale_factor=2, mode='nearest'),
+            FusedConvNoiseBias(256, 256, 64, 'up'),
+            FusedConvNoiseBias(256, 256, 64, 'none'),
+            FusedConvNoiseBias(256, 256, 64, 'none'),
         )
-        self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
+        self.kernel_3 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
-            ConvBlock(128, 128),
-            RiemannNoise(128),
-            ConvBlock(128, 64),
-            RiemannNoise(128),
-            nn.Upsample(scale_factor=2, mode='nearest')
-
+            FusedConvNoiseBias(256, 128, 128, 'up'),
+            FusedConvNoiseBias(128, 128, 128, 'none'),
+            FusedConvNoiseBias(128, 64, 128, 'none'),
         )
-        self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
+        self.kernel_4 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
-            ConvBlock(64, 64),
-            nn.Conv2d(64, 3, kernel_size=1)
+            FusedConvNoiseBias(64, 64, 256, 'up'),
+            FusedConvNoiseBias(64, 3, 256, 'none'),
+            nn.Conv2d(3, 3, kernel_size=1)
         )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
