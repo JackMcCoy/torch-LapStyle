@@ -78,9 +78,9 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.style_encoding = params[0]
         self.style_projection = params[1]
-        self.down_and_up = params[3]
-        self.adaconvs = params[4]
-        self.lap_weight = params[5]
+        self.down_and_up = params[2]
+        self.adaconvs = params[3]
+        self.lap_weight = params[4]
 
         # row_num == col_num, as these are squares
 
