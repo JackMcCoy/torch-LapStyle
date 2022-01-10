@@ -59,8 +59,8 @@ def Down_and_Up():
 
 def adaconvs(batch_size,s_d):
     return nn.ModuleList([
-            nn.Identity(),
-            AdaConv(128, 1, batch_size, s_d=s_d),
+            AdaConv(6, 6, batch_size, s_d=s_d),
+            AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
