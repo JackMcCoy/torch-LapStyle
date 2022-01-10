@@ -57,15 +57,15 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     if isinstance(fn_out, torch.Tensor):
         combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                    + fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
-
+        other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
+        print(f'{layer_num} forward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
         return other_stream
 
     combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                + fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
+    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
 
-    return [fn_out[0]]\
+    return [other_stream]\
            + fn_out[1]
 
 
@@ -77,15 +77,17 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     row_num = layer_res // 256
     lr = math.floor(layer_num / row_num)
     lc = layer_num % row_num
-    diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
-           - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+
     if isinstance(fn_out, torch.Tensor):
-        return fn_out
+        diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
+               - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
+        output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+        print(f'{layer_num} backward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
+        return output
     diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
            - fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
-    return [fn_out[0]]\
+    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+    return [output]\
            + fn_out[1]
 
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
