@@ -3,7 +3,7 @@ from torch import nn
 import typing
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512):
+    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512, norm:bool=True):
         super(AdaConv, self).__init__()
         self.n_groups = int(c_in//p)
         self.pointwise_groups = s_d//p
@@ -11,6 +11,7 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
+        self.norm = norm
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2),
             nn.ReLU())
@@ -33,7 +34,7 @@ class AdaConv(nn.Module):
             nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 1-e9)
 
-    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, norm: bool):
+    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N, self.c_out, self.c_in // self.n_groups, 3, 3)
@@ -42,7 +43,7 @@ class AdaConv(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d).view(N,self.c_out)
 
         a, b, c, d = predicted.size()
-        if norm:
+        if self.norm:
             mean = predicted.mean(dim=(2,3), keepdim=True)
             predicted = predicted -mean
             predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2,3), keepdim=True)+1e-5)

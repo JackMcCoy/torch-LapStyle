@@ -440,15 +440,15 @@ class DecoderAdaConv(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out = self.kernel_1(style, cF['r4_1'], norm=True)
+        adaconv_out = self.kernel_1(style, cF['r4_1'])
         x = self.decoder_1(adaconv_out)
-        adaconv_out =  self.kernel_2(style, cF['r3_1'], norm=True)
+        adaconv_out =  self.kernel_2(style, cF['r3_1'])
         x = x + adaconv_out
         x = self.decoder_2(x)
-        adaconv_out = self.kernel_3(style, cF['r2_1'], norm=True)
+        adaconv_out = self.kernel_3(style, cF['r2_1'])
         x = x + adaconv_out
         x = self.decoder_3(x)
-        adaconv_out = self.kernel_4(style, cF['r1_1'], norm=True)
+        adaconv_out = self.kernel_4(style, cF['r1_1'])
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style

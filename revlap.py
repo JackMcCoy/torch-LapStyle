@@ -136,7 +136,7 @@ class Sequential_Worker(nn.Module):
         style = style.reshape(N, self.s_d, 4, 4)
 
         for ada, learnable in zip(self.adaconvs, self.down_and_up):
-            out = ada(style, out, True)
+            out = ada(style, out)
             out = learnable(out)
         out = self.reinsert_work(x, out, row, col)
         out = self.return_to_full_res(out)
