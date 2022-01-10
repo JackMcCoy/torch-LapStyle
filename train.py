@@ -576,12 +576,11 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = LapRev(512, 512, args.batch_size, 512).to(device)
+    rev_ = torch.jit.trace(LapRev(512, 512, args.batch_size, 512).to(device),
+                            (torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
     rev_.train()
-    #,(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
-    #  torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-    #  torch.rand(args.batch_size, 256, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
-
     disc_ = build_disc(disc_state)
 
     dec_.train()

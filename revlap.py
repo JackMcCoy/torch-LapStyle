@@ -51,7 +51,6 @@ def adaconvs(batch_size,s_d):
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d)])
 
-blank_canvas = torch.zeros(4,3,512,512, device='cuda:0')
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
 lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
 lap_weight.requires_grad = False
@@ -74,10 +73,11 @@ class Sequential_Worker(nn.Module):
     def crop_to_working_area(self, x, layer_row, layer_col):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
-    def reinsert_work(self, x, out, layer_row, layer_col):
-        x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
-        return x
+    def reinsert_work(self, out, layer_row, layer_col):
+        blank_canvas = torch.zeros(4, 3, 512, 512, device='cuda:0')
+        blank_canvas[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        return out
 
     def resize_to_res(self, x, layer_res):
         return F.interpolate(x, layer_res, mode='nearest')
@@ -94,7 +94,7 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, layer_height, num, style, enc_):
+    def forward(self, x, params, ci, layer_height, num, style):
         # x = input in color space
         # out = laplacian (residual) space
         style_projection,down_and_up,adaconvs = params
@@ -119,7 +119,7 @@ class Sequential_Worker(nn.Module):
                 out = ada(style, out)
             out = learnable(out)
         out = down_and_up[-1](out)
-        out = self.reinsert_work(x, out, row, col)
+        out = self.reinsert_work(out, row, col)
         out = self.return_to_full_res(out)
         return out
 
@@ -134,7 +134,7 @@ class LapRev(nn.Module):
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, enc_:torch.nn.Module):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -148,5 +148,5 @@ class LapRev(nn.Module):
         out = F.interpolate(out, self.max_res, mode='nearest')
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(out, self.params[height],ci, height, num, style.data, enc_)
+            out = layer(out, self.params[height],ci, height, num, style.data)
         return out
