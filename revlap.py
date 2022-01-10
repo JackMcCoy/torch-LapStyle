@@ -97,7 +97,7 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, layer_height, num, style, enc_):
+    def forward(self, x, ci, layer_height, num, style, enc_):
         # x = input in color space
         # out = laplacian (residual) space
 
