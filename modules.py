@@ -36,15 +36,11 @@ class FusedConvNoiseBias(nn.Module):
         self.resize = nn.Identity()
         self.ch_in = ch_in
         self.ch_out = ch_out
+        self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False)
         if scale_change == 'up':
-            self.conv = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
-                                 nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False))
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
-            self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect',bias=False)
             self.resize = nn.AvgPool2d(2, stride=2)
-        else:
-            self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect',bias=False)
         self.noise = RiemannNoise(hw)
         self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
         self.act = nn.LeakyReLU()
