@@ -52,18 +52,20 @@ lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
 lap_weight.requires_grad = False
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, max_res,working_res, batch_size,s_d):
+    def __init__(self, layer_height, num, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
+        self.layer_height = layer_height
+        self.num = num
 
         # row_num == col_num, as these are squares
 
-    def get_layer_rows(self, layer_num, layer_res):
+    def get_layer_rows(self, layer_res):
         row_num = layer_res // self.working_res
-        layer_row = math.floor(layer_num / row_num)
-        layer_col = layer_num % row_num
+        layer_row = math.floor(self.num / row_num)
+        layer_col = self.num % row_num
         return layer_row, layer_col, row_num
 
     def crop_to_working_area(self, x, layer_row, layer_col):
@@ -90,12 +92,12 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, layer_height, num, style):
+    def forward(self, x, params, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         style_projection,downblock, upblock,adaconvs = params
-        layer_res = 512*2**layer_height
-        row, col, row_num = self.get_layer_rows(num, layer_res)
+        layer_res = 512*2**self.layer_height
+        row, col, row_num = self.get_layer_rows(self.num, layer_res)
 
         print(f'{row} {col} {layer_res}')
         x = self.resize_to_res(x, layer_res)
@@ -129,8 +131,7 @@ class LapRev(nn.Module):
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
-        print(self.num_layers)
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),beta=.5,target_device='cuda:0')
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),beta=.5,target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
@@ -146,6 +147,5 @@ class LapRev(nn.Module):
 
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            print(f'{height}, {num}')
-            out = layer(out, self.params[height],ci, height, num, style.data)
+            out = layer(out, self.params[height],ci, style.data)
         return out
