@@ -69,14 +69,17 @@ def adaconvs(batch_size,s_d):
             AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d)])
 
-blank_canvas = torch.zeros(4,3,512,512)
+blank_canvas = torch.zeros(4,3,512,512, device='cuda:0')
+lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
+lap_weight.requires_grad = False
+
 class Sequential_Worker(nn.Module):
     def __init__(self, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
-
 
         # row_num == col_num, as these are squares
 
@@ -113,7 +116,7 @@ class Sequential_Worker(nn.Module):
     def forward(self, x, params, ci, layer_height, num, enc_):
         # x = input in color space
         # out = laplacian (residual) space
-        style_encoding,style_projection,down_and_up,adaconvs,lap_weight = params
+        style_encoding,style_projection,down_and_up,adaconvs = params
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
         thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
@@ -146,11 +149,8 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         height = max_res//working_res
-        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
-        self.lap_weight.requires_grad = False
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        self.params = nn.ModuleList([nn.ModuleList([*style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d), self.lap_weight]) for h in range(height)])
+        self.params = nn.ModuleList([nn.ModuleList([*style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.nn.Module):
