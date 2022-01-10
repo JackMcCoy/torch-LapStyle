@@ -167,6 +167,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.working_res = working_res
         height = max_res//working_res
+        print(height)
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
