@@ -577,9 +577,9 @@ def revlap_train():
         rev_state = None
         init_weights(dec_)
     rev_ = torch.jit.trace(LapRev(512, 512, args.batch_size, 512).to(device),
-                            (torch.rand(args.batch_size, 3, 512, 512),
-                          torch.rand(args.batch_size, 3, 512, 512),
-                          torch.rand(args.batch_size, 512, 4,4)),check_trace=False, strict=False)
+                            (torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
     rev_.train()
     disc_ = build_disc(disc_state)
 
@@ -607,7 +607,7 @@ def revlap_train():
 
             stylized, style = dec_(sF, cF)
 
-            rev_stylized = rev_(stylized, ci[-1].detach(), style, enc_)
+            rev_stylized = rev_(stylized, ci[-1].detach(), style)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
             scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
