@@ -59,7 +59,7 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
            + fn_out[1][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
 
 
-def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
+def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
     layer_res = 512 * 2 ** height
