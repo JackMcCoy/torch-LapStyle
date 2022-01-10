@@ -71,7 +71,7 @@ def adaconvs(batch_size,s_d):
 
 blank_canvas = torch.zeros(4,3,512,512, device='cuda:0')
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
+lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
 lap_weight.requires_grad = False
 
 class Sequential_Worker(nn.Module):
