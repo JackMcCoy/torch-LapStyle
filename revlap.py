@@ -100,8 +100,7 @@ class Sequential_Worker(nn.Module):
         style_projection,down_and_up,adaconvs = params
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
-        thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
-        thumb = enc_(thumb)['r4_1']
+
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
