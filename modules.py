@@ -7,23 +7,26 @@ from adaconv import AdaConv
 
 
 class ResBlock(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, hw=0, noise=False):
         super(ResBlock, self).__init__()
-        self.conv_block = nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                        nn.Conv2d(dim, dim, kernel_size=3),
-                                        nn.ReLU(),
+        modules = [nn.ReflectionPad2d((1, 1, 1, 1)),
+                    nn.Conv2d(dim, dim, kernel_size=3)]
+        if noise == True:
+            modules.append(RiemannNoise(hw))
+        self.conv_block = nn.Sequential(*modules,
+                                        nn.LeakyReLU(),
                                         nn.Conv2d(dim, dim, kernel_size=1))
         self.apply(self._init_weights)
 
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 1e-9)
+            if m.kernel_size==3:
+                nn.init.kaiming_normal_(m.weight.data, .01)
+            else:
+                nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0)
             m.requires_grad = True
-        elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 1e-9)
 
     def forward(self, x):
         out = x + self.conv_block(x)

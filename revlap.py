@@ -17,10 +17,8 @@ def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> tor
     return output - downsample(fn_out)
 
 def style_encoder_block(s_d):
-    return nn.Sequential(StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512)), nn.Sequential(
-            nn.Linear(8192, s_d * 16),
+    return nn.Sequential(
+            nn.Linear(s_d * 16, s_d * 16),
             nn.ReLU()
         )
 
@@ -29,10 +27,10 @@ def style_encoder_block(s_d):
 
 def Down_and_Up():
     return nn.ModuleList([FusedConvNoiseBias(6, 128, 256, 'none', noise=False),
-                          FusedConvNoiseBias(128, 128, 256, 'none'),
+                          FusedConvNoiseBias(128, 128, 256, 'none', noise = False),
                           FusedConvNoiseBias(128, 64, 256, 'none', noise=False),
                           FusedConvNoiseBias(64, 64, 128, 'down', noise=False),
-                          ResBlock(64),
+                          ResBlock(64, hw= 128, noise = True),
                           FusedConvNoiseBias(64, 64, 256, 'up'),
                           FusedConvNoiseBias(64, 128, 256, 'none', noise=False),
                           FusedConvNoiseBias(128, 128, 256, 'none'),
@@ -64,7 +62,9 @@ class Sequential_Worker(nn.Module):
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
-
+        self.style_projection= style_encoder_block(s_d)
+        self.down_and_up = Down_and_Up()
+        self.adaconvs = adaconvs(batch_size, s_d)
         # row_num == col_num, as these are squares
 
     def get_layer_rows(self, layer_num, layer_res):
@@ -97,10 +97,10 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, layer_height, num, enc_):
+    def forward(self, x, params, ci, layer_height, num, style, enc_):
         # x = input in color space
         # out = laplacian (residual) space
-        style_encoding,style_projection,down_and_up,adaconvs = params
+
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
         thumb = self.crop_style_thumb(x, layer_res, row, col, row_num)
@@ -114,16 +114,15 @@ class Sequential_Worker(nn.Module):
         out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = thumb.shape
-        style = style_encoding(thumb)
         style = style.flatten(1)
-        style = style_projection(style)
+        style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
 
-        for idx, (ada, learnable) in enumerate(zip(adaconvs, down_and_up)):
+        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.down_and_up)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
-        out = down_and_up[-1](out)
+        out = self.down_and_up[-1](out)
         out = self.reinsert_work(x, out, row, col)
         out = self.return_to_full_res(out)
         return out
@@ -136,10 +135,9 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        self.params = nn.ModuleList([nn.ModuleList([*style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.nn.Module):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, enc_:torch.nn.Module):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -153,5 +151,5 @@ class LapRev(nn.Module):
         out = F.interpolate(out, self.max_res, mode='nearest')
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(out, self.params[height],ci, height, num, enc_)
+            out = layer(out, ci, height, num, style.data, enc_)
         return out
