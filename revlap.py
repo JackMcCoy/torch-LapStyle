@@ -119,7 +119,7 @@ class Sequential_Worker(nn.Module):
                 out = ada(style, out)
             out = learnable(out)
         out = down_and_up[-1](out)
-        out = self.reinsert_work(out, blank_canvas row, col)
+        out = self.reinsert_work(out, blank_canvas, row, col)
         out = self.return_to_full_res(out)
         return out
 
