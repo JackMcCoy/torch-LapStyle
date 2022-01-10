@@ -47,7 +47,7 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     fn_out = revlib.core.split_tensor_list(fn_out)
 
     layer_res = 512*2**height
-    up_f = 256*2**(total_height-height)
+    up_f = 256*2**((total_height-1)-height)
     row_num = layer_res // 256
     lr = math.floor(layer_num / row_num)
     lc = layer_num % row_num
@@ -71,7 +71,7 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     fn_out = revlib.core.split_tensor_list(fn_out)
 
     layer_res = 512 * 2 ** height
-    up_f = 256 * 2 ** (total_height - height)
+    up_f = 256 * 2 ** ((total_height-1) - height)
     row_num = layer_res // 256
     lr = math.floor(layer_num / row_num)
     lc = layer_num % row_num
