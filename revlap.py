@@ -75,8 +75,6 @@ class Sequential_Worker(nn.Module):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
-        print(f'{self.working_res * layer_col}:{self.working_res * (layer_col + 1)},\
-        {self.working_res * layer_row}:{self.working_res * (layer_row + 1)}')
         return out
 
     def resize_to_res(self, x, layer_res):
@@ -101,7 +99,6 @@ class Sequential_Worker(nn.Module):
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
 
-        print(f'{row} {col} {layer_res}')
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
