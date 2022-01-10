@@ -25,7 +25,7 @@ def style_encoder_block(s_d):
         )
 
 def Down_and_Up():
-    return nn.ModuleList(nn.Sequential(  # Downblock
+    return nn.ModuleList([nn.Sequential(  # Downblock
         nn.Conv2d(6, 128, kernel_size=1),
         nn.LeakyReLU()),
         nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -54,7 +54,7 @@ def Down_and_Up():
                       nn.Conv2d(128, 128, kernel_size=3),
                       nn.LeakyReLU()),
         nn.Sequential(nn.Conv2d(128, 3, kernel_size=1)
-                      )
+                      )]
     )
 
 def adaconvs(batch_size,s_d):
