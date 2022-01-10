@@ -76,7 +76,7 @@ class Sequential_Worker(nn.Module):
     def reinsert_work(self, x, out, layer_row, layer_col):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
         return out
 
     def resize_to_res(self, x, layer_res):
