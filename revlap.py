@@ -97,6 +97,7 @@ class Sequential_Worker(nn.Module):
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
 
+        print(f'{row} {col} {layer_res}')
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
@@ -144,5 +145,6 @@ class LapRev(nn.Module):
 
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
+            print(f'{height}, {num}')
             out = layer(out, self.params[height],ci, height, num, style.data)
         return out
