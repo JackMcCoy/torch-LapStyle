@@ -38,7 +38,7 @@ def Down_and_Up():
                           FusedConvNoiseBias(128, 128, 256, 'none'),
                           nn.Sequential(
                               FusedConvNoiseBias(128, 3, 256, 'none', noise=False),
-                              nn.Conv2d(3, 3, kernel_size=1)
+                              nn.Conv2d(3, 3, kernel_size=1))
                       ]
     )
 
