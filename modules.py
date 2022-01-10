@@ -34,8 +34,8 @@ class RiemannNoise(nn.Module):
     def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
         self.size = size
-        self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
-                                        nn.Parameter(nn.init.normal_(torch.ones(size, size))),
+        self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.kaiming_normal_(torch.ones(size, size))),
+                                        nn.Parameter(nn.init.kaiming_normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
         self.noise = torch.zeros(1, device='cuda:0')
@@ -71,7 +71,7 @@ class SpectralResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()
         self.conv_1 = nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
-        self.relu = nn.LeakyReLU(0.2)
+        self.relu = nn.LeakyReLU()
         self.conv_2 = nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
         self.downsample = downsample
         self.learnable_sc = (in_ch != out_ch) or downsample

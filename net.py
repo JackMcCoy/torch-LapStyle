@@ -373,7 +373,7 @@ class DecoderAdaConv(nn.Module):
         self.s_d = 512
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d*16),
-            nn.ReLU()
+            nn.LeakyReLU()
         )
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
@@ -382,10 +382,10 @@ class DecoderAdaConv(nn.Module):
             ConvBlock(512, 256),
             RiemannNoise(32),
             nn.Conv2d(256, 1024, kernel_size=1),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.PixelShuffle(2),
             nn.Conv2d(256, 256, kernel_size=1),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
             )
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
@@ -394,12 +394,8 @@ class DecoderAdaConv(nn.Module):
             RiemannNoise(64),
             ConvBlock(256, 128),
             RiemannNoise(64),
-            nn.Conv2d(128, 512, kernel_size=1),
-            nn.ReLU(),
-            nn.PixelShuffle(2),
-            nn.Conv2d(128, 128, kernel_size=1),
-            nn.ReLU(),
 
+            nn.Upsample(scale_factor=2, mode='nearest'),
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
@@ -407,11 +403,7 @@ class DecoderAdaConv(nn.Module):
             RiemannNoise(128),
             ConvBlock(128, 64),
             RiemannNoise(128),
-            nn.Conv2d(64, 256, kernel_size=1),
-            nn.ReLU(),
-            nn.PixelShuffle(2),
-            nn.Conv2d(64, 64, kernel_size=1),
-            nn.ReLU(),
+            nn.Upsample(scale_factor=2, mode='nearest')
 
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
@@ -425,13 +417,13 @@ class DecoderAdaConv(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
             if not m.bias is None:
-                nn.init.constant_(m.bias.data, 1e-9)
+                nn.init.constant_(m.bias.data, 1e-4)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 1e-9)
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            nn.init.constant_(m.bias.data, 1e-4)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
@@ -701,7 +693,7 @@ class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
         self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
-        self.relu = nn.LeakyReLU(0.2)
+        self.relu = nn.LeakyReLU()
         self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
         self.c_sc = nn.Conv2d(in_channels, dim, kernel_size=1)
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()

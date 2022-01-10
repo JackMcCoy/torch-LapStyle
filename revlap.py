@@ -24,6 +24,31 @@ def style_encoder_block(s_d):
             nn.ReLU()
         )
 
+
+class FusedConvNoiseBias(nn.Module):
+    def __init__(self, ch_in, ch_out, hw, scale_change,):
+        super(FusedConvNoiseBias, self).__init__()
+        self.resize = nn.Identity()
+        if scale_change == 'up':
+            self.conv = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
+                                 nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False))
+            self.resize = nn.Upsample(scale_factor=2, mode='nearest')
+        elif scale_change == 'down':
+            self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=2, padding=1, padding_mode='reflect',bias=False)
+            self.resize = nn.AvgPool2d(2, stride=2)
+        else:
+            self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect',bias=False)
+        self.noise = RiemannNoise(hw)
+        self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
+        self.act = nn.LeakyReLU()
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            m.requires_grad = True
+
 def Down_and_Up():
     return nn.ModuleList([nn.Sequential(  # Downblock
         nn.Conv2d(6, 128, kernel_size=1),
@@ -37,7 +62,6 @@ def Down_and_Up():
         nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
         nn.Conv2d(64, 64, kernel_size=3, stride=2),
         nn.LeakyReLU()),
-        # Resblock Middle
         ResBlock(64),
         nn.Sequential(nn.Conv2d(64, 256, kernel_size=1),
                       nn.LeakyReLU(),
@@ -59,7 +83,7 @@ def Down_and_Up():
 
 def adaconvs(batch_size,s_d):
     return nn.ModuleList([
-            AdaConv(6, 6, batch_size, s_d=s_d),
+            AdaConv(6, 1, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),

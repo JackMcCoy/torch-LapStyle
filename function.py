@@ -112,7 +112,7 @@ def coral(source, target):
     return source_f_transfer.view(source.size())
 
 def init_weights(net,
-                 init_type='normal',
+                 init_type='kaiming',
                  init_gain=0.02,
                  distribution='normal'):
     """Initialize network weights.
@@ -137,9 +137,9 @@ def init_weights(net,
 
             elif init_type == 'kaiming':
                 if distribution == 'normal':
-                    torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
+                    torch.nn.init.kaiming_normal_(m.weight, a=0.01, mode='fan_in')
                 else:
-                    torch.nn.init.kaiming_uniform_(m.weight, a=0, mode='fan_in')
+                    torch.nn.init.kaiming_uniform_(m.weight, a=0.01, mode='fan_in')
             else:
                 raise NotImplementedError(
                     'initialization method [%s] is not implemented' % init_type)
@@ -149,5 +149,5 @@ def init_weights(net,
                 'BatchNorm'
         ) != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             torch.nn.init.normal_(m.weight, 1.0, init_gain)
-            torch.nn.init.constant_(m.bias, 1e-9)
+            torch.nn.init.constant_(m.bias, 1e-4)
     net.apply(init_func)
