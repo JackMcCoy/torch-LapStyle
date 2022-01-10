@@ -75,6 +75,8 @@ class Sequential_Worker(nn.Module):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
+        print(f'{self.working_res * layer_col}:{self.working_res * (layer_col + 1)},\
+        {self.working_res * layer_row}:{self.working_res * (layer_row + 1)}')
         return out
 
     def resize_to_res(self, x, layer_res):
