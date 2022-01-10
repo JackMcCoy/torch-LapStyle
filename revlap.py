@@ -154,7 +154,7 @@ class LapRev(nn.Module):
         self.lap_weight.requires_grad = False
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         self.params = [[*style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d), self.lap_weight] for h in range(height)]
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(params[i[0]],self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.params[i[0]],self.max_res,256, batch_size, s_d) for i in self.num_layers]),target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.nn.Module):
         """
