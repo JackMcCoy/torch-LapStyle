@@ -9,6 +9,7 @@ import typing, math
 from functools import partial
 from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
+import revlib
 
 def style_encoder_block(s_d):
     return nn.Sequential(
@@ -42,7 +43,7 @@ def adaconvs(batch_size,s_d):
             AdaConv(128, 2, batch_size, s_d=s_d)])
 
 
-def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor) -> TENSOR_OR_LIST:
+def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
     layer_res = 512*2**height
@@ -58,7 +59,7 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
            + fn_out[1][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
 
 
-def additive_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor) -> TENSOR_OR_LIST:
+def additive_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
     layer_res = 512 * 2 ** height
