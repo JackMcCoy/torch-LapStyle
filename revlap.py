@@ -109,7 +109,7 @@ class Sequential_Worker(nn.Module):
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
-        N,C,h,w = thumb.shape
+        N,C,h,w = style.shape
         style = style.flatten(1)
         style = style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
