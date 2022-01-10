@@ -144,9 +144,9 @@ class LapRev(nn.Module):
         """
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
-        input = F.interpolate(input, self.max_res, mode='nearest')
+        out = F.interpolate(input, self.max_res, mode='nearest')
 
         for idx, layer in zip(self.num_layers,self.layers):
             height, num = idx
-            out = layer(input, self.params[height],ci, height, num, style.data)
+            out = layer(out, self.params[height],ci, height, num, style.data)
         return out
