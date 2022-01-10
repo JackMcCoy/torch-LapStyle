@@ -23,14 +23,15 @@ def style_encoder_block(s_d):
         )
 
 
-
-
-def Down_and_Up():
-    return nn.ModuleList([FusedConvNoiseBias(6, 128, 256, 'none', noise=False),
+def downblock():
+    return nn.Sequential(FusedConvNoiseBias(6, 128, 256, 'none', noise=False),
                           FusedConvNoiseBias(128, 128, 256, 'none', noise = False),
                           FusedConvNoiseBias(128, 64, 256, 'none', noise=False),
                           FusedConvNoiseBias(64, 64, 128, 'down', noise=False),
-                          ResBlock(64, hw= 128, noise = True),
+                          ResBlock(64, hw= 128, noise = True),)
+
+def upblock():
+    return nn.ModuleList([
                           FusedConvNoiseBias(64, 64, 256, 'up'),
                           FusedConvNoiseBias(64, 128, 256, 'none', noise=False),
                           FusedConvNoiseBias(128, 128, 256, 'none'),
@@ -42,11 +43,6 @@ def Down_and_Up():
 
 def adaconvs(batch_size,s_d):
     return nn.ModuleList([
-            nn.Identity(),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d)])
@@ -97,7 +93,7 @@ class Sequential_Worker(nn.Module):
     def forward(self, x, params, ci, layer_height, num, style):
         # x = input in color space
         # out = laplacian (residual) space
-        style_projection,down_and_up,adaconvs = params
+        style_projection,downblock, upblock,adaconvs = params
         layer_res = 512*2**layer_height
         row, col, row_num = self.get_layer_rows(num, layer_res)
 
@@ -113,8 +109,8 @@ class Sequential_Worker(nn.Module):
         style = style.flatten(1)
         style = style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
-
-        for idx, (ada, learnable) in enumerate(zip(adaconvs, down_and_up)):
+        out = downblock(out)
+        for idx, (ada, learnable) in enumerate(zip(adaconvs, upblock)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
@@ -131,7 +127,7 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), Down_and_Up(),adaconvs(batch_size, s_d)]) for h in range(height)])
+        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(self.max_res,256, batch_size, s_d) for i in self.num_layers]),beta=.5,target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
