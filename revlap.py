@@ -5,16 +5,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
-import typing, math
+import typing, math, partial
 from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
-
-def additive_coupling_forward(other_stream: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
-    return upsample(other_stream),  + fn_out
-
-
-def additive_coupling_inverse(output: torch.Tensor, fn_out: torch.Tensor) -> torch.Tensor:
-    return output - downsample(fn_out)
 
 def style_encoder_block(s_d):
     return nn.Sequential(
@@ -46,6 +39,37 @@ def adaconvs(batch_size,s_d):
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d)])
+
+
+def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor) -> TENSOR_OR_LIST:
+    fn_out = revlib.core.split_tensor_list(fn_out)
+
+    layer_res = 512*2**height
+    up_f = 256*2**(total_height-height)
+    row_num = layer_res // 256
+    lr = math.floor(layer_num / row_num)
+    lc = layer_num % row_num
+
+    if isinstance(fn_out, torch.Tensor):
+        return other_stream + fn_out
+    return [other_stream[:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]\
+            + fn_out[0][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]]\
+           + fn_out[1][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
+
+
+def additive_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor) -> TENSOR_OR_LIST:
+    fn_out = revlib.core.split_tensor_list(fn_out)
+
+    layer_res = 512 * 2 ** height
+    up_f = 256 * 2 ** (total_height - height)
+    row_num = layer_res // 256
+    lr = math.floor(layer_num / row_num)
+    lc = layer_num % row_num
+    if isinstance(fn_out, torch.Tensor):
+        return output - fn_out
+    return [output[:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]\
+            - fn_out[0][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]]\
+           + fn_out[1][:,:, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
 
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
 lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
@@ -129,8 +153,14 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
+        coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
+        coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),beta=.5,target_device='cuda:0')
+        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),
+                                                  beta=.5,
+                                                  coupling_forward = coupling_forward,
+                                                  coupling_inverse = coupling_inverse,
+                                                  target_device='cuda:0')
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
