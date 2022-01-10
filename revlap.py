@@ -118,10 +118,8 @@ class Sequential_Worker(nn.Module):
         style = style.reshape(N, self.s_d, 4, 4)
 
         for idx, (ada, learnable) in enumerate(zip(adaconvs, down_and_up)):
-            print(idx)
             if idx > 0:
                 out = ada(style, out)
-            print(out.shape)
             out = learnable(out)
         out = down_and_up[-1](out)
         out = self.reinsert_work(x, out, row, col)
