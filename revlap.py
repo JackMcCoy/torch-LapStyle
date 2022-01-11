@@ -232,7 +232,7 @@ class LapRev(nn.Module):
                                          cache=mod.cache, first=idx == 0, last=idx == len(momentumnet))
             for idx, mod in enumerate(momentumnet)]
         out_modules = [revlib.core.MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
-                       for i in range(0, len(stem), 2)]
+                       for i in range(0, len(momentumnet), 2)]
         out_modules.append(modules[-1])
         self.layers = nn.ModuleList(out_modules)
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
