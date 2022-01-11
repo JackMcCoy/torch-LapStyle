@@ -234,9 +234,8 @@ class LapRev(nn.Module):
             for idx, mod in enumerate(stem)]
         out_modules = [revlib.core.MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
                        for i in range(0, len(stem)-1, 2)]
-        for idx, m in list(modules):
-            if idx%2 == 0:
-                out_modules.append(m)
+        for i in range(0,len(modules),2):
+            out_modules.append(modules[i])
         self.layers = nn.ModuleList(out_modules)
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
