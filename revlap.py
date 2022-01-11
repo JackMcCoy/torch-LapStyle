@@ -46,6 +46,7 @@ class MomentumNetSide(torch.nn.Module):
 
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] * self.beta
+        return inp
 
 def style_encoder_block(s_d):
     return nn.Sequential(
