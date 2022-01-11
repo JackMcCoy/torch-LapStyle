@@ -136,7 +136,7 @@ class Sequential_Worker(nn.Module):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
-        return out
+        return x
 
     def resize_to_res(self, x, layer_res):
         return F.interpolate(x, layer_res, mode='nearest')
@@ -168,8 +168,9 @@ class Sequential_Worker(nn.Module):
         print(f'{layer_res}')
         print(f'{self.working_res}')
 
-        x = self.resize_to_res(x, layer_res)
-        ci = self.resize_to_res(ci,layer_res)
+        if x.shape[-1] != layer_res:
+            x = self.resize_to_res(x, layer_res)
+            ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
 
