@@ -35,6 +35,7 @@ class MomentumNetStem(torch.nn.Module):
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         inp = self.wrapped_module(inp, *args, **kwargs)
+        print(f'{self.layer_num}')
         y = inp.clone()
         y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
         return y
