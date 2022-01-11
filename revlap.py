@@ -225,13 +225,13 @@ class LapRev(nn.Module):
         secondary_branch_buffer = []
         momentumnet = list(momentumnet.stem)[:-1]
         modules = [
-            revlib.SingleBranchReversibleModule(secondary_branch_buffer, wrapped_module=mod.wrapped_module.wrapped_module,
+            revlib.core.SingleBranchReversibleModule(secondary_branch_buffer, wrapped_module=mod.wrapped_module.wrapped_module,
                                          coupling_forward=mod.wrapped_module.coupling_forward,
                                          coupling_inverse=mod.wrapped_module.coupling_inverse,
                                          memory_savings=mod.memory_savings, target_device=mod.target_device,
                                          cache=mod.cache, first=idx == 0, last=idx == len(momentumnet))
             for idx, mod in enumerate(momentumnet)]
-        out_modules = [MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
+        out_modules = [revlib.core.MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
                        for i in range(0, len(stem), 2)]
         out_modules.append(modules[-1])
         self.layers = nn.ModuleList(out_modules)
