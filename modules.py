@@ -22,7 +22,7 @@ class ResBlock(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             if m.kernel_size==3:
-                nn.init.kaiming_normal_(m.weight.data, .01)
+                nn.init.xavier_normal_(m.weight.data)
             else:
                 nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0)
@@ -55,7 +55,7 @@ class FusedConvNoiseBias(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            nn.init.xavier_normal_(m.weight.data)
             m.requires_grad = True
             if hasattr(m, 'bias') and m.bias is not None:
                 torch.nn.init.constant_(m.bias,0)
