@@ -165,9 +165,8 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def momentum(self, init_scale, layer_num):
+    def copy(self, layer_num):
         out = copy.copy(self)
-        out.init_scale = init_scale
         out.num = layer_num
         return out
 
@@ -216,8 +215,7 @@ class LapRev(nn.Module):
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
-                                                                      layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
+        modules = nn.ModuleList([cells[height].copy() for height, layer_num in self.num_layers])
         momentum_modules = []
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
