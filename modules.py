@@ -22,7 +22,7 @@ class ResBlock(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             if m.kernel_size==3:
-                nn.init.xavier_normal_(m.weight.data)
+                nn.init.kaiming_normal_(m.weight.data, .01)
             else:
                 nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0)
@@ -40,14 +40,14 @@ class FusedConvNoiseBias(nn.Module):
         self.noise = nn.Identity()
         self.ch_in = ch_in
         self.ch_out = ch_out
-        self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect', bias=False)
+        self.conv = nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
         if scale_change == 'up':
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
             self.resize = nn.AvgPool2d(2, stride=2)
         #if noise==True:
         #    self.noise = RiemannNoise(hw)
-        self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
+        #self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
         self.act = nn.LeakyReLU()
         self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))
         self.apply(self._init_weights)
@@ -55,7 +55,7 @@ class FusedConvNoiseBias(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
             m.requires_grad = True
             if hasattr(m, 'bias') and m.bias is not None:
                 torch.nn.init.constant_(m.bias,0)
