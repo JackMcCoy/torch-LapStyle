@@ -58,7 +58,7 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
         combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                    + fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
         other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
-        print(f'{layer_num} forward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
+        #print(f'{layer_num} forward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
         return other_stream
 
     combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
