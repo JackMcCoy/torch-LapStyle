@@ -253,5 +253,7 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
         out = out.repeat(2,1,1,1)
         out = self.momentumnet(out,(self.params[0],ci, style.data))
+        print(type(out))
+        print(out.shape)
         out = out[:N,:, :,:]
         return out
