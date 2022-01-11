@@ -31,6 +31,7 @@ class MomentumNetStem(torch.nn.Module):
         self.wrapped_module = wrapped_module
         self.beta = beta
         self.layer_num = layer_num
+        print(str(layer_num))
         self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height,layer_num,total_height)
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
@@ -220,7 +221,7 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,residual=True,target_device='cuda')
+        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
