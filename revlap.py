@@ -175,7 +175,8 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
-        (style_projection,downblock,upblock,adaconvs), ci, style = params
+        params, ci, style = params
+        style_projection, downblock, upblock, adaconvs = params
         if x.shape[-1] != layer_res:
             x = self.resize_to_res(x, layer_res)
             ci = self.resize_to_res(ci,layer_res)
