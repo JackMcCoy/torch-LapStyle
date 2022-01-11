@@ -84,11 +84,9 @@ def adaconvs(batch_size,s_d):
 
 
 def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
-    fn_out = revlib.core.split_tensor_list(fn_out)
-
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
-    if isinstance(fn_out, torch.Tensor):
+    if not isinstance(fn_out, list):
         y = fn_out.clone()
         y[:, :, ci1: ci2, ri1: ri2]= \
             other_stream[:, :, ci1: ci2, ri1: ri2]+\
@@ -101,11 +99,9 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
            + fn_out[1]
 
 def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
-    fn_out = revlib.core.split_tensor_list(fn_out)
-
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
-    if isinstance(fn_out, torch.Tensor):
+    if isinstance(fn_out, list):
         y = output.clone()
         y[:, :, ci1: ci2, ri1: ri2]= \
             y[:, :, ci1: ci2, ri1: ri2] -\
@@ -115,10 +111,6 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
            fn_out[0][:, :, ci1: ci2, ri1: ri2])
     return [output]\
            + fn_out[1]
-
-lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
-lap_weight.requires_grad = False
 
 
 class Sequential_Worker(nn.Module):
@@ -134,7 +126,9 @@ class Sequential_Worker(nn.Module):
         self.downblock = downblock()
         self.upblock = upblock()
         self.adaconvs = adaconvs(batch_size, s_d)
-
+        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        self.lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
+        self.lap_weight.requires_grad = False
         # row_num == col_num, as these are squares
 
     def get_layer_rows(self, layer_res):
@@ -183,7 +177,7 @@ class Sequential_Worker(nn.Module):
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = style.shape
