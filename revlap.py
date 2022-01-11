@@ -127,7 +127,7 @@ class Sequential_Worker(nn.Module):
         self.upblock = upblock()
         self.adaconvs = adaconvs(batch_size, s_d)
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
+        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
         self.lap_weight.requires_grad = False
         # row_num == col_num, as these are squares
 
