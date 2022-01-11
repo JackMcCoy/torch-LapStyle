@@ -170,7 +170,7 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, params=None):
+    def forward(self, x, params):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
@@ -252,5 +252,5 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
 
-        out = self.momentumnet(out,layerwise_args_kwargs=(self.params[0],ci, style.data))
+        out = self.momentumnet(out,layerwise_args_kwargs=(self.params[0],ci, style.data)*4)
         return out
