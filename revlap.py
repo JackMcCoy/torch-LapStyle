@@ -170,7 +170,7 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, params):
+    def forward(self, x, params=params):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
