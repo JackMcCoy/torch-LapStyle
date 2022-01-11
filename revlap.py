@@ -186,14 +186,14 @@ class Sequential_Worker(nn.Module):
 
         N,C,h,w = style.shape
         style = style.flatten(1)
-        style = self.style_projection(style)
+        style = style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
-        out = self.downblock(out)
-        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.upblock)):
+        out = downblock(out)
+        for idx, (ada, learnable) in enumerate(zip(adaconvs, upblock)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
-        out = self.upblock[-1](out)
+        out = upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
         if x.shape[-1] != layer_res:
             out = self.return_to_full_res(out)
@@ -248,5 +248,5 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
 
         for idx, layer in zip(self.num_layers,self.layers):
-            out = layer(params[idx[0]],out,ci, style.data)
+            out = layer(self.params[idx[0]],out,ci, style.data)
         return out
