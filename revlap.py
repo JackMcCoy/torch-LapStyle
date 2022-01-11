@@ -209,7 +209,7 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
         coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
-        coupling_inverse
+        coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
@@ -218,7 +218,7 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules[:-1],split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward[:-1],coupling_inverse=coupling_inverse[:-1],target_device='cuda')
+        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
