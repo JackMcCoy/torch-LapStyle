@@ -251,5 +251,5 @@ class LapRev(nn.Module):
         out = out.repeat(2,1,1,1)
         out = self.momentumnet(out,self.params[0],ci, style)
 
-        out = out[N:,:, :,:]
+        out = out[:N,:, :,:] + out[N:,:, :,:]
         return out
