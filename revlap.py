@@ -34,8 +34,9 @@ class MomentumNetStem(torch.nn.Module):
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         inp = self.wrapped_module(inp, *args, **kwargs)
-        inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
-        return inp
+        y = inp.clone()
+        y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
+        return y
 
 
 class MomentumNetSide(torch.nn.Module):
@@ -45,8 +46,9 @@ class MomentumNetSide(torch.nn.Module):
         self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height, layer_num, total_height)
 
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] * self.beta
-        return inp
+        y = inp.clone()
+        y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] * self.beta
+        return y
 
 def style_encoder_block(s_d):
     return nn.Sequential(
