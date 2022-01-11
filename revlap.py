@@ -175,7 +175,7 @@ class Sequential_Worker(nn.Module):
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
         style_projection, downblock, upblock, adaconvs = params
-        if x.shape[-1] != layer_res:
+        if layer_res != self.max_res:
             x = self.resize_to_res(x, layer_res)
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
@@ -194,7 +194,7 @@ class Sequential_Worker(nn.Module):
             out = learnable(out)
         out = upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
-        if x.shape[-1] != layer_res:
+        if layer_res != self.max_res
             out = self.return_to_full_res(out)
         return out
 

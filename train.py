@@ -649,7 +649,7 @@ def revlap_train():
 
             cF = enc_(ci[-1][:,:,-384:-128,-384:-128])
             if args.split_style:
-                if self.crop_size>512:
+                if args.crop_size>512:
                     si_cropped = random_crop2(si[-1])
                 else:
                     si_cropped = si[-1]
