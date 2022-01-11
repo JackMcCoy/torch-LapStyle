@@ -82,7 +82,7 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
         diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
                - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
         output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
-        print(f'{layer_num} backward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
+        #print(f'{layer_num} backward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
         return output
     diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
            - fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
@@ -175,7 +175,7 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
-
+        coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
         self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),
                                                   beta=.5,
