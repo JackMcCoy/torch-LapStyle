@@ -135,7 +135,7 @@ class Sequential_Worker(nn.Module):
     def reinsert_work(self, x, out, layer_row, layer_col):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] += out
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
         return x
 
     def resize_to_res(self, x, layer_res):
@@ -200,17 +200,16 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
         coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
+        coupling_inverse.reverse()
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        self.layers = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
+        modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
                                                                                    layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
-        '''
         self.layers = module_list_to_momentum_net(modules,
                                                   beta=self.momentumnet_beta,
                                                   coupling_forward = coupling_forward,
                                                   coupling_inverse = coupling_inverse,
                                                   target_device='cuda:0')
-        '''
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
