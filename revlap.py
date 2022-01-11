@@ -30,12 +30,14 @@ class MomentumNetStem(torch.nn.Module):
         super(MomentumNetStem, self).__init__()
         self.wrapped_module = wrapped_module
         self.beta = beta
+        self.layer_num = layer_num
         self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height,layer_num,total_height)
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         inp = self.wrapped_module(inp, *args, **kwargs)
         y = inp.clone()
         y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
+        print(self.layer_num)
         return y
 
 
