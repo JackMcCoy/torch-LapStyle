@@ -252,5 +252,5 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
 
-        out = self.momentumnet(out,layerwise_args_kwargs=(self.params[0],ci, style.data)*100)
+        out = self.momentumnet(out,layerwise_args_kwargs=[(self.params[0],ci, style.data) for i in range(8)])
         return out
