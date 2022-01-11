@@ -247,8 +247,8 @@ class LapRev(nn.Module):
         N,C,h,w = input.shape
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
-        out = F.interpolate(input, self.max_res, mode='nearest')
-        out = out.repeat(2,1,1,1)
+        input = F.interpolate(input, self.max_res, mode='nearest')
+        out = input.repeat(2,1,1,1)
         out = self.momentumnet(out,self.params[0],ci, style)
 
         out = input + out[N:,:, :,:]
