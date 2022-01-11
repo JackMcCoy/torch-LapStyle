@@ -31,7 +31,6 @@ class MomentumNetStem(torch.nn.Module):
         self.wrapped_module = wrapped_module
         self.beta = beta
         self.layer_num = layer_num
-        print(str(layer_num))
         self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height,layer_num,total_height)
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
@@ -94,7 +93,6 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
         y[:, :, ci1: ci2, ri1: ri2]= \
             other_stream[:, :, ci1: ci2, ri1: ri2]+\
                    y[:, :, ci1: ci2, ri1: ri2]
-        print(f'{layer_num} forward - {ci1}: {ci2}, {ri1}: {ri2}')
         return y
 
     other_stream[:, :, ci1: ci2, ri1: ri2].add_(
@@ -112,7 +110,6 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
         y[:, :, ci1: ci2, ri1: ri2]= \
             y[:, :, ci1: ci2, ri1: ri2] -\
                fn_out[:, :, ci1: ci2, ri1: ri2]
-        print(f'{layer_num} backward - {ci1}: {ci2}, {ri1}: {ri2}')
         return y
     output[:, :, ci1: ci2, ri1: ri2].subtract_(
            fn_out[0][:, :, ci1: ci2, ri1: ri2])
@@ -221,7 +218,7 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
+        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
