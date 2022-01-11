@@ -64,7 +64,7 @@ class FusedConvNoiseBias(nn.Module):
         x = self.resize(x)
         out = self.conv(x)
         out = self.noise(out)
-        out = out + self.bias
+        #out = out + self.bias
         out = self.act(out)
         if self.ch_in == self.ch_out:
             out = (x + out) * self.res_scale
