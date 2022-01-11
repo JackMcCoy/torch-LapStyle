@@ -36,7 +36,7 @@ class MomentumNetStem(torch.nn.Module):
         
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         inp = self.wrapped_module(inp, *args, **kwargs)
-        print(f'{self.layer_num}')
+        #print(f'{self.layer_num}')
         y = inp.clone()
         y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
         return y
@@ -94,7 +94,7 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
         y[:, :, ci1: ci2, ri1: ri2]= \
             other_stream[:, :, ci1: ci2, ri1: ri2]+\
                    y[:, :, ci1: ci2, ri1: ri2]
-        #print(f'{layer_num} forward - {ci1}: {ci2}, {ri1}: {ri2}')
+        print(f'{layer_num} forward - {ci1}: {ci2}, {ri1}: {ri2}')
         return y
 
     other_stream[:, :, ci1: ci2, ri1: ri2].add_(
@@ -112,7 +112,7 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
         y[:, :, ci1: ci2, ri1: ri2]= \
             y[:, :, ci1: ci2, ri1: ri2] -\
                fn_out[:, :, ci1: ci2, ri1: ri2]
-        #print(f'{layer_num} backward - {ci1}: {ci2}, {ri1}: {ri2}')
+        print(f'{layer_num} backward - {ci1}: {ci2}, {ri1}: {ri2}')
         return y
     output[:, :, ci1: ci2, ri1: ri2].subtract_(
            fn_out[0][:, :, ci1: ci2, ri1: ri2])
