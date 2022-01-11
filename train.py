@@ -131,6 +131,7 @@ parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
+parser.add_argument('--momentumnet_beta', type=float, default=.9)
 parser.add_argument('--fp16', type=int, default=0)
 parser.add_argument('--draft_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
@@ -576,7 +577,7 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = LapRev(512, 512, args.batch_size, 512).to(device)
+    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta).to(device)
                             #(torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)

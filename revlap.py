@@ -11,12 +11,30 @@ from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
 import revlib
 
+
+class MomentumNetStem(torch.nn.Module):
+    def __init__(self, wrapped_module: torch.nn.Module, beta: float):
+        super(MomentumNetStem, self).__init__()
+        self.wrapped_module = wrapped_module
+        self.beta = beta
+
+    def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        return self.wrapped_module(inp * self.beta, *args, **kwargs)
+
+
+class MomentumNetSide(torch.nn.Module):
+    def __init__(self, beta: float):
+        super(MomentumNetSide, self).__init__()
+        self.beta = beta
+
+    def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        return inp * self.beta
+
 def style_encoder_block(s_d):
     return nn.Sequential(
             nn.Linear(s_d * 16, s_d * 16),
             nn.ReLU()
         )
-
 
 def downblock():
     return nn.Sequential(FusedConvNoiseBias(6, 128, 256, 'none', noise=False),
@@ -68,7 +86,6 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     return [other_stream]\
            + fn_out[1]
 
-
 def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
@@ -94,9 +111,15 @@ lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 
 lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
 lap_weight.requires_grad = False
 
+
 class Sequential_Worker(nn.Module):
-    def __init__(self, layer_height, num, max_res,working_res, batch_size,s_d):
+    def __init__(self, init_scale:float, layer_height, num, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
+        self.init_scale = init_scale
+        self.style_projection = style_encoder_block(s_d)
+        self.downblock = downblock()
+        self.upbloack = upblock()
+        self.adaconvs = adaconvs(batch_size, s_d)
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
@@ -135,10 +158,15 @@ class Sequential_Worker(nn.Module):
     def return_to_full_res(self, x):
         return F.interpolate(x, self.max_res, mode='nearest')
 
-    def forward(self, x, params, ci, style):
+    def momentum(self, init_scale, layer_num):
+        out = copy.copy(self)
+        out.init_scale = init_scale
+        out.num = layer_num
+        return out
+
+    def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
-        style_projection,downblock, upblock,adaconvs = params
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
 
@@ -152,10 +180,10 @@ class Sequential_Worker(nn.Module):
 
         N,C,h,w = style.shape
         style = style.flatten(1)
-        style = style_projection(style)
+        style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
-        out = downblock(out)
-        for idx, (ada, learnable) in enumerate(zip(adaconvs, upblock)):
+        out = self.downblock(out)
+        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.upblock)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
@@ -166,19 +194,23 @@ class Sequential_Worker(nn.Module):
 
 
 class LapRev(nn.Module):
-    def __init__(self, max_res, working_res, batch_size, s_d):
+    def __init__(self, max_res, working_res, batch_size, s_d, momentumnet_beta):
         super(LapRev, self).__init__()
         self.max_res = max_res
+        self.momentumnet_beta = momentumnet_beta
         self.working_res = working_res
         height = max_res//working_res
 
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        coupling_forward = [partial(cropped_coupling_forward, height, h, i) for h, i in self.num_layers]
-        coupling_inverse = [partial(cropped_coupling_inverse, height, h, i) for h, i in self.num_layers]
+        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
+        coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
+        cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d), downblock(),upblock(),adaconvs(batch_size, s_d)]) for h in range(height)])
-        self.layers = module_list_to_momentum_net(nn.ModuleList([Sequential_Worker(*i,self.max_res,256, batch_size, s_d) for i in self.num_layers]),
-                                                  beta=.5,
+        modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
+                                                                                   layer_num) for height, i in self.num_layers])
+
+        self.layers = module_list_to_momentum_net(modules,
+                                                  beta=self.momentumnet_beta,
                                                   coupling_forward = coupling_forward,
                                                   coupling_inverse = coupling_inverse,
                                                   target_device='cuda:0')
@@ -196,6 +228,5 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
 
         for idx, layer in zip(self.num_layers,self.layers):
-            height, num = idx
-            out = layer(out, self.params[height],ci, style.data)
+            out = layer(out,ci, style.data)
         return out
