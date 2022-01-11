@@ -137,7 +137,9 @@ class Sequential_Worker(nn.Module):
     def reinsert_work(self, x, out, layer_row, layer_col):
 
         x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
+        self.working_res * layer_row:self.working_res * (layer_row + 1)] = \
+            x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+            self.working_res * layer_row:self.working_res * (layer_row + 1)]+out
         return x
 
     def resize_to_res(self, x, layer_res):
@@ -210,8 +212,6 @@ class LapRev(nn.Module):
                                                                                    layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
         self.layers = module_list_to_momentum_net(modules,
                                                   beta=self.momentumnet_beta,
-                                                  coupling_forward = coupling_forward,
-                                                  coupling_inverse = coupling_inverse,
                                                   target_device='cuda:0')
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
