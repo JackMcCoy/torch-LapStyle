@@ -130,6 +130,10 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.layer_height = layer_height
         self.num = num
+        self.style_projection = style_encoder_block(s_d)
+        self.downblock = downblock()
+        self.upblock = upblock()
+        self.adaconvs = adaconvs(batch_size, s_d)
 
         # row_num == col_num, as these are squares
 
@@ -185,14 +189,14 @@ class Sequential_Worker(nn.Module):
 
         N,C,h,w = style.shape
         style = style.flatten(1)
-        style = style_projection(style)
+        style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
         out = downblock(out)
-        for idx, (ada, learnable) in enumerate(zip(adaconvs, upblock)):
+        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.upblock)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
-        out = upblock[-1](out)
+        out = self.upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
         if layer_res != self.max_res:
             out = self.return_to_full_res(out)
@@ -211,7 +215,6 @@ class LapRev(nn.Module):
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
         coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
         coupling_inverse.reverse()
-        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
         modules = nn.ModuleList([cells[height].copy(layer_num) for height, layer_num in self.num_layers])
@@ -250,7 +253,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.momentumnet(out,self.params[0],ci, style)
+        out = self.momentumnet(out,ci, style)
 
         out = out[N:,:, :,:]
         return out
