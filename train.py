@@ -577,10 +577,10 @@ def revlap_train():
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta).to(device)
-                            #(torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                          #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                          #torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
+    rev_ = torch.jit.trace(LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta).to(device),
+                          (torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+                          torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
     rev_.train()
     disc_ = build_disc(disc_state)
 
@@ -624,8 +624,9 @@ def revlap_train():
                 d_scaler.update()
         else:
             loss_D.backward()
-            opt_D.step()
-            opt_D.zero_grad()
+            if (i + 1) % args.accumulation_steps == 0:
+                opt_D.step()
+                opt_D.zero_grad()
         set_requires_grad(disc_, False)
 
         with autocast(enabled=ac_enabled):
@@ -676,8 +677,9 @@ def revlap_train():
 
         else:
             loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            if (i + 1) % args.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
 
         if (i + 1) % 1 == 0:
 
