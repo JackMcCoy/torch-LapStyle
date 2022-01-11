@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
-import typing, math
+import typing, math, copy
 from functools import partial
 from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
