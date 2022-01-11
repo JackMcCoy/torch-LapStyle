@@ -215,7 +215,7 @@ class LapRev(nn.Module):
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        modules = nn.ModuleList([cells[height].copy() for height, layer_num in self.num_layers])
+        modules = nn.ModuleList([cells[height].copy(layer_num) for height, layer_num in self.num_layers])
         momentum_modules = []
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
