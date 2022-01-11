@@ -187,7 +187,7 @@ class Sequential_Worker(nn.Module):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
-        out = upblock[-1](out)
+        out = self.upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
         out = self.return_to_full_res(out)
         return out
