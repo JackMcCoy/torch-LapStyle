@@ -164,6 +164,8 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
+        print(f'{row} {col} {row_num}')
+
 
         x = self.resize_to_res(x, layer_res)
         ci = self.resize_to_res(ci,layer_res)
