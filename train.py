@@ -547,7 +547,7 @@ def revlap_train():
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
-        random_crop = transforms.RandomCrop(512)
+        random_crop2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -650,7 +650,7 @@ def revlap_train():
             cF = enc_(ci[-1][:,:,-384:-128,-384:-128])
             if args.split_style:
                 if self.crop_size>512:
-                    si_cropped = random_crop(si[-1])
+                    si_cropped = random_crop2(si[-1])
                 else:
                     si_cropped = si[-1]
                 sF = None
