@@ -210,9 +210,9 @@ class LapRev(nn.Module):
         height = max_res//working_res
 
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        #coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
-        #coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
-        #coupling_inverse.reverse()
+        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
+        coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
+        coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
@@ -222,8 +222,22 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.layers = revlib.ReversibleSequential(*momentum_modules,split_dim=0,coupling_forward=None,coupling_inverse=None,target_device='cuda')
-
+        self.layers = revlib.ReversibleSequential(*momentum_modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
+        secondary_branch_buffer = []
+        stem = list(momentumnet.stem)[:-1]
+        modules = [
+            revlib.core.SingleBranchReversibleModule(secondary_branch_buffer, wrapped_module=mod.wrapped_module.wrapped_module,
+                                         coupling_forward=mod.wrapped_module.coupling_forward,
+                                         coupling_inverse=mod.wrapped_module.coupling_inverse,
+                                         memory_savings=mod.memory_savings, target_device=mod.target_device,
+                                         cache=mod.cache, first=idx == 0, last=idx == len(stem)-1)
+            for idx, mod in enumerate(stem)]
+        out_modules = [revlib.core.MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
+                       for i in range(0, len(stem)-1, 2)]
+        out_modules.append(modules[-1])
+        #for i in range(0,len(modules),2):
+        #    out_modules.append(modules[i])
+        self.layers = nn.ModuleList(out_modules)
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
@@ -236,7 +250,6 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
 
-        for i, idx in enumerate(range(0,len(self.layers.stem),2)):
-            out = self.layers.stem[idx](out,self.params[self.num_layers[i][0]],ci, style.data)
-            out = self.layers.stem[idx+1](out)
+        for idx, layer in zip(self.num_layers,self.layers):
+            out = layer(out,self.params[idx[0]],ci, style.data)
         return out
