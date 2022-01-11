@@ -221,7 +221,7 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward[:-1],coupling_inverse=coupling_inverse[:-1],target_device='cuda')
+        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
@@ -253,5 +253,5 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
         out = out.repeat(2,1,1,1)
         out = self.momentumnet(out,(self.params[0],ci, style.data))
-        out = out[N:,:, :,:]
+        out = out[:N,:, :,:]
         return out
