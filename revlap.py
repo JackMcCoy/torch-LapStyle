@@ -91,11 +91,12 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
     if isinstance(fn_out, torch.Tensor):
-        other_stream[:, :, ci1: ci2, ri1: ri2]= \
+        y = fn_out.clone()
+        y[:, :, ci1: ci2, ri1: ri2]= \
             other_stream[:, :, ci1: ci2, ri1: ri2]+\
-                   fn_out[:, :, ci1: ci2, ri1: ri2]
+                   y[:, :, ci1: ci2, ri1: ri2]
         #print(f'{layer_num} forward - {ci1}: {ci2}, {ri1}: {ri2}')
-        return other_stream
+        return y
 
     other_stream[:, :, ci1: ci2, ri1: ri2].add_(
                fn_out[0][:, :, ci1: ci2, ri1: ri2])
@@ -108,11 +109,12 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
     if isinstance(fn_out, torch.Tensor):
-        output[:, :, ci1: ci2, ri1: ri2]= \
-            output[:, :, ci1: ci2, ri1: ri2] -\
+        y = output.clone()
+        y[:, :, ci1: ci2, ri1: ri2]= \
+            y[:, :, ci1: ci2, ri1: ri2] -\
                fn_out[:, :, ci1: ci2, ri1: ri2]
         #print(f'{layer_num} backward - {ci1}: {ci2}, {ri1}: {ri2}')
-        return output
+        return y
     output[:, :, ci1: ci2, ri1: ri2].subtract_(
            fn_out[0][:, :, ci1: ci2, ri1: ri2])
     return [output]\
