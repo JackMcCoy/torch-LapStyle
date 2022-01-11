@@ -170,18 +170,18 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, params):
+    def forward(self, x, params, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
-        params, ci, style = params
-        style_projection, downblock, upblock, adaconvs = params
+        style_projection,downblock,upblock,adaconvs = params
         if x.shape[-1] != layer_res:
             x = self.resize_to_res(x, layer_res)
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
+
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
@@ -222,8 +222,7 @@ class LapRev(nn.Module):
         for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
             momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
             momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
-        '''
+        momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
         modules = [
@@ -239,7 +238,6 @@ class LapRev(nn.Module):
         #for i in range(0,len(modules),2):
         #    out_modules.append(modules[i])
         self.layers = nn.ModuleList(out_modules)
-        '''
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
@@ -252,5 +250,6 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
 
-        out = self.momentumnet(out,[self.params[0]],layerwise_args_kwargs=[([self.params[0],ci, style.data]) for i in range(100)])
+        for idx, layer in zip(self.num_layers,self.layers):
+            out = layer(out,self.params[idx[0]],ci, style.data)
         return out
