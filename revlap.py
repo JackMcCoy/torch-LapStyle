@@ -169,7 +169,7 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, params, x, ci, style):
+    def forward(self, x, params, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
@@ -248,5 +248,5 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
 
         for idx, layer in zip(self.num_layers,self.layers):
-            out = layer(self.params[idx[0]],out,ci, style.data)
+            out = layer(out,self.params[idx[0]],ci, style.data)
         return out
