@@ -181,8 +181,6 @@ class Sequential_Worker(nn.Module):
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        print(out.shape)
-        print(lap.shape)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
@@ -252,6 +250,6 @@ class LapRev(nn.Module):
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
-
+        out = out.repeat(2,1,1,1)
         out = self.momentumnet(out,(self.params[0],ci, style.data))
         return out
