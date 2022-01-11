@@ -547,7 +547,7 @@ def revlap_train():
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
-        random_crop_2 = transforms.RandomCrop(512)
+        random_crop = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
@@ -610,7 +610,7 @@ def revlap_train():
 
             rev_stylized = rev_(stylized, ci[-1].detach(), style)
             si_cropped = random_crop(si[-1])
-            stylized_crop = rev_stylized[:,:,-256:,-256:]
+            stylized_crop = rev_stylized[:,:,-192:-64,-128:]
             scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
 
         set_requires_grad(disc_, True)
@@ -634,7 +634,7 @@ def revlap_train():
                                         calc_identity=False, disc_loss=False,
                                         mdog_losses=args.mdog_loss, content_all_layers=False,
                                         remd_loss=remd_loss,
-                                        patch_loss=False, sF=sF, split_style=args.split_style)
+                                        patch_loss=False, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
             losses_small = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
@@ -642,19 +642,19 @@ def revlap_train():
             losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                  calc_identity=False, disc_loss=False,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                 patch_loss=False, sF=sF, split_style=args.split_style)
+                                 patch_loss=False, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
             losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
-            cF2 = enc_(ci[-1][:,:,-384:-128,-256:])
-            sF2 = enc_(si_cropped)
+            cF = enc_(ci[-1][:,:,-384:-128,-256:])
+            sF = enc_(si_cropped)
             ci_patch = ci[-1][:,:,-384:-128,-256:]
-            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='nearest'))
+            patch_feats = enc_(F.interpolate(stylized[:,:,-192:-64,-128:],size=256,mode='nearest'))
 
-            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF2, enc_, dec_, patch_feats, disc_,
+            losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                 patch_loss=True, sF=sF2, split_style=args.split_style)
+                                 patch_loss=True, sF=sF, split_style=args.split_style)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
             loss = loss*args.thumbnail_loss + losses_scaled + losses_small
