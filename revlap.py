@@ -173,7 +173,6 @@ class Sequential_Worker(nn.Module):
     def forward(self, x, params):
         # x = input in color space
         # out = laplacian (residual) space
-        print(x.shape)
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
         params, ci, style = params
@@ -183,9 +182,7 @@ class Sequential_Worker(nn.Module):
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        print(out.shape)
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
-        print(lap.shape)
         out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = style.shape
@@ -255,5 +252,5 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         out = F.interpolate(input, self.max_res, mode='nearest')
 
-        out = self.momentumnet(out,(self.params[0],ci, style.data))
+        out = self.momentumnet(out,layerwise_args_kwargs=(self.params[0],ci, style.data))
         return out
