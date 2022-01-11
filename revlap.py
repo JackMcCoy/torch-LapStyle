@@ -190,7 +190,7 @@ class Sequential_Worker(nn.Module):
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
-        out = downblock(out)
+        out = self.downblock(out)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.upblock)):
             if idx > 0:
                 out = ada(style, out)
