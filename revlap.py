@@ -201,15 +201,15 @@ class LapRev(nn.Module):
         coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
+        self.layers = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
                                                                                    layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
-
+        '''
         self.layers = module_list_to_momentum_net(modules,
                                                   beta=self.momentumnet_beta,
                                                   coupling_forward = coupling_forward,
                                                   coupling_inverse = coupling_inverse,
                                                   target_device='cuda:0')
-
+        '''
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
