@@ -123,10 +123,6 @@ class Sequential_Worker(nn.Module):
     def __init__(self, init_scale:float, layer_height, num, max_res,working_res, batch_size,s_d):
         super(Sequential_Worker, self).__init__()
         self.init_scale = init_scale
-        self.style_projection = style_encoder_block(s_d)
-        self.downblock = downblock()
-        self.upblock = upblock()
-        self.adaconvs = adaconvs(batch_size, s_d)
         self.working_res = working_res
         self.s_d = 512
         self.max_res =max_res
@@ -173,12 +169,12 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style):
+    def forward(self, params, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
-
+        style_projection,downblock,upblock,adaconvs = params
         if x.shape[-1] != layer_res:
             x = self.resize_to_res(x, layer_res)
             ci = self.resize_to_res(ci,layer_res)
@@ -213,9 +209,10 @@ class LapRev(nn.Module):
         height = max_res//working_res
 
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
-        coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
-        coupling_inverse.reverse()
+        #coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
+        #coupling_inverse = [c  for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
+        #coupling_inverse.reverse()
+        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
         modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
@@ -251,5 +248,5 @@ class LapRev(nn.Module):
         out = F.interpolate(input, self.max_res, mode='nearest')
 
         for idx, layer in zip(self.num_layers,self.layers):
-            out = layer(out,ci, style.data)
+            out = layer(params[idx[0]],out,ci, style.data)
         return out

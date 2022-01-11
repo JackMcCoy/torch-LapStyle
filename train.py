@@ -610,7 +610,7 @@ def revlap_train():
 
             rev_stylized = rev_(stylized, ci[-1].detach(), style)
             si_cropped = random_crop(si[-1])
-            stylized_crop = rev_stylized[:,:,-384:-128,-256:]
+            stylized_crop = rev_stylized[:,:,-256:,-256:]
             scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
 
         set_requires_grad(disc_, True)
@@ -649,7 +649,7 @@ def revlap_train():
             cF = enc_(ci[-1][:,:,-384:-128,-256:])
             sF = enc_(si_cropped)
             ci_patch = ci[-1][:,:,-384:-128,-256:]
-            patch_feats = enc_(F.interpolate(stylized[:,:,-192:-64,-128:],size=256,mode='nearest'))
+            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='nearest'))
 
             losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
                                  calc_identity=False, disc_loss=True,
