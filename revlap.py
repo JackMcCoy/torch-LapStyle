@@ -230,7 +230,7 @@ class LapRev(nn.Module):
                                          coupling_inverse=mod.wrapped_module.coupling_inverse,
                                          memory_savings=mod.memory_savings, target_device=mod.target_device,
                                          cache=mod.cache, first=idx == 0, last=idx == len(stem)-1)
-            for idx, mod in enumerate(momentumnet)]
+            for idx, mod in enumerate(stem)]
         out_modules = [revlib.core.MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
                        for i in range(0, len(stem)-1, 2)]
         out_modules.append(modules[-1])
