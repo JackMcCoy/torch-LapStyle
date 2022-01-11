@@ -143,12 +143,12 @@ class Sequential_Worker(nn.Module):
         return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
 
     def reinsert_work(self, x, out, layer_row, layer_col):
-
-        x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+        y = x.clone()
+        y[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
         self.working_res * layer_row:self.working_res * (layer_row + 1)] = \
-            x[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
+            y[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
             self.working_res * layer_row:self.working_res * (layer_row + 1)] + out
-        return x
+        return y
 
     def resize_to_res(self, x, layer_res):
         return F.interpolate(x, layer_res, mode='nearest')
