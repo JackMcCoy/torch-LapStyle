@@ -210,6 +210,8 @@ class LapRev(nn.Module):
                                                                                    layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
         self.layers = module_list_to_momentum_net(modules,
                                                   beta=self.momentumnet_beta,
+                                                  coupling_forward = coupling_forward,
+                                                  coupling_inverse = coupling_inverse,
                                                   target_device='cuda:0')
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
