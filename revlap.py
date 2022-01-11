@@ -118,7 +118,7 @@ class Sequential_Worker(nn.Module):
         self.init_scale = init_scale
         self.style_projection = style_encoder_block(s_d)
         self.downblock = downblock()
-        self.upbloack = upblock()
+        self.upblock = upblock()
         self.adaconvs = adaconvs(batch_size, s_d)
         self.working_res = working_res
         self.s_d = 512
