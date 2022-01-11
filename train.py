@@ -647,7 +647,14 @@ def revlap_train():
             losses_scaled = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
             cF = enc_(ci[-1][:,:,-384:-128,-384:-128])
-            sF = enc_(si_cropped)
+            if args.split_style:
+                if self.crop_size>512:
+                    si_cropped = random_crop(si[-1])
+                else:
+                    si_cropped = si[-1]
+                sF = None
+            else:
+                sF = enc_(si_cropped)
             ci_patch = ci[-1][:,:,-384:-128,-384:-128]
             patch_feats = enc_(F.interpolate(stylized[:,:,-192:-64,-192:-64],size=256,mode='nearest'))
 
