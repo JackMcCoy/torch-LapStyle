@@ -13,7 +13,7 @@ import revlib
 
 def calc_crop_indices(layer_height,layer_num,total_height):
     layer_res = 512 * 2 ** layer_height
-    up_f = 256 * 2 ** ((total_height - 1) - layer_heightheight)  # 256
+    up_f = 256 * 2 ** ((total_height - 1) - layer_height)  # 256
     row_num = layer_res // 256  # 2
     lr = math.floor(layer_num / row_num)  # 0 -> 0
     # 1 -> 0    2->1    3 ->
