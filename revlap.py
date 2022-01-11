@@ -11,24 +11,41 @@ from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
 import revlib
 
+def calc_crop_indices(layer_height,layer_num,total_height):
+    layer_res = 512 * 2 ** layer_height
+    up_f = 256 * 2 ** ((total_height - 1) - layer_heightheight)  # 256
+    row_num = layer_res // 256  # 2
+    lr = math.floor(layer_num / row_num)  # 0 -> 0
+    # 1 -> 0    2->1    3 ->
+    lc = layer_num % row_num
+    ci1 = up_f * lc
+    ci2 = up_f * (lc + 1)
+    ri1 = up_f * lr
+    ri2 = up_f * (lr + 1)
+    return ci1, ci2, ri1, ri2
+
 
 class MomentumNetStem(torch.nn.Module):
-    def __init__(self, wrapped_module: torch.nn.Module, beta: float):
+    def __init__(self, wrapped_module: torch.nn.Module, beta: float, layer_height:int, layer_num:int, total_height:int):
         super(MomentumNetStem, self).__init__()
         self.wrapped_module = wrapped_module
         self.beta = beta
-
+        self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height,layer_num,total_height)
+        
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        return self.wrapped_module(inp * self.beta, *args, **kwargs)
+        inp = self.wrapped_module(inp, *args, **kwargs)
+        inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2]*self.beta
+        return inp
 
 
 class MomentumNetSide(torch.nn.Module):
-    def __init__(self, beta: float):
+    def __init__(self, beta: float, layer_height:int, layer_num:int, total_height:int):
         super(MomentumNetSide, self).__init__()
         self.beta = beta
+        self.ci1, self.ci2, self.ri1, self.ri2 = calc_crop_indices(layer_height, layer_num, total_height)
 
     def forward(self, inp: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        return inp * self.beta
+        inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = inp[:,:,self.ci1:self.ci2,self.ri1:self.ri2] * self.beta
 
 def style_encoder_block(s_d):
     return nn.Sequential(
@@ -64,43 +81,33 @@ def adaconvs(batch_size,s_d):
 def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    layer_res = 512*2**height # 512
-    up_f = 256*2**((total_height-1)-height) #256
-    row_num = layer_res // 256 # 2
-    lr = math.floor(layer_num / row_num) # 0 -> 0
-    # 1 -> 0    2->1    3 ->
-    lc = layer_num % row_num # 0 -> 0   1 -> 1
-    # 2 -> 0    3 -> 1
+    ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
     if isinstance(fn_out, torch.Tensor):
-        other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]= \
-            other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]+\
-                   fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        #print(f'{layer_num} forward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
+        other_stream[:, :, ci1: ci2, ri1: ri2]= \
+            other_stream[:, :, ci1: ci2, ri1: ri2]+\
+                   fn_out[:, :, ci1: ci2, ri1: ri2]
+        #print(f'{layer_num} forward - {ci1}: {ci2}, {ri1}: {ri2}')
         return other_stream
 
-    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].add_(
-               fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
+    other_stream[:, :, ci1: ci2, ri1: ri2].add_(
+               fn_out[0][:, :, ci1: ci2, ri1: ri2])
     return [other_stream]\
            + fn_out[1]
 
 def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    layer_res = 512 * 2 ** height
-    up_f = 256 * 2 ** ((total_height-1) - height)
-    row_num = layer_res // 256
-    lr = math.floor(layer_num / row_num)
-    lc = layer_num % row_num
+    ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
     if isinstance(fn_out, torch.Tensor):
-        output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]= \
-            output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] -\
-               fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        #print(f'{layer_num} backward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
+        output[:, :, ci1: ci2, ri1: ri2]= \
+            output[:, :, ci1: ci2, ri1: ri2] -\
+               fn_out[:, :, ci1: ci2, ri1: ri2]
+        #print(f'{layer_num} backward - {ci1}: {ci2}, {ri1}: {ri2}')
         return output
-    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].subtract_(
-           fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
+    output[:, :, ci1: ci2, ri1: ri2].subtract_(
+           fn_out[0][:, :, ci1: ci2, ri1: ri2])
     return [output]\
            + fn_out[1]
 
@@ -209,12 +216,25 @@ class LapRev(nn.Module):
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
         modules = nn.ModuleList([cells[height].momentum((1 - self.momentumnet_beta) / self.momentumnet_beta ** i,
-                                                                                   layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
-        self.layers = module_list_to_momentum_net(modules,
-                                                  beta=self.momentumnet_beta,
-                                                  #coupling_forward = coupling_forward,
-                                                  #coupling_inverse = coupling_inverse,
-                                                  target_device='cuda:0')
+                                                                      layer_num) for i, (height, layer_num) in enumerate(self.num_layers)])
+        momentum_modules = []
+        for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
+            momentum_modules.append(MomentumNetStem(mod, beta ** idx, h,i,height))
+            momentum_modules.append(MomentumNetSide((1 - beta) / beta ** (idx + 1), h,i,height))
+        momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,target_device='cuda')
+        secondary_branch_buffer = []
+        momentumnet = list(momentumnet.stem)[:-1]
+        modules = [
+            revlib.SingleBranchReversibleModule(secondary_branch_buffer, wrapped_module=mod.wrapped_module.wrapped_module,
+                                         coupling_forward=mod.wrapped_module.coupling_forward,
+                                         coupling_inverse=mod.wrapped_module.coupling_inverse,
+                                         memory_savings=mod.memory_savings, target_device=mod.target_device,
+                                         cache=mod.cache, first=idx == 0, last=idx == len(momentumnet))
+            for idx, mod in enumerate(momentumnet)]
+        out_modules = [MergeCalls(modules[i], modules[i + 1], collate_fn=lambda y, x: [y] + x[0][1:])
+                       for i in range(0, len(stem), 2)]
+        out_modules.append(modules[-1])
+        self.layers = nn.ModuleList(out_modules)
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
