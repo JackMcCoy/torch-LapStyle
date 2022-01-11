@@ -73,16 +73,13 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
     # 2 -> 0    3 -> 1
 
     if isinstance(fn_out, torch.Tensor):
-        combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
-                   + fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
+        other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].add_(
+                   fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
         #print(f'{layer_num} forward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
         return other_stream
 
-    combined = other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
-               + fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = combined
-
+    other_stream[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].add_(
+               fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
     return [other_stream]\
            + fn_out[1]
 
@@ -96,14 +93,12 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     lc = layer_num % row_num
 
     if isinstance(fn_out, torch.Tensor):
-        diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
-               - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-        output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+        output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].subtract_(
+               - fn_out[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
         #print(f'{layer_num} backward - {up_f * lc}: {up_f * (lc + 1)}, {up_f * lr}: {up_f * (lr + 1)}')
         return output
-    diff = output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] \
-           - fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)]
-    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)] = diff
+    output[:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)].subtract_(
+           fn_out[0][:, :, up_f * lc: up_f * (lc + 1), up_f * lr: up_f * (lr + 1)])
     return [output]\
            + fn_out[1]
 
