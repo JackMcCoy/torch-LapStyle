@@ -194,7 +194,7 @@ class Sequential_Worker(nn.Module):
             out = learnable(out)
         out = upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
-        if layer_res != self.max_res
+        if layer_res != self.max_res:
             out = self.return_to_full_res(out)
         return out
 
