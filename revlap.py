@@ -143,9 +143,11 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, args):
+    def forward(self, x, *args):
         # x = input in color space
         # out = laplacian (residual) space
+        print(len(args))
+        [print(type(i)) for i in args]
         ci, style = args
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
