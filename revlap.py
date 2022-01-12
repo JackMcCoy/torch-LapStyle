@@ -153,9 +153,10 @@ def crop_to_working_area(x, layer_row, layer_col, working_res):
     return x[:,:,working_res*layer_col:working_res*(layer_col+1),working_res*layer_row:working_res*(layer_row+1)]
 
 def reinsert_work(x, out, layer_row, layer_col, working_res):
-    x[:, :, working_res * layer_col:working_res * (layer_col + 1),
+    y = x.clone()
+    y[:, :, working_res * layer_col:working_res * (layer_col + 1),
     working_res * layer_row:working_res * (layer_row + 1)] = out
-    return x
+    return y
 
 def resize_to_res(x, layer_res):
     return F.interpolate(x, layer_res, mode='nearest')
