@@ -60,7 +60,7 @@ def fused_conv_noise_weights(ch_in, ch_out, noise=False, noise_size=256):
         params.append(rnoise_weight(noise_size))
     params.append(bias())
     if ch_in != ch_out:
-        params.append(ParameterList([conv_weight(ch_in, ch_out, 3, 1, activation_std),bias()]))
+        params.append(nn.ParameterList([conv_weight(ch_in, ch_out, 3, 1, activation_std),bias()]))
     return nn.ParameterList(params)
 
 def downblock_weights():
