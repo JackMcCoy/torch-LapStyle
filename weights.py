@@ -58,7 +58,7 @@ def fused_conv_noise_weights(ch_in, ch_out, noise=False, noise_size=256):
     params.append(nn.ParameterList([conv_weight(ch_in, ch_out, 3, 1, activation_std)]))
     if noise:
         params.append(rnoise_weight(noise_size))
-    params.append(nn.ParameterList([bias()])
+    params.append(nn.ParameterList([bias()]))
     if ch_in != ch_out:
         params.append(nn.ParameterList([conv_weight(ch_in, ch_out, 3, 1, activation_std),bias()]))
     return nn.ModuleList(params)
