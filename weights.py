@@ -53,8 +53,7 @@ def downblock_weights():
 
 def upblock_weights():
     params = []
-    for i, j, k, l in [(64, 64, False, 0), (64, 128, False, 0), (128, 128, False, 0), (128, 3, False, 0),
-                       (64, 64, False, 0)]:
+    for i, j, k, l in [(64, 64, False, 0), (64, 128, False, 0), (128, 128, False, 0), (128, 3, False, 0)]:
         params.append(fused_conv_noise_weights(i, j, noise=k, noise_size=l))
     params.append(nn.ParameterList([conv_weight(3, 3, 1, 1, activation_std),bias(3)]))
     return nn.ModuleList(params)
