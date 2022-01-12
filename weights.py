@@ -45,7 +45,7 @@ def adaconv_weight(s_d, channels, n_groups,):
     params.append(nn.ParameterList([conv_weight(s_d, channels * (channels // n_groups), 1, 1, activation_std), bias()]))
     params.append(nn.ParameterList([conv_weight(s_d, channels, 1, 1, activation_std),bias()]))
     params.append(nn.ParameterList([bias()]))
-    return nn.ParameterList(params)
+    return nn.ModuleList(params)
 
 def resblock_weight(ch):
     params = []
