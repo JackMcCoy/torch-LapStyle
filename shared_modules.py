@@ -20,6 +20,7 @@ def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
         resized = F.avg_pool2d(inp, 2, stride=2)
     else:
         resized = int
+    print(resized)
     out = conv(resized, weights[0][0], 1)
     if noise:
         out = rnoise(out, weights[1])
