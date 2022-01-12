@@ -98,7 +98,7 @@ class Sequential_Worker(nn.Module):
         self.layer_height = layer_height
         self.num = num
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.upblock_w = upblock_weights()
         self.adaconv_w = up_adaconv_weights(self.s_d)
         self.downblock_w = downblock_weights()
