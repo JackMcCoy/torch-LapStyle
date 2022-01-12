@@ -87,10 +87,6 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
     return [output]\
            + fn_out[1]
 
-lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
-lap_weight.requires_grad = False
-
 
 class Sequential_Worker(nn.Module):
     def __init__(self, init_scale:float, layer_height, num, max_res,working_res, batch_size,s_d):
@@ -101,42 +97,14 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.layer_height = layer_height
         self.num = num
+        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.upblock_w = upblock_weights()
         self.adaconv_w = up_adaconv_weights(self.s_d)
         self.downblock_w = downblock_weights()
         self.style_emb_w = style_encoder_weights(self.s_d, 16)
 
         # row_num == col_num, as these are squares
-
-    def get_layer_rows(self, layer_res):
-        row_num = layer_res // self.working_res
-        layer_row = math.floor(self.num / row_num)
-        layer_col = self.num % row_num
-        return layer_row, layer_col, row_num
-
-    def crop_to_working_area(self, x, layer_row, layer_col):
-        return x[:,:,self.working_res*layer_col:self.working_res*(layer_col+1),self.working_res*layer_row:self.working_res*(layer_row+1)]
-
-    def reinsert_work(self, x, out, layer_row, layer_col):
-        y = x.clone()
-        y[:, :, self.working_res * layer_col:self.working_res * (layer_col + 1),
-        self.working_res * layer_row:self.working_res * (layer_row + 1)] = out
-        return y
-
-    def resize_to_res(self, x, layer_res):
-        return F.interpolate(x, layer_res, mode='nearest')
-
-    def crop_style_thumb(self, x, layer_res, row, col, row_num):
-        style_col = col if col % 2 == 0 else col - 1
-        style_row = row
-        if row + 1 >= row_num:
-            style_row -= 1
-        scaled = F.interpolate(x, layer_res//2, mode='nearest')
-        scaled = scaled[:,:,self.working_res*style_col:self.working_res*(style_col+1),self.working_res*style_row:self.working_res*(style_row+1)]
-        return scaled
-
-    def return_to_full_res(self, x):
-        return F.interpolate(x, self.max_res, mode='nearest')
 
     def copy(self, layer_num):
         out = copy.copy(self)
@@ -146,28 +114,64 @@ class Sequential_Worker(nn.Module):
     def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
-        #if args[0] is None:
-        #    args = args[1:]
-        layer_res = 512*2**self.layer_height
-        row, col, row_num = self.get_layer_rows(layer_res)
-        if layer_res != self.max_res:
-            x = self.resize_to_res(x, layer_res)
-            ci = self.resize_to_res(ci,layer_res)
-        out = self.crop_to_working_area(x, row, col)
-        lap = self.crop_to_working_area(ci, row, col)
-        with torch.no_grad():
-            lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
-            out = torch.cat([out, lap], dim=1)
 
-        N,C,h,w = style.shape
-        style = style_projection(style, self.style_emb_w, self.s_d)
-        out = downblock(out, self.downblock_w)
-        out = upblock_w_adaconvs(out,style,self.upblock_w,self.adaconv_w)
-
-        out = self.reinsert_work(x, out, row, col)
-        if layer_res != self.max_res:
-            out = self.return_to_full_res(out)
+        out = patch_calc(x, ci, style, self.layer_height, self.working_res, self.max_res, self.num,
+               self.lap_weight, self.s_d, self.style_emb_w,
+               self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
+
+def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
+               lap_weight, s_d, style_emb_w,
+               downblock_w, upblock_w, adaconv_w):
+    layer_res = 512*2**layer_height
+    row, col, row_num = get_layer_rows(layer_res, working_res, num)
+    if layer_res != self.max_res:
+        x = resize_to_res(x, layer_res, working_res)
+        ci = resize_to_res(ci,layer_res, working_res)
+    out = self.crop_to_working_area(x, row, col, working_res)
+    lap = self.crop_to_working_area(ci, row, col, working_res)
+    with torch.no_grad():
+        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+        out = torch.cat([out, lap], dim=1)
+
+    style = style_projection(style, style_emb_w, s_d)
+    out = downblock(out, downblock_w)
+    out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
+
+    out = reinsert_work(x, out, row, col, working_res)
+    if layer_res != max_res:
+        out = return_to_full_res(out, max_res)
+    return out
+
+def get_layer_rows(layer_res, working_res):
+    row_num = layer_res // working_res
+    layer_row = math.floor(num / row_num)
+    layer_col = num % row_num
+    return layer_row, layer_col, row_num
+
+def crop_to_working_area(x, layer_row, layer_col, working_res):
+    return x[:,:,working_res*layer_col:working_res*(layer_col+1),working_res*layer_row:working_res*(layer_row+1)]
+
+def reinsert_work(x, out, layer_row, layer_col, working_res):
+    x[:, :, working_res * layer_col:working_res * (layer_col + 1),
+    working_res * layer_row:working_res * (layer_row + 1)] = out
+    return x
+
+def resize_to_res(x, layer_res):
+    return F.interpolate(x, layer_res, mode='nearest')
+
+def crop_style_thumb(x, layer_res, row, col, row_num, working_res):
+    style_col = col if col % 2 == 0 else col - 1
+    style_row = row
+    if row + 1 >= row_num:
+        style_row -= 1
+    scaled = F.interpolate(x, layer_res//2, mode='nearest')
+    scaled = scaled[:,:,working_res*style_col:working_res*(style_col+1),working_res*style_row:working_res*(style_row+1)]
+    return scaled
+
+def return_to_full_res(x, max_res):
+    return F.interpolate(x, max_res, mode='nearest')
+
 
 
 class LapRev(nn.Module):
