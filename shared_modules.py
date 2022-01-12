@@ -23,7 +23,8 @@ def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
     out = conv(resized, weights[0][0], 1)
     if noise:
         out = rnoise(out, weights[1])
-    out = out + weights[2][0]
+    # note: including noise will create order conflict
+    out = out + weights[1][0]
     out = F.leaky_relu(out)
     if len(weights)>3:
         resized = conv(resized, weights[3][0], 1, bias=weights[3][1])
