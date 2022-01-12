@@ -209,7 +209,6 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)]
         coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)]
-        coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
