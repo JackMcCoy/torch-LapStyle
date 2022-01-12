@@ -125,11 +125,11 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
     row, col, row_num = get_layer_rows(layer_res, working_res, num)
-    if layer_res != self.max_res:
+    if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
-    out = self.crop_to_working_area(x, row, col, working_res)
-    lap = self.crop_to_working_area(ci, row, col, working_res)
+    out = crop_to_working_area(x, row, col, working_res)
+    lap = crop_to_working_area(ci, row, col, working_res)
     with torch.no_grad():
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
