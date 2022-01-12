@@ -17,7 +17,7 @@ import math
 import vgg
 import net
 import random
-from function import init_weights, PositionalEncoding2D, get_embeddings
+from function import setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
@@ -544,6 +544,7 @@ def revision_train():
                            'disc_optimizer.pth.tar')
 
 def revlap_train():
+    setup_torch(0)
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
