@@ -26,8 +26,8 @@ def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
     # note: including noise will create order conflict
     out = out + weights[1][0]
     out = F.leaky_relu(out)
-    if len(weights)>3:
-        resized = conv(resized, weights[3][0], 1, bias=weights[3][1])
+    if len(weights)>2:
+        resized = conv(resized, weights[2][0], 1, bias=weights[2][1])
     return (out + resized) * torch.rsqrt((torch.ones(1,device='cuda:0')*2))
 
 def adaconv(input, weights, style_encoding, n_groups, ch):
