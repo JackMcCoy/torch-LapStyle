@@ -84,9 +84,11 @@ def adaconvs(batch_size,s_d):
 
 
 def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
+    fn_out = revlib.core.split_tensor_list(fn_out)
+
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
-    if not isinstance(fn_out, list):
+    if isinstance(fn_out, torch.Tensor):
         y = fn_out.clone()
         y[:, :, ci1: ci2, ri1: ri2]= \
             other_stream[:, :, ci1: ci2, ri1: ri2]+\
@@ -99,9 +101,11 @@ def cropped_coupling_forward(total_height, height, layer_num, other_stream: torc
            + fn_out[1]
 
 def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
+    fn_out = revlib.core.split_tensor_list(fn_out)
+
     ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
 
-    if isinstance(fn_out, list):
+    if isinstance(fn_out, torch.Tensor):
         y = output.clone()
         y[:, :, ci1: ci2, ri1: ri2]= \
             y[:, :, ci1: ci2, ri1: ri2] -\
@@ -111,6 +115,10 @@ def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tens
            fn_out[0][:, :, ci1: ci2, ri1: ri2])
     return [output]\
            + fn_out[1]
+
+lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+lap_weight = torch.Tensor(lap_weight).to(torch.device('cuda:0'))
+lap_weight.requires_grad = False
 
 
 class Sequential_Worker(nn.Module):
@@ -122,13 +130,7 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.layer_height = layer_height
         self.num = num
-        self.style_projection = style_encoder_block(s_d)
-        self.downblock = downblock()
-        self.upblock = upblock()
-        self.adaconvs = adaconvs(batch_size, s_d)
-        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda:0'))
-        self.lap_weight.requires_grad = False
+
         # row_num == col_num, as these are squares
 
     def get_layer_rows(self, layer_res):
@@ -167,29 +169,30 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style):
+    def forward(self, x, params, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
+        style_projection, downblock, upblock, adaconvs = params
         if layer_res != self.max_res:
             x = self.resize_to_res(x, layer_res)
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = self.lap_weight, groups = 3)
+        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = style.shape
         style = style.flatten(1)
-        style = self.style_projection(style)
+        style = style_projection(style)
         style = style.reshape(N, self.s_d, 4, 4)
-        out = self.downblock(out)
-        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.upblock)):
+        out = downblock(out)
+        for idx, (ada, learnable) in enumerate(zip(adaconvs, upblock)):
             if idx > 0:
                 out = ada(style, out)
             out = learnable(out)
-        out = self.upblock[-1](out)
+        out = upblock[-1](out)
         out = self.reinsert_work(x, out, row, col)
         if layer_res != self.max_res:
             out = self.return_to_full_res(out)
@@ -208,6 +211,7 @@ class LapRev(nn.Module):
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
         coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
         coupling_inverse.reverse()
+        self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
         modules = nn.ModuleList([cells[height].copy(layer_num) for height, layer_num in self.num_layers])
@@ -246,7 +250,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.momentumnet(out,ci, style)
+        out = self.momentumnet(out,self.params[0],ci, style)
 
-        out = out[:N,:, :,:]+out[N:,:, :,:]
+        out = out[N:,:, :,:]
         return out
