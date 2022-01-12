@@ -141,7 +141,6 @@ class Sequential_Worker(nn.Module):
     def copy(self, layer_num):
         out = copy.copy(self)
         out.num = layer_num
-        out.style_emb_w = copy.deepcopy(out.style_emb_w)
         return out
 
     def forward(self, x, ci, style):

@@ -11,7 +11,7 @@ def init_(t, dim = None):
     return torch.nn.init.normal_(t, mean=0, std=std)
 
 def conv_weight(in_features: int, out_features: int, kernel_size: int, groups: int, std: float):
-    return nn.Parameter(nn.init.orthogonal_(torch.nn.Conv2d(in_features, out_features, kernel_size=kernel_size, groups=groups).weight))
+    return nn.Parameter(nn.init.xavier_normal_(torch.nn.Conv2d(in_features, out_features, kernel_size=kernel_size, groups=groups).weight))
 
 def rnoise_weight(size):
     return nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
