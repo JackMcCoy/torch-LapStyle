@@ -223,4 +223,5 @@ class LapRev(nn.Module):
         out = self.layers(out,ci, style)
 
         out = out[N:,:, :,:]
+        print(out.shape)
         return out
