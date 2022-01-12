@@ -148,7 +148,7 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
         print(len(args))
         [print(type(i)) for i in args]
-        ci, style = args
+        ci, style = *args
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
         if layer_res != self.max_res:
