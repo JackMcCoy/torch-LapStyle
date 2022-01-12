@@ -5,8 +5,8 @@ import torch.nn.functional as F
 
 def conv(inp, weight, groups, use_pad=True,bias=None):
     if use_pad:
-        inp = F.pad(inp, (1, 1, 1, 1), stride=1, mode='reflect')
-    return F.conv2d(inp, weight, groups=groups, bias=bias)
+        inp = F.pad(inp, (1, 1, 1, 1), mode='reflect')
+    return F.conv2d(inp, weight, groups=groups, stride=1, bias=bias)
 
 def conv1d(inp, weight, groups, use_pad=True,bias=None):
     if use_pad:
