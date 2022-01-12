@@ -207,18 +207,18 @@ class LapRev(nn.Module):
         height = max_res//working_res
 
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)*2]
-        coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)*2]
+        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)]
+        coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)]
         coupling_inverse.reverse()
         self.params = nn.ModuleList([nn.ModuleList([style_encoder_block(s_d),downblock(),upblock(),adaconvs(batch_size, s_d)]) for i in range(height)])
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
-        modules = nn.ModuleList([cells[height].copy(layer_num) for height, layer_num in self.num_layers])
-        momentum_modules = []
-        for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
-            momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
-            momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.momentumnet = revlib.ReversibleSequential(*momentum_modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
+        modules = [cells[height].copy(layer_num) for height, layer_num in self.num_layers]
+        #momentum_modules = []
+        #for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
+        #    momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
+        #    momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
+        self.layers = revlib.ReversibleSequential(*modules,split_dim=0,memory_mode = revlib.MemoryModes.no_savings,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse,target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
@@ -249,7 +249,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.momentumnet(out,self.params[0],ci, style)
+        out = self.layers(out,self.params[0],ci, style)
 
         out = out[N:,:, :,:]
         return out
