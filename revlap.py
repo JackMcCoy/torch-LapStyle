@@ -109,6 +109,7 @@ class Sequential_Worker(nn.Module):
     def copy(self, layer_num):
         out = copy.copy(self)
         out.num = layer_num
+        out.style_emb_w - copy.deepcopy(self.style_emb_w)
         return out
 
     def forward(self, x, ci, style):
@@ -193,7 +194,7 @@ class LapRev(nn.Module):
         #for idx, (mod,(h,i)) in enumerate(zip(modules,self.num_layers)):
         #    momentum_modules.append(MomentumNetStem(mod, self.momentumnet_beta ** h, h,i,height))
         #    momentum_modules.append(MomentumNetSide((1 - self.momentumnet_beta) / self.momentumnet_beta ** (h + 1), h,i,height))
-        self.layers = revlib.ReversibleSequential(*modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse)
+        self.layers = revlib.ReversibleSequential(*modules,split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, target_device='cuda')
         '''
         secondary_branch_buffer = []
         stem = list(momentumnet.stem)[:-1]
