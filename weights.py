@@ -20,7 +20,7 @@ def rnoise_weight(size):
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
 
 def bias(dim):
-    return nn.Parameter(nn.init.constant_(torch.ones(dim, ), 0))
+    return nn.Parameter(nn.init.constant_(torch.ones(1,dim, ), 0))
 
 def adaconv_weight(s_d, channels, n_groups,):
     params = []
