@@ -82,7 +82,7 @@ def up_adaconv_weights(s_d):
     params.append(adaconv_weight(s_d,64, 1))
     params.append(adaconv_weight(s_d, 64, 1))
     params.append(adaconv_weight(s_d, 128, 2))
-    return nn.ParameterList(params)
+    return nn.ModuleList(params)
 
 def style_encoder_weights(s_d, dim=16):
     params = []
