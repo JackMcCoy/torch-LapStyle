@@ -226,5 +226,5 @@ class LapRev(nn.Module):
         out = input.repeat(2,1,1,1)
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
-        out = out[N:,:, :,:]
+        out = out[:N,:, :,:]
         return out
