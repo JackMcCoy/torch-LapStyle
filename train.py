@@ -592,6 +592,8 @@ def revlap_train():
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
+    wandb.watch((rev_, disc_, dec_), log='all', log_freq=50)
+
     optimizer = torch.optim.AdamW(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     for i in range(args.max_iter):
