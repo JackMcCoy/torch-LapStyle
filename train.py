@@ -610,7 +610,7 @@ def revlap_train():
             rev_stylized = rev_(stylized, ci[-1].detach(), style)
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,-256:,-256:]
-            scale_stylized = F.interpolate(rev_stylized, size=256, mode='bicubic')
+            scale_stylized = F.interpolate(rev_stylized, size=256, mode='nearest')
 
         set_requires_grad(disc_, True)
         with autocast(enabled=ac_enabled):
