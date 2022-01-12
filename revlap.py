@@ -220,7 +220,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out,(ci, style))
+        out = self.layers(out,[(ci, style)])
 
         out = out[N:,:, :,:]
         print(out.shape)
