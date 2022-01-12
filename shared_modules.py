@@ -46,7 +46,7 @@ def adaconv(input, weights, style_encoding, n_groups, ch):
     content_out = torch.empty_like(predicted, device='cuda:0')
     for i in range(a):
         content_out[i] = nn.functional.conv2d(
-            nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
+            nn.functional.conv2d(F.pad(predicted[i].unsqueeze(0),(1, 1, 1, 1), mode='reflect'),
                                          weight=depthwise[i],
                                          stride=1,
                                          groups=n_groups
