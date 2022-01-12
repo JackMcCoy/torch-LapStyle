@@ -593,7 +593,7 @@ def revlap_train():
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     optimizer = torch.optim.AdamW(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), lr=args.lr)
-    opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     for i in range(args.max_iter):
         adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
         adjust_learning_rate(opt_D, i//args.accumulation_steps, args, disc=True)
