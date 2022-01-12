@@ -143,7 +143,7 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
         out = return_to_full_res(out, max_res)
     return out
 
-def get_layer_rows(layer_res, working_res):
+def get_layer_rows(layer_res, working_res, num):
     row_num = layer_res // working_res
     layer_row = math.floor(num / row_num)
     layer_col = num % row_num
