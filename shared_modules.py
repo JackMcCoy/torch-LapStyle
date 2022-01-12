@@ -73,7 +73,7 @@ def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_pa
     out = adaconv(out, adaconv_weights[2], style_encoding, *adaconv_param_list[2])
     out = fused_conv_noise_bias(out, weights[2])
     out = fused_conv_noise_bias(out, weights[3])
-    out = conv(out,weights[4][0],1,bias=weights[4][1])
+    out = conv(out,weights[4][0],1,bias=weights[4][1],use_pad=False)
     return out
 
 def style_projection(inp, weights, s_d):
