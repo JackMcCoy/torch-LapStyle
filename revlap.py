@@ -138,7 +138,8 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
     out = downblock(out, downblock_w)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
-    out = reinsert_work(x, out, row, col, working_res)
+    blank_canvass = torch.zeros_like(out)
+    out = reinsert_work(blank_canvass, out, row, col, working_res)
     if layer_res != max_res:
         out = return_to_full_res(out, max_res)
     return out
@@ -153,10 +154,9 @@ def crop_to_working_area(x, layer_row, layer_col, working_res):
     return x[:,:,working_res*layer_col:working_res*(layer_col+1),working_res*layer_row:working_res*(layer_row+1)]
 
 def reinsert_work(x, out, layer_row, layer_col, working_res):
-    y = x.clone()
-    y[:, :, working_res * layer_col:working_res * (layer_col + 1),
+    x[:, :, working_res * layer_col:working_res * (layer_col + 1),
     working_res * layer_row:working_res * (layer_row + 1)] = out
-    return y
+    return x
 
 def resize_to_res(x, layer_res):
     return F.interpolate(x, layer_res, mode='nearest')
@@ -227,5 +227,4 @@ class LapRev(nn.Module):
         out = self.layers(out,ci, style,layerwise_args_kwargs=None)
 
         out = out[N:,:, :,:]
-        print(out.shape)
         return out
