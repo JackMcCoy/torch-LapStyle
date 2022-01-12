@@ -657,9 +657,9 @@ def revlap_train():
                 sF = None
             else:
                 sF = enc_(si_cropped)
-            ci_patch = ci[-1][:,:,-256:,-256:]
-            cF = enc_(ci_patch[:, :, -256:, -256:])
-            patch_feats = enc_(F.interpolate(stylized[:,:,-128:,-128:],size=256,mode='nearest'))
+            ci_patch = ci[-1][:,:,-384:-128,-256:]
+            cF = enc_(ci_patch[:, :, -384:-128, -256:])
+            patch_feats = enc_(F.interpolate(stylized[:,:,-192:-64,-128:],size=256,mode='nearest'))
 
             losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
                                  calc_identity=False, disc_loss=True,
