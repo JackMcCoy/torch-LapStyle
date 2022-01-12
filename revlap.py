@@ -143,12 +143,11 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, *args):
+    def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
         #if args[0] is None:
         #    args = args[1:]
-        ci, style = args
         layer_res = 512*2**self.layer_height
         row, col, row_num = self.get_layer_rows(layer_res)
         if layer_res != self.max_res:
@@ -220,7 +219,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out,(ci, style),layerwise_args_kwargs=None)
+        out = self.layers(out,ci, style,layerwise_args_kwargs=None)
 
         out = out[N:,:, :,:]
         print(out.shape)
