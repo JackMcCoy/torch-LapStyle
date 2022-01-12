@@ -6,8 +6,6 @@ import torch.nn.functional as F
 def conv(inp, weight, groups, use_pad=True,bias=None):
     if use_pad:
         inp = F.pad(inp, (1, 1, 1, 1), mode='reflect')
-    print(inp.shape)
-    print(weight)
     return F.conv2d(inp, weight, groups=groups, bias=bias)
 
 def conv1d(inp, weight, groups, use_pad=True,bias=None):
@@ -25,7 +23,7 @@ def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
     out = conv(resized, weights[0][0], 1)
     if noise:
         out = rnoise(out, weights[1])
-    out = out + weights[2]
+    out = out + weights[2][0]
     out = F.leaky_relu(out)
     if len(weights)>3:
         resized = conv(resized, weights[3][0], 1, bias=weights[3][1])
