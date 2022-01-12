@@ -153,8 +153,9 @@ class Sequential_Worker(nn.Module):
             ci = self.resize_to_res(ci,layer_res)
         out = self.crop_to_working_area(x, row, col)
         lap = self.crop_to_working_area(ci, row, col)
-        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
-        out = torch.cat([out, lap], dim=1)
+        with torch.no_grad():
+            lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+            out = torch.cat([out, lap], dim=1)
 
         N,C,h,w = style.shape
         style = style_projection(style, self.style_emb_w, self.s_d)
