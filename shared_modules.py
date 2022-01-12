@@ -7,7 +7,7 @@ def conv(inp, weight, groups, use_pad=True,bias=None):
     if use_pad:
         inp = F.pad(inp, (1, 1, 1, 1), mode='reflect')
     print(inp.shape)
-    print(weight.shape)
+    print(weight)
     return F.conv2d(inp, weight, groups=groups, bias=bias)
 
 def conv1d(inp, weight, groups, use_pad=True,bias=None):
