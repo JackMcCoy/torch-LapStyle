@@ -97,8 +97,8 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
-    out = crop_to_working_area(x, row, col, working_res)
-    lap = crop_to_working_area(ci, row, col, working_res)
+    out = crop_to_working_area(x, layer_height, num)
+    lap = crop_to_working_area(ci, layer_height, num)
     with torch.no_grad():
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
@@ -107,7 +107,7 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
     out = downblock(out, downblock_w)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
-    out = reinsert_work(x, out, row, col, working_res)
+    out = reinsert_work(x, out, layer_height, num)
     if layer_res != max_res:
         out = return_to_full_res(out, max_res)
     return out
@@ -118,15 +118,21 @@ def get_layer_rows(layer_res, working_res, num):
     layer_col = num % row_num
     return layer_row, layer_col, row_num
 
-def crop_to_working_area(x, layer_row, layer_col, working_res):
-    return x[:,:,working_res*layer_col:working_res*(layer_col+1),working_res*layer_row:working_res*(layer_row+1)]
+def crop_to_working_area(x, height, num):
+    N, C, h, w = inp.shape
+    side = 2 ** (height + 1)
+    x = x.view(N, C, side, h // side, side, w // side)
+    x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+    return x[:,num,:,:]
 
-def reinsert_work(x, out, layer_row, layer_col, working_res):
-    y = x.clone()
-    print(f'[:,:,{working_res * layer_col}:{working_res * (layer_col + 1)},\
-    {working_res * layer_row}:{working_res * (layer_row + 1)}]')
-    y[:, :, working_res * layer_col:working_res * (layer_col + 1),
-    working_res * layer_row:working_res * (layer_row + 1)] = out
+def reinsert_work(x, out, layer_height, num):
+    N, C, h, w = inp.shape
+    side = 2 ** (height + 1)
+    x = x.view(N, C, side, h // side, side, w // side)
+    x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+    a,b,c,d = out.shape
+    y = torch.cat([x[:,:num,:,:,:],out.view(a,1,b,c,d),x[:,num+1:,:,:,:]],1)
+    y = y.reshape((N, side, side, C, h // side, w // side)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, h, w)
     return y
 
 def resize_to_res(x, layer_res):
