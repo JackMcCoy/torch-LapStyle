@@ -53,8 +53,8 @@ def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: to
     mask = get_mask(fn_out,height,layer_num)
 
     if isinstance(fn_out, torch.Tensor):
-        return (output*mask) - fn_out
-    return [(output*mask) - fn_out[0]] + fn_out[1]
+        return output - (fn_out * mask)
+    return [output - (fn_out[0] * mask)] + fn_out[1]
 
 
 class Sequential_Worker(nn.Module):
