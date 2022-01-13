@@ -174,5 +174,14 @@ class LapRev(nn.Module):
         out = input.repeat(2,1,1,1)
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
+        print(out.shape)
+        test_1 = input[:,:,0,0]
+        test_2 = input[:,:,-1,0]
+        test_3 = input[:, :, 0,-1]
+        test_4 = input[:, :, -1, -1]
+        for i in [test_1,test_2,test_3,test_4]:
+            for j in [out[N:,:,:,:],out[:N,:,:,:]]:
+                test = j-i
+                print(test.mean())
         out = torch.cat([out[N:,:,:,256:],out[:N,:,:,:256]],3)
         return out
