@@ -156,6 +156,7 @@ class LapRev(nn.Module):
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
         coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, h, i),)]
         coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, h, i),)]
+        coupling_inverse.reverse()
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
         self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, target_device='cuda')
 
@@ -179,6 +180,6 @@ class LapRev(nn.Module):
         for i in tests:
             for idx,j in enumerate([out[N:,:,:,:],out[:N,:,:,:]]):
                 test = j[:,:,i[0],i[1]]-input[:,:,i[0],i[1]]
-                print(f'out[{idx*3}:{idx*3}] pixels {i}: {test.mean()}')
+                print(f'out[{idx*3}:{(idx+1)*3}] pixels {i}: {test.mean()}')
         out = torch.cat([out[N:,:,:,256:],out[:N,:,:,:256]],3)
         return out
