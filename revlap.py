@@ -219,7 +219,7 @@ class LapRev(nn.Module):
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
-        out = input.repeat(1,2,1,1)
+        out = input.repeat(2,1,1,1)
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
         out = torch.cat([out[N:,:,:256,:],out[:N,:,256:,:]],2)
