@@ -80,7 +80,7 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, x2, ci, style, enc_):
+    def forward(self, x, ci, style, enc_):
         # x = input in color space
         # out = laplacian (residual) space
 
