@@ -123,6 +123,8 @@ def crop_to_working_area(x, layer_row, layer_col, working_res):
 
 def reinsert_work(x, out, layer_row, layer_col, working_res):
     y = x.clone()
+    print(f'[:,:,{working_res * layer_col}:{working_res * (layer_col + 1)},\
+    {working_res * layer_row}:{working_res * (layer_row + 1)}]')
     y[:, :, working_res * layer_col:working_res * (layer_col + 1),
     working_res * layer_row:working_res * (layer_row + 1)] = out
     return y
