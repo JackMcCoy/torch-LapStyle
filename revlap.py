@@ -119,7 +119,7 @@ def get_layer_rows(layer_res, working_res, num):
     return layer_row, layer_col, row_num
 
 def crop_to_working_area(x, height, num):
-    N, C, h, w = inp.shape
+    N, C, h, w = x.shape
     side = 2 ** (height + 1)
     x = x.view(N, C, side, h // side, side, w // side)
     x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
