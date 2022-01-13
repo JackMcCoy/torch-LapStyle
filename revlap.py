@@ -80,11 +80,11 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style):
+    def forward(self, x, ci, style, enc_):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, style, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, style, enc_, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d, self.style_emb_w,
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
