@@ -172,7 +172,7 @@ class LapRev(nn.Module):
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
         self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.Module):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:nn.Module):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
