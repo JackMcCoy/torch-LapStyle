@@ -41,11 +41,11 @@ def get_mask(inp, height, layer_num):
 def cropped_coupling_forward(height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    mask = get_mask(other_stream,height,layer_num)
+    mask = get_mask(fn_out,height,layer_num)
     if isinstance(fn_out, torch.Tensor):
-        return other_stream + (fn_out*mask)
+        return (other_stream*mask) + fn_out
 
-    return [other_stream + (fn_out[0]*mask)] + fn_out[1]
+    return [(other_stream*mask) + fn_out[0]] + fn_out[1]
 
 def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
@@ -80,16 +80,16 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style, input):
+    def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, style, input, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, style, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d, self.style_emb_w,
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
 
-def patch_calc(x, ci, style, input,layer_height, working_res, max_res, num,
+def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
                lap_weight, s_d, style_emb_w,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
@@ -107,7 +107,7 @@ def patch_calc(x, ci, style, input,layer_height, working_res, max_res, num,
     out = downblock(out, downblock_w)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
-    out = reinsert_work(input, out, row, col, working_res)
+    out = reinsert_work(x, out, row, col, working_res)
     if layer_res != max_res:
         out = return_to_full_res(out, max_res)
     return out
@@ -172,7 +172,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out,ci, style,input,layerwise_args_kwargs=None)
+        out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
         print(out.shape)
         tests = [[0,0],[-1,0],[0,-1],[-1,-1]]
