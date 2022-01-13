@@ -54,38 +54,33 @@ class MomentumNetSide(torch.nn.Module):
         y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] = y[:,:,self.ci1:self.ci2,self.ri1:self.ri2] * self.beta
         return y
 
-def cropped_coupling_forward(total_height, height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
+def get_mask(inp, height, layer_num):
+    N,C,h,w = inp.shape
+    side = 2**(height+1)
+    x = torch.zeros_like(inp)
+    x = x.view(N, C, side, h // side, side, w // side)
+    x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+    x[:,layer_num,:,:,:]+=1
+    x = x.reshape((N, side, side, C, h // side, w // side)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, h, w)
+    return x
+
+def cropped_coupling_forward(height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
-
+    mask = get_mask(fn_out,height,layer_num)
     if isinstance(fn_out, torch.Tensor):
-        y = fn_out.clone()
-        y[:, :, ci1: ci2, ri1: ri2]= \
-            other_stream[:, :, ci1: ci2, ri1: ri2]+\
-                   y[:, :, ci1: ci2, ri1: ri2]
-        return y
+        return other_stream + (fn_out*mask)
 
-    other_stream[:, :, ci1: ci2, ri1: ri2].add_(
-               fn_out[0][:, :, ci1: ci2, ri1: ri2])
-    return [other_stream]\
-           + fn_out[1]
+    return [other_stream + (fn_out[0]*mask)] + fn_out[1]
 
-def cropped_coupling_inverse(total_height, height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
+def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    ci1, ci2, ri1, ri2 = calc_crop_indices(height,layer_num,total_height)
+    mask = get_mask(fn_out,height,layer_num)
 
     if isinstance(fn_out, torch.Tensor):
-        y = output.clone()
-        y[:, :, ci1: ci2, ri1: ri2]= \
-            y[:, :, ci1: ci2, ri1: ri2] -\
-               fn_out[:, :, ci1: ci2, ri1: ri2]
-        return y
-    output[:, :, ci1: ci2, ri1: ri2].subtract_(
-           fn_out[0][:, :, ci1: ci2, ri1: ri2])
-    return [output]\
-           + fn_out[1]
+        return output - (fn_out*mask)
+    return [output - (fn_out[0]*mask)] + fn_out[1]
 
 
 class Sequential_Worker(nn.Module):
@@ -183,9 +178,10 @@ class LapRev(nn.Module):
         self.working_res = working_res
         height = max_res//working_res
 
+
         self.num_layers = [(h,i) for h in range(height) for i in range(int((2**h)/.25))]
-        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, height, h, i),)]
-        coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, height, h, i),)]
+        coupling_forward = [c for h, i in self.num_layers for c in (partial(cropped_coupling_forward, h, i),)]
+        coupling_inverse = [c for h, i in self.num_layers for c in (partial(cropped_coupling_inverse, h, i),)]
         cells = [Sequential_Worker(1., i, 0, self.max_res,256, batch_size, s_d) for i in range(height)]
 
         modules = [cells[height].copy(layer_num) for height, layer_num in self.num_layers]
@@ -226,5 +222,5 @@ class LapRev(nn.Module):
         out = input.repeat(2,1,1,1)
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
-        out = out[N:,:, :,:]
+        out = torch.cat([out[N:,:,:256,:],out[:N,:,256:,:]],2)
         return out
