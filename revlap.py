@@ -71,7 +71,7 @@ class Sequential_Worker(nn.Module):
         self.upblock_w = upblock_weights()
         self.adaconv_w = up_adaconv_weights(self.s_d)
         self.downblock_w = downblock_weights()
-        self.style_emb_w = style_encoder_weights(self.s_d, 16)
+        self.style_emb_w = style_encoder_weights(512, self.s_d, 16)
 
         # row_num == col_num, as these are squares
 

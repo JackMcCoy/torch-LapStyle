@@ -71,7 +71,7 @@ def style_encoder_block(ch):
     params.append(nn.ParameterList([conv_weight(ch,ch,1,1,activation_std),bias(ch)]))
     return nn.ModuleList(params)
 
-def style_encoder_weights(ch, s_d):
+def style_encoder_weights(ch, s_d, dim=16):
     params = []
     for i in range(3):
         params.append(style_encoder_block(ch))
