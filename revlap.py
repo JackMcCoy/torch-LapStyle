@@ -41,7 +41,7 @@ def get_mask(inp, height, layer_num):
 def cropped_coupling_forward(height, layer_num, other_stream: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
 
-    mask = get_mask(fn_out,height,layer_num)
+    mask = get_mask(other_stream,height,layer_num)
     if isinstance(fn_out, torch.Tensor):
         return other_stream + (fn_out*mask)
 
