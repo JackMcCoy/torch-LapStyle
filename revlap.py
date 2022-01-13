@@ -185,5 +185,5 @@ class LapRev(nn.Module):
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
-        print((out-input).mean())
+        out = input+out
         return out
