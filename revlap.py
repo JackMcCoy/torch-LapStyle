@@ -78,6 +78,7 @@ class Sequential_Worker(nn.Module):
     def copy(self, layer_num):
         out = copy.copy(self)
         out.num = layer_num
+        out.style_emb_w = copy.deepcopy(self.style_emb_w)
         return out
 
     def forward(self, x, ci, style):
@@ -166,7 +167,7 @@ class LapRev(nn.Module):
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, target_device='cuda:0')
+        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse)
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
