@@ -89,7 +89,7 @@ class Sequential_Worker(nn.Module):
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
 
-def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
+def patch_calc(x, ci, style, input,layer_height, working_res, max_res, num,
                lap_weight, s_d, style_emb_w,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
@@ -107,7 +107,7 @@ def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
     out = downblock(out, downblock_w)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
-    out = reinsert_work(x, out, row, col, working_res)
+    out = reinsert_work(input, out, row, col, working_res)
     if layer_res != max_res:
         out = return_to_full_res(out, max_res)
     return out
@@ -172,7 +172,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
+        out = self.layers(out,ci, style,input,layerwise_args_kwargs=None)
 
         print(out.shape)
         tests = [[0,0],[-1,0],[0,-1],[-1,-1]]
