@@ -65,9 +65,16 @@ def up_adaconv_weights(s_d):
     params.append(adaconv_weight(s_d, 128, 2))
     return nn.ModuleList(params)
 
-def style_encoder_weights(s_d, dim=16):
+def style_encoder_block(ch):
     params = []
-    params.append(torch.nn.Parameter(torch.normal(torch.zeros(s_d * dim, s_d * dim),
-                                                          torch.ones(s_d * dim, s_d * dim))))
-    params.append(bias(s_d * dim))
-    return nn.ParameterList(params)
+    params.append(nn.ParameterList([conv_weight(ch,ch,3,1,activation_std),bias(ch)]))
+    params.append(nn.ParameterList([conv_weight(ch,ch,1,1,activation_std),bias(ch)]))
+    return nn.ModuleList(params)
+
+def style_encoder_weights(ch, s_d):
+    params = []
+    for i in range(3):
+        params.append(style_encoder_block(ch))
+    params.append(nn.ParameterList([nn.Parameter(torch.normal(torch.zeros(s_d * dim, 8192),
+                                                          torch.ones(s_d * dim, 8192))),bias(s_d * dim)]))
+    return nn.ModuleList(params)

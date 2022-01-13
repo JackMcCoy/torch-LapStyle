@@ -11,7 +11,7 @@ from einops.layers.torch import Rearrange
 from revlib.utils import module_list_to_momentum_net
 import revlib
 from weights import upblock_weights, up_adaconv_weights, downblock_weights, adaconv_weight, style_encoder_weights
-from shared_modules import upblock_w_adaconvs, downblock, style_projection
+from shared_modules import AuxLoss, upblock_w_adaconvs, downblock, style_projection
 
 '''
 def calc_crop_indices(layer_height,layer_num,total_height):
@@ -89,11 +89,13 @@ class Sequential_Worker(nn.Module):
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
 
-def patch_calc(x, ci, style, layer_height, working_res, max_res, num,
+def patch_calc(x, ci, enc_, layer_height, working_res, max_res, num,
                lap_weight, s_d, style_emb_w,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
     row, col, row_num = get_layer_rows(layer_res, working_res, num)
+    thumb = crop_style_thumb(x, layer_res, row, col, row_num, working_res)
+    thumb_enc = enc_(thumb)['r4_1']
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
@@ -144,6 +146,8 @@ def crop_style_thumb(x, layer_res, row, col, row_num, working_res):
     if row + 1 >= row_num:
         style_row -= 1
     scaled = F.interpolate(x, layer_res//2, mode='nearest')
+    if layer_res == 512:
+        return scaled
     scaled = scaled[:,:,working_res*style_col:working_res*(style_col+1),working_res*style_row:working_res*(style_row+1)]
     return scaled
 
@@ -168,7 +172,7 @@ class LapRev(nn.Module):
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
         self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, enc_:torch.Module):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -181,7 +185,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out,ci.detach(), style,layerwise_args_kwargs=None)
+        out = self.layers(out,ci.detach(), enc_,layerwise_args_kwargs=None)
 
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
         return out
