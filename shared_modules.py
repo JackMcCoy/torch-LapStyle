@@ -3,6 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class AuxLoss(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, inp: torch.Tensor):
+        ctx.save_for_backward(inp)
+        return inp
+
+    @staticmethod
+    def backward(ctx, grad_outputs: torch.Tensor):
+        inp, = ctx.saved_tensors
+        inp.mean().backward()
+
 def conv(inp, weight, groups, use_pad=True,bias=None):
     if use_pad:
         inp = F.pad(inp, (1, 1, 1, 1), mode='reflect')
@@ -78,7 +89,7 @@ def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_pa
 
 def style_projection(inp, weights, s_d):
     N = inp.shape[0]
-    out = inp.flatten(1)
+    out = AuxLoss(inp.flatten(1))
     out = F.linear(out,weights[0],bias=weights[1])
     out = F.leaky_relu(out.reshape(N, s_d, 4, 4))
     return out
