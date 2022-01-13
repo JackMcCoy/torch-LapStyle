@@ -73,7 +73,7 @@ def style_encoder_block(ch):
 
 def style_encoder_weights(ch, s_d, dim=16):
     params = []
-    for i in range(4):
+    for i in range(5):
         params.append(style_encoder_block(ch))
     params.append(nn.ParameterList([nn.Parameter(torch.normal(torch.zeros(s_d * dim, 8192),
                                                           torch.ones(s_d * dim, 8192))),bias(s_d * dim)]))
