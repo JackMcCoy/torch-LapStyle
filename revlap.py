@@ -183,5 +183,5 @@ class LapRev(nn.Module):
             for idx,j in enumerate([out[N:,:,:,:],out[:N,:,:,:]]):
                 test = j[:,:,i[0],i[1]]-input[:,:,i[0],i[1]]
                 print(f'out[{idx*3}:{(idx+1)*3}] pixels {i}: {test.mean()}')
-        out = torch.cat([out[:N,:,256:,:],out[N:,:,:256,:]],2)
+        out = torch.cat([out[:N,:,:,256:],out[N:,:,:,:256]],3)
         return out
