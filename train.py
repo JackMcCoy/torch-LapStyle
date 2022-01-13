@@ -651,8 +651,8 @@ def revlap_train():
 
             for i in range(2):
                 for j in range(2):
-                    sF = enc_(si[-1][:,:,i*256:(i+1):256, j*256:(j+1):256])
-                    ci_patch = ci[-1][:,:,i*256:(i+1):256, j*256:(j+1):256]
+                    sF = enc_(si[-1][:,:,i*256:(i+1)*256, j*256:(j+1)*256])
+                    ci_patch = ci[-1][:,:,i*256:(i+1)*256, j*256:(j+1)*256]
                     cF = enc_(ci_patch)
                     stylized_crop = rev_stylized[:,:,i*256:(i+1):256, j*256:(j+1):256]
                     patch_feats = enc_(stylized_crop)
