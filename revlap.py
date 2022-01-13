@@ -43,9 +43,9 @@ def cropped_coupling_forward(height, layer_num, other_stream: torch.Tensor, fn_o
 
     mask = get_mask(fn_out,height,layer_num)
     if isinstance(fn_out, torch.Tensor):
-        return (other_stream*mask) + fn_out
+        return other_stream + (fn_out*mask)
 
-    return [(other_stream*mask) + fn_out[0]] + fn_out[1]
+    return [other_stream + (fn_out[0]*mask)] + fn_out[1]
 
 def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: torch.Tensor):
     fn_out = revlib.core.split_tensor_list(fn_out)
