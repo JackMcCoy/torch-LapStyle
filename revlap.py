@@ -105,7 +105,7 @@ def patch_calc(x, ci, enc_, layer_height, working_res, max_res, num,
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
-    style = style_projection(style, style_emb_w, s_d)
+    style = style_projection(thumb_enc, style_emb_w, s_d)
     out = downblock(out, downblock_w)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
