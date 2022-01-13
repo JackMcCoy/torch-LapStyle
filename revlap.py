@@ -187,5 +187,5 @@ class LapRev(nn.Module):
         out = input.repeat(2,1,1,1)
         out = self.layers(out.data, ci.data, style.data, enc_,layerwise_args_kwargs=None)
 
-        out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
+        out = out[:N,:,:,:]+out[N:,:,:,:]
         return out
