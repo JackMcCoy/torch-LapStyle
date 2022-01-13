@@ -654,7 +654,7 @@ def revlap_train():
                     sF = enc_(si[-1][:,:,i*256:(i+1)*256, j*256:(j+1)*256])
                     ci_patch = ci[-1][:,:,i*256:(i+1)*256, j*256:(j+1)*256]
                     cF = enc_(ci_patch)
-                    stylized_crop = rev_stylized[:,:,i*256:(i+1):256, j*256:(j+1):256]
+                    stylized_crop = rev_stylized[:,:,i*256:(i+1)*256, j*256:(j+1)*256]
                     patch_feats = enc_(stylized_crop)
 
                     losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
