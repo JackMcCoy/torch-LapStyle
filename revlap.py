@@ -175,7 +175,7 @@ class LapRev(nn.Module):
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
         print(out.shape)
-        tests = [[0,0][-1,0],[0,-1],[-1,-1]]
+        tests = [[0,0],[-1,0],[0,-1],[-1,-1]]
         for i in tests:
             for idx,j in enumerate([out[N:,:,:,:],out[:N,:,:,:]]):
                 test = j[:,:,i[0],i[1]]-input[:,:,i[0],i[1]]
