@@ -183,11 +183,5 @@ class LapRev(nn.Module):
         out = input.repeat(2,1,1,1)
         out = self.layers(out,ci.detach(), style.data,layerwise_args_kwargs=None)
 
-        print(out.shape)
-        tests = [[0,0],[-1,0],[0,-1],[-1,-1]]
-        for i in tests:
-            for idx,j in enumerate([out[N:,:,:,:],out[:N,:,:,:]]):
-                test = j[:,:,i[0],i[1]]-input[:,:,i[0],i[1]]
-                print(f'out[{idx*3}:{(idx+1)*3}] pixels {i}: {test.mean()}')
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
         return out
