@@ -583,6 +583,7 @@ def revlap_train():
                           #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
     rev_.train()
+    print(rev_.parameter())
     disc_ = build_disc(disc_state)
 
     dec_.train()
