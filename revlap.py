@@ -123,7 +123,7 @@ def crop_to_working_area(x, height, num):
     side = 2 ** (height + 1)
     x = x.view(N, C, side, h // side, side, w // side)
     x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
-    return x[:,num,:,:]
+    return x[:,num,:,:,:]
 
 def reinsert_work(x, out, layer_height, num):
     N, C, h, w = x.shape
