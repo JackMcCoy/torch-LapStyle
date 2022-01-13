@@ -89,7 +89,8 @@ def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_pa
 
 def style_projection(inp, weights, s_d):
     N = inp.shape[0]
-    out = AuxLoss(inp.flatten(1))
+    AuxLoss(inp)
+    out = inp.flatten(1)
     out = F.linear(out,weights[0],bias=weights[1])
     out = F.leaky_relu(out.reshape(N, s_d, 4, 4))
     return out
