@@ -138,8 +138,8 @@ class SpectralResBlock(nn.Module):
                 x2 = nn.functional.avg_pool2d(x2, 2)
         else:
             x2=0
-        out = x+x2
-        return out
+        x = x+x2
+        return x
 
 
 class Bias(nn.Module):
