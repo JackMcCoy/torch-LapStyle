@@ -554,8 +554,7 @@ def revlap_train():
         random_crop2 = transforms.RandomCrop(512)
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.DecoderAdaConv(batch_size=args.batch_size)
-    '''
+    dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size),
         {k:v for k,v in zip(['r1_1','r2_1','r3_1','r4_1'],
                             [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
                              torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
@@ -565,10 +564,8 @@ def revlap_train():
                               [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
                                torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
                                torch.rand(args.batch_size, 256, 64, 64).to(torch.device('cuda')),
-                               torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])}
-    ),
-                           strict=False,check_trace=False)
-    '''
+                               torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])},
+                         strict=False,check_trace=False)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
@@ -585,7 +582,7 @@ def revlap_train():
                           #(torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
-    disc_ = build_disc(disc_state)
+    disc_ = torch.jit.script(build_disc(disc_state))
 
     dec_.train()
     enc_.to(device)
@@ -598,13 +595,13 @@ def revlap_train():
     wandb.watch((rev_, disc_, dec_), log='all', log_freq=50)
 
     base_optimizer = torch.optim.AdamW
-    base_opt_D = torch.optim.AdamW
+    base_opt_D = torch.optim.SGD
     dec_optimizer = sam.SAM(dec_.parameters(recurse=True),
                         base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr)
 
     optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
     opt_D = sam.SAM(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr)
+                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr, momentum=.9)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
