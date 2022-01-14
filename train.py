@@ -599,7 +599,10 @@ def revlap_train():
 
     base_optimizer = torch.optim.AdamW
     base_opt_D = torch.optim.AdamW
-    optimizer = sam.SAM(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
+    dec_optimizer = sam.SAM(dec_.parameters(recurse=True),
+                        base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr)
+
+    optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
     opt_D = sam.SAM(disc_.parameters(recurse=True),
                         base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.lr)
     if args.load_rev == 1:
@@ -669,9 +672,11 @@ def revlap_train():
             loss_D.backward()
             if idx == 0:
                 opt_D.first_step(zero_grad=True)
+                dec_optimizer.first_step(zero_grad=True)
                 optimizer.first_step(zero_grad=True)
             else:
                 opt_D.second_step(zero_grad=True)
+                dec_optimizer.second_step(zero_grad=True)
                 optimizer.second_step(zero_grad=True)
 
         if (i + 1) % 1 == 0:
@@ -730,6 +735,9 @@ def revlap_train():
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
+                state_dict = dec_optimizer.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'dec_optimizer.pth.tar')
 
         del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
 
