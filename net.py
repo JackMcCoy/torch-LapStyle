@@ -45,7 +45,6 @@ def max_singular_value(W, u=None, Ip=1):
     sigma = torch.sum(nn.functional.linear(_u, W.transpose(1, 0)) * _v)
     return sigma, _u
 
-
 class Encoder(nn.Module):
     def __init__(self, vggs):
         super(Encoder,(self)).__init__()
