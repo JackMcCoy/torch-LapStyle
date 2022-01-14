@@ -644,15 +644,17 @@ def revlap_train():
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
                 loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
                 k =.5
-                sF = enc_(si[-1][:,:,int(k*256):int((k+1)*256), int(k*256):int((k+1)*256)])
+                if args.split_style and args.crop_size == 512:
+                    sF = None
+                    si_cropped = si[-1]
+                elif args.split_style:
+                    sF = None
+                    si_cropped = random_crop2(si[-1])
+                else:
+                    sF = enc_(si[-1][:,:,int(k*256):int((k+1)*256), int(k*256):int((k+1)*256)])
                 ci_patch = ci[-1][:,:,int(k*256):int((k+1)*256), int(k*256):int((k+1)*256)]
                 cF = enc_(ci_patch)
-                if args.split_style and args.crop_size==512:
-                    stylized_crop = rev_stylized
-                elif args.split_style:
-                    stylized_crop = random_crop2(rev_stylized)
-                else:
-                    stylized_crop = rev_stylized[:,:,int(k*256):int((k+1)*256), int(k*256):int((k+1)*256)]
+                stylized_crop = rev_stylized[:,:,int(k*256):int((k+1)*256), int(k*256):int((k+1)*256)]
                 patch_feats = enc_(F.interpolate(stylized[:,:,int(k*128):int((k+1)*128), int(k*128):int((k+1)*128)],size=256,mode='nearest'))
 
                 losses = calc_losses(stylized_crop, ci_patch, si_cropped, cF, enc_, dec_, patch_feats, disc_,
