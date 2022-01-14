@@ -45,9 +45,9 @@ class FusedConvNoiseBias(nn.Module):
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
             self.resize = nn.AvgPool2d(2, stride=2)
-        #if noise==True:
-        #    self.noise = RiemannNoise(hw)
-        #self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
+        if noise==True:
+            self.noise = RiemannNoise(hw)
+        self.bias = nn.Parameter(nn.init.constant_(torch.ones(1, ), .01))
         self.act = nn.LeakyReLU()
         self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))
         self.apply(self._init_weights)
