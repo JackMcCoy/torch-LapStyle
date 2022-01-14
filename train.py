@@ -628,12 +628,10 @@ def revlap_train():
                 stylized_crop = rev_stylized[:,:,-384:-128, -256:]
                 scale_stylized = F.interpolate(rev_stylized, size=256, mode='nearest')
 
-            set_requires_grad(disc_, True)
             with autocast(enabled=ac_enabled):
 
                 loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), None,disc_)
 
-            set_requires_grad(disc_, False)
             with autocast(enabled=ac_enabled):
 
                 losses_small = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
