@@ -583,7 +583,6 @@ def revlap_train():
                           #(torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
                           #torch.rand(args.batch_size, 512, 4,4).to(torch.device('cuda'))),check_trace=False, strict=False)
-    rev_.train()
     disc_ = build_disc(disc_state)
 
     dec_.train()
@@ -600,7 +599,7 @@ def revlap_train():
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
-        dec_.load_state_dict(torch.load(args.load_model))
+        dec_.load_state_dict(torch.load(args.load_model), strict=False)
     if args.load_optimizer ==1:
         optimizer.load_state_dict(torch.load('/'.join(path[:-1])+'/optimizer.pth.tar'))
         opt_D.load_state_dict(torch.load('/'.join(path[:-1]) + '/disc_optimizer.pth.tar'))
