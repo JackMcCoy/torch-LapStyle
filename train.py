@@ -600,7 +600,7 @@ def revlap_train():
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
-        dec_.load_state_dict(torch.load(args.load_model), strict='false')
+        dec_.load_state_dict(torch.load(args.load_model))
     if args.load_optimizer ==1:
         optimizer.load_state_dict(torch.load('/'.join(path[:-1])+'/optimizer.pth.tar'))
         opt_D.load_state_dict(torch.load('/'.join(path[:-1]) + '/disc_optimizer.pth.tar'))
@@ -672,19 +672,19 @@ def revlap_train():
                     loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)*.25
 
 
-    if ac_enabled:
-        scaler.scale(loss).backward()
+        if ac_enabled:
+            scaler.scale(loss).backward()
 
-        if (i+1) % args.accumulation_steps == 0:
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
+            if (i+1) % args.accumulation_steps == 0:
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
 
-    else:
-        loss.backward()
-        if (i + 1) % args.accumulation_steps == 0:
-            optimizer.step()
-            optimizer.zero_grad()
+        else:
+            loss.backward()
+            if (i + 1) % args.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
 
         if (i + 1) % 1 == 0:
 
