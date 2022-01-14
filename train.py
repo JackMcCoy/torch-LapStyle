@@ -216,7 +216,7 @@ def build_disc(disc_state):
         disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
         if not disc_state is None:
-            disc.load_state_dict(torch.load(new_path_func('discriminator_')), strict=False)
+            disc.load_state_dict(torch.load(disc_state), strict=False)
         else:
             init_weights(disc)
         disc.init_spectral_norm()
