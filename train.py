@@ -264,7 +264,6 @@ def drafting_train():
             if args.draft_disc:
                 set_requires_grad(disc_, True)
                 with autocast(enabled=ac_enabled):
-
                     loss_D = calc_GAN_loss(crop128(si.detach()), crop128(stylized.clone().detach()), disc_)
                 if ac_enabled:
                     d_scaler.scale(loss_D).backward()
@@ -566,6 +565,10 @@ def revlap_train():
                                torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])}),
                          strict=False,check_trace=False)
     disc_state = None
+    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta, enc_).to(device)
+    # (torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
+    # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
+    # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda'))),check_trace=False, strict=False)
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
@@ -574,13 +577,13 @@ def revlap_train():
             disc_state = new_path_func('discriminator_')
         if args.load_rev == 1:
             rev_state = new_path_func('revisor_')
+        dec_state = new_path_func('revisor_')
+        dec_.load_state_dict(torch.load(dec_state), strict=False)
+        rev_.load_state_dict(torch.load(rev_state), strict=False)
     else:
         rev_state = None
         init_weights(dec_)
-    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta, enc_).to(device)
-                          #(torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
-                          #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-                          #torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda'))),check_trace=False, strict=False)
+
     disc_ = build_disc(disc_state)#, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
 
     dec_.train()
@@ -590,7 +593,6 @@ def revlap_train():
     d_scaler = GradScaler(init_scale=128)
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
-    wandb.watch((rev_, disc_, dec_), log='all', log_freq=50)
 
     base_optimizer = torch.optim.AdamW
     base_opt_D = torch.optim.AdamW
