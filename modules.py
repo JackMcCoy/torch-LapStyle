@@ -117,10 +117,7 @@ class SpectralResBlock(nn.Module):
         self.conv_2 = nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
         self.downsample = downsample
         self.learnable_sc = (in_ch != out_ch) or downsample
-        if self.learnable_sc:
-            self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
-        else:
-            self.c_sc = nn.Identity()
+        self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
 
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
@@ -132,10 +129,9 @@ class SpectralResBlock(nn.Module):
         x = self.conv_2(x)
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
-        if self.learnable_sc:
-            x2 = self.c_sc(in_feat)
-            if self.downsample:
-                x2 = nn.functional.avg_pool2d(x2, 2)
+        x2 = self.c_sc(in_feat)
+        if self.downsample:
+            x2 = nn.functional.avg_pool2d(x2, 2)
         else:
             x2=0
         x = x+x2
