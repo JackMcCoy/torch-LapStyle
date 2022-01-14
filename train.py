@@ -671,11 +671,11 @@ def revlap_train():
         loss.backward()
         loss_D.backward()
         if idx == 0:
-            optimizer.first_step(zero_grad=True)
             opt_D.first_step(zero_grad=True)
+            optimizer.first_step(zero_grad=True)
         else:
-            optimizer.second_step(zero_grad=True)
             opt_D.second_step(zero_grad=True)
+            optimizer.second_step(zero_grad=True)
 
         if (i + 1) % 1 == 0:
 
