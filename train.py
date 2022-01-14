@@ -599,7 +599,7 @@ def revlap_train():
     optimizer = torch.optim.AdamW(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     if args.load_rev == 1:
-        disc_.load_state_dict(torch.load(new_path_func('revisor')), strict=False)
+        disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model))
     if args.load_optimizer ==1:
         optimizer.load_state_dict(torch.load(path_tokens+'optimizer.pth.tar'))
