@@ -24,6 +24,23 @@ def conv1d(inp, weight, groups, use_pad=True,bias=None):
         inp = F.pad(inp, 1, mode='reflect')
     return F.conv1d(inp, weight, groups=groups, bias=bias)
 
+def rnoise(x, params, zero):
+    N, c, d = x.shape
+    A, b, alpha, r = params
+
+    s = torch.sum(x, dim=1, keepdim=True)
+    s = s - s.mean(dim=(2), keepdim=True)
+    s_max = s.abs().amax(dim=(2), keepdim=True)
+    s = s / (s_max + 1e-8)
+    s = (s + 1) / 2
+    s = s * A + b
+    s = torch.tile(s, (1, c, 1))
+    sp_att_mask = (1 - alpha) + alpha * s
+    sp_att_mask = sp_att_mask / (torch.linalg.norm(sp_att_mask, dim=1, keepdims=True) + 1e-8)
+    zero = torch.zeros(1, device='cuda')
+    x = r * sp_att_mask * x + r * sp_att_mask * (zero.repeat(N, c, d).normal_())
+    return x
+
 def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
     if scale_change == 'up':
         resized = F.upsample(inp, scale_factor=2, mode='nearest')
