@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from revlap import LapRev
 
+import copy
 import torch
 import torch.nn as nn
 import torch.utils.data as data
