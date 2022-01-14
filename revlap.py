@@ -99,6 +99,7 @@ def patch_calc(x, ci, style, enc_, layer_height, working_res, max_res, num,
     thumb = crop_style_thumb(style, layer_res, row, col, row_num, working_res)
     with torch.no_grad():
         thumb_enc = enc_(thumb)['r4_1']
+    thumb_enc.requires_grad=True
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
