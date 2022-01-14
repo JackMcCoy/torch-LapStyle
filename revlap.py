@@ -67,6 +67,7 @@ class Sequential_Worker(nn.Module):
         self.layer_height = layer_height
         self.num = num
         self.enc_ = enc_
+        self.enc_.requires_grad = False
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.upblock_w = upblock_weights()
@@ -96,7 +97,8 @@ def patch_calc(x, ci, style, enc_, layer_height, working_res, max_res, num,
     layer_res = 512*2**layer_height
     row, col, row_num = get_layer_rows(layer_res, working_res, num)
     thumb = crop_style_thumb(style, layer_res, row, col, row_num, working_res)
-    thumb_enc = enc_(thumb)['r4_1']
+    with torch.no_grad():
+        thumb_enc = enc_(thumb)['r4_1']
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
