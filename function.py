@@ -4,6 +4,16 @@ import random
 import numpy as np
 
 
+@torch.no_grad()
+def _clip_gradient(model):
+    for p in model.parameters():
+        if p.grad is None:
+            continue
+        g_norm = p.grad.norm(2, 0, True).clamp(min=1e-6)
+        p_norm = p.norm(2, 0, True).clamp(min=1e-3)
+        grad_scale = (p_norm / g_norm * .01).clamp(max=1)
+        p.grad.data.copy_(p.grad * grad_scale)
+
 def setup_torch(seed: int):
     torch._C._debug_set_autodiff_subgraph_inlining(False)  # skipcq: PYL-W0212
     torch._C._set_graph_executor_optimize(True)  # skipcq: PYL-W0212

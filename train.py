@@ -18,7 +18,7 @@ import math
 import vgg
 import net
 import random
-from function import setup_torch, init_weights, PositionalEncoding2D, get_embeddings
+from function import _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
@@ -668,6 +668,8 @@ def revlap_train():
                                              patch_loss=True, sF=sF, split_style=args.split_style)
                         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                         loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)*.25
+            for mod in [dec_,disc_,rev_]:
+                _clip_gradient(mod)
             loss.backward()
             loss_D.backward()
             if idx == 0:
