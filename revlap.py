@@ -58,7 +58,7 @@ def cropped_coupling_inverse(height, layer_num, output: torch.Tensor, fn_out: to
 
 
 class Sequential_Worker(nn.Module):
-    def __init__(self, init_scale:float, layer_height, num, max_res,working_res, batch_size,s_d):
+    def __init__(self, init_scale:float, layer_height, num, max_res,working_res, batch_size,s_d, enc_):
         super(Sequential_Worker, self).__init__()
         self.init_scale = init_scale
         self.working_res = working_res
@@ -66,6 +66,7 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.layer_height = layer_height
         self.num = num
+        self.enc_ = enc_
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.upblock_w = upblock_weights()
@@ -80,11 +81,11 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style, enc_):
+    def forward(self, x, ci, style):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, style, enc_, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, style, self.enc_, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d, self.style_emb_w,
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
@@ -157,7 +158,7 @@ def return_to_full_res(x, max_res):
 
 
 class LapRev(nn.Module):
-    def __init__(self, max_res, working_res, batch_size, s_d, momentumnet_beta):
+    def __init__(self, max_res, working_res, batch_size, s_d, momentumnet_beta, enc_):
         super(LapRev, self).__init__()
         self.max_res = max_res
         self.momentumnet_beta = momentumnet_beta
@@ -169,10 +170,10 @@ class LapRev(nn.Module):
         coupling_forward = [partial(cropped_coupling_forward, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
-        cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
+        cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d, enc_)
         self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
 
-    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor, enc_:nn.Module):
+    def forward(self, input:torch.Tensor, ci:torch.Tensor, style:torch.Tensor):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -185,7 +186,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out.clone().detach().requires_grad_(), ci.data, style.data, enc_,layerwise_args_kwargs=None)
+        out = self.layers(out.clone().detach().requires_grad_(), ci.data, style.data,layerwise_args_kwargs=None)
 
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
         return out
