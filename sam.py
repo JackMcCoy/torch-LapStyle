@@ -47,12 +47,17 @@ class SAM(torch.optim.Optimizer):
 
     def _grad_norm(self):
         shared_device = self.param_groups[0]["params"][0].device  # put everything on the same device, in case of model parallelism
+        to_stack = []
+        for group in self.param_groups:
+            p_list = []
+            for p in group["params"]:
+                if p.grad is not None:
+                    p_list.append(p)
+            if len(p_list)>0:
+                to_stack.append(((torch.abs(p) if group["adaptive"] else 1.0) * p.grad).norm(p=2).to(shared_device))
+
         norm = torch.norm(
-                    torch.stack([
-                        ((torch.abs(p) if group["adaptive"] else 1.0) * p.grad).norm(p=2).to(shared_device)
-                        for group in self.param_groups for p in group["params"]
-                        if p.grad is not None
-                    ]),
+                    torch.stack(to_stacl),
                     p=2
                )
         return norm
