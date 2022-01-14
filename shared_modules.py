@@ -89,7 +89,7 @@ def downblock(inp, weights):
     out = fused_conv_noise_bias(inp, weights[0])
     out = fused_conv_noise_bias(out, weights[1])
     out = fused_conv_noise_bias(out, weights[2])
-    out = fused_conv_noise_bias(out, weights[3], scale_change='down')
+    out = fused_conv_noise_bias(out, weights[3], scale_change='down', noise=True)
     out = fused_conv_noise_bias(out, weights[4])
     return out
 
