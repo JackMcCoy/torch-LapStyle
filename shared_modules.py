@@ -89,8 +89,8 @@ def downblock(inp, weights):
     out = fused_conv_noise_bias(inp, weights[0])
     out = fused_conv_noise_bias(out, weights[1])
     out = fused_conv_noise_bias(out, weights[2])
-    out = fused_conv_noise_bias(out, weights[3], scale_change='down')
-    out = fused_conv_noise_bias(out, weights[4], noise=True)
+    out = fused_conv_noise_bias(out, weights[3], scale_change='down', noise=True)
+    out = fused_conv_noise_bias(out, weights[4])
     return out
 
 def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_param_list=[(1, 64),(1, 64),(2, 128)]):
@@ -99,7 +99,7 @@ def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_pa
     out = adaconv(out,adaconv_weights[1],style_encoding, *adaconv_param_list[1])
     out = fused_conv_noise_bias(out, weights[1], noise=True)
     out = adaconv(out, adaconv_weights[2], style_encoding, *adaconv_param_list[2])
-    out = fused_conv_noise_bias(out, weights[2])
+    out = fused_conv_noise_bias(out, weights[2], noise = True)
     out = fused_conv_noise_bias(out, weights[3])
     out = conv(out,weights[4][0],1,bias=weights[4][1],use_pad=False)
     return out
