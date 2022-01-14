@@ -597,14 +597,14 @@ def revlap_train():
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
     wandb.watch((rev_, disc_, dec_), log='all', log_freq=50)
 
-    base_optimizer = torch.optim.SGD
-    base_opt_D = torch.optim.SGD
+    base_optimizer = torch.optim.AdamW
+    base_opt_D = torch.optim.AdamW
     dec_optimizer = sam.SAM(dec_.parameters(recurse=True),
-                        base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr, momentum=0.9)
+                        base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr)
 
-    optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr, momentum=0.9)
+    optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
     opt_D = sam.SAM(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr, momentum=0.9)
+                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
