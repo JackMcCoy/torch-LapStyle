@@ -594,13 +594,13 @@ def revlap_train():
     wandb.watch((rev_, disc_, dec_), log='all', log_freq=50)
 
     base_optimizer = torch.optim.AdamW
-    base_opt_D = torch.optim.SGD
+    base_opt_D = torch.optim.AdamW
     dec_optimizer = sam.SAM(dec_.parameters(recurse=True),
                         base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr)
 
     optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
     opt_D = sam.SAM(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr, momentum=.9)
+                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
@@ -608,8 +608,9 @@ def revlap_train():
         optimizer.load_state_dict(torch.load('/'.join(path[:-1])+'/optimizer.pth.tar'))
         opt_D.load_state_dict(torch.load('/'.join(path[:-1]) + '/disc_optimizer.pth.tar'))
     for i in range(args.max_iter):
-        #adjust_learning_rate(optimizer.base_optimizer, i//args.accumulation_steps, args)
-        #adjust_learning_rate(opt_D.base_optimizer, i//args.accumulation_steps, args, disc=True)
+        adjust_learning_rate(optimizer.base_optimizer, i//args.accumulation_steps, args)
+        adjust_learning_rate(dec_optimizer.base_optimizer, i // args.accumulation_steps, args)
+        adjust_learning_rate(opt_D.base_optimizer, i//args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
