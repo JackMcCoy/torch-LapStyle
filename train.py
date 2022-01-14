@@ -555,7 +555,7 @@ def revlap_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = torch.jit.trace(net.DecoderAdaConv(batch_size=args.batch_size),
-        {k:v for k,v in zip(['r1_1','r2_1','r3_1','r4_1'],
+        ({k:v for k,v in zip(['r1_1','r2_1','r3_1','r4_1'],
                             [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
                              torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
                              torch.rand(args.batch_size, 256, 64, 64).to(torch.device('cuda')),
@@ -564,7 +564,7 @@ def revlap_train():
                               [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
                                torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
                                torch.rand(args.batch_size, 256, 64, 64).to(torch.device('cuda')),
-                               torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])},
+                               torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])}),
                          strict=False,check_trace=False)
     disc_state = None
     if args.load_rev == 1 or args.load_disc == 1:
