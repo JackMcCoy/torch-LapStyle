@@ -629,7 +629,6 @@ def revlap_train():
                 rev_stylized = rev_(stylized, ci[-1], si[-1], enc_)
                 si_cropped = random_crop(si[-1])
                 stylized_crop = rev_stylized[:,:,-384:-128, -256:]
-                scale_stylized = F.interpolate(rev_stylized, size=256, mode='nearest')
 
             with autocast(enabled=ac_enabled):
 
@@ -644,15 +643,6 @@ def revlap_train():
                                             patch_loss=False, sF=sF, split_style=False)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
                 loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
-
-
-                losses_scaled = calc_losses(scale_stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                     calc_identity=False, disc_loss=False,
-                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                     patch_loss=False, sF=sF, split_style=False)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_scaled
-                loss = loss+loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
-
 
                 for k in range(2):
                     for j in range(2):
@@ -742,7 +732,7 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
-        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
+        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,stylized_crop)
 
 
 def vq_train():
