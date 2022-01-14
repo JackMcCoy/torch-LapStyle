@@ -726,21 +726,20 @@ def revlap_train():
                                i + 1) + '.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-                print(loss)
                 state_dict = rev_.state_dict()
-                torch.save(state_dict, save_dir /
+                torch.save(copy.deepcopy(state_dict), save_dir /
                            'revisor_iter_{:d}.pth.tar'.format(i + 1))
                 state_dict = dec_.state_dict()
-                torch.save(state_dict, save_dir /
+                torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
                 state_dict = disc_.state_dict()
-                torch.save(state_dict, save_dir /
+                torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(i + 1))
                 state_dict = optimizer.state_dict()
-                torch.save(state_dict, save_dir /
+                torch.save(copy.deepcopy(state_dict), save_dir /
                            'optimizer.pth.tar')
                 state_dict = opt_D.state_dict()
-                torch.save(state_dict, save_dir /
+                torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
 
         del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,scale_stylized,stylized_crop)
