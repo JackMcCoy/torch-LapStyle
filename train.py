@@ -602,8 +602,8 @@ def revlap_train():
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict='false')
     if args.load_optimizer ==1:
-        optimizer.load_state_dict(torch.load('/'.join(path[:-1])+'/optimizer.pth.tar'),strict=False)
-        opt_D.load_state_dict(torch.load('/'.join(path[:-1]) + '/disc_optimizer.pth.tar'), strict=False)
+        optimizer.load_state_dict(torch.load('/'.join(path[:-1])+'/optimizer.pth.tar'))
+        opt_D.load_state_dict(torch.load('/'.join(path[:-1]) + '/disc_optimizer.pth.tar'))
     for i in range(args.max_iter):
         with torch.autograd.detect_anomaly():
             adjust_learning_rate(optimizer, i//args.accumulation_steps, args)
