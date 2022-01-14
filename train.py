@@ -379,7 +379,6 @@ def revision_train():
         dec_.to(device)
         disc_.to(device)
         rev_.to(device)
-    wandb.watch((rev_,disc_,dec_), log='all', log_freq=25)
     remd_loss = True if args.remd_loss==1 else False
     scaler = GradScaler(init_scale=128)
     d_scaler = GradScaler(init_scale=128)
