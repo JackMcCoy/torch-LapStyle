@@ -35,10 +35,10 @@ def fused_conv_noise_bias(inp, weights, scale_change='',noise=False):
     if noise:
         out = rnoise(out, weights[1])
     # note: including noise will create order conflict
-    out = out + weights[1][0].view(1,-1,1,1)
+    out = out + weights[2][0].view(1,-1,1,1)
     out = F.leaky_relu(out)
-    if len(weights)>2:
-        resized = conv(resized, weights[2][0], 1, bias=weights[2][1])
+    if len(weights)+noise > 2+noise:
+        resized = conv(resized, weights[-1][0], 1, bias=weights[-1][1])
     return (out + resized)
 
 def adaconv(input, weights, style_encoding, n_groups, ch):
@@ -73,13 +73,13 @@ def downblock(inp, weights):
     out = fused_conv_noise_bias(out, weights[1])
     out = fused_conv_noise_bias(out, weights[2])
     out = fused_conv_noise_bias(out, weights[3], scale_change='down')
-    out = fused_conv_noise_bias(out, weights[4])
+    out = fused_conv_noise_bias(out, weights[4], noise=True)
     return out
 
 def upblock_w_adaconvs(inp, style_encoding, weights, adaconv_weights, adaconv_param_list=[(1, 64),(1, 64),(2, 128)]):
     out = adaconv(inp,adaconv_weights[0],style_encoding, *adaconv_param_list[0])
-    out = fused_conv_noise_bias(out, weights[0], scale_change='up')
-    out = adaconv(out,adaconv_weights[1],style_encoding, *adaconv_param_list[1])
+    out = fused_conv_noise_bias(out, weights[0], scale_change='up', noise=True)
+    out = adaconv(out,adaconv_weights[1],style_encoding, *adaconv_param_list[1], noise=True)
     out = fused_conv_noise_bias(out, weights[1])
     out = adaconv(out, adaconv_weights[2], style_encoding, *adaconv_param_list[2])
     out = fused_conv_noise_bias(out, weights[2])
