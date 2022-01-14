@@ -599,9 +599,9 @@ def revlap_train():
 
     base_optimizer = torch.optim.AdamW
     base_opt_D = torch.optim.AdamW
-    optimizer = sam.SAM(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), base_optimizer=base_optimizer, rho=.5, adaptive=True,lr=args.lr)
+    optimizer = sam.SAM(list(rev_.parameters(recurse=True))+list(dec_.parameters(recurse=True)), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
     opt_D = sam.SAM(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, rho=.5, adaptive=True,lr=args.lr)
+                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
@@ -667,15 +667,14 @@ def revlap_train():
                                              patch_loss=True, sF=sF, split_style=args.split_style)
                         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
                         loss = loss + (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog)*.25
-        with rev_.no_sync():
             loss.backward()
-        loss_D.backward()
-        if idx == 0:
-            opt_D.first_step(zero_grad=True)
-            optimizer.first_step(zero_grad=True)
-        else:
-            opt_D.second_step(zero_grad=True)
-            optimizer.second_step(zero_grad=True)
+            loss_D.backward()
+            if idx == 0:
+                opt_D.first_step(zero_grad=True)
+                optimizer.first_step(zero_grad=True)
+            else:
+                opt_D.second_step(zero_grad=True)
+                optimizer.second_step(zero_grad=True)
 
         if (i + 1) % 1 == 0:
 
