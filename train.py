@@ -641,8 +641,6 @@ def revlap_train():
                                             patch_loss=False, sF=sF, split_style=False)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
                 loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
-                ci[-1] = torch.roll(ci[-1],(128,128),dims=(2,3))
-                si[-1] = torch.roll(si[-1], (128, 128), dims=(2, 3))
                 for k in range(2):
                     for j in range(2):
                         if args.split_style and args.crop_size == 512:
@@ -690,7 +688,6 @@ def revlap_train():
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             if(i +1) % 10 ==0:
-                rev_stylized = torch.roll(rev_stylized, (-128, -128), dims=(2, 3))
                 loss_dict['example'] = wandb.Image(rev_stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             print('\n')
             print(str(i)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
