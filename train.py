@@ -778,16 +778,14 @@ def adaconv_thumb_train():
             wandb.log(loss_dict, step=i)
 
         with torch.no_grad():
-            if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
+            if (i + 1) % 50 == 0:
 
                 stylized = stylized.float().to('cpu')
                 patch_stylized = patch_stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
-                si[0] = F.interpolate(si[-1], size=256, mode='bicubic')
-                ci[0] = F.interpolate(ci[-1], size=256, mode='bicubic')
-                style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
+                style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
                 save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
                 save_image(draft_img_grid.detach(),
                            args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
