@@ -181,13 +181,13 @@ class LapRev(nn.Module):
         inp_downblock = self.cell(F.interpolate(input,256),F.interpolate(ci,256))
         side = 2
         N, C, h, w = input.shape
-        input = input.view(N, C, side, h // side, side, w // side)
-        input = torch.permute(input, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+        x = input.view(N, C, side, h // side, side, w // side)
+        x = torch.permute(x, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
         ci = ci.view(N, C, side, h // side, side, w // side)
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
 
         for i in range(ci.shape[1]):
-            a = self.cell(input[:,i,:,:,:], ci[:,i,:,:,:], inp_downblock=inp_downblock)
+            a = self.cell(x[:,i,:,:,:], ci[:,i,:,:,:], inp_downblock=inp_downblock)
             tiles.append(a.view(N,1,C,256,256))
         out = torch.cat(tiles,1)
         out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
