@@ -818,8 +818,7 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 rev_depth:int = None):
-    with torch.no_grad():
-        stylized_feats = encoder(stylized)
+    stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
@@ -834,11 +833,11 @@ def calc_losses(stylized: torch.Tensor,
     if content_all_layers:
         #content_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
         #style_layers = ['r1_1', 'r2_1', 'r3_1', 'r4_1', 'r5_1']
-        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'], norm=True)
+        loss_c = content_loss(stylized_feats['r1_1'], cF['r1_1'].detach(), norm=True)
         for key in content_layers[1:]:
-            loss_c += content_loss(stylized_feats[key], cF[key], norm=True)
+            loss_c += content_loss(stylized_feats[key], cF[key].detach(), norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
         sF = []
         b = si.shape[0]
@@ -850,27 +849,22 @@ def calc_losses(stylized: torch.Tensor,
         sF = [sF]
     for idx, s in enumerate(sF):
         if idx == 0:
-            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'])
+            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         else:
-            loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'], norm=True)
-        for idx, s in enumerate(sF):
+            loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
+        for key in style_layers[1:]:
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
+        if remd_loss:
             if idx == 0:
-                loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'])
-            else:
-                loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'])
-            for key in style_layers[1:]:
-                loss_s = loss_s + style_loss(stylized_feats[key], s[key])
-            if remd_loss:
-                if idx == 0:
-                    style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1']) + \
-                                 style_remd_loss(stylized_feats['r4_1'], s['r4_1'])
-                style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1']) + \
-                             style_remd_loss(stylized_feats['r4_1'], s['r4_1'])
+                style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
+                             style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
+            style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
+                         style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
     if remd_loss:
         if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'])+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'])
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
