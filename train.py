@@ -565,7 +565,7 @@ def revlap_train():
                                torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda'))])}),
                          strict=False,check_trace=False)
     disc_state = None
-    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta, enc_).to(device)
+    rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta).to(device)
     # (torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
     # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
     # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda'))),check_trace=False, strict=False)
@@ -591,8 +591,6 @@ def revlap_train():
     remd_loss = True if args.remd_loss == 1 else False
     scaler = GradScaler(init_scale=128)
     d_scaler = GradScaler(init_scale=128)
-    # for i in rev_.layers:
-    #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
 
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True),lr=args.lr)
 
@@ -619,7 +617,7 @@ def revlap_train():
 
             stylized, style = dec_(sF, cF)
 
-            rev_stylized = rev_(stylized, ci[-1], si[-1])
+            rev_stylized = rev_(stylized, ci[-1])
             si_cropped = random_crop(si[-1])
             stylized_crop = rev_stylized[:,:,:256, :256]
 
