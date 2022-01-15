@@ -496,15 +496,15 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-        adaconv_out = kernel_1(style, cF['r4_1'].detach())
+        adaconv_out = self.kernel_1(style, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
-        adaconv_out =  kernel_2(style, cF['r3_1'].detach())
+        adaconv_out = self.kernel_2(style, cF['r3_1'].detach())
         x = x + adaconv_out
         x = self.decoder_2(x)
-        adaconv_out = kernel_3(style, cF['r2_1'].detach())
+        adaconv_out = self.kernel_3(style, cF['r2_1'].detach())
         x = x + adaconv_out
         x = self.decoder_3(x)
-        adaconv_out = kernel_4(style, cF['r1_1'].detach())
+        adaconv_out = self.kernel_4(style, cF['r1_1'].detach())
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style
