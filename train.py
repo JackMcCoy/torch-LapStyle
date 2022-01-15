@@ -747,7 +747,7 @@ def adaconv_thumb_train():
                              int(randy/scale):int((randy+256)/scale)]
             cF_patch = enc_(ci_patch)
             patch_stylized, _ = dec_(None, cF_patch, style)
-            patch_feats = enc_(cF_patch)
+            patch_feats = enc_(patch_stylized)
 
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, patch_feats,
                                        calc_identity=args.identity_loss==1, disc_loss=False,
