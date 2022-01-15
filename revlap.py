@@ -1,6 +1,6 @@
 from adaconv import AdaConv
 from net import style_encoder_block, ResBlock
-from modules import RiemannNoise, PixelShuffleUp, StyleEncoderBlock, FusedConvNoiseBias
+from modules import ThumbInstanceNorm, RiemannNoise, PixelShuffleUp, StyleEncoderBlock, FusedConvNoiseBias
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -13,21 +13,6 @@ import revlib
 from weights import upblock_weights, up_adaconv_weights, downblock_weights, adaconv_weight, style_encoder_weights
 from shared_modules import AuxLoss, upblock_w_adaconvs, downblock, style_projection
 from function import adaptive_instance_normalization as adain
-
-'''
-def calc_crop_indices(layer_height,layer_num,total_height):
-    layer_res = 512 * 2 ** layer_height
-    up_f = 256 * 2 ** ((total_height - 1) - layer_height)  # 256
-    row_num = layer_res // 256  # 2
-    lr = math.floor(layer_num / row_num)  # 0 -> 0
-    # 1 -> 0    2->1    3 ->
-    lc = layer_num % row_num
-    ci1 = up_f * lc
-    ci2 = up_f * (lc + 1)
-    ri1 = up_f * lr
-    ri2 = up_f * (lr + 1)
-    return ci1, ci2, ri1, ri2
-'''
 
 def get_mask(inp, height, layer_num):
     N,C,h,w = inp.shape
@@ -67,6 +52,7 @@ class Sequential_Worker(nn.Module):
         self.max_res =max_res
         self.layer_height = layer_height
         self.num = num
+        self.tin = ThumbInstanceNorm(out_channels=64)
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.upblock_w = upblock_weights()
@@ -83,12 +69,12 @@ class Sequential_Worker(nn.Module):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, self.tin, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d,
                self.downblock_w, self.upblock_w, inp_downblock=inp_downblock)
         return out
 
-def patch_calc(x, ci, layer_height, working_res, max_res, num,
+def patch_calc(x, ci, tin, layer_height, working_res, max_res, num,
                lap_weight, s_d,
                downblock_w, upblock_w, inp_downblock=None):
     layer_res = 512*2**layer_height
@@ -103,7 +89,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
         out = torch.cat([x, lap], dim=1)
 
     out = downblock(out, downblock_w)
-    out = adain(out, inp_downblock)
+    out = tin(out, inp_downblock)
     out = upblock_w_adaconvs(out,None,upblock_w,None)
 
     return out

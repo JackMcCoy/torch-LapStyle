@@ -6,6 +6,40 @@ from function import normalized_feat
 from adaconv import AdaConv
 
 
+class ThumbInstanceNorm(nn.Module):
+    def __init__(self, out_channels=None, affine=True):
+        super(ThumbInstanceNorm, self).__init__()
+        self.thumb_mean = None
+        self.thumb_std = None
+        self.collection = True
+        if affine == True:
+            self.weight = nn.Parameter(torch.ones(size=(1, out_channels, 1, 1), requires_grad=True))
+            self.bias = nn.Parameter(torch.zeros(size=(1, out_channels, 1, 1), requires_grad=True))
+
+    def calc_mean_std(self, feat, eps=1e-5):
+        size = feat.size()
+        assert (len(size) == 4)
+        N, C = size[:2]
+        feat_var = feat.view(N, C, -1).var(dim=2) + eps
+        feat_std = feat_var.sqrt().view(N, C, 1, 1)
+        feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+        return feat_mean, feat_std
+
+    def forward(self, x, thumb=None):
+        if self.training:
+            thumb_mean, thumb_std = self.calc_mean_std(thumb)
+            x = (x - thumb_mean) / thumb_std * self.weight + self.bias
+            thumb = (thumb - thumb_mean) / thumb_std * self.weight + self.bias
+            return x, thumb
+        else:
+            if self.collection:
+                thumb_mean, thumb_std = self.calc_mean_std(x)
+                self.thumb_mean = thumb_mean
+                self.thumb_std = thumb_std
+            x = (x - self.thumb_mean) / self.thumb_std * self.weight + self.bias
+            return x
+
+
 class ResBlock(nn.Module):
     def __init__(self, dim, hw=0, noise=False):
         super(ResBlock, self).__init__()
