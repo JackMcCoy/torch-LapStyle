@@ -99,7 +99,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
         inp_downblock = downblock(input, downblock_w)
         return inp_downblock
     with torch.no_grad():
-        lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+        lap = F.conv2d(F.pad(ci, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
 
     out = downblock(out, downblock_w)
@@ -187,7 +187,7 @@ class LapRev(nn.Module):
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
 
         for i in range(ci.shape[1]):
-            a = self.cell(input[:,i,:,:,:], ci[:,i,:,:,:], inp_downblock=inp_downblock)
+            a = self.cell(input[:,i,:,:,:], ci[:,i,:,:,:]Z, inp_downblock=inp_downblock)
             tiles.append(a.view(N,1,C,256,256))
         out = torch.cat(tiles,1)
         out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
