@@ -79,20 +79,24 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, input):
+    def forward(self, x, ci, input_downblock=None):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, input, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d,
-               self.downblock_w, self.upblock_w)
+               self.downblock_w, self.upblock_w, input_downblock=input_downblock)
         return out
 
-def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
+def patch_calc(x, ci, layer_height, working_res, max_res, num,
                lap_weight, s_d,
-               downblock_w, upblock_w):
+               downblock_w, upblock_w, inp_downblock=None):
     layer_res = 512*2**layer_height
-    thumb_lap = F.conv2d(F.pad(F.interpolate(ci, 256, mode='nearest'), (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+    if input_feats is None:
+        thumb_lap = F.conv2d(F.pad(F.interpolate(ci, 256, mode='nearest'), (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
+        input = F.interpolate(x, 256, mode='nearest')
+        input = torch.cat([input, thumb_lap], dim=1)
+        inp_downblock = downblock(input, downblock_w)
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
@@ -101,17 +105,12 @@ def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
     with torch.no_grad():
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
-    input = F.interpolate(input, 256, mode='nearest')
-    input = torch.cat([input, thumb_lap], dim=1)
+
     out = downblock(out, downblock_w)
-    inp_downblock = downblock(input, downblock_w)
     out = adain(out, inp_downblock)
     out = upblock_w_adaconvs(out,None,upblock_w,None)
 
-    out = reinsert_work(x, out, layer_height, num)
-    if layer_res != max_res:
-        out = return_to_full_res(out, max_res)
-    return out
+    return out, inp_downblock
 
 def get_layer_rows(layer_res, working_res, num):
     row_num = layer_res // working_res
@@ -170,7 +169,7 @@ class LapRev(nn.Module):
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=1,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
+        self.layers = nn.ModuleList(*[cell.copy(layer_num) for height, layer_num in self.num_layers])
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor):
         """
@@ -180,13 +179,17 @@ class LapRev(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        N,C,h,w = input.shape
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
-        out = input.repeat(1,2,1,1)
-        out = self.layers(out, ci.data, input.data,layerwise_args_kwargs=None)
-
-        out = self.conv(out)
-        out = torch.cat([out[:,:,:,:256],out[:,:,:,256:]],3)
+        tiles=[]
+        input_downblock = None
+        for layer in self.layers:
+            a,input_downblock = layer(input, ci, input_downblock=input_downblock)
+            N,C,h,w = a.shape
+            tiles.append(a.view(N,C,1,h,w))
+        out = torch.cat(tiles,2)
+        side = 2
+        out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
+        out = out + input
         return out
