@@ -447,24 +447,23 @@ class ThumbAdaConv(nn.Module):
         )
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
-            FusedConvNoiseBias(512, 256, 32, 'none', noise=False),
+            FusedConvNoiseBias(512, 256, 32, 'none'),
             FusedConvNoiseBias(256, 256, 64, 'up', noise=False)
         )
         self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
         self.decoder_2 = nn.Sequential(
-            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
-            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
-            FusedConvNoiseBias(256, 128, 128, 'up', noise=False),
+            FusedConvNoiseBias(256, 256, 64, 'none'),
+            FusedConvNoiseBias(256, 256, 64, 'none'),
+            FusedConvNoiseBias(256, 128, 128, 'up'),
         )
         self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
         self.decoder_3 = nn.Sequential(
-            FusedConvNoiseBias(128, 128, 128, 'none', noise=False),
-            FusedConvNoiseBias(128, 64, 256, 'up', noise=False),
+            FusedConvNoiseBias(128, 128, 128, 'none'),
+            FusedConvNoiseBias(128, 64, 256, 'up'),
         )
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
-            FusedConvNoiseBias(64, 64, 256, 'none', noise=False),
-            FusedConvNoiseBias(64, 3, 256, 'none', noise=False),
+            FusedConvNoiseBias(64, 64, 256, 'none'),
             nn.Conv2d(3, 3, kernel_size=1)
         )
         '''
