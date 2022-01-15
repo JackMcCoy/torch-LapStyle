@@ -963,7 +963,7 @@ def calc_losses(stylized: torch.Tensor,
         loss_Gp_GAN = 0
 
     if patch_loss:
-        if not upscaled_patch:
+        if upscaled_patch is None:
             upscaled_patch_feats = stylized_feats['r4_1']
         else:
             upscaled_patch_feats = enc_(upscaled_patch)['r4_1']
