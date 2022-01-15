@@ -79,13 +79,13 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, input_downblock=None):
+    def forward(self, x, ci, inp_downblock=None):
         # x = input in color space
         # out = laplacian (residual) space
 
         out = patch_calc(x, ci, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d,
-               self.downblock_w, self.upblock_w, input_downblock=input_downblock)
+               self.downblock_w, self.upblock_w, inp_downblock=input_downblock)
         return out
 
 def patch_calc(x, ci, layer_height, working_res, max_res, num,
@@ -183,9 +183,9 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         tiles=[]
-        input_downblock = None
+        inp_downblock = None
         for layer in self.layers:
-            a,input_downblock = layer(input, ci, input_downblock=input_downblock)
+            a,inp_downblock = layer(input, ci, inp_downblock=inp_downblock)
             N,C,h,w = a.shape
             tiles.append(a.view(N,C,1,h,w))
         out = torch.cat(tiles,2)
