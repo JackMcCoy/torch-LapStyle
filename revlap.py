@@ -178,7 +178,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         tiles=[]
-        inp_downblock = self.cell(F.interpolate(input,256),F.interpolate(ci,256))
+        inp_downblock = self.cell(F.interpolate(input,256).data,F.interpolate(ci,256).detach())
         side = 2
         N, C, h, w = input.shape
         x = input.view(N, C, side, h // side, side, w // side)
@@ -187,7 +187,7 @@ class LapRev(nn.Module):
         ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
 
         for i in range(ci.shape[1]):
-            a = self.cell(x[:,i,:,:,:], ci[:,i,:,:,:], inp_downblock=inp_downblock)
+            a = self.cell(x[:,i,:,:,:].data, ci[:,i,:,:,:].detach(), inp_downblock=inp_downblock)
             tiles.append(a.view(N,1,C,256,256))
         out = torch.cat(tiles,1)
         out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
