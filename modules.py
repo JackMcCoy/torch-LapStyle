@@ -29,8 +29,7 @@ class ThumbInstanceNorm(nn.Module):
         if self.training:
             thumb_mean, thumb_std = self.calc_mean_std(thumb)
             x = (x - thumb_mean) / thumb_std * self.weight + self.bias
-            thumb = (thumb - thumb_mean) / thumb_std * self.weight + self.bias
-            return x, thumb
+            return x
         else:
             if self.collection:
                 thumb_mean, thumb_std = self.calc_mean_std(x)
