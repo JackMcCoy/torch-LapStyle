@@ -594,12 +594,10 @@ def revlap_train():
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
 
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True),
-                        base_optimizer=base_optimizer,lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True),lr=args.lr)
 
-    optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), base_optimizer=base_optimizer,lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, lr=args.disc_lr)
+    optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True),lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
