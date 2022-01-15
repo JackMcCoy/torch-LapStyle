@@ -412,7 +412,7 @@ class DecoderAdaConv(nn.Module):
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
-        style = self.style_encoding(sF['r4_1'].detach())
+        style = self.style_encoding(sF['r4_1'])
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
