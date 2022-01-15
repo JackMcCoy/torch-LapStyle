@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import random
 import numpy as np
+from losses import calc_mean_std
 
 
 @torch.no_grad()
@@ -92,9 +93,7 @@ def adaptive_instance_normalization(content_feat, style_feat):
     size = content_feat.size()
     style_mean, style_std = calc_mean_std(style_feat)
     content_mean, content_std = calc_mean_std(content_feat)
-
-    normalized_feat = (content_feat - content_mean.expand(
-        size)) / content_std.expand(size)
+    normalized_feat = (content_feat - content_mean) / content_std.expand(size)
     return normalized_feat * style_std.expand(size) + style_mean.expand(size)
 
 

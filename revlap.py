@@ -12,6 +12,7 @@ from revlib.utils import module_list_to_momentum_net
 import revlib
 from weights import upblock_weights, up_adaconv_weights, downblock_weights, adaconv_weight, style_encoder_weights
 from shared_modules import AuxLoss, upblock_w_adaconvs, downblock, style_projection
+from function import adaptive_instance_normalization as adain
 
 '''
 def calc_crop_indices(layer_height,layer_num,total_height):
@@ -82,11 +83,11 @@ class Sequential_Worker(nn.Module):
         out.num = layer_num
         return out
 
-    def forward(self, x, ci, style):
+    def forward(self, x, ci, input):
         # x = input in color space
         # out = laplacian (residual) space
 
-        out = patch_calc(x, ci, style, self.enc_, self.layer_height, self.working_res, self.max_res, self.num,
+        out = patch_calc(x, ci, input, self.enc_, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d, self.style_emb_w,
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
@@ -95,11 +96,6 @@ def patch_calc(x, ci, style, enc_, layer_height, working_res, max_res, num,
                lap_weight, s_d, style_emb_w,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
-    row, col, row_num = get_layer_rows(layer_res, working_res, num)
-    thumb = crop_style_thumb(style, layer_res, row, col, row_num, working_res)
-    with torch.no_grad():
-        thumb_enc = enc_(thumb)['r4_1']
-    thumb_enc.requires_grad=True
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
@@ -108,9 +104,10 @@ def patch_calc(x, ci, style, enc_, layer_height, working_res, max_res, num,
     with torch.no_grad():
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
-
-    style = style_projection(thumb_enc, style_emb_w, s_d)
+    input = F.interpolate(input, 256, mode='nearest')
     out = downblock(out, downblock_w)
+    inp_downblock = downblock(input, downblock_w)
+    out = adain(out, inp_downblock)
     out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
 
     out = reinsert_work(x, out, layer_height, num)
@@ -189,7 +186,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out, ci.data, style.data,layerwise_args_kwargs=None)
+        out = self.layers(out, ci.data, input,layerwise_args_kwargs=None)
 
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
         return out
