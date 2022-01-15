@@ -170,7 +170,7 @@ class LapRev(nn.Module):
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=2,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
+        self.layers = revlib.ReversibleSequential(*[c for height, layer_num in self.num_layers for c in (cell.copy(layer_num,)*2)],split_dim=2,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor):
         """
