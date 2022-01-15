@@ -190,6 +190,6 @@ class LapRev(nn.Module):
             tiles.append(a.view(N,1,C,h,w))
         out = torch.cat(tiles,1)
         side = 2
-        out = out.reshape((N, side, side, C, 256, 256)).permute(0, 2, 4, 1, 3, 5).reshape(N, C, 512, 512)
+        out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
         out = out + input
         return out
