@@ -410,6 +410,77 @@ class DecoderAdaConv(nn.Module):
             nn.init.kaiming_normal_(m.weight.data, a = .01)
             nn.init.constant_(m.bias.data, 0)
 
+    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style=None):
+        if style is None:
+            b, n, h, w = sF['r4_1'].shape
+            style = self.style_encoding(sF['r4_1'])
+            style = style.flatten(1)
+            style = self.style_projection(style)
+            style = style.reshape(b, self.s_d, 4, 4)
+        adaconv_out = self.kernel_1(style, cF['r4_1'].detach())
+        x = self.decoder_1(adaconv_out)
+        adaconv_out =  self.kernel_2(style, cF['r3_1'].detach())
+        x = x + adaconv_out
+        x = self.decoder_2(x)
+        adaconv_out = self.kernel_3(style, cF['r2_1'].detach())
+        x = x + adaconv_out
+        x = self.decoder_3(x)
+        adaconv_out = self.kernel_4(style, cF['r1_1'].detach())
+        x = x + adaconv_out
+        x = self.decoder_4(x)
+        return x, style
+
+
+class ThumbAdaConv(nn.Module):
+    def __init__(self, batch_size = 8):
+        super(ThumbAdaConv, self).__init__()
+
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+        )
+        self.s_d = 512
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, self.s_d*16),
+            nn.LeakyReLU()
+        )
+        self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
+        self.decoder_1 = nn.Sequential(
+            FusedConvNoiseBias(512, 256, 32, 'none', noise=False),
+            FusedConvNoiseBias(256, 256, 64, 'up', noise=False)
+        )
+        self.kernel_2 = AdaConv(256, 4, batch_size, s_d = self.s_d)
+        self.decoder_2 = nn.Sequential(
+            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
+            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
+            FusedConvNoiseBias(256, 128, 128, 'up', noise=False),
+        )
+        self.kernel_3 = AdaConv(128, 2, batch_size, s_d = self.s_d)
+        self.decoder_3 = nn.Sequential(
+            FusedConvNoiseBias(128, 128, 128, 'none', noise=False),
+            FusedConvNoiseBias(128, 64, 256, 'up', noise=False),
+        )
+        self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
+        self.decoder_4 = nn.Sequential(
+            FusedConvNoiseBias(64, 64, 256, 'none', noise=False),
+            FusedConvNoiseBias(64, 3, 256, 'none', noise=False),
+            nn.Conv2d(3, 3, kernel_size=1)
+        )
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            if not m.bias is None:
+                nn.init.constant_(m.bias.data, 0)
+            m.requires_grad = True
+        elif isinstance(m, nn.Linear):
+            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            nn.init.constant_(m.bias.data, 0)
+
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
         b, n, h, w = sF['r4_1'].shape
         style = self.style_encoding(sF['r4_1'])
@@ -428,6 +499,7 @@ class DecoderAdaConv(nn.Module):
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style
+
 
 class DecoderVQGAN(nn.Module):
     def __init__(self):
@@ -813,6 +885,7 @@ def calc_losses(stylized: torch.Tensor,
                 disc_loss: bool=True,
                 patch_disc: bool=False,
                 content_all_layers: bool=False,
+                upscaled_patch = None,
                 remd_loss: bool=True,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
@@ -890,7 +963,11 @@ def calc_losses(stylized: torch.Tensor,
         loss_Gp_GAN = 0
 
     if patch_loss:
-        patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'], norm=True)
+        if not upscaled_patch:
+            upscaled_patch_feats = stylized_feats['r4_1']
+        else:
+            upscaled_patch_feats = enc_(upscaled_patch)['r4_1']
+        patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
 

@@ -716,6 +716,97 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
+def adaconv_thumb_train():
+    with autocast(enabled=ac_enabled):
+        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
+        dec_ = net.DecoderAdaConv(batch_size=args.batch_size).to(device)
+
+        init_weights(dec_)
+        dec_.train()
+        enc_.to(device)
+        remd_loss = True if args.remd_loss == 1 else False
+        scaler = GradScaler(init_scale=128)
+        dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    for i in range(args.max_iter):
+        adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
+        with autocast(enabled=ac_enabled):
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
+
+            stylized, style = dec_(sF, cF)
+
+            randx = np.random.randint(0,ci[-1].shape-256)
+            randy = np.random.randint(0, ci[-1].shape - 256)
+            ci_patch = ci[-1][:,:,randx:randx+256,randy:randy+256]
+            scale = ci[-1].shape[-1]//ci[0].shape[-1]
+            upscaled_patch = stylized[:,:,int(randx/scale):int((randx+256)/scale),
+                             int(randy/scale):int((randy+256)/scale)]
+            cF_patch = enc_(ci_patch)
+            patch_stylized, _ = dec_(None, cF_patch, style)
+
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                       calc_identity=False, disc_loss=False,
+                                       mdog_losses=args.mdog_loss, content_all_layers=False,
+                                       remd_loss=remd_loss,
+                                       patch_loss=True, upscaled_patch = upscaled_patch, sF=sF, split_style=False)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
+
+            loss.backward()
+            dec_optimizer.step()
+            dec_optimizer.zero_grad()
+        if (i + 1) % 1 == 0:
+
+            loss_dict = {}
+            for l, s in zip(
+                    [loss, loss_c, loss_s, style_remd, content_relt, loss_Gp_GAN, loss_D, patch_loss,
+                     mdog],
+                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                     'Revision Disc. Loss', 'Discriminator Loss', 'Patch Loss', 'MXDOG Loss']):
+                if type(l) == torch.Tensor:
+                    loss_dict[s] = l.item()
+            if(i +1) % 10 ==0:
+                loss_dict['example'] = wandb.Image(rev_stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+            print('\n')
+            print(str(i)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+
+            wandb.log(loss_dict, step=i)
+
+        with torch.no_grad():
+            if ((i + 1) % 50 == 0 and rev_start) or ((i+1)%250==0):
+
+                stylized = stylized.float().to('cpu')
+                patch_stylized = patch_stylized.float().to('cpu')
+                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
+                si[0] = F.interpolate(si[-1], size=256, mode='bicubic')
+                ci[0] = F.interpolate(ci[-1], size=256, mode='bicubic')
+                style_source_grid = make_grid(si[-1], nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
+                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
+                save_image(draft_img_grid.detach(),
+                           args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
+                save_image(content_img_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_ci' + str(
+                               i + 1) + '.jpg')
+                save_image(style_source_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_si' + str(
+                               i + 1) + '.jpg')
+
+            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+                state_dict = dec_.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
+
+                state_dict = dec_optimizer.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'dec_optimizer.pth.tar')
+
+
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)
