@@ -85,7 +85,7 @@ class Sequential_Worker(nn.Module):
 
         out = patch_calc(x, ci, self.layer_height, self.working_res, self.max_res, self.num,
                self.lap_weight, self.s_d,
-               self.downblock_w, self.upblock_w, inp_downblock=input_downblock)
+               self.downblock_w, self.upblock_w, inp_downblock=inp_downblock)
         return out
 
 def patch_calc(x, ci, layer_height, working_res, max_res, num,
