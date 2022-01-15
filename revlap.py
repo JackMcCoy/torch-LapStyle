@@ -97,6 +97,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
         input = F.interpolate(x, 256, mode='nearest')
         input = torch.cat([input, thumb_lap], dim=1)
         inp_downblock = downblock(input, downblock_w)
+        return inp_downblock
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
@@ -110,7 +111,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
     out = adain(out, inp_downblock)
     out = upblock_w_adaconvs(out,None,upblock_w,None)
 
-    return out, inp_downblock
+    return out
 
 def get_layer_rows(layer_res, working_res, num):
     row_num = layer_res // working_res
@@ -168,8 +169,7 @@ class LapRev(nn.Module):
         coupling_forward = [partial(cropped_coupling_forward, h, i) for h, i in self.num_layers]
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
-        cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = nn.ModuleList([cell.copy(layer_num) for height, layer_num in self.num_layers])
+        self.cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor):
         """
@@ -183,13 +183,18 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         tiles=[]
-        inp_downblock = None
-        for layer in self.layers:
-            a,inp_downblock = layer(input, ci, inp_downblock=inp_downblock)
+        inp_downblock = self.cell(F.interpolate(input,256),F.interpolate(ci,256))
+        side = 2
+        input = input.view(N, C, side, h // side, side, w // side)
+        input = torch.permute(input, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+        ci = ci.view(N, C, side, h // side, side, w // side)
+        ci = torch.permute(ci, (0, 2, 4, 1, 3, 5)).reshape(N, -1, C, h // side, w // side)
+
+        for i in range(ci.shape[1]):
+            a = self.cell(input, ci, inp_downblock=inp_downblock)
             N,C,h,w = a.shape
             tiles.append(a.view(N,1,C,h,w))
         out = torch.cat(tiles,1)
-        side = 2
         out = out.reshape((N, side, side, C, 256, 256)).permute(0, 3, 1, 4, 2, 5).reshape(N, C, 512, 512)
         out = out + input
         return out
