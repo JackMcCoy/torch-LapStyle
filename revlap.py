@@ -93,6 +93,7 @@ def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
                lap_weight, s_d,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
+    thumb_lap = F.conv2d(F.pad(F.interpolate(ci, 256, mode='nearest'), (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
     if layer_res != max_res:
         x = resize_to_res(x, layer_res, working_res)
         ci = resize_to_res(ci,layer_res, working_res)
@@ -102,6 +103,7 @@ def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
         lap = F.conv2d(F.pad(lap, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         out = torch.cat([out, lap], dim=1)
     input = F.interpolate(input, 256, mode='nearest')
+    input = torch.cat([input, thumb_lap], dim=1)
     out = downblock(out, downblock_w)
     inp_downblock = downblock(input, downblock_w)
     out = adain(out, inp_downblock)
