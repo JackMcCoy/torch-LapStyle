@@ -966,7 +966,7 @@ def calc_losses(stylized: torch.Tensor,
         if upscaled_patch is None:
             upscaled_patch_feats = stylized_feats['r4_1']
         else:
-            upscaled_patch_feats = enc_(upscaled_patch)['r4_1']
+            upscaled_patch_feats = encoder(upscaled_patch)['r4_1']
         patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
