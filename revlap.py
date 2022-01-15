@@ -189,7 +189,7 @@ class LapRev(nn.Module):
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
         out = input.repeat(2,1,1,1)
-        out = self.layers(out, ci.data, input.data,layerwise_args_kwargs=None)
+        out = self.layers(out, ci.data, style.data,layerwise_args_kwargs=None)
 
         out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
         return out
