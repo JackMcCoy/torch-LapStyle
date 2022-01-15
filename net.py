@@ -497,6 +497,7 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
             style_w_noise = self.style_noise_a(style)
         else:
+            style = None
             style_w_noise = self.style_noise_b(style_enc)
         adaconv_out = self.kernel_1(style_w_noise, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
