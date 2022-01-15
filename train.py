@@ -24,7 +24,7 @@ from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
-import sam
+
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -594,14 +594,12 @@ def revlap_train():
     # for i in rev_.layers:
     #    optimizers.append(torch.optim.AdamW(list(i.parameters()), lr=args.lr))
 
-    base_optimizer = torch.optim.AdamW
-    base_opt_D = torch.optim.AdamW
-    dec_optimizer = sam.SAM(dec_.parameters(recurse=True),
-                        base_optimizer=base_optimizer, rho=2., adaptive=True, lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True),
+                        base_optimizer=base_optimizer,lr=args.lr)
 
-    optimizer = sam.SAM(rev_.parameters(recurse=True), base_optimizer=base_optimizer, rho=2., adaptive=True,lr=args.lr)
-    opt_D = sam.SAM(disc_.parameters(recurse=True),
-                        base_optimizer=base_opt_D, rho=2., adaptive=True,lr=args.disc_lr)
+    optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), base_optimizer=base_optimizer,lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True),
+                        base_optimizer=base_opt_D, lr=args.disc_lr)
     if args.load_rev == 1:
         disc_.load_state_dict(torch.load(new_path_func('revisor_')), strict=False)
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
@@ -617,54 +615,51 @@ def revlap_train():
             si = next(style_iter).to(device)
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-        for idx in range(2):
-            with autocast(enabled=ac_enabled):
-                cF = enc_(ci[0])
-                sF = enc_(si[0])
+        with autocast(enabled=ac_enabled):
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
 
-                stylized, style = dec_(sF, cF)
+            stylized, style = dec_(sF, cF)
 
-                rev_stylized = rev_(stylized, ci[-1], si[-1])
-                si_cropped = random_crop(si[-1])
-                stylized_crop = rev_stylized[:,:,:256, :256]
+            rev_stylized = rev_(stylized, ci[-1], si[-1])
+            si_cropped = random_crop(si[-1])
+            stylized_crop = rev_stylized[:,:,:256, :256]
 
-            with autocast(enabled=ac_enabled):
+        with autocast(enabled=ac_enabled):
 
-                loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), None,disc_)
+            loss_D = calc_GAN_loss(si_cropped.detach(), stylized_crop.clone().detach(), None,disc_)
 
-            with autocast(enabled=ac_enabled):
+        with autocast(enabled=ac_enabled):
 
-                losses_small = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                            calc_identity=False, disc_loss=False,
-                                            mdog_losses=args.mdog_loss, content_all_layers=False,
-                                            remd_loss=remd_loss,
-                                            patch_loss=False, sF=sF, split_style=False)
-                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
-                loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
+            losses_small = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                        calc_identity=False, disc_loss=False,
+                                        mdog_losses=args.mdog_loss, content_all_layers=False,
+                                        remd_loss=remd_loss,
+                                        patch_loss=False, sF=sF, split_style=False)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
+            loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
 
-                cF2 = enc_(ci[-1])
-                patch_feats = enc_(F.interpolate(stylized,size=512,mode='nearest'))
-                sF2 = enc_(si[-1])
-                losses = calc_losses(rev_stylized, ci[-1], si[-1], cF2, enc_, dec_, patch_feats, disc_,
-                                     calc_identity=False, disc_loss=True,
-                                     mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
-                                     patch_loss=True, sF=sF2, split_style=args.split_style)
-                loss_c2, loss_s2, content_relt2, style_remd2, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-                loss = loss + loss_c2 * args.content_weight + args.style_weight * loss_s2 + content_relt2 * args.content_relt + style_remd2 * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
+            cF2 = enc_(ci[-1])
+            patch_feats = enc_(F.interpolate(stylized,size=512,mode='nearest'))
+            sF2 = enc_(si[-1])
+            losses = calc_losses(rev_stylized, ci[-1], si[-1], cF2, enc_, dec_, patch_feats, disc_,
+                                 calc_identity=False, disc_loss=True,
+                                 mdog_losses=args.mdog_loss, content_all_layers=False, remd_loss=remd_loss,
+                                 patch_loss=True, sF=sF2, split_style=args.split_style)
+            loss_c2, loss_s2, content_relt2, style_remd2, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
+            loss = loss + loss_c2 * args.content_weight + args.style_weight * loss_s2 + content_relt2 * args.content_relt + style_remd2 * args.style_remd + loss_Gp_GAN * args.gan_loss + patch_loss * args.patch_loss + mdog
 
-            loss.backward()
-            loss_D.backward()
-            for mod in [dec_,disc_,rev_]:
-                _clip_gradient(mod)
-            if idx == 0:
-                opt_D.first_step(zero_grad=True)
-                dec_optimizer.first_step(zero_grad=True)
-                optimizer.first_step(zero_grad=True)
-            else:
-                opt_D.second_step(zero_grad=True)
-                dec_optimizer.second_step(zero_grad=True)
-                optimizer.second_step(zero_grad=True)
-
+        loss.backward()
+        loss_D.backward()
+        for mod in [dec_,disc_,rev_]:
+            _clip_gradient(mod)
+        if idx == 0:
+            opt_D.step()
+            dec_optimizer.step()
+            optimizer.step()
+            opt_D.zero_grad()
+            dec_optimizer.zero_grad()
+            optimizer.zero_grad
         if (i + 1) % 1 == 0:
 
             loss_dict = {}
