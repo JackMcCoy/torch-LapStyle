@@ -161,6 +161,7 @@ class LapRev(nn.Module):
         self.max_res = max_res
         self.momentumnet_beta = momentumnet_beta
         self.working_res = working_res
+        self.conv = nn.Conv2d(6,3,kernel_size=1)
         height = max_res//working_res
 
 
@@ -169,7 +170,7 @@ class LapRev(nn.Module):
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=0,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
+        self.layers = revlib.ReversibleSequential(*[cell.copy(layer_num) for height, layer_num in self.num_layers],split_dim=1,coupling_forward=coupling_forward,coupling_inverse=coupling_inverse, memory_mode=revlib.core.MemoryModes.autograd_function)
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor):
         """
@@ -183,8 +184,8 @@ class LapRev(nn.Module):
         #input = F.interpolate(input, self.max_res, mode='nearest').repeat(1,2,1,1).data.to(torch.device('cuda:0'))
         #input.requires_grad = True
         input = F.interpolate(input, self.max_res, mode='nearest')
-        out = input.repeat(2,1,1,1)
+        out = input.repeat(1,2,1,1)
         out = self.layers(out, ci.data, input.data,layerwise_args_kwargs=None)
 
-        out = torch.cat([out[:N,:,:,:256],out[N:,:,:,256:]],3)
+        out = self.conv(out)
         return out
