@@ -464,7 +464,7 @@ class ThumbAdaConv(nn.Module):
         self.kernel_4 = AdaConv(64, 1, batch_size, s_d = self.s_d)
         self.decoder_4 = nn.Sequential(
             FusedConvNoiseBias(64, 64, 256, 'none'),
-            nn.Conv2d(3, 3, kernel_size=1)
+            nn.Conv2d(64, 3, kernel_size=1)
         )
         '''
         self.kernel_5 = AdaConv(512, 8, batch_size, s_d=self.s_d)
