@@ -743,8 +743,8 @@ def adaconv_thumb_train():
             randy = np.random.randint(0, ci[-1].shape[-1] - 256)
             ci_patch = ci[-1][:,:,randx:randx+256,randy:randy+256]
             scale = ci[-1].shape[-1]//ci[0].shape[-1]
-            upscaled_patch = stylized[:,:,int(randx/scale):int((randx+256)/scale),
-                             int(randy/scale):int((randy+256)/scale)]
+            upscaled_patch = F.interpolate(stylized[:,:,int(randx/scale):int((randx+256)/scale),
+                             int(randy/scale):int((randy+256)/scale)], 256)
             cF_patch = enc_(ci_patch)
             patch_stylized, _ = dec_(None, cF_patch, style)
             patch_feats = enc_(upscaled_patch)
