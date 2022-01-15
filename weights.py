@@ -61,8 +61,6 @@ def upblock_weights():
 def up_adaconv_weights(s_d):
     params=[]
     params.append(adaconv_weight(s_d,64, 1))
-    params.append(adaconv_weight(s_d, 64, 1))
-    params.append(adaconv_weight(s_d, 128, 2))
     return nn.ModuleList(params)
 
 def style_encoder_block(ch):
