@@ -92,7 +92,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
                lap_weight, s_d,
                downblock_w, upblock_w, inp_downblock=None):
     layer_res = 512*2**layer_height
-    if input_feats is None:
+    if inp_downblock is None:
         thumb_lap = F.conv2d(F.pad(F.interpolate(ci, 256, mode='nearest'), (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
         input = F.interpolate(x, 256, mode='nearest')
         input = torch.cat([input, thumb_lap], dim=1)
