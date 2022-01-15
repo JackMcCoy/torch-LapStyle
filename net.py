@@ -467,11 +467,12 @@ class ThumbAdaConv(nn.Module):
             FusedConvNoiseBias(64, 3, 256, 'none', noise=False),
             nn.Conv2d(3, 3, kernel_size=1)
         )
+        '''
         self.kernel_5 = AdaConv(512, 8, batch_size, s_d=self.s_d)
         self.kernel_6 = AdaConv(256, 4, batch_size, s_d=self.s_d)
         self.kernel_7 = AdaConv(128, 2, batch_size, s_d=self.s_d)
         self.kernel_8 = AdaConv(64, 1, batch_size, s_d=self.s_d)
-
+        '''
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -493,15 +494,7 @@ class ThumbAdaConv(nn.Module):
             style = style.flatten(1)
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
-            kernel_1 = self.kernel_1
-            kernel_2 = self.kernel_2
-            kernel_3 = self.kernel_3
-            kernel_4 = self.kernel_4
         else:
-            kernel_1 = self.kernel_5
-            kernel_2 = self.kernel_6
-            kernel_3 = self.kernel_7
-            kernel_4 = self.kernel_8
             style = style_enc
         adaconv_out = kernel_1(style, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
