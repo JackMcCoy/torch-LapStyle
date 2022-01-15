@@ -651,13 +651,13 @@ def revlap_train():
         loss_D.backward()
         for mod in [dec_,disc_,rev_]:
             _clip_gradient(mod)
-        if idx == 0:
-            opt_D.step()
-            dec_optimizer.step()
-            optimizer.step()
-            opt_D.zero_grad()
-            dec_optimizer.zero_grad()
-            optimizer.zero_grad
+
+        opt_D.step()
+        dec_optimizer.step()
+        optimizer.step()
+        opt_D.zero_grad()
+        dec_optimizer.zero_grad()
+        optimizer.zero_grad
         if (i + 1) % 1 == 0:
 
             loss_dict = {}
