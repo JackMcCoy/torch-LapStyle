@@ -849,5 +849,7 @@ elif args.train_model == 'revision':
     revision_train()
 elif args.train_model == 'revlap':
     revlap_train()
+elif args.train_model == 'adaconv_thumb':
+    adaconv_thumb_train()
 elif args.train_model == 'vqvae_pretrain':
     vq_train()
