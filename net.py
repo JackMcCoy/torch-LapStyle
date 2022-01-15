@@ -410,13 +410,13 @@ class DecoderAdaConv(nn.Module):
             nn.init.kaiming_normal_(m.weight.data, a = .01)
             nn.init.constant_(m.bias.data, 0)
 
-    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style=None):
-        if style is None:
-            b, n, h, w = sF['r4_1'].shape
-            style = self.style_encoding(sF['r4_1'])
-            style = style.flatten(1)
-            style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
+    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
+
+        b, n, h, w = sF['r4_1'].shape
+        style = self.style_encoding(sF['r4_1'])
+        style = style.flatten(1)
+        style = self.style_projection(style)
+        style = style.reshape(b, self.s_d, 4, 4)
         adaconv_out = self.kernel_1(style, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
         adaconv_out =  self.kernel_2(style, cF['r3_1'].detach())
@@ -467,6 +467,11 @@ class ThumbAdaConv(nn.Module):
             FusedConvNoiseBias(64, 3, 256, 'none', noise=False),
             nn.Conv2d(3, 3, kernel_size=1)
         )
+        self.kernel_5 = AdaConv(512, 8, batch_size, s_d=self.s_d)
+        self.kernel_6 = AdaConv(256, 4, batch_size, s_d=self.s_d)
+        self.kernel_7 = AdaConv(128, 2, batch_size, s_d=self.s_d)
+        self.kernel_8 = AdaConv(64, 1, batch_size, s_d=self.s_d)
+
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -481,21 +486,31 @@ class ThumbAdaConv(nn.Module):
             nn.init.kaiming_normal_(m.weight.data, a = .01)
             nn.init.constant_(m.bias.data, 0)
 
-    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor]):
+    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
         b, n, h, w = sF['r4_1'].shape
-        style = self.style_encoding(sF['r4_1'])
-        style = style.flatten(1)
-        style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
-        adaconv_out = self.kernel_1(style, cF['r4_1'].detach())
+        if style_enc is None:
+            style = self.style_encoding(sF['r4_1'])
+            style = style.flatten(1)
+            style = self.style_projection(style)
+            style = style.reshape(b, self.s_d, 4, 4)
+            kernel_1 = self.kernel_1
+            kernel_2 = self.kernel_2
+            kernel_3 = self.kernel_3
+            kernel_4 = self.kernel_4
+        else:
+            kernel_1 = self.kernel_5
+            kernel_2 = self.kernel_6
+            kernel_3 = self.kernel_7
+            kernel_4 = self.kernel_8
+        adaconv_out = kernel_1(style, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
-        adaconv_out =  self.kernel_2(style, cF['r3_1'].detach())
+        adaconv_out =  kernel_2(style, cF['r3_1'].detach())
         x = x + adaconv_out
         x = self.decoder_2(x)
-        adaconv_out = self.kernel_3(style, cF['r2_1'].detach())
+        adaconv_out = kernel_3(style, cF['r2_1'].detach())
         x = x + adaconv_out
         x = self.decoder_3(x)
-        adaconv_out = self.kernel_4(style, cF['r1_1'].detach())
+        adaconv_out = kernel_4(style, cF['r1_1'].detach())
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style

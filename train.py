@@ -719,7 +719,7 @@ def revlap_train():
 def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.DecoderAdaConv(batch_size=args.batch_size).to(device)
+        dec_ = net.PatchAdaConv(batch_size=args.batch_size).to(device)
 
         init_weights(dec_)
         dec_.train()
