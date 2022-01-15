@@ -169,7 +169,7 @@ class LapRev(nn.Module):
         coupling_inverse = [partial(cropped_coupling_inverse, h, i) for h, i in self.num_layers]
 
         cell = Sequential_Worker(1., 0, 0, self.max_res,256, batch_size, s_d)
-        self.layers = nn.ModuleList(*[cell.copy(layer_num) for height, layer_num in self.num_layers])
+        self.layers = nn.ModuleList([cell.copy(layer_num) for height, layer_num in self.num_layers])
 
     def forward(self, input:torch.Tensor, ci:torch.Tensor):
         """
