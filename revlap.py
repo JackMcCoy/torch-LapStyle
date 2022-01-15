@@ -100,7 +100,7 @@ def patch_calc(x, ci, layer_height, working_res, max_res, num,
         return inp_downblock
     with torch.no_grad():
         lap = F.conv2d(F.pad(ci, (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
-        out = torch.cat([out, lap], dim=1)
+        out = torch.cat([x, lap], dim=1)
 
     out = downblock(out, downblock_w)
     out = adain(out, inp_downblock)
