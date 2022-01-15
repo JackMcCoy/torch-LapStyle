@@ -72,7 +72,6 @@ class Sequential_Worker(nn.Module):
         self.upblock_w = upblock_weights()
         self.adaconv_w = up_adaconv_weights(self.s_d)
         self.downblock_w = downblock_weights()
-        self.style_emb_w = style_encoder_weights(512, self.s_d, 16)
 
         # row_num == col_num, as these are squares
 
@@ -86,12 +85,12 @@ class Sequential_Worker(nn.Module):
         # out = laplacian (residual) space
 
         out = patch_calc(x, ci, input, self.layer_height, self.working_res, self.max_res, self.num,
-               self.lap_weight, self.s_d, self.style_emb_w,
+               self.lap_weight, self.s_d,
                self.downblock_w, self.upblock_w, self.adaconv_w)
         return out
 
 def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
-               lap_weight, s_d, style_emb_w,
+               lap_weight, s_d,
                downblock_w, upblock_w, adaconv_w):
     layer_res = 512*2**layer_height
     if layer_res != max_res:
