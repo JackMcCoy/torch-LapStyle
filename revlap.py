@@ -70,7 +70,6 @@ class Sequential_Worker(nn.Module):
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(torch.device('cuda'))
         self.upblock_w = upblock_weights()
-        self.adaconv_w = up_adaconv_weights(self.s_d)
         self.downblock_w = downblock_weights()
 
         # row_num == col_num, as these are squares
@@ -91,7 +90,7 @@ class Sequential_Worker(nn.Module):
 
 def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
                lap_weight, s_d,
-               downblock_w, upblock_w, adaconv_w):
+               downblock_w, upblock_w):
     layer_res = 512*2**layer_height
     thumb_lap = F.conv2d(F.pad(F.interpolate(ci, 256, mode='nearest'), (1,1,1,1), mode='reflect'), weight = lap_weight, groups = 3)
     if layer_res != max_res:
@@ -107,7 +106,7 @@ def patch_calc(x, ci, input, layer_height, working_res, max_res, num,
     out = downblock(out, downblock_w)
     inp_downblock = downblock(input, downblock_w)
     out = adain(out, inp_downblock)
-    out = upblock_w_adaconvs(out,style,upblock_w,adaconv_w)
+    out = upblock_w_adaconvs(out,None,upblock_w,None)
 
     out = reinsert_work(x, out, layer_height, num)
     if layer_res != max_res:
