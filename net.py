@@ -445,6 +445,8 @@ class ThumbAdaConv(nn.Module):
             nn.Linear(8192, self.s_d*16),
             nn.LeakyReLU()
         )
+        self.style_noise_a = RiemannNoise(4)
+        self.style_noise_b = RiemannNoise(4)
         self.kernel_1 = AdaConv(512, 8, batch_size, s_d = self.s_d)
         self.decoder_1 = nn.Sequential(
             FusedConvNoiseBias(512, 256, 32, 'none'),
@@ -493,17 +495,18 @@ class ThumbAdaConv(nn.Module):
             style = style.flatten(1)
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
+            style_w_noise = self.style_noise_a(style)
         else:
-            style = style_enc
-        adaconv_out = self.kernel_1(style, cF['r4_1'].detach())
+            style_w_noise = self.style_noise_b(style_enc)
+        adaconv_out = self.kernel_1(style_w_noise, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
-        adaconv_out = self.kernel_2(style, cF['r3_1'].detach())
+        adaconv_out = self.kernel_2(style_w_noise, cF['r3_1'].detach())
         x = x + adaconv_out
         x = self.decoder_2(x)
-        adaconv_out = self.kernel_3(style, cF['r2_1'].detach())
+        adaconv_out = self.kernel_3(style_w_noise, cF['r2_1'].detach())
         x = x + adaconv_out
         x = self.decoder_3(x)
-        adaconv_out = self.kernel_4(style, cF['r1_1'].detach())
+        adaconv_out = self.kernel_4(style_w_noise, cF['r1_1'].detach())
         x = x + adaconv_out
         x = self.decoder_4(x)
         return x, style
