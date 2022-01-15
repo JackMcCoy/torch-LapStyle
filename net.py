@@ -502,6 +502,7 @@ class ThumbAdaConv(nn.Module):
             kernel_2 = self.kernel_6
             kernel_3 = self.kernel_7
             kernel_4 = self.kernel_8
+            style = style_enc
         adaconv_out = kernel_1(style, cF['r4_1'].detach())
         x = self.decoder_1(adaconv_out)
         adaconv_out =  kernel_2(style, cF['r3_1'].detach())
