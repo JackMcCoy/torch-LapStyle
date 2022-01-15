@@ -619,7 +619,7 @@ def revlap_train():
 
             rev_stylized = rev_(stylized, ci[-1])
             si_cropped = random_crop(si[-1])
-            stylized_crop = rev_stylized[:,:,128:384, :256]
+            stylized_crop = random_crop(rev_stylized)
 
         with autocast(enabled=ac_enabled):
 
