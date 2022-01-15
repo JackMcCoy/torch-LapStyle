@@ -24,7 +24,7 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 device = torch.device('cuda')
 
 unfold = torch.nn.Unfold(256,stride=256)
-crop128 = RandomCrop(128)
+random_crop = RandomCrop(256)
 
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
@@ -889,7 +889,7 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized)
+        fake_loss = disc_(random_crop(stylized))
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
