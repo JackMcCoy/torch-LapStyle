@@ -626,7 +626,7 @@ def revlap_train():
 
                 rev_stylized = rev_(stylized, ci[-1], si[-1])
                 si_cropped = random_crop(si[-1])
-                stylized_crop = rev_stylized[:,:,-384:-128, -256:]
+                stylized_crop = rev_stylized[:,:,-256:, -256:]
 
             with autocast(enabled=ac_enabled):
 
@@ -641,7 +641,7 @@ def revlap_train():
                                             patch_loss=False, sF=sF, split_style=False)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses_small
                 loss = (loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog)*args.thumbnail_loss
-
+                ci[-1] = torch.roll(ci[-1],(0,0,128,128))
                 for k in range(2):
                     for j in range(2):
                         if args.split_style and args.crop_size == 512:
