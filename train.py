@@ -725,9 +725,6 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
-        del(si,ci,sF,cF,stylized,rev_stylized,si_cropped,ci_patch,stylized_crop)
-
-
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
     init_weights(dec_)
