@@ -498,7 +498,7 @@ class ThumbAdaConv(nn.Module):
         counter=0
         for ada, learnable, mixin in zip(self.adaconvs, self.learnable, self.content_injection_layer):
             print(counter)
-            counter++
+            counter+=1
             x = ada(style, cF[mixin] if not mixin is None else x)
             x = learnable(x)
         x = self.out_conv(x)
