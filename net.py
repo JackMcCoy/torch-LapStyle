@@ -469,7 +469,7 @@ class ThumbAdaConv(nn.Module):
             FusedConvNoiseBias(128, 128, 128, 'up', noise=False),
             FusedConvNoiseBias(128, 64, 128, 'none', noise=False),
             FusedConvNoiseBias(64, 64, 256, 'up', noise=False),
-            FusedConvNoiseBias(64, 3, 256, 'none'),
+            FusedConvNoiseBias(64, 3, 256, 'none', noise=False)
         ])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
