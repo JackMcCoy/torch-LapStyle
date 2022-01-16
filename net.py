@@ -461,15 +461,15 @@ class ThumbAdaConv(nn.Module):
         ])
         self.content_injection_layer = ['r4_1',None,None,None,'r3_1',None,'r2_1',None,'r1_1']
         self.learnable=nn.ModuleList([
-            FusedConvNoiseBias(512, 256, 32, 'none', noise=False),
-            FusedConvNoiseBias(256, 256, 64, 'up'),
-            FusedConvNoiseBias(256, 256, 64, 'none'),
-            FusedConvNoiseBias(256, 256, 64, 'none'),
+            FusedConvNoiseBias(512, 256, 32, 'none'),
+            FusedConvNoiseBias(256, 256, 64, 'up', noise=False),
+            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
+            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
             FusedConvNoiseBias(256, 128, 64, 'none', noise=False),
-            FusedConvNoiseBias(128, 128, 128, 'up'),
+            FusedConvNoiseBias(128, 128, 128, 'up', noise=False),
             FusedConvNoiseBias(128, 64, 128, 'none', noise=False),
-            FusedConvNoiseBias(64, 64, 256, 'up'),
-            FusedConvNoiseBias(64, 3, 256, 'none', noise=False),
+            FusedConvNoiseBias(64, 64, 256, 'up', noise=False),
+            FusedConvNoiseBias(64, 3, 256, 'none'),
         ])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -496,7 +496,7 @@ class ThumbAdaConv(nn.Module):
         else:
             style = style_enc
         for ada, learnable, mixin in zip(self.adaconvs, self.learnable, self.content_injection_layer):
-            x = ada(style, cF[mixin] if not mixin is None else x).relu()
+            x = ada(style, cF[mixin] if not mixin is None else x)
             x = learnable(x)
         x = self.out_conv(x)
         return x, style
