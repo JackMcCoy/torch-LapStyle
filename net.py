@@ -465,9 +465,9 @@ class ThumbAdaConv(nn.Module):
             FusedConvNoiseBias(256, 256, 64, 'up'),
             FusedConvNoiseBias(256, 256, 64, 'none'),
             FusedConvNoiseBias(256, 256, 64, 'none'),
-            FusedConvNoiseBias(256, 128, 128, 'none'),
+            FusedConvNoiseBias(256, 128, 64, 'none'),
             FusedConvNoiseBias(128, 128, 128, 'up'),
-            FusedConvNoiseBias(128, 64, 256, 'none'),
+            FusedConvNoiseBias(128, 64, 128, 'none'),
             FusedConvNoiseBias(64, 64, 256, 'up'),
             FusedConvNoiseBias(64, 3, 256, 'none'),
         ])
