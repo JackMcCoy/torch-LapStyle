@@ -80,7 +80,6 @@ class FusedConvNoiseBias(nn.Module):
             self.resize = nn.AvgPool2d(2, stride=2)
         if noise==True:
             self.noise = RiemannNoise(hw)
-        self.bn = nn.BatchNorm2d(ch_out)
         self.bias = nn.Parameter(nn.init.constant_(torch.ones(ch_out, ), .01))
         self.act = nn.LeakyReLU()
         self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))
@@ -99,7 +98,6 @@ class FusedConvNoiseBias(nn.Module):
         out = self.conv(x)
         out = self.noise(out)
         out = out + self.bias.view(1,-1,1,1)
-        out = self.bn(out)
         out = self.act(out)
         if self.ch_in == self.ch_out:
             out = (x + out) * self.res_scale
