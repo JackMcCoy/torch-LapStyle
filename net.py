@@ -507,7 +507,7 @@ class ThumbAdaConv(nn.Module):
             style = style.flatten(1)
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
-            style, indices, loss = vq(style)
+            style, indices, loss = self.vq(style)
         else:
             style = style_enc
             loss = None
