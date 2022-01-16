@@ -470,8 +470,8 @@ class ThumbAdaConv(nn.Module):
             FusedConvNoiseBias(128, 64, 256, 'none'),
             FusedConvNoiseBias(64, 64, 256, 'up'),
             FusedConvNoiseBias(64, 3, 256, 'none'),
-
         ])
+        self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -495,9 +495,13 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
+        counter=0
         for ada, learnable, mixin in zip(self.adaconvs, self.learnable, self.content_injection_layer):
+            print(counter)
+            counter++
             x = ada(style, cF[mixin] if not mixin is None else x)
             x = learnable(x)
+        x = self.out_conv(x)
         return x, style
 
 
