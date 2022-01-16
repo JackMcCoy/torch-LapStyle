@@ -496,7 +496,7 @@ class ThumbAdaConv(nn.Module):
         else:
             style = style_enc
         for ada, learnable, mixin in zip(self.adaconvs, self.learnable, self.content_injection_layer):
-            x = ada(style, cF[mixin] if not mixin is None else x).gelu()
+            x = F.gelu(ada(style, cF[mixin] if not mixin is None else x))
             x = learnable(x)
         x = self.out_conv(x)
         return x, style
