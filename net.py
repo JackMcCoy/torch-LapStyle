@@ -512,9 +512,13 @@ class ThumbAdaConv(nn.Module):
         if style_enc is None:
             style = self.style_encoding(sF['r4_1'])
             style = style.flatten(1)
+            print(style.shape)
             style = self.style_projection(style)
+            print(style.shape)
             style = style.reshape(b, self.s_d, 16)
+            print(style.shape)
             style = self.vq(style)
+            print(style.shape)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
