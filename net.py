@@ -432,32 +432,32 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size = 8):
+    def __init__(self, batch_size = 8, style_encoding=True):
         super(ThumbAdaConv, self).__init__()
-
-        self.style_encoding = nn.Sequential(
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-        )
+        if style_encoding:
+            self.style_encoding = nn.Sequential(
+                StyleEncoderBlock(512),
+                StyleEncoderBlock(512),
+                StyleEncoderBlock(512),
+            )
+            self.style_projection = nn.Sequential(
+                nn.Linear(8192, s_d*16),
+                nn.LeakyReLU()
+            )
+            self.vq = VectorQuantize(
+                dim=s_d,
+                codebook_size=2400,  # codebook size
+                decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
+                codebook_dim=512,
+                commitment_weight=1.,  # the weight on the commitment loss
+                use_cosine_sim=True,
+                threshold_ema_dead_code=2,
+                accept_image_fmap = True,
+                orthogonal_reg_weight=10,
+                orthogonal_reg_max_codes=256,
+                orthogonal_reg_active_codes_only=False
+            )
         self.s_d = 512
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d*16),
-            nn.LeakyReLU()
-        )
-        self.vq = VectorQuantize(
-            dim=self.s_d,
-            codebook_size=2400,  # codebook size
-            decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
-            codebook_dim=512,
-            commitment_weight=1.,  # the weight on the commitment loss
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2,
-            accept_image_fmap = True,
-            orthogonal_reg_weight=10,
-            orthogonal_reg_max_codes=256,
-            orthogonal_reg_active_codes_only=False
-        )
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
