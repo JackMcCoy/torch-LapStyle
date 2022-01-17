@@ -166,8 +166,8 @@ class GANLoss(nn.Module):
 
 def moment_loss(X, Y, moments=[1,2]):
     loss = 0.
-    X = X.squeeze().t()
-    Y = Y.squeeze().t()
+    X = X.squeeze().transpose(1,0)
+    Y = Y.squeeze().transpose(1,0)
 
     mu_x = torch.mean(X, 0, keepdim=True)
     mu_y = torch.mean(Y, 0, keepdim=True)
