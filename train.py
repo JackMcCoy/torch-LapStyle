@@ -834,6 +834,12 @@ def adaconv_thumb_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
+                state_dict = disc_.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'discriminator_iter_{:d}.pth.tar'.format(i + 1))
+                state_dict = opt_D.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'disc_optimizer.pth.tar')
 
 
 def vq_train():
