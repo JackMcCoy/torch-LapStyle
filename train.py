@@ -721,13 +721,16 @@ def adaconv_thumb_train():
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
         dec_2 = net.ThumbAdaConv(batch_size=args.batch_size, style_encoding=False).to(device)
-        dec_optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(dec_2.parameters()), lr=args.lr)
+        dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+        dec_2optimizer = torch.optim.AdamW(dec_2.parameters(recurse=True), lr=args.lr)
         if args.load_model == 'none':
             init_weights(dec_)
+            init_weights(dec_2)
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
             dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
         dec_.train()
+        dec_2.train()
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
         scaler = GradScaler(init_scale=128)
@@ -765,6 +768,8 @@ def adaconv_thumb_train():
             loss.backward()
             dec_optimizer.step()
             dec_optimizer.zero_grad()
+            dec_2optimizer.step()
+            dec_2optimizer.zero_grad()
         if (i + 1) % 1 == 0:
 
             loss_dict = {}
