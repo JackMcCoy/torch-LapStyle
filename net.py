@@ -501,7 +501,7 @@ class ThumbAdaConv(nn.Module):
             x = ada(style, cF[mixin].data if not mixin is None else x)
             x = learnable(x)
         x = self.out_conv(x)
-        return x, style, loss
+        return x, style
 
 
 class DecoderVQGAN(nn.Module):
