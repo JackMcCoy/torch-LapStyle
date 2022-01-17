@@ -455,7 +455,7 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
         self.vq = VectorQuantize(
             dim=16,
-            codebook_size=1024,  # codebook size
+            codebook_size=1200,  # codebook size
             decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
             commitment_weight=1.,  # the weight on the commitment loss
             use_cosine_sim=True,
