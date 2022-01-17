@@ -739,7 +739,7 @@ def adaconv_thumb_train():
             cF = enc_(ci)
             sF = enc_(si)
 
-            stylized, style, loss = dec_(sF, cF)
+            stylized, style, cb_loss = dec_(sF, cF)
             '''
             randx = np.random.randint(0,ci[-1].shape[-1]-256)
             randy = np.random.randint(0, ci[-1].shape[-1] - 256)
