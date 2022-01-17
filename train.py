@@ -726,6 +726,7 @@ def adaconv_thumb_train():
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
             dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
+            dec_optimizer.lr = args.lr
         dec_.train()
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
