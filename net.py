@@ -79,7 +79,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         encodings = {}
-        for idx,module in enumerate(self.encoder_modules):
+        for idx,module in enumerate(self.encoder_module):
             for jdx, sequence in enumerate(module):
                 x = sequence(x)
                 encodings[f'r{idx+1}_{jdx+1}']=x
