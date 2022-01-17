@@ -180,6 +180,8 @@ def moment_loss(X, Y, moments=[1,2]):
     if 2 in moments:
         X_c = X - mu_x
         Y_c = Y - mu_y
+        print(X_c.shape)
+        print(Y_c.shape)
         X_cov = torch.mm(X_c.transpose(1,0), X_c) / (X.shape[0] - 1)
         Y_cov = torch.mm(Y_c.transpose(1,0), Y_c) / (Y.shape[0] - 1)
 
