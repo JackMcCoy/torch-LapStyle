@@ -736,7 +736,7 @@ def adaconv_thumb_train():
             init_weights(dec_)
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
-            dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
+            dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'),strict=False)
             dec_optimizer.lr = args.lr
         dec_.train()
         enc_.to(device)
