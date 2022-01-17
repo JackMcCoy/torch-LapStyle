@@ -434,7 +434,7 @@ class DecoderAdaConv(nn.Module):
 class ThumbAdaConv(nn.Module):
     def __init__(self, batch_size = 8, style_encoding=True):
         super(ThumbAdaConv, self).__init__()
-        self.s_d = 512
+        self.s_d = 64
         if style_encoding:
             self.style_encoding = nn.Sequential(
                 StyleEncoderBlock(512),
