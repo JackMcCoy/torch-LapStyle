@@ -447,14 +447,13 @@ class ThumbAdaConv(nn.Module):
             )
             self.vq = VectorQuantize(
                 dim=16,
-                codebook_size=1024,  # codebook size
+                codebook_size=2048,  # codebook size
                 decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
                 commitment_weight=1.,  # the weight on the commitment loss
                 use_cosine_sim=True,
-                threshold_ema_dead_code=2,
-                orthogonal_reg_weight=10,
-                orthogonal_reg_max_codes=256,
-                orthogonal_reg_active_codes_only=False
+                kmeans_init=True,
+                kmeans_iters=10,
+                threshold_ema_dead_code=2
             )
 
         self.adaconvs = nn.ModuleList([
