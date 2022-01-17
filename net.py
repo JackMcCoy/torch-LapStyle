@@ -1003,7 +1003,7 @@ def calc_losses(stylized: torch.Tensor,
         if upscaled_patch is None:
             disc_test = random_crop(stylized)
         else:
-            disc_test = patch_stylized
+            disc_test = stylized
         fake_loss = disc_(disc_test)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
