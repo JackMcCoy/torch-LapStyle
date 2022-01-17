@@ -480,7 +480,6 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 64),
                 RiemannNoise(256),
                 ConvBlock(64, 3),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
