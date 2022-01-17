@@ -449,7 +449,6 @@ class ThumbAdaConv(nn.Module):
                 dim=16,
                 codebook_size=1024,  # codebook size
                 decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
-                codebook_dim=512,
                 commitment_weight=1.,  # the weight on the commitment loss
                 use_cosine_sim=True,
                 threshold_ema_dead_code=2,
