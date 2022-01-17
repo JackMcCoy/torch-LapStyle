@@ -790,15 +790,15 @@ def adaconv_thumb_train():
                 #styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
+                #save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
                 save_image(draft_img_grid.detach(),
                            args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
                 save_image(content_img_grid.detach(),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                i + 1) + '.jpg')
-                #save_image(style_source_grid.detach(),
-                #           args.save_dir + '/drafting_training_iter_si' + str(
-                #               i + 1) + '.jpg')
+                save_image(style_source_grid.detach(),
+                           args.save_dir + '/drafting_training_iter_si' + str(
+                               i + 1) + '.jpg')
 
             if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
                 state_dict = dec_.state_dict()
