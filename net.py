@@ -489,18 +489,18 @@ class ThumbAdaConv(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            nn.init.xavier_normal_(m.weight.data)
             if not m.bias is None:
                 nn.init.constant_(m.bias.data, 0)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
-            nn.init.kaiming_normal_(m.weight.data, a = .01)
+            nn.init.xavier_normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
         b, n, h, w = cF['r4_1'].shape
         if style_enc is None:
-            style = self.style_encoding(sF['r4_1'])
+            style = self.style_encoding(sF['r4_1'].data)
             style = style.flatten(1)
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
