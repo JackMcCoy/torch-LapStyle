@@ -589,8 +589,6 @@ def revlap_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    scaler = GradScaler(init_scale=128)
-    d_scaler = GradScaler(init_scale=128)
 
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True),lr=args.lr)
 
@@ -720,7 +718,20 @@ def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
+        if args.load_disc == 1:
+            path = args.load_model.split('/')
+            path_tokens = args.load_model.split('_')
+            new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
+            disc_state = new_path_func('discriminator_')
+
+        else:
+            disc_state = None
+            init_weights(dec_)
+        disc_ = build_disc(
+            disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+
         dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
+        opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
         else:
@@ -750,17 +761,23 @@ def adaconv_thumb_train():
             scale = ci[-1].shape[-1]//ci[0].shape[-1]
             upscaled_patch = F.interpolate(stylized[:,:,int(randx/scale):int((randx+256)/scale),
                              int(randy/scale):int((randy+256)/scale)], 256)
-            cF_patch = enc_(ci_patch)
+
+            si_cropped = si[-1][:, :, randx:randx + 256, randy:randy + 256]
             patch_stylized, _ = dec_(None, cF_patch, style)
+
+            loss_D = calc_GAN_loss(si_cropped.detach(), patch_stylized.clone().detach(), None, disc_)
+
+            cF_patch = enc_(ci_patch)
+
             patch_feats = enc_(upscaled_patch)
 
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, patch_feats, None,
-                                       calc_identity=args.identity_loss==1, disc_loss=False,
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, patch_feats, disc_,
+                                       calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
-                                       patch_loss=False, upscaled_patch = patch_stylized, sF=sF, split_style=False)
+                                       patch_loss=True, patch_styled = None, upscaled_patch = patch_stylized, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + loss_D
 
             loss.backward()
             dec_optimizer.step()
@@ -770,9 +787,9 @@ def adaconv_thumb_train():
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog],
+                     mdog, loss_Gp_GAN, loss_D],
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss']):
+                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             if(i +1) % 10 ==0:

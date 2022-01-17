@@ -931,6 +931,7 @@ def calc_losses(stylized: torch.Tensor,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
+                patch_stylized = None,
                 rev_depth:int = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
@@ -998,7 +999,12 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(random_crop(stylized))
+        disc_test = None
+        if upscaled_patch is None:
+            disc_test = random_crop(stylized)
+        else:
+            disc_test = patch_stylized
+        fake_loss = disc_(disc_test)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
