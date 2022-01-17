@@ -458,10 +458,6 @@ class ThumbAdaConv(nn.Module):
                 StyleEncoderBlock(512),
                 StyleEncoderBlock(512),
             )
-            self.style_projection = nn.Sequential(
-                nn.Linear(8192, self.s_d*16),
-                nn.LeakyReLU()
-            )
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
@@ -472,8 +468,7 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16),
-            nn.LeakyReLU()
+            nn.Linear(8192, self.s_d * 16)
         )
         self.learnable=nn.ModuleList([
             nn.Sequential(
