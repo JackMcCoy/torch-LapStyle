@@ -462,28 +462,26 @@ class ThumbAdaConv(nn.Module):
                 ResBlock(512),
                 RiemannNoise(32),
                 ConvBlock(512, 256),
-                RiemannNoise(32),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ResBlock(256),
                 RiemannNoise(64),
                 ConvBlock(256, 128),
-                RiemannNoise(64),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 ConvBlock(128, 128),
                 RiemannNoise(128),
                 ConvBlock(128, 64),
-                RiemannNoise(128),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ConvBlock(64, 64),
                 RiemannNoise(256),
+                ConvBlock(64, 3),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, kernel_size=3)
+                nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
