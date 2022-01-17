@@ -478,21 +478,30 @@ class ThumbAdaConv(nn.Module):
             nn.BatchNorm1d(self.s_d * 16),
             nn.LeakyReLU(),
         )
+        self.riemann_a = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
+            RiemannNoise(256),
+        ])
+        self.riemann_b = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
+            RiemannNoise(256),
+        ])
         self.learnable=nn.ModuleList([
             nn.Sequential(
-                RiemannNoise(32),
                 ResBlock(512),
                 ConvBlock(512, 256),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
-                RiemannNoise(64),
                 ResBlock(256),
                 ConvBlock(256, 128),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                RiemannNoise(128),
                 ConvBlock(128, 128),
                 ConvBlock(128, 64),
                 nn.Upsample(scale_factor=2, mode='nearest')
@@ -509,12 +518,12 @@ class ThumbAdaConv(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
+            nn.init.normal_(m.weight.data)
             if not m.bias is None:
                 nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
+            nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
@@ -526,8 +535,9 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann_a if type(style_enc) is None else self.riemann_b)):
             x = ada(style, cF[mixin]).relu()
+            x = noise(x)
             x = learnable(x)
         return x, style
 
