@@ -723,7 +723,6 @@ def adaconv_thumb_train():
         dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
         if args.load_model == 'none':
             init_weights(dec_)
-            init_weights(dec_2)
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
             dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))

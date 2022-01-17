@@ -447,7 +447,7 @@ class ThumbAdaConv(nn.Module):
             )
             self.vq = VectorQuantize(
                 dim=self.s_d,
-                codebook_size=2400,  # codebook size
+                codebook_size=1024,  # codebook size
                 decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
                 codebook_dim=512,
                 commitment_weight=1.,  # the weight on the commitment loss
