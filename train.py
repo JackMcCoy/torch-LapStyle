@@ -720,7 +720,7 @@ def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
-        dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+        dec_optimizer = torch.optim.SGD(dec_.parameters(recurse=True), lr=args.lr, momentum=.9)
         if args.load_model == 'none':
             init_weights(dec_)
         else:
