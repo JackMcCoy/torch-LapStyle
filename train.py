@@ -762,7 +762,6 @@ def adaconv_thumb_train():
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
             loss.backward()
-            _clip_gradient(dec_)
             dec_optimizer.step()
             dec_optimizer.zero_grad()
         if (i + 1) % 1 == 0:

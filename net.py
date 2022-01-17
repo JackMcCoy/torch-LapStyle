@@ -495,7 +495,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
         b, n, h, w = cF['r4_1'].shape
         if style_enc is None:
-            style = self.style_encoding(sF['r4_1'].data)
+            style = self.style_encoding(sF['r4_1'])
             style = style.flatten(1)
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
