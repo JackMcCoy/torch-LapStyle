@@ -457,9 +457,6 @@ class ThumbAdaConv(nn.Module):
             nn.Linear(8192, self.s_d * 16),
             nn.LeakyReLU()
         )
-        self.style_reprojection = nn.Sequential(
-            nn.Linear(self.s_d * 16,self.s_d * 16),
-            nn.LeakyReLU())
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
@@ -511,9 +508,7 @@ class ThumbAdaConv(nn.Module):
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
-            style = style_enc.flatten(1)
-            style = self.style_reprojection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
+            style = style_enc
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style, cF[mixin])
             x = learnable(x)
