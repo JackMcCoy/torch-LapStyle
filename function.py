@@ -148,7 +148,7 @@ def coral(source, target):
     return source_f_transfer.view(source.size())
 
 def init_weights(net,
-                 init_type='xavier',
+                 init_type='normal',
                  init_gain=0.02,
                  distribution='normal'):
     """Initialize network weights.
