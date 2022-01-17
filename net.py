@@ -475,7 +475,7 @@ class ThumbAdaConv(nn.Module):
         ])
         self.content_injection_layer = ['r4_1',None,None,None,'r3_1',None,'r2_1',None,'r1_1']
         self.learnable=nn.ModuleList([
-            FusedConvNoiseBias(512, 256, 32, 'none'),
+            FusedConvNoiseBias(512, 256, 32, 'none', noise=False),
             FusedConvNoiseBias(256, 256, 64, 'up', noise=False),
             FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
             FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
