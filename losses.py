@@ -164,35 +164,6 @@ class GANLoss(nn.Module):
         loss = self.loss(prediction, target_tensor.detach())
         return loss
 
-def moment_loss(X, Y, moments=[1,2]):
-    loss = 0.
-    X = X.squeeze().transpose(1,0)
-    Y = Y.squeeze().transpose(1,0)
-
-    mu_x = torch.mean(X, 0, keepdim=True)
-    mu_y = torch.mean(Y, 0, keepdim=True)
-    mu_d = torch.abs(mu_x - mu_y).mean()
-
-    if 1 in moments:
-        # print(mu_x.shape)
-        loss = loss + mu_d
-
-    if 2 in moments:
-        X_c = X - mu_x
-        Y_c = Y - mu_y
-        print(X_c.shape)
-        print(Y_c.shape)
-        X_cov = torch.mm(X_c.transpose(1,0), X_c) / (X.shape[0] - 1)
-        Y_cov = torch.mm(Y_c.transpose(1,0), Y_c) / (Y.shape[0] - 1)
-
-        # print(X_cov.shape)
-        # exit(1)
-
-        D_cov = torch.abs(X_cov - Y_cov).mean()
-        loss = loss + D_cov
-
-    return loss
-
 class GramErrors():
     def __init__(self):
         self.mse_loss = nn.MSELoss()

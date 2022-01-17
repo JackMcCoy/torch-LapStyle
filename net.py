@@ -12,7 +12,7 @@ from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
 from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
-from losses import moment_loss, GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
+from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
@@ -922,7 +922,6 @@ def calc_losses(stylized: torch.Tensor,
             loss_c += content_loss(stylized_feats[key], cF[key].detach(), norm=True)
     else:
         loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
-    loss_moment = moment_loss(stylized, si, moments=[1, 2])
     if split_style:
         sF = []
         b = si.shape[0]
@@ -983,5 +982,5 @@ def calc_losses(stylized: torch.Tensor,
     else:
         patch_loss = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, loss_moment
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
 
