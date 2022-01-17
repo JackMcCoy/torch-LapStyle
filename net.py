@@ -445,18 +445,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(8192, self.s_d*16),
                 nn.LeakyReLU()
             )
-            self.vq = VectorQuantize(
-                dim=512,
-                codebook_size=2048,  # codebook size
-                codebook_dim=16,
-                decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
-                commitment_weight=1.,  # the weight on the commitment loss
-                use_cosine_sim=True,
-                accept_image_fmap=True,
-                kmeans_init=True,
-                kmeans_iters=10,
-                threshold_ema_dead_code=2
-            )
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
@@ -511,8 +499,6 @@ class ThumbAdaConv(nn.Module):
             loss = None
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style, cF[mixin].data if not mixin is None else x)
-            if idx==0:
-                x, indices, loss = self.vq(x)
             x = learnable(x)
         x = self.out_conv(x)
         return x, style, loss
