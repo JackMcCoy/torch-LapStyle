@@ -742,7 +742,7 @@ def adaconv_thumb_train():
             sF = enc_(si[0])
 
             stylized, style = dec_(sF, cF)
-
+            '''
             randx = np.random.randint(0,ci[-1].shape[-1]-256)
             randy = np.random.randint(0, ci[-1].shape[-1] - 256)
             ci_patch = ci[-1][:,:,randx:randx+256,randy:randy+256]
@@ -752,12 +752,12 @@ def adaconv_thumb_train():
             cF_patch = enc_(ci_patch)
             patch_stylized, _ = dec_(None, cF_patch, style)
             patch_feats = enc_(upscaled_patch)
-
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, patch_feats, None,
+            '''
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                                        calc_identity=args.identity_loss==1, disc_loss=False,
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
-                                       patch_loss=True, upscaled_patch = patch_stylized, sF=sF, split_style=False)
+                                       patch_loss=False, upscaled_patch = patch_stylized, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
