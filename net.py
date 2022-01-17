@@ -448,16 +448,16 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
+            nn.Identity(),
+
+            nn.Identity(),
+            nn.Identity(),
             AdaConv(256, 4, batch_size, s_d=self.s_d),
 
-            AdaConv(256, 4, batch_size, s_d=self.s_d),
-            AdaConv(256, 4, batch_size, s_d=self.s_d),
-            AdaConv(256, 4, batch_size, s_d=self.s_d),
-
+            nn.Identity(),
             AdaConv(128, 2, batch_size, s_d=self.s_d),
-            AdaConv(128, 2, batch_size, s_d=self.s_d),
 
-            AdaConv(64, 1, batch_size, s_d=self.s_d),
+            nn.Identity(),
             AdaConv(64, 1, batch_size, s_d=self.s_d)
         ])
         self.content_injection_layer = ['r4_1',None,None,None,'r3_1',None,'r2_1',None,'r1_1']
@@ -496,9 +496,9 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-            loss = None
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = ada(style, cF[mixin].data if not mixin is None else x)
+            if not mixin is None:
+                x = ada(style, cF[mixin].data if not mixin is None else x)
             x = learnable(x)
         x = self.out_conv(x)
         return x, style
