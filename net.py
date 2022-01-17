@@ -448,30 +448,35 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
-            nn.Identity(),
-
-            nn.Identity(),
-            nn.Identity(),
             AdaConv(256, 4, batch_size, s_d=self.s_d),
-
-            nn.Identity(),
             AdaConv(128, 2, batch_size, s_d=self.s_d),
-
-            nn.Identity(),
             AdaConv(64, 1, batch_size, s_d=self.s_d)
         ])
-        self.content_injection_layer = ['r4_1',None,None,None,'r3_1',None,'r2_1',None,'r1_1']
+        self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
+
         self.learnable=nn.ModuleList([
-            FusedConvNoiseBias(512, 256, 32, 'none', noise=False),
-            FusedConvNoiseBias(256, 256, 64, 'up', noise=False),
-            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
-            FusedConvNoiseBias(256, 256, 64, 'none', noise=False),
-            FusedConvNoiseBias(256, 128, 64, 'none', noise=False),
-            FusedConvNoiseBias(128, 128, 128, 'up', noise=False),
-            FusedConvNoiseBias(128, 64, 128, 'none', noise=False),
-            FusedConvNoiseBias(64, 64, 256, 'up', noise=False),
-            FusedConvNoiseBias(64, 3, 256, 'none', noise=False)
-        ])
+            nn.Sequential(
+                ResBlock(512),
+                ConvBlock(512, 256),
+                nn.Upsample(scale_factor=2, mode='nearest')
+            ),
+            nn.Sequential(
+                ResBlock(256),
+                ConvBlock(256, 128),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+            ),
+            nn.Sequential(
+                ConvBlock(128, 128),
+                ConvBlock(128, 64),
+                nn.Upsample(scale_factor=2, mode='nearest')
+            ),
+            nn.Sequential(
+                ConvBlock(64, 64),
+                ConvBlock(64, 64),
+                ConvBlock(64, 3),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(3, 3, kernel_size=3)
+            )])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -497,8 +502,7 @@ class ThumbAdaConv(nn.Module):
         else:
             style = style_enc
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            if not mixin is None:
-                x = ada(style, cF[mixin].data if not mixin is None else x)
+            x = ada(style, cF[mixin])
             x = learnable(x)
         x = self.out_conv(x)
         return x, style
