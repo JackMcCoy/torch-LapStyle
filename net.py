@@ -468,7 +468,12 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16)
+            nn.Linear(8192, self.s_d * 16),
+            nn.ReLU(),
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.ReLU(),
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.ReLU(),
         )
         self.learnable=nn.ModuleList([
             nn.Sequential(
