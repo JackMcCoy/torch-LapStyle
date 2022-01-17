@@ -453,17 +453,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 1, batch_size, s_d=self.s_d)
         ])
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
-        self.vq = VectorQuantize(
-            dim=16,
-            codebook_size=1200,  # codebook size
-            decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
-            commitment_weight=1.,  # the weight on the commitment loss
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2,
-            orthogonal_reg_weight=10,
-            orthogonal_reg_max_codes=256,
-            orthogonal_reg_active_codes_only=False
-        )
+
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d * 16),
             nn.LeakyReLU()
@@ -513,15 +503,13 @@ class ThumbAdaConv(nn.Module):
             style = self.style_encoding(sF['r4_1'])
             style = style.flatten(1)
             style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 16)
-            style, indices, loss = self.vq(style)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style, cF[mixin])
             x = learnable(x)
-        return x, style, loss
+        return x, style
 
 
 class DecoderVQGAN(nn.Module):

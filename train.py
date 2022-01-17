@@ -739,7 +739,7 @@ def adaconv_thumb_train():
             cF = enc_(ci)
             sF = enc_(si)
 
-            stylized, style, cb_loss = dec_(sF, cF)
+            stylized, style = dec_(sF, cF)
             '''
             randx = np.random.randint(0,ci[-1].shape[-1]-256)
             randy = np.random.randint(0, ci[-1].shape[-1] - 256)
@@ -757,7 +757,7 @@ def adaconv_thumb_train():
                                        remd_loss=remd_loss,
                                        patch_loss=False, upscaled_patch = None, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = cb_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
             loss.backward()
             dec_optimizer.step()
