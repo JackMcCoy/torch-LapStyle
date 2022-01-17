@@ -460,25 +460,25 @@ class ThumbAdaConv(nn.Module):
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
-                RiemannNoise(32),
+                #RiemannNoise(32),
                 ConvBlock(512, 256),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ResBlock(256),
-                RiemannNoise(64),
+                #RiemannNoise(64),
                 ConvBlock(256, 128),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 ConvBlock(128, 128),
-                RiemannNoise(128),
+                #RiemannNoise(128),
                 ConvBlock(128, 64),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ConvBlock(64, 64),
-                RiemannNoise(256),
+                #RiemannNoise(256),
                 ConvBlock(64, 3),
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
