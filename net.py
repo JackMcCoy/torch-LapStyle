@@ -446,7 +446,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             )
             self.vq = VectorQuantize(
-                dim=self.s_d,
+                dim=16,
                 codebook_size=1024,  # codebook size
                 decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
                 codebook_dim=512,
@@ -506,8 +506,9 @@ class ThumbAdaConv(nn.Module):
             style = self.style_encoding(sF['r4_1'].data)
             style = style.flatten(1)
             style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
+            style = style.reshape(b, self.s_d, 16)
             style, indices, loss = self.vq(style)
+            style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
             loss = None
