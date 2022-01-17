@@ -736,10 +736,8 @@ def adaconv_thumb_train():
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+            cF = enc_(ci)
+            sF = enc_(si)
 
             stylized, style = dec_(sF, cF)
             '''
@@ -753,7 +751,7 @@ def adaconv_thumb_train():
             patch_stylized, _ = dec_(None, cF_patch, style)
             patch_feats = enc_(upscaled_patch)
             '''
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
+            losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
                                        calc_identity=args.identity_loss==1, disc_loss=False,
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
