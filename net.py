@@ -481,13 +481,13 @@ class ThumbAdaConv(nn.Module):
         self.riemann_a = nn.ModuleList([
             RiemannNoise(32),
             RiemannNoise(64),
-            nn.Identity(),
+            RiemannNoise(128),
             nn.Identity()
         ])
         self.riemann_b = nn.ModuleList([
             RiemannNoise(32),
             RiemannNoise(64),
-            nn.Identity(),
+            RiemannNoise(128),
             nn.Identity()
         ])
         self.learnable=nn.ModuleList([
