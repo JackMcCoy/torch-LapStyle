@@ -750,7 +750,7 @@ def adaconv_thumb_train():
             upscaled_patch = F.interpolate(stylized[:,:,int(randx/scale):int((randx+256)/scale),
                              int(randy/scale):int((randy+256)/scale)], 256)
             cF_patch = enc_(ci_patch)
-            patch_stylized, _, _ = dec_(None, cF_patch, style)
+            patch_stylized, _, cb_loss2 = dec_(None, cF_patch, style)
             patch_feats = enc_(upscaled_patch)
 
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, patch_feats, None,
@@ -759,7 +759,7 @@ def adaconv_thumb_train():
                                        remd_loss=remd_loss,
                                        patch_loss=True, upscaled_patch = patch_stylized, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = cb_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
+            loss = cb_loss + cb_loss2 + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + mdog
 
             loss.backward()
             dec_optimizer.step()

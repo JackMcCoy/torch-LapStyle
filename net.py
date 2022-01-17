@@ -446,11 +446,13 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             )
             self.vq = VectorQuantize(
-                dim=16,
+                dim=512,
                 codebook_size=2048,  # codebook size
+                codebook_dim=16,
                 decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
                 commitment_weight=1.,  # the weight on the commitment loss
                 use_cosine_sim=True,
+                accept_image_fmap=True,
                 kmeans_init=True,
                 kmeans_iters=10,
                 threshold_ema_dead_code=2
@@ -503,14 +505,14 @@ class ThumbAdaConv(nn.Module):
             style = self.style_encoding(sF['r4_1'].data)
             style = style.flatten(1)
             style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 16)
-            style, indices, loss = self.vq(style)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
             loss = None
-        for ada, learnable, mixin in zip(self.adaconvs, self.learnable, self.content_injection_layer):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style, cF[mixin].data if not mixin is None else x)
+            if idx==0:
+                x, indices, loss = self.vq(x)
             x = learnable(x)
         x = self.out_conv(x)
         return x, style, loss
