@@ -491,11 +491,11 @@ class ThumbAdaConv(nn.Module):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
             if not m.bias is None:
-                nn.init.constant_(m.bias.data, 0)
+                nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0)
+            nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
         b, n, h, w = cF['r4_1'].shape

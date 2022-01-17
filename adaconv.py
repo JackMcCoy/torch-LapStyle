@@ -22,7 +22,7 @@ class AdaConv(nn.Module):
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0)
+            nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad=True
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):

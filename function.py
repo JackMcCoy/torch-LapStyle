@@ -180,10 +180,10 @@ def init_weights(net,
                 raise NotImplementedError(
                     'initialization method [%s] is not implemented' % init_type)
             if hasattr(m, 'bias') and m.bias is not None:
-                torch.nn.init.constant_(m.bias,0)
+                torch.nn.init.constant_(m.bias,0.01)
         elif classname.find(
                 'BatchNorm'
         ) != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             torch.nn.init.normal_(m.weight, 1.0, init_gain)
-            torch.nn.init.constant_(m.bias, 0)
+            torch.nn.init.constant_(m.bias, 0.01)
     net.apply(init_func)
