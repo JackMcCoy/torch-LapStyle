@@ -732,7 +732,7 @@ def adaconv_thumb_train():
         scaler = GradScaler(init_scale=128)
 
     for i in range(args.max_iter):
-        adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
+        #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
             si = next(style_iter).to(device)
