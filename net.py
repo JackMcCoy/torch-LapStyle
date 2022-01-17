@@ -453,29 +453,40 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 1, batch_size, s_d=self.s_d)
         ])
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
-
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, self.s_d * 16),
+            nn.LeakyRelu()
+        )
+        self.style_reprojection = nn.Sequential(
+            nn.Linear(self.s_d * 16,self.s_d * 16),
+            nn.LeakyRelu())
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
+                RiemannNoise(32),
                 ConvBlock(512, 256),
+                RiemannNoise(32),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ResBlock(256),
+                RiemannNoise(64),
                 ConvBlock(256, 128),
+                RiemannNoise(64),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 ConvBlock(128, 128),
+                RiemannNoise(128),
                 ConvBlock(128, 64),
+                RiemannNoise(128),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ConvBlock(64, 64),
-                ConvBlock(64, 64),
-                ConvBlock(64, 3),
+                RiemannNoise(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(3, 3, kernel_size=3)
+                nn.Conv2d(64, 3, kernel_size=3)
             )])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -500,7 +511,9 @@ class ThumbAdaConv(nn.Module):
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
-            style = style_enc
+            style = style_enc.flatten(1)
+            style = self.style_reprojection(style)
+            style = style.reshape(b, self.s_d, 4, 4)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style, cF[mixin])
             x = learnable(x)
