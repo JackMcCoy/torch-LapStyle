@@ -763,11 +763,12 @@ def adaconv_thumb_train():
                              int(randy/scale):int((randy+256)/scale)], 256)
 
             si_cropped = si[-1][:, :, randx:randx + 256, randy:randy + 256]
+            cF_patch = enc_(ci_patch)
             patch_stylized, _ = dec_(None, cF_patch, style)
 
             loss_D = calc_GAN_loss(si_cropped.detach(), patch_stylized.clone().detach(), None, disc_)
 
-            cF_patch = enc_(ci_patch)
+
 
             patch_feats = enc_(upscaled_patch)
 
@@ -777,11 +778,15 @@ def adaconv_thumb_train():
                                        remd_loss=remd_loss,
                                        patch_loss=True, patch_styled = None, upscaled_patch = patch_stylized, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + loss_D
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
 
             loss.backward()
+            loss_D.backward()
             dec_optimizer.step()
             dec_optimizer.zero_grad()
+            opt_D.step()
+            opt_D.zero_grad()
+
         if (i + 1) % 1 == 0:
 
             loss_dict = {}
