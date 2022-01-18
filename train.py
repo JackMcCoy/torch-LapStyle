@@ -740,6 +740,10 @@ def adaconv_thumb_train():
                 dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
             except:
                 'optimizer not loaded'
+            try:
+                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+            except:
+                'discriminator optimizer not loaded'
             dec_optimizer.lr = args.lr
         dec_.train()
         enc_.to(device)
