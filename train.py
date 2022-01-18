@@ -783,6 +783,8 @@ def adaconv_thumb_train():
                         size /= 2
                     first_x = int(first_x/8)
                     first_y = int(first_y/8)
+                    print(f'256 cropping: {first_x}:{first_x + int(size)},{first_y}:{first_y + int(size)}')
+                    print(f'2048 cropping: {randx}:{randx + (256 * 2 ** (2 - i))}, {randy}:{randy + (256*2**(2-i))}')
                     original.append(stylized[:,:,first_x:first_x+int(size),first_y:first_y+int(size)])
                 ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
                 scale = F.interpolate(ci_to_crop,256)
