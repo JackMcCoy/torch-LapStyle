@@ -1018,15 +1018,7 @@ def calc_losses(stylized: torch.Tensor,
     else:
         mxdog_losses = 0
 
-    if disc_loss and patch_stylized is None:
-        disc_test = None
-        if upscaled_patch is None:
-            disc_test = random_crop(stylized)
-            patch_disc_loss = 0
-        else:
-            patch_disc = disc_(patch_stylized)
-            patch_disc_loss = calc_GAN_loss_from_pred(patch_disc, True)
-            disc_test = stylized
+    if disc_loss:
         fake_loss = disc_(disc_test)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
