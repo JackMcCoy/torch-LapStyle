@@ -784,8 +784,8 @@ def adaconv_thumb_train():
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
                                        patch_loss=True, patch_stylized = patch_stylized, upscaled_patch = patch_stylized, sF=sF, split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
 
             loss.backward()
             loss_D.backward()
@@ -799,9 +799,10 @@ def adaconv_thumb_train():
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, loss_Gp_GAN, loss_D],
+                     mdog, loss_Gp_GAN, loss_D, patch_disc_loss],
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss']):
+                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
+                     'Patch Disc. Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             if(i +1) % 10 ==0:
