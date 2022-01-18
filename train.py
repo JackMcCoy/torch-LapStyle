@@ -773,6 +773,7 @@ def adaconv_thumb_train():
                 randx = np.random.choice(np.arange(0, 256*2**(2-i),4))
                 randy = np.random.choice(np.arange(0, 256*2**(2-i),4))
                 crops.append((randx, randy))
+                print(f'first cropping: {randx}, {randy}')
                 if i > 0:
                     first_x = crops[0][0]
                     first_y = crops[0][1]
