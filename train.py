@@ -766,12 +766,13 @@ def adaconv_thumb_train():
             patches = []
             thumbnails = []
             for i in range(3):
+                to_patch = stylized if i==0 else to_patch
                 ci_to_crop = ci[-1] if i==0 else ci_to_crop
                 randx = np.random.randint(0, (256*2**(2-i)))
                 randy = np.random.randint(0, (256*2**(2-i)))
                 ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
                 scale = F.interpolate(ci_to_crop,256)
-                to_patch = F.interpolate(stylized,256)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
+                to_patch = F.interpolate(to_patch,512)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
                            int(randy//2**(2-i)):int(randy//2**(2-i))+256]
 
                 cF_patch = enc_(scale)
@@ -820,7 +821,7 @@ def adaconv_thumb_train():
             if (i + 1) % 50 == 0:
 
                 stylized = stylized.float().to('cpu')
-                patch_stylized = patch_stylized.float().to('cpu')
+                patch_stylized = torch.vstack(patches).float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
