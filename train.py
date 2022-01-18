@@ -776,7 +776,7 @@ def adaconv_thumb_train():
                 if i > 0:
                     first_x = crops[0][0]
                     first_y = crops[0][1]
-                    size = 256
+                    size = 128
                     for j in range(1,len(crops)):
                         first_x = int(first_x+(crops[j][0]/2**i))
                         first_y = int(first_y+(crops[j][1]/2 ** i))
