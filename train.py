@@ -760,7 +760,7 @@ def adaconv_thumb_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style = dec_(sF, cF)
+            stylized, style = dec_(sF, cF,patch_num=0)
 
 
             patches = []
@@ -773,9 +773,11 @@ def adaconv_thumb_train():
                 scale = F.interpolate(ci_to_crop,256)
                 to_patch = F.interpolate(stylized,256)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
                            int(randy//2**(2-i)):int(randy//2**(2-i))+256]
+
                 cF_patch = enc_(scale)
                 thumbnails.append(to_patch)
-                patch_stylized, _ = dec_(None, cF_patch, to_patch)
+
+                patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
                 patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
