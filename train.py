@@ -772,7 +772,7 @@ def adaconv_thumb_train():
             for i in range(3):
 
                 original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
-                ci_to_crop = ci[0][:, :, 0:ci_size, 0:ci_size]
+                ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
                 scale = F.interpolate(ci_to_crop,256)
                 cF_patch = enc_(scale)
                 patch_stylized = F.interpolate(patch_stylized[:,:,0:128,0:128],256)
