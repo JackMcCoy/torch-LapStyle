@@ -781,7 +781,7 @@ def adaconv_thumb_train():
                         first_x = int(first_x+(crops[j][0]/2**i))
                         first_y = int(first_y+(crops[j][1]/2 ** i))
                         size /= 2
-                    original.append(stylized[:,:,first_x:first_x+size,first_y:first_y+size])
+                    original.append(stylized[:,:,first_x:first_x+int(size),first_y:first_y+int(size)])
                 ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
                 scale = F.interpolate(ci_to_crop,256)
                 to_patch = F.interpolate(to_patch,512)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
