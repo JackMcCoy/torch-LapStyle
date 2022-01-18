@@ -750,7 +750,7 @@ def adaconv_thumb_train():
         remd_loss = True if args.remd_loss == 1 else False
         scaler = GradScaler(init_scale=128)
 
-    for i in range(args.max_iter):
+    for n in range(args.max_iter):
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter).to(device)
@@ -799,7 +799,7 @@ def adaconv_thumb_train():
             opt_D.step()
             opt_D.zero_grad()
 
-        if (i + 1) % 1 == 0:
+        if (n + 1) % 1 == 0:
 
             loss_dict = {}
             for l, s in zip(
@@ -818,7 +818,7 @@ def adaconv_thumb_train():
             wandb.log(loss_dict, step=i)
 
         with torch.no_grad():
-            if (i + 1) % 50 == 0:
+            if (n + 1) % 50 == 0:
 
                 stylized = stylized.float().to('cpu')
                 patch_stylized = torch.vstack(patches).float().to('cpu')
@@ -826,27 +826,27 @@ def adaconv_thumb_train():
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(i + 1) + '.jpg')
+                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid.detach(),
-                           args.save_dir + '/drafting_draft_iter' + str(i + 1) + '.jpg')
+                           args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(content_img_grid.detach(),
                            args.save_dir + '/drafting_training_iter_ci' + str(
-                               i + 1) + '.jpg')
+                               n + 1) + '.jpg')
                 save_image(style_source_grid.detach(),
                            args.save_dir + '/drafting_training_iter_si' + str(
-                               i + 1) + '.jpg')
+                               n + 1) + '.jpg')
 
-            if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
+            if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
-                           'decoder_iter_{:d}.pth.tar'.format(i + 1))
+                           'decoder_iter_{:d}.pth.tar'.format(n + 1))
 
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_iter_{:d}.pth.tar'.format(i + 1))
+                           'discriminator_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
