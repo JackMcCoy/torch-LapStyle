@@ -792,6 +792,7 @@ def adaconv_thumb_train():
                 ratio = 512/256*2**(1-i)
                 _x = int(randx/ratio)
                 _y = int(randy/ratio)
+                print(f'thumbnail cropping: {_x}, {_y}')
                 to_patch = F.interpolate(to_patch,512)[:,:,_x:_x+256,
                            _y:_y+256]
 
