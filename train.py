@@ -789,8 +789,11 @@ def adaconv_thumb_train():
                     original.append(stylized[:,:,first_x:first_x+int(size),first_y:first_y+int(size)])
                 ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
                 scale = F.interpolate(ci_to_crop,256)
-                to_patch = F.interpolate(to_patch,512)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
-                           int(randy//2**(2-i)):int(randy//2**(2-i))+256]
+                ratio = 512/256*2**(1-i)
+                _x = int(randx/ratio)
+                _y = int(randy/ratio)
+                to_patch = F.interpolate(to_patch,512)[:,:,_x:_x+256,
+                           _y:_y+256]
 
                 cF_patch = enc_(scale)
                 thumbnails.append(to_patch)
