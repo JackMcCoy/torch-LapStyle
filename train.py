@@ -770,8 +770,8 @@ def adaconv_thumb_train():
             for i in range(3):
                 to_patch = stylized if i==0 else to_patch
                 ci_to_crop = ci[-1] if i==0 else ci_to_crop
-                randx = np.random.choice(np.arange(0, (256*2**(2-i),4)))
-                randy = np.random.choice(np.arange(0, (256*2**(2-i),4)))
+                randx = np.random.choice(np.arange(0, 256*2**(2-i),4))
+                randy = np.random.choice(np.arange(0, 256*2**(2-i),4))
                 crops.append((randx, randy))
                 if i > 0:
                     first_x = crops[0][0]
