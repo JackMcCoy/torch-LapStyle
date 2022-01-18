@@ -1039,8 +1039,10 @@ def calc_losses(stylized: torch.Tensor,
                 patch_feats = encoder(j)['r4_1']
                 patch_loss = patch_loss + content_loss(patch_feats, upscaled_patch_feats, norm=False)
                 if idx>0:
-                    top_patch_feats = encoder(F.interpolate(top_level_patch[idx],256))['r4_1']
+                    top_patch_feats = encoder(top_level_patch[idx])['r4_1']
                     patch_loss = patch_loss +content_loss(patch_feats, top_patch_feats, norm=False)
+                else:
+                    patch_loss = patch_loss*2
     else:
         patch_loss = 0
 

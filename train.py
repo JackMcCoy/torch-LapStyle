@@ -771,11 +771,11 @@ def adaconv_thumb_train():
             ci_size = 1024
             for i in range(3):
 
-                original.append(stylized[:,:,0:size,0:size])
+                original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
                 ci_to_crop = ci[0][:, :, 0:ci_size, 0:ci_size]
                 scale = F.interpolate(ci_to_crop,256)
                 cF_patch = enc_(scale)
-                patch_stylized = patch_stylized[:,:,0:128,0:128]
+                patch_stylized = F.interpolate(patch_stylized[:,:,0:128,0:128])
                 thumbnails.append(patch_stylized)
 
                 patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
