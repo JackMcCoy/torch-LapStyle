@@ -762,29 +762,31 @@ def adaconv_thumb_train():
 
             stylized, style = dec_(sF, cF)
 
-            randx = np.random.randint(0,ci[-1].shape[-1]-256)
-            randy = np.random.randint(0, ci[-1].shape[-1] - 256)
-            ci_patch = ci[-1][:,:,randx:randx+256,randy:randy+256]
-            scale = ci[-1].shape[-1]//ci[0].shape[-1]
-            upscaled_patch = F.interpolate(stylized[:,:,int(randx/scale):int((randx+256)/scale),
-                             int(randy/scale):int((randy+256)/scale)], 256)
 
-            si_cropped = si[-1][:, :, randx:randx + 256, randy:randy + 256]
-            cF_patch = enc_(ci_patch)
-            patch_stylized, _ = dec_(None, cF_patch, style)
+            patches = []
+            thumbnails = []
+            for i in range(3):
+                ci_to_crop = ci[-1] if i==0 else ci_to_crop
+                randx = np.random.randint(0, (256*2**(2-i)))
+                randy = np.random.randint(0, (256*2**(2-i)))
+                ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
+                scale = F.interpolate(ci_to_crop,256)
+                to_patch = F.interpolate(stylized,256)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
+                           int(randy//2**(2-i)):int(randy//2**(2-i))+256]
+                cF_patch = enc_(scale)
+                thumbnails.append(to_patch)
+                patch_stylized, _ = dec_(None, cF_patch, to_patch)
+                patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
 
 
-
-            patch_feats = enc_(upscaled_patch)
-
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, patch_feats, disc_,
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, thumbnails, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
-                                       patch_loss=True, patch_stylized = patch_stylized, upscaled_patch = patch_stylized, sF=sF, split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
+                                       patch_loss=True, patch_stylized = patches, sF=sF, split_style=False)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, _, patch_disc_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
 
             loss.backward()

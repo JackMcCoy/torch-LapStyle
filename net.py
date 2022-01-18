@@ -488,6 +488,18 @@ class ThumbAdaConv(nn.Module):
             RiemannNoise(32),
             RiemannNoise(64),
             RiemannNoise(128),
+            RiemannNoise(256),
+        ])
+        self.riemann_c = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
+            RiemannNoise(256),
+        ])
+        self.riemann_d = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity()
         ])
         self.learnable=nn.ModuleList([
@@ -526,7 +538,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None):
+    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None, patch_num = 0):
         b, n, h, w = cF['r4_1'].shape
         if style_enc is None:
             style = self.style_encoding(sF['r4_1'])
@@ -535,7 +547,15 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann_a if type(style_enc) is None else self.riemann_b)):
+        if patch_num==0:
+            letter='a'
+        elif patch_num==1:
+            letter='b'
+        elif patch_num==2:
+            letter='c'
+        else:
+            letter='d'
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
             x = ada(style, cF[mixin]).relu()
             x = noise(x)
             x = learnable(x)
@@ -998,7 +1018,7 @@ def calc_losses(stylized: torch.Tensor,
     else:
         mxdog_losses = 0
 
-    if disc_loss:
+    if disc_loss and patch_stylized is None:
         disc_test = None
         if upscaled_patch is None:
             disc_test = random_crop(stylized)
@@ -1013,11 +1033,18 @@ def calc_losses(stylized: torch.Tensor,
         loss_Gp_GAN = 0
 
     if patch_loss:
-        if upscaled_patch is None:
+        if patch_stylized is None:
             upscaled_patch_feats = stylized_feats['r4_1']
+            patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
         else:
-            upscaled_patch_feats = encoder(upscaled_patch)['r4_1']
-        patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
+            patch_disc_loss = 0
+            patch_loss = 0
+            for i,j in zip(patch_feats,patch_stylized):
+                upscaled_patch_feats = encoder(i)['r4_1']
+                patch_disc = disc_(j)
+                patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True)
+                patch_feats = encoder(j)['r4_1']
+                patch_loss = patch_loss+content_loss(patch_feats, upscaled_patch_feats, norm=False)
     else:
         patch_loss = 0
 
