@@ -775,8 +775,8 @@ def adaconv_thumb_train():
                 crops.append((randx, randy))
                 print(f'first cropping: {randx}, {randy}')
                 if i > 0:
-                    first_x = crops[0][0]
-                    first_y = crops[0][1]
+                    first_x = int(crops[0][0]//2)
+                    first_y = int(crops[0][1]//2)
                     size = 128
                     for j in range(1,len(crops)):
                         first_x = int(first_x+(crops[j][0]/2**(2-i)))
