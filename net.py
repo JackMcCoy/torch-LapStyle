@@ -948,6 +948,7 @@ def calc_losses(stylized: torch.Tensor,
                 content_all_layers: bool=False,
                 upscaled_patch = None,
                 remd_loss: bool=True,
+                top_level_patch=None,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
@@ -1031,12 +1032,14 @@ def calc_losses(stylized: torch.Tensor,
         else:
             patch_disc_loss = 0
             patch_loss = 0
-            for i,j in zip(patch_feats,patch_stylized):
+            for idx, (i,j) in enumerate(zip(patch_feats,patch_stylized)):
                 upscaled_patch_feats = encoder(i)['r4_1']
                 patch_disc = disc_(j)
                 patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True)
                 patch_feats = encoder(j)['r4_1']
-                patch_loss = patch_loss+content_loss(patch_feats, upscaled_patch_feats, norm=False)
+                patch_loss = patch_loss + content_loss(patch_feats, upscaled_patch_feats, norm=False)
+                top_patch_feats = encoder(F.interpolate(top_level_patch[idx],256))
+                patch_loss = patch_loss +content_loss(patch_feats, top_patch_feats, norm=False)
     else:
         patch_loss = 0
 

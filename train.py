@@ -765,11 +765,23 @@ def adaconv_thumb_train():
 
             patches = []
             thumbnails = []
+            original = [None]
+            crops = []
             for i in range(3):
                 to_patch = stylized if i==0 else to_patch
                 ci_to_crop = ci[-1] if i==0 else ci_to_crop
-                randx = np.random.randint(0, (256*2**(2-i)))
-                randy = np.random.randint(0, (256*2**(2-i)))
+                randx = np.random.choice(np.arange(0, (256*2**(2-i),4)))
+                randy = np.random.choice(np.arange(0, (256*2**(2-i),4)))
+                crops.append((randx, randy))
+                if i > 0:
+                    first_x = crops[0][0]
+                    first_y = crops[0][1]
+                    size = 256
+                    for j in range(1,len(crops)):
+                        first_x = first_x/2**i
+                        first_y = first_y/2 ** i
+                        size /= 2
+                    original.append(stylized[:,:,first_x:first_x+size,first_y:first_y+size])
                 ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
                 scale = F.interpolate(ci_to_crop,256)
                 to_patch = F.interpolate(to_patch,512)[:,:,int(randx//2**(2-i)):int(randx//2**(2-i))+256,
@@ -788,7 +800,7 @@ def adaconv_thumb_train():
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=False,
                                        remd_loss=remd_loss,
-                                       patch_loss=True, patch_stylized = patches, sF=sF, split_style=False)
+                                       patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
 
