@@ -1005,7 +1005,7 @@ def calc_losses(stylized: torch.Tensor,
             patch_disc_loss = 0
         else:
             patch_disc = disc_(patch_stylized)
-            patch_disc_loss = calc_GAN_loss_from_pred(fake_loss, True)
+            patch_disc_loss = calc_GAN_loss_from_pred(patch_disc, True)
             disc_test = stylized
         fake_loss = disc_(disc_test)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
