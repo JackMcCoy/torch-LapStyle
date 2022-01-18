@@ -1033,10 +1033,10 @@ def calc_losses(stylized: torch.Tensor,
             patch_disc_loss = 0
             patch_loss = 0
             for idx, (i,j) in enumerate(zip(patch_feats,patch_stylized)):
-                upscaled_patch_feats = encoder(i)['r4_1']
-                patch_disc = disc_(j)
+                upscaled_patch_feats = encoder(j)['r4_1']
+                patch_disc = disc_(i)
                 patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True)
-                patch_feats = encoder(j)['r4_1']
+                patch_feats = encoder(i)['r4_1']
                 patch_loss = patch_loss + content_loss(patch_feats, upscaled_patch_feats, norm=False)
                 if idx>0:
                     top_patch_feats = encoder(top_level_patch[idx])['r4_1']
