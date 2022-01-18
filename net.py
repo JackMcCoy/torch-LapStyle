@@ -500,7 +500,7 @@ class ThumbAdaConv(nn.Module):
             RiemannNoise(32),
             RiemannNoise(64),
             RiemannNoise(128),
-            nn.Identity()
+            RiemannNoise(256),
         ])
         self.learnable=nn.ModuleList([
             nn.Sequential(
