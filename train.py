@@ -815,7 +815,7 @@ def adaconv_thumb_train():
             print('\n')
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
-            wandb.log(loss_dict, step=i)
+            wandb.log(loss_dict, step=n)
 
         with torch.no_grad():
             if (n + 1) % 50 == 0:
