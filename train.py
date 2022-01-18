@@ -778,8 +778,8 @@ def adaconv_thumb_train():
                     first_y = crops[0][1]
                     size = 128
                     for j in range(1,len(crops)):
-                        first_x = int(first_x+(crops[j][0]/2**(2-i)))
-                        first_y = int(first_y+(crops[j][1]/2**(2-i)))
+                        first_x = int(first_x+(crops[j][0]/2**(3-i)))
+                        first_y = int(first_y+(crops[j][1]/2**(3-i)))
                         size /= 2
                     print(first_x)
                     print(first_y)
