@@ -765,42 +765,24 @@ def adaconv_thumb_train():
 
             patches = []
             thumbnails = []
-            original = [None]
-            crops = []
+            original = []
+            patch_stylized = stylized
+            size = 128
+            ci_size = 1024
             for i in range(3):
-                to_patch = stylized if i==0 else to_patch
-                ci_to_crop = ci[-1] if i==0 else ci_to_crop
-                randx = np.random.choice(np.arange(0, 256*2**(2-i),4))
-                randy = np.random.choice(np.arange(0, 256*2**(2-i),4))
-                crops.append((randx, randy))
-                print(f'first cropping: {randx}, {randy}')
-                if i > 0:
-                    first_x = int(crops[0][0]//2)
-                    first_y = int(crops[0][1]//2)
-                    size = 128
-                    for j in range(1,len(crops)):
-                        first_x = int(first_x+(crops[j][0]/2**(2-i)))
-                        first_y = int(first_y+(crops[j][1]/2**(2-i)))
-                        size /= 2
-                    first_x = int(first_x/8)
-                    first_y = int(first_y/8)
-                    print(f'256 cropping: {first_x}:{first_x + int(size)},{first_y}:{first_y + int(size)}')
-                    print(f'2048 cropping: {randx}:{randx + (256 * 2 ** (2 - i))}, {randy}:{randy + (256*2**(2-i))}')
-                    original.append(stylized[:,:,first_x:first_x+int(size),first_y:first_y+int(size)])
-                ci_to_crop = ci_to_crop[:, :, randx:randx + (256*2**(2-i)), randy:randy + (256*2**(2-i))]
-                scale = F.interpolate(ci_to_crop,256)
-                ratio = 512/256*2**(1-i)
-                _x = int(randx/ratio)
-                _y = int(randy/ratio)
-                print(f'thumbnail cropping: {_x}, {_y}')
-                to_patch = F.interpolate(to_patch,512)[:,:,_x:_x+256,
-                           _y:_y+256]
 
+                original.append(stylized[:,:,0:size,0:size])
+                ci_to_crop = ci[0][:, :, 0:ci_size, 0:ci_size]
+                scale = F.interpolate(ci_to_crop,256)
                 cF_patch = enc_(scale)
-                thumbnails.append(to_patch)
+                patch_stylized = patch_stylized[:,:0:128,0:128]
+                thumbnails.append(patch_stylized)
 
                 patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
                 patches.append(patch_stylized)
+                size = int(size/2)
+                ci_size = int(ci_size/2)
+
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
 
