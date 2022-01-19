@@ -218,10 +218,10 @@ def build_revlap(depth, state):
 
 def build_disc(disc_state,device):
     with autocast(enabled=ac_enabled):
-        disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
+        disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels)
         disc.train()
         if not disc_state is None:
-            disc.load_state_dict(torch.load(disc_state, map_location=device), strict=False)
+            disc.load_state_dict(torch.load(disc_state, map_location=torch.device('cpu')), strict=False)
         else:
             init_weights(disc)
         disc.init_spectral_norm()
@@ -752,7 +752,7 @@ def adaconv_thumb_train(index, args):
 
     print(f'make models {index}')
     enc_ = build_enc(vgg,device)
-    dec_ = net.ThumbAdaConv(batch_size=args.batch_size,device=device).to(device)
+    dec_ = net.ThumbAdaConv(batch_size=args.batch_size,device=device)
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
@@ -770,7 +770,7 @@ def adaconv_thumb_train(index, args):
     if args.load_model == 'none':
         init_weights(dec_)
     else:
-        dec_.load_state_dict(torch.load(args.load_model, map_location=device), strict=False)
+        dec_.load_state_dict(torch.load(args.load_model, map_location=torch.device('cpu')), strict=False)
         try:
             dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
         except:
@@ -780,6 +780,8 @@ def adaconv_thumb_train(index, args):
         except:
             'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
+        dec_.to(device)
+        disc_.to(device)
         dec_.train()
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
