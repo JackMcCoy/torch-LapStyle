@@ -807,15 +807,11 @@ class SNLinear(nn.Linear):
 class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
-        self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
+        self.conv_1 = spectral_norm(nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect'))
         self.relu = nn.LeakyReLU()
-        self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
+        self.conv_2 = spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect'))
         self.c_sc = nn.Conv2d(in_channels, dim, kernel_size=1)
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
-
-    def init_spectral_norm(self):
-        self.conv_1 = spectral_norm(self.conv_1)
-        self.conv_2 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
