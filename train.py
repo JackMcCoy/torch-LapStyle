@@ -780,11 +780,11 @@ def adaconv_thumb_train(index, args):
         except:
             'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
-        dec_.to(device)
-        disc_.to(device)
-        dec_.train()
-        enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
+    dec_.to(device)
+    disc_.to(device)
+    dec_.train()
+    enc_.to(device)
 
     for n in range(args.max_iter):
         with torch.autograd.detect_anomaly():
