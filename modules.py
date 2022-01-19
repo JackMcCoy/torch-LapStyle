@@ -155,7 +155,6 @@ class SpectralResBlock(nn.Module):
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
         self.conv_2 = spectral_norm(self.conv_2)
-        self.c_sc = spectral_norm(self.c_sc)
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
