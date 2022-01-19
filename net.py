@@ -128,6 +128,7 @@ class SwitchableNoise(nn.Module):
     def forward(self, x):
         return self.noise_or_ident(x)
 
+
 class RevisionNet(nn.Module):
     def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
         super(RevisionNet, self).__init__()
@@ -486,18 +487,6 @@ class ThumbAdaConv(nn.Module):
             RiemannNoise(128, device),
             RiemannNoise(256, device),
         ])
-        self.riemann_c = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
-        self.riemann_d = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
@@ -544,15 +533,7 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-        if patch_num==0:
-            letter='a'
-        elif patch_num==1:
-            letter='b'
-        elif patch_num==2:
-            letter='c'
-        else:
-            letter='d'
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann_a if patch_num==0 else self.riemann_b)):
             x = ada(style, cF[mixin])
             x = self.relu(x)
             x = noise(x)
@@ -833,9 +814,11 @@ class Sequential(nn.Sequential):
         return input
 
 class SpectralDiscriminator(nn.Module):
-    def __init__(self, depth:int=5, num_channels: int=64):
+    def __init__(self, device,depth:int=5, num_channels: int=64):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
+        self.target_true = torch.ones(batch_size, c, h, h, device=device)
+        self.target_false = torch.zeros(batch_size, c, h, h, device=device)
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
@@ -897,26 +880,18 @@ style_layers = ['r1_1','r1_2','r2_1','r2_2','r3_1','r3_2','r3_3','r3_4','r4_1']
 gan_first=True
 
 
-def calc_GAN_loss_from_pred(prediction: torch.Tensor,
+def calc_GAN_loss_from_pred(disc_,prediction: torch.Tensor,
               target_is_real: bool, device):
-    batch_size = prediction.shape[0]
-    c = 3
-    h = 64
-    if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h, device=device)
-    else:
-        target_tensor = torch.zeros(batch_size, c, h, h,device=device)
-    loss = F.mse_loss(torch.nan_to_num(prediction), torch.nan_to_num(target_tensor.detach()))
+    loss = F.mse_loss(prediction, disc_.target_true if target_is_real else disc_.target_false)
     return loss
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module, device):
     pred_fake = disc_(fake)
-    print(pred_fake.shape)
     pred_fake = torch.clamp(pred_fake,0,1)
-    loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False, device)
+    loss_D_fake = calc_GAN_loss_from_pred(disc_, pred_fake, False, device)
     pred_real = disc_(real)
     pred_real = torch.clamp(pred_real,0,1)
-    loss_D_real = calc_GAN_loss_from_pred(pred_real, True, device)
+    loss_D_real = calc_GAN_loss_from_pred(disc_, pred_real, True, device)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
@@ -1014,7 +989,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True,device)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(disc_,fake_loss, True,device)
     else:
         loss_Gp_GAN = 0
 

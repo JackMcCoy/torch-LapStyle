@@ -118,10 +118,6 @@ class RiemannNoise(nn.Module):
         self.size=size
         self.relu = nn.ReLU()
 
-
-    def set_random(self):
-        self.noise = self.zero_holder.normal_()
-
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
