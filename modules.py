@@ -169,7 +169,6 @@ class SpectralResBlock(nn.Module):
         else:
             x2 = 0
         '''
-        x = x+x2
         return x
 
 
