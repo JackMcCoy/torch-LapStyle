@@ -521,6 +521,7 @@ class ThumbAdaConv(nn.Module):
             )])
         self.out_conv = nn.Conv2d(3,3,kernel_size=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.relu = nn.ReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -552,7 +553,8 @@ class ThumbAdaConv(nn.Module):
         else:
             letter='d'
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
-            x = ada(style, cF[mixin]).relu()
+            x = ada(style, cF[mixin])
+            x = self.relu(x0)
             x = noise(x)
             x = learnable(x)
         return x, style
