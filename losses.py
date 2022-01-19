@@ -74,7 +74,7 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return self.mse_loss(pred, (target+1))
+            return self.mse_loss((pred+1), (target+1))
         else:
             pred_variance = mean_variance_norm(pred)
             target_variance = mean_variance_norm(target)
