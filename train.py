@@ -221,7 +221,7 @@ def build_disc(disc_state,device):
         disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
         if not disc_state is None:
-            disc.load_state_dict(torch.load(disc_state), strict=False)
+            disc.load_state_dict(torch.load(disc_state, map_location=device), strict=False)
         else:
             init_weights(disc)
         disc.init_spectral_norm()
@@ -770,7 +770,7 @@ def adaconv_thumb_train(index, args):
     if args.load_model == 'none':
         init_weights(dec_)
     else:
-        dec_.load_state_dict(torch.load(args.load_model), strict=False)
+        dec_.load_state_dict(torch.load(args.load_model, map_location=device), strict=False)
         try:
             dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
         except:
