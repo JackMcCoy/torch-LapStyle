@@ -785,64 +785,65 @@ def adaconv_thumb_train(index, args):
         remd_loss = True if args.remd_loss == 1 else False
 
     for n in range(args.max_iter):
-        #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
-        ci = next(content_iter).to(device)
-        si = next(style_iter).to(device)
-        ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
-        si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-        if n==0:
-            print(f'encoding step  {index}')
-        cF = enc_(ci[0])
-        sF = enc_(si[0])
-
-        if n==0:
-            print(f'decoding step {index}')
-        stylized, style = dec_(sF, cF,patch_num=0)
-
-
-        patches = []
-        thumbnails = []
-        original = []
-        patch_stylized = stylized
-        size = 128
-        ci_size = 1024
-        for i in range(3):
-
-            original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
-            ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
-            scale = F.interpolate(ci_to_crop,256)
-            cF_patch = enc_(scale)
+        with torch.autograd.detect_anomaly():
+            #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
+            ci = next(content_iter).to(device)
+            si = next(style_iter).to(device)
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
             if n==0:
-                print(f'patch step{i} {index}')
-            patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
-            patches.append(patch_stylized)
-            size = int(size/2)
-            ci_size = int(ci_size/2)
+                print(f'encoding step  {index}')
+            cF = enc_(ci[0])
+            sF = enc_(si[0])
 
-        if n == 0:
-            print(f'losses {index}')
-        loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
+            if n==0:
+                print(f'decoding step {index}')
+            stylized, style = dec_(sF, cF,patch_num=0)
 
 
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                   calc_identity=args.identity_loss==1, disc_loss=True,
-                                   mdog_losses=args.mdog_loss, content_all_layers=False,
-                                   remd_loss=args.remd_loss==1,
-                                   patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False, device=device)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
-        loss.backward()
-        loss_D.backward()
-        dec_optimizer.step()
-        opt_D.step()
-        if n==0:
-            print(f'finished first step {index}')
-        xm.optimizer_step(dec_optimizer)
-        xm.optimizer_step(opt_D)
-        if n==0:
-            print(f'synced first step {index}')
-        dec_optimizer.zero_grad()
-        opt_D.zero_grad()
+            patches = []
+            thumbnails = []
+            original = []
+            patch_stylized = stylized
+            size = 128
+            ci_size = 1024
+            for i in range(3):
+
+                original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
+                ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
+                scale = F.interpolate(ci_to_crop,256)
+                cF_patch = enc_(scale)
+                if n==0:
+                    print(f'patch step{i} {index}')
+                patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
+                patches.append(patch_stylized)
+                size = int(size/2)
+                ci_size = int(ci_size/2)
+
+            if n == 0:
+                print(f'losses {index}')
+            loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
+
+
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                       calc_identity=args.identity_loss==1, disc_loss=True,
+                                       mdog_losses=args.mdog_loss, content_all_layers=False,
+                                       remd_loss=args.remd_loss==1,
+                                       patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False, device=device)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
+            loss.backward()
+            loss_D.backward()
+            dec_optimizer.step()
+            opt_D.step()
+            if n==0:
+                print(f'finished first step {index}')
+            xm.optimizer_step(dec_optimizer)
+            xm.optimizer_step(opt_D)
+            if n==0:
+                print(f'synced first step {index}')
+            dec_optimizer.zero_grad()
+            opt_D.zero_grad()
 
         if index==0:
             if (n + 1) % 1 == 0:

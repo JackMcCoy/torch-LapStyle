@@ -1029,7 +1029,7 @@ def calc_losses(stylized: torch.Tensor,
     if patch_loss:
         if patch_stylized is None:
             upscaled_patch_feats = stylized_feats['r4_1']
-            patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
+            patch_loss = content_loss(upscaled_patch_feats, (patch_feats['r4_1']+1), norm=False)
         else:
             patch_disc_loss = 0
             patch_loss = 0
@@ -1038,7 +1038,7 @@ def calc_losses(stylized: torch.Tensor,
                 patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True,device)
                 patch_feats = encoder(i)['r4_1']
                 upscaled_patch_feats = encoder(j)['r4_1']
-                patch_loss = patch_loss + content_loss(patch_feats, upscaled_patch_feats, norm=False)
+                patch_loss = patch_loss + content_loss(patch_feats, (upscaled_patch_feats+1), norm=False)
     else:
         patch_loss = 0
 
