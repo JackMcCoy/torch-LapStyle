@@ -832,8 +832,12 @@ def adaconv_thumb_train(index, args):
         dec_optimizer.zero_grad()
         opt_D.step()
         opt_D.zero_grad()
+        if n==0:
+            print(f'finished first step {index}')
         xm.optimizer_step(dec_optimizer)
         xm.optimizer_step(opt_D)
+        if n==0:
+            print(f'synced first step {index}')
 
         if index==0:
             if (n + 1) % 1 == 0:
