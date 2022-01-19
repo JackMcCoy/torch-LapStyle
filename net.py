@@ -949,7 +949,8 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 patch_stylized = None,
-                rev_depth:int = None):
+                rev_depth:int = None,
+                device=None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -1017,7 +1018,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True,device)
     else:
         loss_Gp_GAN = 0
 
@@ -1030,7 +1031,7 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = 0
             for idx, (i,j) in enumerate(zip(patch_stylized, top_level_patch)):
                 patch_disc = disc_(j)
-                patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True)
+                patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True,device)
                 patch_feats = encoder(i)['r4_1']
                 upscaled_patch_feats = encoder(j)['r4_1']
                 patch_loss = patch_loss + content_loss(patch_feats, upscaled_patch_feats, norm=False)
