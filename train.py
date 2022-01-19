@@ -832,7 +832,8 @@ def adaconv_thumb_train(index, args):
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False, device=device)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
-
+            _clip_gradient(dec_)
+            _clip_gradient(disc_)
             loss.backward()
             loss_D.backward()
             dec_optimizer.step()
