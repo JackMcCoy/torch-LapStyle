@@ -835,7 +835,7 @@ def adaconv_thumb_train(index, args):
         xm.optimizer_step(dec_optimizer)
         xm.optimizer_step(opt_D)
 
-        if xm.is_master_ordinal():
+        if index==0:
             if (n + 1) % 1 == 0:
                 loss_dict = {}
                 for l, s in zip(
