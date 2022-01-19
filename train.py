@@ -839,58 +839,55 @@ def adaconv_thumb_train(index, args):
         xm.optimizer_step(opt_D)
 
         if xm.is_master_ordinal():
-            xm.rendezvous('logging')
-        if (n + 1) % 1 == 0:
-            loss_dict = {}
-            for l, s in zip(
-                    [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, loss_Gp_GAN, loss_D, patch_disc_loss],
-                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
-                     'Patch Disc. Loss']):
-                if type(l) == torch.Tensor:
-                    loss_dict[s] = l.item()
-            if(n +1) % 10 ==0:
-                loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
-            print('\n')
-            print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
-            wandb.log(loss_dict, step=n)
+            if (n + 1) % 1 == 0:
+                loss_dict = {}
+                for l, s in zip(
+                        [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
+                         mdog, loss_Gp_GAN, loss_D, patch_disc_loss],
+                        ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                         'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
+                         'Patch Disc. Loss']):
+                    if type(l) == torch.Tensor:
+                        loss_dict[s] = l.item()
+                if(n +1) % 10 ==0:
+                    loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                print('\n')
+                print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+                wandb.log(loss_dict, step=n)
 
-        with torch.no_grad():
-            if (n + 1) % 50 == 0:
+            with torch.no_grad():
+                if (n + 1) % 50 == 0:
 
-                stylized = stylized.float().to('cpu')
-                patch_stylized = torch.vstack(patches).float().to('cpu')
-                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
-                style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(draft_img_grid.detach(),
-                           args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
-                save_image(content_img_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_ci' + str(
-                               n + 1) + '.jpg')
-                save_image(style_source_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_si' + str(
-                               n + 1) + '.jpg')
+                    stylized = stylized.float().to('cpu')
+                    patch_stylized = torch.vstack(patches).float().to('cpu')
+                    draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                    styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
+                    style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
+                    content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
+                    save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                    save_image(draft_img_grid.detach(),
+                               args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
+                    save_image(content_img_grid.detach(),
+                               args.save_dir + '/drafting_training_iter_ci' + str(
+                                   n + 1) + '.jpg')
+                    save_image(style_source_grid.detach(),
+                               args.save_dir + '/drafting_training_iter_si' + str(
+                                   n + 1) + '.jpg')
 
-            if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
-                state_dict = dec_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'decoder_iter_{:d}.pth.tar'.format(n + 1))
+                if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
+                    state_dict = dec_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'decoder_iter_{:d}.pth.tar'.format(n + 1))
 
-                state_dict = dec_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'dec_optimizer.pth.tar')
-                state_dict = disc_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'disc_optimizer.pth.tar')
-        if xm.is_master_ordinal():
-            xm.rendezvous('logging')
+                    state_dict = dec_optimizer.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'dec_optimizer.pth.tar')
+                    state_dict = disc_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'discriminator_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = opt_D.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'disc_optimizer.pth.tar')
 
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
