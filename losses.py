@@ -76,7 +76,7 @@ class CalcContentLoss():
         if (norm == False):
             return self.mse_loss(pred, target)
         else:
-            pred_variance = mean_vairance_norm(pred)
+            pred_variance = mean_variance_norm(pred)
             target_variance = mean_variance_norm(target)
             return self.mse_loss(pred_variance, target_variance)
 
