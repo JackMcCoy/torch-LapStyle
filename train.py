@@ -170,6 +170,7 @@ content_tf = train_transform(args.load_size, args.crop_size)
 style_tf = train_transform(args.style_load_size, args.crop_size)
 
 def get_vgg(args):
+    import vgg
     vgg = vgg.vgg
 
     vgg.load_state_dict(torch.load(args.vgg))
