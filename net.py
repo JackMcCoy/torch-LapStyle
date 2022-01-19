@@ -1025,13 +1025,13 @@ def calc_losses(stylized: torch.Tensor,
     else:
         loss_Gp_GAN = 0
 
+    patch_disc_loss = 0
+    patch_loss = 0
     if patch_loss:
         if patch_stylized is None:
             upscaled_patch_feats = stylized_feats['r4_1']
             patch_loss = content_loss(upscaled_patch_feats, (patch_feats['r4_1']+1), norm=False)
         else:
-            patch_disc_loss = 0
-            patch_loss = 0
             for idx, (i,j) in enumerate(zip(patch_stylized, top_level_patch)):
                 patch_disc = disc_(j)
                 patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True,device)
