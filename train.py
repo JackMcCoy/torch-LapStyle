@@ -24,7 +24,10 @@ from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
-
+import torch_xla
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.distributed.parallel_loader as pl
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -157,38 +160,37 @@ log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
 wandb.init(config=vars(args))
 
-def build_enc(vgg):
-    enc = net.Encoder(vgg)
+def build_enc(vgg,device):
+    enc = net.Encoder(vgg).to(device)
     set_requires_grad(enc, False)
     enc.train(False)
     return enc
 
-with autocast(enabled=ac_enabled):
+content_tf = train_transform(args.load_size, args.crop_size)
+style_tf = train_transform(args.style_load_size, args.crop_size)
+
+def get_vgg(args):
     vgg = vgg.vgg
 
     vgg.load_state_dict(torch.load(args.vgg))
     vgg = nn.Sequential(*list(vgg.children()))
+    return vgg
 
-    content_tf = train_transform(args.load_size, args.crop_size)
-    style_tf = train_transform(args.style_load_size, args.crop_size)
-
+def get_datasets(args, content_tf,style_tf):
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    return content_dataset, style_dataset
 
-content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
-    sampler=InfiniteSamplerWrapper(content_dataset),
-    num_workers=args.n_threads,pin_memory=True))
-'''
-tmp_dataset_2 = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
-    sampler=SequentialSamplerWrapper(content_dataset),
-    num_workers=args.n_threads))
-'''
-style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size,
-    sampler=InfiniteSamplerWrapper(style_dataset),
-    num_workers=args.n_threads,pin_memory=True))
+def make_dataloader(args, content_dataset, style_dataset):
+    content_iter = iter(data.DataLoader(
+        content_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(content_dataset),
+        num_workers=args.n_threads))
+    style_iter = iter(data.DataLoader(
+        style_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(style_dataset),
+        num_workers=args.n_threads))
+    return content_iter, style_iter
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
@@ -213,7 +215,7 @@ def build_revlap(depth, state):
     rev.train()
     return rev
 
-def build_disc(disc_state):
+def build_disc(disc_state,device):
     with autocast(enabled=ac_enabled):
         disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
@@ -222,7 +224,6 @@ def build_disc(disc_state):
         else:
             init_weights(disc)
         disc.init_spectral_norm()
-        disc.to(torch.device('cuda'))
     return disc
 
 def drafting_train():
@@ -714,94 +715,131 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
-def adaconv_thumb_train():
-    with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
-        if args.load_disc == 1:
-            path = args.load_model.split('/')
-            path_tokens = args.load_model.split('_')
-            new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-            disc_state = new_path_func('discriminator_')
+def adaconv_thumb_train(index, args):
+    torch.manual_seed(1)
+    device = xm.xla_device()
 
-        else:
-            disc_state = None
-            init_weights(dec_)
-        disc_ = build_disc(
-            disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    if not xm.is_master_ordinal():
+        xm.rendezvous('load_only_once')
 
-        dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
-        opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
-        if args.load_model == 'none':
-            init_weights(dec_)
-        else:
-            dec_.load_state_dict(torch.load(args.load_model), strict=False)
-            try:
-                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
-            except:
-                'optimizer not loaded'
-            try:
-                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
-            dec_optimizer.lr = args.lr
+    content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
+    vgg = get_vgg(args)
+
+    if xm.is_master_ordinal():
+        xm.rendezvous('load_only_once')
+
+    content_sampler = torch.utils.data.distributed.DistributedSampler(
+        content_dataset,
+        num_replicas=xm.xrt_world_size(),
+        rank=xm.get_ordinal(),
+        shuffle=True)
+
+    style_sampler = torch.utils.data.distributed.DistributedSampler(
+        style_dataset,
+        num_replicas=xm.xrt_world_size(),
+        rank=xm.get_ordinal(),
+        shuffle=False)
+
+    content_iter = iter(data.DataLoader(
+        content_dataset, batch_size=args.batch_size,
+        sampler= content_sampler,
+        shuffle=False,
+        num_workers=args.n_threads,
+        drop_last=True))
+    style_iter = iter(data.DataLoader(
+        style_dataset, batch_size=args.batch_size,
+        sampler= style_sampler,
+        shuffle=False,
+        num_workers=args.n_threads,
+        drop_last=True))
+
+    enc_ = torch.jit.trace(build_enc(vgg,device), (torch.rand((args.batch_size, 3, 256, 256).to(device))), strict=False)
+    dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
+    if args.load_disc == 1:
+        path = args.load_model.split('/')
+        path_tokens = args.load_model.split('_')
+        new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
+        disc_state = new_path_func('discriminator_')
+
+    else:
+        disc_state = None
+        init_weights(dec_)
+    disc_ = build_disc(
+        disc_state, device)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+
+    dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    if args.load_model == 'none':
+        init_weights(dec_)
+    else:
+        dec_.load_state_dict(torch.load(args.load_model), strict=False)
+        try:
+            dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
+        except:
+            'optimizer not loaded'
+        try:
+            opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+        except:
+            'discriminator optimizer not loaded'
+        dec_optimizer.lr = args.lr
         dec_.train()
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
-        scaler = GradScaler(init_scale=128)
 
     for n in range(args.max_iter):
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
-        with autocast(enabled=ac_enabled):
-            ci = next(content_iter).to(device)
-            si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+        ci = next(content_iter).to(device)
+        si = next(style_iter).to(device)
+        ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+        si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
+        cF = enc_(ci[0])
+        sF = enc_(si[0])
 
-            stylized, style = dec_(sF, cF,patch_num=0)
-
-
-            patches = []
-            thumbnails = []
-            original = []
-            patch_stylized = stylized
-            size = 128
-            ci_size = 1024
-            for i in range(3):
-
-                original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
-                ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
-                scale = F.interpolate(ci_to_crop,256)
-                cF_patch = enc_(scale)
-
-                patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
-                patches.append(patch_stylized)
-                size = int(size/2)
-                ci_size = int(ci_size/2)
+        stylized, style = dec_(sF, cF,patch_num=0)
 
 
-            loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
+        patches = []
+        thumbnails = []
+        original = []
+        patch_stylized = stylized
+        size = 128
+        ci_size = 1024
+        for i in range(3):
+
+            original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
+            ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
+            scale = F.interpolate(ci_to_crop,256)
+            cF_patch = enc_(scale)
+
+            patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
+            patches.append(patch_stylized)
+            size = int(size/2)
+            ci_size = int(ci_size/2)
 
 
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                       calc_identity=args.identity_loss==1, disc_loss=True,
-                                       mdog_losses=args.mdog_loss, content_all_layers=False,
-                                       remd_loss=remd_loss,
-                                       patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
+        loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
 
-            loss.backward()
-            loss_D.backward()
-            dec_optimizer.step()
-            dec_optimizer.zero_grad()
-            opt_D.step()
-            opt_D.zero_grad()
 
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                   calc_identity=args.identity_loss==1, disc_loss=True,
+                                   mdog_losses=args.mdog_loss, content_all_layers=False,
+                                   remd_loss=remd_loss,
+                                   patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
+        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
+
+        loss.backward()
+        loss_D.backward()
+        dec_optimizer.step()
+        dec_optimizer.zero_grad()
+        opt_D.step()
+        opt_D.zero_grad()
+        xm.optimizer_step(dec_optimizer)
+        xm.optimizer_step(opt_D)
+
+        if xm.is_master_ordinal():
+            xm.rendezvous('logging')
         if (n + 1) % 1 == 0:
-
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
@@ -815,7 +853,6 @@ def adaconv_thumb_train():
                 loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             print('\n')
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
-
             wandb.log(loss_dict, step=n)
 
         with torch.no_grad():
@@ -851,7 +888,8 @@ def adaconv_thumb_train():
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
-
+        if xm.is_master_ordinal():
+            xm.rendezvous('logging')
 
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
@@ -896,6 +934,6 @@ elif args.train_model == 'revision':
 elif args.train_model == 'revlap':
     revlap_train()
 elif args.train_model == 'adaconv_thumb':
-    adaconv_thumb_train()
+    xmp.spawn(map_fn, args=(args,), nprocs=8, start_method='fork')
 elif args.train_model == 'vqvae_pretrain':
     vq_train()
