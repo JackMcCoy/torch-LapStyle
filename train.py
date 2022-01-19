@@ -800,7 +800,6 @@ def adaconv_thumb_train(index, args):
             print(f'decoding step {index}')
         stylized, style = dec_(sF, cF,patch_num=0)
 
-
         patches = []
         thumbnails = []
         original = []
@@ -822,7 +821,7 @@ def adaconv_thumb_train(index, args):
 
         if n == 0:
             print(f'losses {index}')
-        #loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
+        loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
 
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
@@ -833,18 +832,17 @@ def adaconv_thumb_train(index, args):
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, patch_disc_loss = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +loss_Gp_GAN*args.gan_loss + patch_disc_loss*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4
         loss.backward()
-        #loss_D.backward()
+        loss_D.backward()
         dec_optimizer.step()
-        #opt_D.step()
+        opt_D.step()
         if n==0:
             print(f'finished first step {index}')
         xm.optimizer_step(dec_optimizer)
-        #xm.optimizer_step(opt_D)
+        xm.optimizer_step(opt_D)
         if n==0:
             print(f'synced first step {index}')
         dec_optimizer.zero_grad()
-        #opt_D.zero_grad()
-        loss_D = 0
+        opt_D.zero_grad()
 
         if xm.is_master_ordinal():
             if (n + 1) % 1 == 0:
