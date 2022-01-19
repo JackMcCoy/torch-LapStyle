@@ -812,9 +812,9 @@ class OptimizedBlock(nn.Module):
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
     def init_spectral_norm(self):
-        self.conv_1 = spectral_norm(self.conv_1).to(device)
-        self.conv_2 = spectral_norm(self.conv_2).to(device)
-        self.c_sc = spectral_norm(self.c_sc).to(device)
+        self.conv_1 = spectral_norm(self.conv_1)
+        self.conv_2 = spectral_norm(self.conv_2)
+        self.c_sc = spectral_norm(self.c_sc)
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
