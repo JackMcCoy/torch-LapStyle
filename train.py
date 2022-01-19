@@ -754,9 +754,9 @@ def adaconv_thumb_train():
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter)
-            si = next(style_iter).to(device)
+            si = next(style_iter)
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [si]
+            si = [si.to(device)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
