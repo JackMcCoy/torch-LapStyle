@@ -892,7 +892,7 @@ def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch
     pred_real = disc_(real)
     pred_real = torch.clamp(pred_real,0,1)
     loss_D_real = calc_GAN_loss_from_pred(disc_, pred_real, True, device)
-    loss_D = ((loss_D_real + loss_D_fake) * 0.5)
+    loss_D = (loss_D_real + loss_D_fake) * 0.5
     return loss_D
 
 def calc_patch_loss(stylized_feats, patch_feats):
