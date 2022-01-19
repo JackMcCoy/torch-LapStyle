@@ -753,9 +753,9 @@ def adaconv_thumb_train():
     for n in range(args.max_iter):
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
         with autocast(enabled=ac_enabled):
-            ci = next(content_iter).to(device)
+            ci = next(content_iter)
             si = next(style_iter).to(device)
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
+            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:32,:32].to(device)]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
             cF = enc_(ci[0])
             sF = enc_(si[0])
@@ -769,9 +769,7 @@ def adaconv_thumb_train():
             patch_stylized = stylized
 
             original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
-            ci_to_crop = ci[-1][:, :, 0:256, 0:256]
-            scale = F.interpolate(ci_to_crop,256)
-            cF_patch = enc_(scale)
+            cF_patch = enc_(ci[-1])
 
             patch_stylized, _ = dec_(None, cF_patch, style,patch_num=1)
             patches.append(patch_stylized)
