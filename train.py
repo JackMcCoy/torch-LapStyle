@@ -158,7 +158,7 @@ save_dir = Path(args.save_dir)
 save_dir.mkdir(exist_ok=True, parents=True)
 log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
-wandb.init(config=vars(args))
+#wandb.init(config=vars(args))
 
 def build_enc(vgg,device):
     enc = net.Encoder(vgg).to(device)
@@ -719,6 +719,8 @@ def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
 
+    if xm.is_master_ordinal():
+        wandb.init(config=vars(args))
     print(f'get datasets {index}')
 
     content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
