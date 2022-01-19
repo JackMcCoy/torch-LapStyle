@@ -170,7 +170,7 @@ with autocast(enabled=ac_enabled):
     vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
-    style_tf = train_transform(args.style_load_size, args.crop_size)
+    style_tf = train_transform(256, 256)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
