@@ -934,6 +934,6 @@ elif args.train_model == 'revision':
 elif args.train_model == 'revlap':
     revlap_train()
 elif args.train_model == 'adaconv_thumb':
-    xmp.spawn(map_fn, args=(args,), nprocs=8, start_method='fork')
+    xmp.spawn(revision_train, args=(args,), nprocs=8, start_method='fork')
 elif args.train_model == 'vqvae_pretrain':
     vq_train()
