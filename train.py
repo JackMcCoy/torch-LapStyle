@@ -321,7 +321,7 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(state_dict, save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(i + 1))
-def revision_train():
+def revision_train(index, args):
     random_crop = transforms.RandomCrop(512 if args.split_style else 256)
     with autocast(enabled=ac_enabled):
 
@@ -934,6 +934,6 @@ elif args.train_model == 'revision':
 elif args.train_model == 'revlap':
     revlap_train()
 elif args.train_model == 'adaconv_thumb':
-    xmp.spawn(revision_train, args=(args,), nprocs=8, start_method='fork')
+    xmp.spawn(adaconv_thumb_train, args=(args,), nprocs=8, start_method='fork')
 elif args.train_model == 'vqvae_pretrain':
     vq_train()
