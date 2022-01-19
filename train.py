@@ -719,8 +719,12 @@ def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
 
+    if not xm.is_master_ordinal():
+        xm.rendezvous('wandb init')
+
     if xm.is_master_ordinal():
         wandb.init(config=vars(args))
+        xm.rendezvous('wandb init')
     print(f'get datasets {index}')
 
     content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
