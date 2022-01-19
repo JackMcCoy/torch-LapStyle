@@ -224,7 +224,6 @@ def build_disc(disc_state,device):
             disc.load_state_dict(torch.load(disc_state, map_location=torch.device('cpu')), strict=False)
         else:
             init_weights(disc)
-        disc.init_spectral_norm()
     return disc
 
 def drafting_train():
