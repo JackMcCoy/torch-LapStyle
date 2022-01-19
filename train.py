@@ -720,15 +720,12 @@ def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
 
-    if not xm.is_master_ordinal():
-        xm.rendezvous('load_only_once')
+    if xm.is_master_ordinal():
+        print('get datasets')
 
     content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
+
     vgg = get_vgg(args)
-
-    if xm.is_master_ordinal():
-        xm.rendezvous('load_only_once')
-
     content_sampler = torch.utils.data.distributed.DistributedSampler(
         content_dataset,
         num_replicas=xm.xrt_world_size(),
@@ -754,6 +751,8 @@ def adaconv_thumb_train(index, args):
         num_workers=2,
         drop_last=True))
 
+    if xm.is_master_ordinal():
+        print('make models')
     enc_ = build_enc(vgg,device)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size,device=device).to(device)
     if args.load_disc == 1:
