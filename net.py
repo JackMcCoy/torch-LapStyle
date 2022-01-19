@@ -817,8 +817,8 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, device,batch_size=4,depth:int=5, num_channels: int=64):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
-        #self.target_true = torch.ones(batch_size, , h, h, device=device)
-        #self.target_false = torch.zeros(batch_size, c, h, h, device=device)
+        self.target_true = torch.ones(batch_size, 3, 64, 64, device=device)
+        self.target_false = torch.zeros(batch_size, 3, 64, 64, device=device)
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
@@ -887,7 +887,6 @@ def calc_GAN_loss_from_pred(disc_,prediction: torch.Tensor,
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module, device):
     pred_fake = disc_(fake)
-    print(pred_fake.shape)
     pred_fake = torch.clamp(pred_fake,0,1)
     loss_D_fake = calc_GAN_loss_from_pred(disc_, pred_fake, False, device)
     pred_real = disc_(real)
