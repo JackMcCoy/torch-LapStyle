@@ -720,8 +720,7 @@ def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
 
-    if xm.is_master_ordinal():
-        print('get datasets')
+    print(f'get datasets {index}')
 
     content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
 
@@ -751,8 +750,7 @@ def adaconv_thumb_train(index, args):
         num_workers=2,
         drop_last=True))
 
-    if xm.is_master_ordinal():
-        print('make models')
+    print(f'make models {index}')
     enc_ = build_enc(vgg,device)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size,device=device).to(device)
     if args.load_disc == 1:
@@ -766,7 +764,7 @@ def adaconv_thumb_train(index, args):
         init_weights(dec_)
     disc_ = build_disc(
         disc_state, device)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-
+    print(f'make optimizers  {index}')
     dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     if args.load_model == 'none':
