@@ -793,13 +793,10 @@ def adaconv_thumb_train(index, args):
         si = next(style_iter).to(device)
         ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True), ci]
         si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True), si]
-        if n==0:
-            print(f'encoding step  {index}')
+
         cF = enc_(ci[0])
         sF = enc_(si[0])
 
-        if n==0:
-            print(f'decoding step {index}')
         stylized, style = dec_(sF, cF,patch_num=0)
 
         patches = []
@@ -808,21 +805,15 @@ def adaconv_thumb_train(index, args):
         patch_stylized = stylized
         size = 128
         ci_size = 1024
-        for i in range(3):
 
-            original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
-            ci_to_crop = ci[-1][:, :, 0:ci_size, 0:ci_size]
-            scale = F.interpolate(ci_to_crop,256)
-            cF_patch = enc_(scale)
-            if n==0:
-                print(f'patch step{i} {index}')
-            patch_stylized, _ = dec_(None, cF_patch, style,patch_num=i+1)
-            patches.append(patch_stylized)
-            size = int(size/2)
-            ci_size = int(ci_size/2)
+        original.append(F.interpolate(stylized[:,:,0:size,0:size],256))
+        cF_patch = enc_(F.interpolate(ci[-1][:, :, 0:ci_size, 0:ci_size],256))
 
-        if n == 0:
-            print(f'losses {index}')
+        patch_stylized, _ = dec_(None, cF_patch, style,patch_num=1)
+        patches.append(patch_stylized)
+        size = int(size/2)
+        ci_size = int(ci_size/2)
+
         loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
 
 

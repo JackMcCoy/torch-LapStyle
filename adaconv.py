@@ -38,9 +38,9 @@ class AdaConv(nn.Module):
             mean = predicted.mean(dim=(2,3), keepdim=True)
             predicted = predicted -mean
             predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2,3), keepdim=True)+1e-5)
-        content_out = []
+        content_out = torch.empty_like(predicted)
         for i in range(a):
-            content_out.append(nn.functional.conv2d(
+            content_out[i] = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
                                              weight=depthwise[i],
                                              stride=1,
@@ -49,6 +49,5 @@ class AdaConv(nn.Module):
                                  stride = 1,
                                  weight=pointwise_kn[i],
                                  bias=pointwise_bias[i],
-                                 groups=self.n_groups))
-        content_out = torch.cat(content_out,0)
+                                 groups=self.n_groups).squeeze()
         return content_out
