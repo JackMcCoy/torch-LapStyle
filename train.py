@@ -754,7 +754,7 @@ def adaconv_thumb_train(index, args):
         num_workers=args.n_threads,
         drop_last=True))
 
-    enc_ = torch.jit.trace(build_enc(vgg,device), (torch.rand((args.batch_size, 3, 256, 256).to(device))), strict=False)
+    enc_ = torch.jit.trace(build_enc(vgg,device), (torch.rand(args.batch_size, 3, 256, 256).to(device)), strict=False)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
     if args.load_disc == 1:
         path = args.load_model.split('/')
