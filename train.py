@@ -845,7 +845,9 @@ def adaconv_thumb_train(index, args):
             print(f'synced first step {index}')
         #dec_optimizer.zero_grad()
         #opt_D.zero_grad()
-
+        loss_Gp_GAN = 0
+        patch_disc_loss = 0
+        loss_D = 0
         if index==0:
             if (n + 1) % 1 == 0:
                 loss_dict = {}
