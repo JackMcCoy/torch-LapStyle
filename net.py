@@ -554,7 +554,7 @@ class ThumbAdaConv(nn.Module):
             letter='d'
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
             x = ada(style, cF[mixin])
-            x = self.relu(x0)
+            x = self.relu(x)
             x = noise(x)
             x = learnable(x)
         return x, style
