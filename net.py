@@ -490,18 +490,7 @@ class ThumbAdaConv(nn.Module):
             RiemannNoise(128),
             RiemannNoise(256),
         ])
-        self.riemann_c = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
-        ])
-        self.riemann_d = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
-        ])
+
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
@@ -547,15 +536,8 @@ class ThumbAdaConv(nn.Module):
             style = style.reshape(b, self.s_d, 4, 4)
         else:
             style = style_enc
-        if patch_num==0:
-            letter='a'
-        elif patch_num==1:
-            letter='b'
-        elif patch_num==2:
-            letter='c'
-        else:
-            letter='d'
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
+
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann_a if style_enc is None else self.riemann_b)):
             x = ada(style, cF[mixin]).relu()
             x = noise(x)
             x = learnable(x)
