@@ -162,11 +162,13 @@ class SpectralResBlock(nn.Module):
         x = self.conv_2(x)
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
+        '''
         if self.downsample:
             x2 = self.c_sc(in_feat)
             x2 = nn.functional.avg_pool2d(x2, 2)
         else:
             x2 = 0
+        '''
         x = x+x2
         return x
 
