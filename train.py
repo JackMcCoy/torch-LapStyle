@@ -745,17 +745,17 @@ def adaconv_thumb_train(index, args):
         content_dataset, batch_size=args.batch_size,
         sampler= content_sampler,
         shuffle=False,
-        num_workers=args.n_threads,
+        num_workers=2,
         drop_last=True))
     style_iter = iter(data.DataLoader(
         style_dataset, batch_size=args.batch_size,
         sampler= style_sampler,
         shuffle=False,
-        num_workers=args.n_threads,
+        num_workers=2,
         drop_last=True))
 
     enc_ = build_enc(vgg,device)
-    dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
+    dec_ = net.ThumbAdaConv(batch_size=args.batch_size,device=device).to(device)
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')

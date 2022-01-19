@@ -445,7 +445,7 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size = 8, style_encoding=True):
+    def __init__(self, batch_size = 8, style_encoding=True, device=None):
         super(ThumbAdaConv, self).__init__()
         self.s_d = 64
         if style_encoding:
@@ -475,28 +475,28 @@ class ThumbAdaConv(nn.Module):
             nn.LeakyReLU(),
         )
         self.riemann_a = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
+            RiemannNoise(32, device),
+            RiemannNoise(64, device),
+            RiemannNoise(128, device),
+            RiemannNoise(256, device),
         ])
         self.riemann_b = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
+            RiemannNoise(32, device),
+            RiemannNoise(64, device),
+            RiemannNoise(128, device),
+            RiemannNoise(256, device),
         ])
         self.riemann_c = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
+            RiemannNoise(32, device),
+            RiemannNoise(64, device),
+            RiemannNoise(128, device),
+            RiemannNoise(256, device),
         ])
         self.riemann_d = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
+            RiemannNoise(32, device),
+            RiemannNoise(64, device),
+            RiemannNoise(128, device),
+            RiemannNoise(256, device),
         ])
         self.learnable=nn.ModuleList([
             nn.Sequential(
