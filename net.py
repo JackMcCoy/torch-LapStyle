@@ -915,7 +915,7 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
         target_tensor = torch.ones(batch_size, c, h, h, device=device)
     else:
         target_tensor = torch.zeros(batch_size, c, h, h,device=device)
-    loss = F.mse_loss(prediction, target_tensor.detach())
+    loss = F.mse_loss(torch.nan_to_num(prediction)+1e-12, torch.nan_to_num(target_tensor.detach()))
     return loss
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module, device):

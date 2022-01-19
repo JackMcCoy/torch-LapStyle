@@ -74,11 +74,11 @@ class CalcContentLoss():
             norm(Bool): whether use mean_variance_norm for pred and target
         """
         if (norm == False):
-            return self.mse_loss(pred, target)
+            return self.mse_loss(torch.nan_to_num(pred)+1e-12, torch.nan_to_num(target))
         else:
             pred_variance = mean_variance_norm(pred)
             target_variance = mean_variance_norm(target)
-            return self.mse_loss(pred_variance, target_variance)
+            return self.mse_loss(torch.nan_to_num(pred_variance)+1e-12, torch.nan_to_num(target_variance))
 
 
 class CalcStyleLoss():
@@ -96,8 +96,8 @@ class CalcStyleLoss():
         """
         pred_mean, pred_std = calc_mean_std(pred)
         target_mean, target_std = calc_mean_std(target)
-        return self.mse_loss(pred_mean, target_mean) + self.mse_loss(
-            pred_std, target_std)
+        return self.mse_loss(torch.nan_to_num(pred_mean)+1e-12, torch.nan_to_num(target_mean)) + self.mse_loss(
+            torch.nan_to_num(pred_std)+1e-12, torch.nan_to_num(target_std))
 
 
 class GANLoss(nn.Module):
@@ -162,7 +162,7 @@ class GANLoss(nn.Module):
             target_tensor = self.target_real
         else:
             target_tensor = self.target_fake
-        loss = self.loss(prediction, target_tensor.detach())
+        loss = self.loss(torch.nan_to_num(prediction)+1e-12, target_tensor.detach())
         return loss
 
 class GramErrors():
