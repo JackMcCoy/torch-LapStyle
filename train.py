@@ -848,7 +848,7 @@ def adaconv_thumb_train(index, args):
         loss_Gp_GAN = 0
         patch_disc_loss = 0
         loss_D = 0
-        if index==0:
+        if xm.is_master_ordinal():
             if (n + 1) % 1 == 0:
                 loss_dict = {}
                 for l, s in zip(
