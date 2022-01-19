@@ -82,7 +82,7 @@ class FusedConvNoiseBias(nn.Module):
             self.noise = RiemannNoise(hw)
         self.bias = nn.Parameter(nn.init.constant_(torch.ones(ch_out, ), .01))
         self.act = nn.LeakyReLU()
-        self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))
+        self.res_scale = torch.rsqrt((torch.ones(1,device=device)*2))
         self.apply(self._init_weights)
 
     @staticmethod
@@ -106,14 +106,14 @@ class FusedConvNoiseBias(nn.Module):
 
 class RiemannNoise(nn.Module):
 
-    def __init__(self, size:int):
+    def __init__(self, size:int, device):
         super(RiemannNoise, self).__init__()
         self.size = size
         self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
-        self.noise = torch.zeros(1, device='cuda:0')
+        self.noise = torch.zeros(1, device=device)
         self.noise.requires_grad = False
         self.size=size
         self.relu = nn.ReLU()

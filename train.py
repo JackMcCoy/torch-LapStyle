@@ -817,7 +817,7 @@ def adaconv_thumb_train(index, args):
             ci_size = int(ci_size/2)
 
 
-        loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
+        loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_, device)
 
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
