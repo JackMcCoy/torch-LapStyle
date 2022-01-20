@@ -563,7 +563,7 @@ class ThumbAdaConv(nn.Module):
             x = ada(style_enc, cF[mixin]).relu()
             x = noise(x)
             x = learnable(x)
-        return x, style
+        return x
 
 
 class DecoderVQGAN(nn.Module):
@@ -899,7 +899,7 @@ style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, style_project=None):
     projection = style_project(F['r4_1'])
-    Icc, ada = decoder(F, style_enc = projection)
+    Icc = decoder(F, style_enc = projection)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)

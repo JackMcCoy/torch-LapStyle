@@ -768,7 +768,7 @@ def adaconv_thumb_train():
 
             style_embedding = style_enc_(sF['r4_1'][:half,:,:,:])
             style_embedding = torch.cat([style_embedding,style_embedding],0)
-            stylized, style = dec_(cF,style_enc=style_embedding)
+            stylized = dec_(cF,style_enc=style_embedding)
 
 
             patches = []
