@@ -553,7 +553,7 @@ class ThumbAdaConv(nn.Module):
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = ada(style_enc, cF[mixin]).relu()
+            x = x + ada(style_enc, cF[mixin]).relu()
             x = learnable(x)
         return x
 
