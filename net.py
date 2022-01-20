@@ -448,16 +448,54 @@ class DecoderAdaConv(nn.Module):
         return x, style
 
 
+class StyleReprojection(nn.Module):
+    def __init__(self, s_d):
+        self.s_d = s_d
+        self.style_reprojection = nn.Sequential(
+            nn.Linear(self.s_d * 16, self.s_d * 32),
+            nn.LeakyReLU(),
+            nn.Linear(self.s_d * 32, self.s_d * 16),
+            nn.LeakyReLU()
+        )
+    def forward(self,x):
+        style = x.flatten(1)
+        style = self.style_reprojection(style)
+        style = style.reshape(b, self.s_d, 4, 4)
+        return style
+
+
+class StyleProjection(nn.Module):
+    def __init__(self, s_d):
+        super(StyleProjection, self).__init__()
+        self.s_d = s_d
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+        )
+        self.style_projection = nn.Sequential(
+            nn.Linear(8192, self.s_d * 16),
+            nn.BatchNorm1d(self.s_d * 16),
+            nn.LeakyReLU(),
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.BatchNorm1d(self.s_d * 16),
+            nn.LeakyReLU(),
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.BatchNorm1d(self.s_d * 16),
+            nn.LeakyReLU(),
+        )
+    def forward(self, sF):
+        style = self.style_encoding(sF['r4_1'])
+        style = style.flatten(1)
+        style = self.style_projection(style)
+        style = style.reshape(b, self.s_d, 4, 4)
+        return style
+
+
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size = 8, style_encoding=True):
+    def __init__(self, batch_size = 8):
         super(ThumbAdaConv, self).__init__()
         self.s_d = 64
-        if style_encoding:
-            self.style_encoding = nn.Sequential(
-                StyleEncoderBlock(512),
-                StyleEncoderBlock(512),
-                StyleEncoderBlock(512),
-            )
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
@@ -467,23 +505,6 @@ class ThumbAdaConv(nn.Module):
         ])
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d*16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-        )
-        self.style_reprojection = nn.Sequential(
-            nn.Linear(self.s_d * 16, self.s_d * 32),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d *32, self.s_d *16),
-            nn.LeakyReLU()
-        )
         self.riemann = nn.ModuleList([
             RiemannNoise(32),
             RiemannNoise(64),
@@ -527,20 +548,11 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None, patch_num = 0):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None):
         b, n, h, w = cF['r4_1'].shape
-        if style_enc is None:
-            style = self.style_encoding(sF['r4_1'])
-            style = style.flatten(1)
-            style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
-        else:
-            style = style_enc.flatten(1)
-            style = self.style_reprojection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
 
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann)):
-            x = ada(style, cF[mixin]).relu()
+            x = ada(style_enc, cF[mixin]).relu()
             x = noise(x)
             x = learnable(x)
         return x, style

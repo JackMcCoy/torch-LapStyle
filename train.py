@@ -718,6 +718,9 @@ def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(batch_size=args.batch_size).to(device)
+        style_enc_ = net.StyleProjection(64).to(device)
+        style_reproject_ = net.StyleReprojection(64).to(device)
+
         if args.load_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -729,8 +732,10 @@ def adaconv_thumb_train():
             init_weights(dec_)
         disc_ = build_disc(
             disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+        init_weights(style_enc_)
+        init_weight(style_reproject_)
 
-        dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
+        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters())+list(style_reproject_.parameters()), lr=args.lr)
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
@@ -745,6 +750,7 @@ def adaconv_thumb_train():
             except:
                 'discriminator optimizer not loaded'
             dec_optimizer.lr = args.lr
+
         dec_.train()
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
@@ -760,21 +766,19 @@ def adaconv_thumb_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style = dec_(sF, cF,patch_num=0)
+            style_embedding = style_enc_(sF)
+            stylized, style = dec_(cF,style_enc=style_embedding)
 
 
             patches = []
-            thumbnails = []
             original = []
-            patch_stylized = stylized
 
             original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
             cF_patch = enc_(ci[-1])
 
-            patch_stylized, _ = dec_(None, cF_patch, style,patch_num=1)
+            reprojected = style_reproject_(style_embedding)
+            patch_stylized, _ = dec_(cF_patch, style_enc=reprojected)
             patches.append(patch_stylized)
-
-
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
 
@@ -834,6 +838,12 @@ def adaconv_thumb_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
+                state_dict = style_enc_.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'style_enc_iter_{:d}.pth.tar'.format(n + 1))
+                state_dict = style_reproject_.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'style_reproject_iter_{:d}.pth.tar'.format(n + 1))
 
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
