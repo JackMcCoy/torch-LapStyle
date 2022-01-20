@@ -475,13 +475,6 @@ class StyleProjection(nn.Module):
         )
         self.style_projection = nn.Sequential(
             nn.Linear(8192, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
             nn.LeakyReLU(),
         )
     def forward(self, sF):
