@@ -748,6 +748,7 @@ def adaconv_thumb_train():
         enc_.to(device)
         remd_loss = True if args.remd_loss == 1 else False
         scaler = GradScaler(init_scale=128)
+        disc_scaler = GradScaler(init_scale=128)
     half = args.batch_size//2
     for n in range(args.max_iter):
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
@@ -792,6 +793,14 @@ def adaconv_thumb_train():
                    loss_Gp_GAN*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + \
                    style_contrastive_loss*0.3 + content_contrastive_loss*0.3
 
+        if ac_enabled:
+            disc_scaler.scale(loss_D).backward()
+            disc_scaler.step(opt_D)
+            disc_scaler.update()
+            scaler.scale(loss).backward()
+            scaler.step(dec_optimizer)
+            scaler.update()
+        else:
             loss.backward()
             loss_D.backward()
             dec_optimizer.step()
