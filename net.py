@@ -841,10 +841,6 @@ class SpectralDiscriminator(nn.Module):
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
-    def init_spectral_norm(self):
-        for layer in self.spectral_gan:
-            layer.init_spectral_norm()
-
     def forward(self, x: torch.Tensor):
         for layer in self.spectral_gan:
             x = layer(x)
