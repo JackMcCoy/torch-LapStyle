@@ -795,7 +795,7 @@ def adaconv_thumb_train():
             loss.backward()
             loss_D.backward()
             dec_optimizer.step()
-            dec_optimizer.zero_grad()\
+            dec_optimizer.zero_grad()
             opt_D.step()
             opt_D.zero_grad()
 
