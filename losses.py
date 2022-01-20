@@ -106,7 +106,7 @@ class GANLoss(nn.Module):
     that has the same size as the input.
     """
     def __init__(self,
-                 gan_mode, depth=5, conv_ch=64, batch_size=5):
+                 gan_mode, depth=5, conv_ch=64, batch_size=6):
         """ Initialize the GANLoss class.
 
         Args:
