@@ -494,9 +494,9 @@ class StyleProjection(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size = 8):
+    def __init__(self, s_d = 64,batch_size = 8):
         super(ThumbAdaConv, self).__init__()
-        self.s_d = 64
+        self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
