@@ -485,7 +485,7 @@ class StyleProjection(nn.Module):
             nn.LeakyReLU(),
         )
     def forward(self, sF):
-        style = self.style_encoding(sF['r4_1'])
+        style = self.style_encoding(sF)
         style = style.flatten(1)
         style = self.style_projection(style)
         style = style.reshape(b, self.s_d, 4, 4)
@@ -533,7 +533,16 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 3),
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
-        self.out_conv = nn.Conv2d(3,3,kernel_size=1)
+        self.proj_style = nn.Sequential(
+            nn.Linear(in_features=256, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=128)
+        )
+        self.proj_content = nn.Sequential(
+            nn.Linear(in_features=512, out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=128)
+        )
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -549,8 +558,6 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None):
-        b, n, h, w = cF['r4_1'].shape
-
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann)):
             x = ada(style_enc, cF[mixin]).relu()
             x = noise(x)
@@ -889,8 +896,9 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def identity_loss(i, F, encoder, decoder):
-    Icc, ada = decoder(F, F)
+def identity_loss(i, F, encoder, decoder, style_project=None):
+    projection = style_project(F['r4_1'])
+    Icc, ada = decoder(F, style_enc = projection)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
@@ -928,6 +936,25 @@ def calc_patch_loss(stylized_feats, patch_feats):
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
 
+def style_feature_contrastive(sF, decoder):
+    out = torch.sum(sF, dim=[2, 3])
+    out = decoder.proj_style(out)
+    out = out / torch.norm(out, p=2, dim=1, keepdim=True)
+    return out
+
+def content_feature_contrastive(input, decoder):
+    # out = self.enc_content(input)
+    out = torch.sum(input, dim=[2, 3])
+    out = decoder.proj_content(out)
+    out = out / torch.norm(out, p=2, dim=1, keepdim=True)
+    return out
+
+def compute_contrastive_loss(feat_q, feat_k, tau, index):
+    out = torch.mm(feat_q, feat_k.transpose(1, 0)) / tau
+    #loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
+    loss = F.cross_entropy(out, torch.tensor([index], dtype=torch.long, device=feat_q.device))
+    return loss
+
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
@@ -948,12 +975,14 @@ def calc_losses(stylized: torch.Tensor,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
+                contrastive_loss = False,
+                style_project_:nn.Module = None,
                 patch_stylized = None,
                 rev_depth:int = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, style_project=style_project)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, style_project=style_project)
     else:
         l_identity1 = 0
         l_identity2 = 0
@@ -1019,6 +1048,85 @@ def calc_losses(stylized: torch.Tensor,
     else:
         loss_Gp_GAN = 0
 
+    if contrastive_loss:
+        half = stylized_feats['r4_1'].shape[0]//2
+        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half])
+        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:])
+        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half])
+        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:])
+
+        style_contrastive_loss = 0
+        for i in range(half):
+            reference_style = style_up[i:i + 1]
+
+            if i == 0:
+                style_comparisons = torch.cat([style_down[0:half - 1], style_up[1:]], 0)
+            elif i == 1:
+                style_comparisons = torch.cat([style_down[1:], style_up[0:1], style_up[2:]], 0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_down[half - 1:], style_down[0:half - 2], style_up[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat([style_down[i:], style_down[0:i - 1], style_up[0:i], style_up[i + 1:]], 0)
+
+            style_contrastive_loss += compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+
+        for i in range(half):
+            reference_style = style_down[i:i + 1]
+
+            if i == 0:
+                style_comparisons = torch.cat([style_up[0:1], style_up[2:], style_down[1:]], 0)
+            elif i == (half - 2):
+                style_comparisons = torch.cat(
+                    [style_up[half - 2:half - 1], style_up[0:half - 2], style_down[0:half - 2], style_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_up[half - 1:], style_up[1:half - 1], style_down[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat(
+                    [style_up[i:i + 1], style_up[0:i], style_up[i + 2:], style_down[0:i], style_down[i + 1:]], 0)
+
+            style_contrastive_loss += compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+
+        content_contrastive_loss = 0
+        for i in range(half):
+            reference_content = content_up[i:i + 1]
+
+            if i == 0:
+                content_comparisons = torch.cat([content_down[half - 1:], content_down[1:half - 1], content_up[1:]], 0)
+            elif i == 1:
+                content_comparisons = torch.cat([content_down[0:1], content_down[2:], content_up[0:1], content_up[2:]],
+                                                0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat(
+                    [content_down[half - 2:half - 1], content_down[0:half - 2], content_up[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_down[i - 1:i], content_down[0:i - 1], content_down[i + 1:], content_up[0:i],
+                     content_up[i + 1:]], 0)
+
+            content_contrastive_loss += compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+
+        for i in range(half):
+            reference_content = content_down[i:i + 1]
+
+            if i == 0:
+                content_comparisons = torch.cat([content_up[1:], content_down[1:]], 0)
+            elif i == (half - 2):
+                content_comparisons = torch.cat(
+                    [content_up[half - 1:], content_up[0:half - 2], content_down[0:half - 2], content_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat([content_up[0:half - 1], content_down[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
+                     content_down[i + 1:]], 0)
+
+            content_contrastive_loss += compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+    else:
+        content_contrastive_loss=0
+        style_contrastive_loss=0
+
     if patch_loss:
         if patch_stylized is None:
             upscaled_patch_feats = stylized_feats['r4_1']
@@ -1033,5 +1141,5 @@ def calc_losses(stylized: torch.Tensor,
     else:
         patch_loss = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss
 
