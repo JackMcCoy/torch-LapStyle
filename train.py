@@ -210,7 +210,7 @@ def build_revlap(depth, state):
 
 def build_disc(disc_state):
     with autocast(enabled=ac_enabled):
-        disc = net.Discriminator(depth=args.revision_depth, num_channels=args.disc_channels, relgan=False).to(device)
+        disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
         if not disc_state is None:
             disc.load_state_dict(torch.load(disc_state), strict=False)

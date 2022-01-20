@@ -1025,7 +1025,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(fake_loss, disc_.true)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
