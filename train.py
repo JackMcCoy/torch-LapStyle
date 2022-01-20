@@ -752,61 +752,62 @@ def adaconv_thumb_train():
     half = args.batch_size//2
     for n in range(args.max_iter):
         #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
-        with autocast(enabled=ac_enabled):
-            ci = next(content_iter)
-            si = next(style_iter)
-            ######
-            ci_ = ci[1:]
-            ci_ = torch.cat([ci_, ci[0:1]], 0)
-            ci = torch.cat([ci, ci_], 0)
-            si = torch.cat([si, si], 0)
-            ######
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [si.to(device)]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+        with torch.autograd.detect_anomaly():
+            with autocast(enabled=ac_enabled):
+                ci = next(content_iter)
+                si = next(style_iter)
+                ######
+                ci_ = ci[1:]
+                ci_ = torch.cat([ci_, ci[0:1]], 0)
+                ci = torch.cat([ci, ci_], 0)
+                si = torch.cat([si, si], 0)
+                ######
+                ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
+                si = [si.to(device)]
+                cF = enc_(ci[0])
+                sF = enc_(si[0])
 
-            style_embedding = style_enc_(sF['r4_1'][:half,:,:,:])
-            style_embedding = torch.cat([style_embedding,style_embedding],0)
-            stylized = dec_(cF,style_enc=style_embedding)
-
-
-            patches = []
-            original = []
-
-            original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
-            cF_patch = enc_(ci[-1])
-
-            patch_stylized = dec_(cF_patch, style_enc=style_embedding)
-            patches.append(patch_stylized)
-
-            loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
+                style_embedding = style_enc_(sF['r4_1'][:half,:,:,:])
+                style_embedding = torch.cat([style_embedding,style_embedding],0)
+                stylized = dec_(cF,style_enc=style_embedding)
 
 
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                       calc_identity=args.identity_loss==1, disc_loss=True,
-                                       mdog_losses=args.mdog_loss, content_all_layers=False,
-                                       remd_loss=remd_loss, style_project = style_enc_,contrastive_loss = True,
-                                       patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
-                   loss_Gp_GAN*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + \
-                   style_contrastive_loss*0.3 + content_contrastive_loss*0.3
+                patches = []
+                original = []
 
-        if ac_enabled:
-            disc_scaler.scale(loss_D).backward()
-            disc_scaler.step(opt_D)
-            disc_scaler.update()
-            scaler.scale(loss).backward()
-            scaler.step(dec_optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            loss_D.backward()
-            dec_optimizer.step()
-            dec_optimizer.zero_grad()
-            opt_D.step()
-            opt_D.zero_grad()
+                original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
+                cF_patch = enc_(ci[-1])
+
+                patch_stylized = dec_(cF_patch, style_enc=style_embedding)
+                patches.append(patch_stylized)
+
+                loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
+
+
+                losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                           calc_identity=args.identity_loss==1, disc_loss=True,
+                                           mdog_losses=args.mdog_loss, content_all_layers=False,
+                                           remd_loss=remd_loss, style_project = style_enc_,contrastive_loss = True,
+                                           patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
+                loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
+                       loss_Gp_GAN*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + \
+                       style_contrastive_loss*0.3 + content_contrastive_loss*0.3
+
+            if ac_enabled:
+                disc_scaler.scale(loss_D).backward()
+                disc_scaler.step(opt_D)
+                disc_scaler.update()
+                scaler.scale(loss).backward()
+                scaler.step(dec_optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                loss_D.backward()
+                dec_optimizer.step()
+                dec_optimizer.zero_grad()
+                opt_D.step()
+                opt_D.zero_grad()
 
         if (n + 1) % 1 == 0:
 
