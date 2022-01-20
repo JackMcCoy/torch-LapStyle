@@ -455,7 +455,12 @@ class ThumbAdaConv(nn.Module):
                 StyleEncoderBlock(512),
                 StyleEncoderBlock(512),
             )
-
+        self.style_reprojection = nn.Sequential(
+            nn.Linear(self.s_d * 16, self.s_d * 32),
+            nn.ReLU(),
+            nn.Linear(self.s_d * 32, self.s_d * 16)
+            nn.ReLU()
+        )
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, batch_size, s_d=self.s_d),
             AdaConv(256, 4, batch_size, s_d=self.s_d),
@@ -532,7 +537,9 @@ class ThumbAdaConv(nn.Module):
             style = self.style_projection(style)
             style = style.reshape(b, self.s_d, 4, 4)
         else:
-            style = style_enc
+            style = style_enc.flatten(1)
+            style = self.style_reprojection(style)
+            style = style.reshape(b, self.s_d, 4, 4)
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann_a if patch_num==0 else self.riemann_b)):
             x = ada(style, cF[mixin])
             x = self.relu(x)
