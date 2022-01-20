@@ -485,6 +485,7 @@ class StyleProjection(nn.Module):
             nn.LeakyReLU(),
         )
     def forward(self, sF):
+        b, n, h, w = sF.shape
         style = self.style_encoding(sF)
         style = style.flatten(1)
         style = self.style_projection(style)
