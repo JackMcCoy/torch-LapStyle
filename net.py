@@ -1051,10 +1051,10 @@ def calc_losses(stylized: torch.Tensor,
 
     if contrastive_loss:
         half = stylized_feats['r4_1'].shape[0]//2
-        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half])
-        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:])
-        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half])
-        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:])
+        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
+        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
+        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
+        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
 
         style_contrastive_loss = 0
         for i in range(half):
