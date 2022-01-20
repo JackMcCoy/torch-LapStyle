@@ -728,8 +728,7 @@ def adaconv_thumb_train():
             disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
         init_weights(style_enc_)
 
-        dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
-        projection_optimizer = torch.optim.Adam(style_enc_.parameters(), lr=args.lr)
+        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters()), lr=args.lr)
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
@@ -796,9 +795,7 @@ def adaconv_thumb_train():
             loss.backward()
             loss_D.backward()
             dec_optimizer.step()
-            dec_optimizer.zero_grad()
-            projection_optimizer.step()
-            projection_optimizer.zero_grad()
+            dec_optimizer.zero_grad()\
             opt_D.step()
             opt_D.zero_grad()
 
@@ -807,10 +804,12 @@ def adaconv_thumb_train():
             loss_dict = {}
             for l, s in zip(
                     [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss],
+                     mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
+                     l_identity1,l_identity2,l_identity3,l_identity4],
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
-                     'Style Contrastive Loss','Content Contrastive Loss']):
+                     'Style Contrastive Loss','Content Contrastive Loss',
+                     "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss"]):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
             if(n +1) % 10 ==0:
@@ -849,9 +848,6 @@ def adaconv_thumb_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
-                state_dict = projection_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'projection_optimizer.pth.tar')
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
