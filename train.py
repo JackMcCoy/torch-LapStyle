@@ -777,7 +777,7 @@ def adaconv_thumb_train():
             original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
             cF_patch = enc_(ci[-1])
 
-            patch_stylized, _ = dec_(cF_patch, style_enc=style_embedding)
+            patch_stylized = dec_(cF_patch, style_enc=style_embedding)
             patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
