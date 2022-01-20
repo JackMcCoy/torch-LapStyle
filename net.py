@@ -506,13 +506,6 @@ class ThumbAdaConv(nn.Module):
         ])
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
-        self.riemann = nn.ModuleList([
-            RiemannNoise(32),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            RiemannNoise(256),
-        ])
-
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
@@ -561,7 +554,6 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None):
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann)):
             x = ada(style_enc, cF[mixin]).relu()
-            x = noise(x)
             x = learnable(x)
         return x
 
