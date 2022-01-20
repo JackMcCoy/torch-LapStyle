@@ -977,7 +977,7 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 contrastive_loss = False,
-                style_project_:nn.Module = None,
+                style_project:nn.Module = None,
                 patch_stylized = None,
                 rev_depth:int = None):
     stylized_feats = encoder(stylized)
