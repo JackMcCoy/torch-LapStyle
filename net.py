@@ -758,28 +758,27 @@ class Discriminator(nn.Module):
             pred_fake = pred_fake.view(-1)
         else:
             loss_D_fake = self.ganloss(pred_fake, self.false)
-        for i in torch.split(real.detach(),256,dim=2):
-            for j in torch.split(i.detach(), 256,dim=3):
-                pred_real = self(j)
-                if self.relgan:
-                    pred_real = pred_real.view(-1)
-                    if idx==0:
-                        loss_D = (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        )
-                    else:
-                        loss_D += (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        ).data
-                else:
-                    loss_D_real = self.ganloss(pred_real, self.true)
-                    if idx ==0:
-                        loss_D = ((loss_D_real + loss_D_fake) * 0.5)
-                    else:
-                        loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
-                idx += 1
+
+        pred_real = self(real)
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            if idx==0:
+                loss_D = (
+                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                )
+            else:
+                loss_D += (
+                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                ).data
+        else:
+            loss_D_real = self.ganloss(pred_real, self.true)
+            if idx ==0:
+                loss_D = ((loss_D_real + loss_D_fake) * 0.5)
+            else:
+                loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
+
         return loss_D
 
     def forward(self, x):
@@ -1031,7 +1030,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+        loss_Gp_GAN = disc_.ganloss(fake_loss, disc_.true)
     else:
         loss_Gp_GAN = 0
 
