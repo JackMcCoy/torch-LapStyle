@@ -49,41 +49,24 @@ class Encoder(nn.Module):
     def __init__(self, vggs):
         super(Encoder,(self)).__init__()
         enc_layers = list(vggs.children())
-        '''
+
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        '''
-        #self.enc_5 = nn.Sequential(*enc_layers[31:44])
-        self.encoder_module = nn.ModuleList([
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[:4]),
-                nn.Sequential(*enc_layers[4:8]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[8:11]),
-                nn.Sequential(*enc_layers[11:15]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[15:18]),
-                nn.Sequential(*enc_layers[18:21]),
-                nn.Sequential(*enc_layers[21:24]),
-                nn.Sequential(*enc_layers[24:27]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[27:31]),
-            ])
-        ])
-
 
     def forward(self, x):
         encodings = {}
-        for idx,module in enumerate(self.encoder_module):
-            for jdx, sequence in enumerate(module):
-                x = sequence(x)
-                encodings[f'r{idx+1}_{jdx+1}']=x
-
+        x = self.enc_1(x)
+        encodings['r1_1'] = x
+        x = self.enc_2(x)
+        encodings['r2_1'] = x
+        x = self.enc_3(x)
+        encodings['r3_1'] = x
+        x = self.enc_4(x)
+        encodings['r4_1'] = x
+        #x = self.enc_5(x)
+        #encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -517,12 +500,6 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 3),
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
-        self.riemann = nn.ModuleList([
-            RiemannNoise(64),
-            RiemannNoise(128),
-            nn.Identity(),
-            nn.Identity()
-        ])
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
@@ -548,7 +525,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, patch = False):
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer,self.riemann)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
                 x = x.relu()
@@ -558,7 +535,6 @@ class ThumbAdaConv(nn.Module):
             x = learnable(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
-            x = noise(x)
         return x
 
 
@@ -895,7 +871,7 @@ def identity_loss(i, F, encoder, decoder, style_project=None):
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
-style_layers = ['r1_1','r1_2','r2_1','r2_2','r3_1','r3_2','r3_3','r3_4','r4_1']
+style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
