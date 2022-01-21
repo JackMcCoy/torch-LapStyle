@@ -542,7 +542,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, patch = False):
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
                 x = x.relu()
