@@ -433,6 +433,7 @@ class DecoderAdaConv(nn.Module):
 
 class StyleReprojection(nn.Module):
     def __init__(self, s_d):
+        super(StyleReprojection, self).__init__()
         self.s_d = s_d
         self.style_reprojection = nn.Sequential(
             nn.Linear(self.s_d * 16, self.s_d * 32),
