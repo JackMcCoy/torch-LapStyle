@@ -442,6 +442,7 @@ class StyleReprojection(nn.Module):
             nn.LeakyReLU()
         )
     def forward(self,x):
+        b = x.shape[0]
         style = x.flatten(1)
         style = self.style_reprojection(style)
         style = style.reshape(b, self.s_d, 4, 4)
