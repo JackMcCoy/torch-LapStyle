@@ -520,14 +520,14 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.riemann_a = nn.ModuleList([
-            RiemannNoise(32),
             RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
         self.riemann_b = nn.ModuleList([
-            RiemannNoise(32),
             RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
