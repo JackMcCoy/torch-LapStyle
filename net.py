@@ -519,7 +519,7 @@ class ThumbAdaConv(nn.Module):
         self.riemann = nn.ModuleList([
             RiemannNoise(64),
             RiemannNoise(128),
-            RiemannNoise(256),
+            nn.Identity(),
             nn.Identity()
         ])
         self.proj_style = nn.Sequential(
