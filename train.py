@@ -713,7 +713,7 @@ def adaconv_thumb_train():
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(s_d=128,batch_size=args.batch_size).to(device)
         style_enc_ = net.StyleProjection(128).to(device)
-
+        style_reproject_ = net.StyleReprojection(128).to(device)
         if args.load_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -726,8 +726,9 @@ def adaconv_thumb_train():
         disc_ = build_disc(
             disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
         init_weights(style_enc_)
+        init_weight(style_reproject_)
 
-        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters()), lr=args.lr)
+        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters()+list(style_reproject_.parameters())), lr=args.lr)
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
@@ -769,14 +770,14 @@ def adaconv_thumb_train():
             style_embedding = torch.cat([style_embedding,style_embedding],0)
             stylized = dec_(cF,style_enc=style_embedding)
 
-
             patches = []
             original = []
 
             original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
             cF_patch = enc_(ci[-1])
 
-            patch_stylized = dec_(cF_patch, style_enc=style_embedding, patch=True)
+            reprojected_style  = style_reproject_(style_embedding)
+            patch_stylized = dec_(cF_patch, style_enc=reprojected_style, patch=True)
             patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
