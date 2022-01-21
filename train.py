@@ -771,7 +771,7 @@ def adaconv_thumb_train():
             patches = []
             original = []
 
-            original.append(F.interpolate(stylized[:,:,0:32,0:32],256))
+            original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
             cF_patch = enc_(ci[-1])
 
             patch_stylized = dec_(cF_patch, style_enc=style_embedding, patch=True)
