@@ -517,14 +517,14 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.riemann_a = nn.ModuleList([
-            RiemannNoise(32),
             RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
         self.riemann_b = nn.ModuleList([
-            RiemannNoise(32),
             RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
@@ -561,9 +561,9 @@ class ThumbAdaConv(nn.Module):
                 x = x + ada(style_enc, cF[mixin])
                 x = x.relu()
             x = learnable(x)
-            x = noise(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
+            x = noise(x)
         return x
 
 
