@@ -516,16 +516,10 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 3),
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
-        self.riemann_a = nn.ModuleList([
+        self.riemann = nn.ModuleList([
             RiemannNoise(64),
             RiemannNoise(128),
-            nn.Identity(),
-            nn.Identity()
-        ])
-        self.riemann_b = nn.ModuleList([
-            RiemannNoise(64),
-            RiemannNoise(128),
-            nn.Identity(),
+            RiemannNoise(256),
             nn.Identity()
         ])
         self.proj_style = nn.Sequential(
@@ -553,7 +547,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, patch = False):
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer,self.riemann_b if patch else self.riemann_a)):
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer,self.riemann)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
                 x = x.relu()
