@@ -502,17 +502,14 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 ResBlock(512),
                 ConvBlock(512, 256),
-                nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ResBlock(256),
                 ConvBlock(256, 128),
-                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 ConvBlock(128, 128),
                 ConvBlock(128, 64),
-                nn.Upsample(scale_factor=2, mode='nearest')
             ),
             nn.Sequential(
                 ConvBlock(64, 64),
@@ -520,14 +517,14 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.riemann_a = nn.ModuleList([
+            RiemannNoise(32),
             RiemannNoise(64),
-            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
         self.riemann_b = nn.ModuleList([
+            RiemannNoise(32),
             RiemannNoise(64),
-            RiemannNoise(128),
             nn.Identity(),
             nn.Identity()
         ])
@@ -565,6 +562,8 @@ class ThumbAdaConv(nn.Module):
                 x = x.relu()
             x = learnable(x)
             x = noise(x)
+            if idx<(len(self.adaconvs)-1):
+                x = self.upsample(x)
         return x
 
 
