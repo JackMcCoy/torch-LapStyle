@@ -728,7 +728,7 @@ def adaconv_thumb_train():
         init_weights(style_enc_)
         init_weights(style_reproject_)
 
-        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters()+list(style_reproject_.parameters())), lr=args.lr)
+        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters())+list(style_reproject_.parameters()), lr=args.lr)
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
