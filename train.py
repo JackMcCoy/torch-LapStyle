@@ -711,8 +711,8 @@ def revlap_train():
 def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.ThumbAdaConv(s_d=512,batch_size=args.batch_size).to(device)
-        style_enc_ = net.StyleProjection(512).to(device)
+        dec_ = net.ThumbAdaConv(s_d=128,batch_size=args.batch_size).to(device)
+        style_enc_ = net.StyleProjection(128).to(device)
 
         if args.load_disc == 1:
             path = args.load_model.split('/')
