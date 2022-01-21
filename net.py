@@ -438,7 +438,8 @@ class StyleReprojection(nn.Module):
         self.style_reprojection = nn.Sequential(
             nn.Linear(self.s_d * 16, self.s_d * 16),
             nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16)
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.LeakyReLU(),
         )
     def forward(self,x):
         b = x.shape[0]
