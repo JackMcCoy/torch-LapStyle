@@ -12,9 +12,15 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
-        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2)
+        self.depthwise_kernel_conv = nn.Sequential(
+            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2),
+            nn.Unflatten(1,(self.c_out, self.c_in // self.n_groups))
+        )
         self.pointwise_avg_pool = nn.AvgPool2d(4)
-        self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1)
+        self.pw_cn_kn = nn.Sequential(
+            nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1),
+            nn.Unflatten(1,(self.c_out, self.c_out//self.n_groups))
+        )
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, kernel_size=1)
         self.apply(self._init_weights)
 
@@ -28,15 +34,9 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        print(depthwise.shape)
-        depthwise = depthwise.view(N, self.c_out, self.c_in // self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d)
-        print(pointwise_kn.shape)
-        pointwise_kn = pointwise_kn.view(N, self.c_out, self.c_out//self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d)
-        print(pointwise_bias.shape)
-        pointwise_bias = pointwise_bias.view(N,self.c_out)
+        pointwise_bias = self.pw_cn_bias(s_d).view(N,self.c_out)
 
         a, b, c, d = predicted.size()
         if self.norm:
