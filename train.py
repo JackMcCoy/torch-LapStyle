@@ -771,10 +771,12 @@ def adaconv_thumb_train():
             patches = []
             original = []
 
+            stylized_feats = enc_(stylized)
+            patch_embedding = style_enc_(stylized_feats['r4_1'])
             original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
             cF_patch = enc_(ci[-1])
 
-            patch_stylized = dec_(cF_patch, style_enc=style_embedding, patch=True)
+            patch_stylized = dec_(cF_patch, style_enc=patch_embedding, patch=True)
             patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
@@ -783,7 +785,7 @@ def adaconv_thumb_train():
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                       remd_loss=remd_loss, style_project = style_enc_,contrastive_loss = True,
+                                       remd_loss=remd_loss, stylized_feats = stylized_feats,style_project = style_enc_,contrastive_loss = True,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
