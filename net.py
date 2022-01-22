@@ -940,11 +940,9 @@ def calc_losses(stylized: torch.Tensor,
                 split_style: bool=False,
                 contrastive_loss = False,
                 style_project:nn.Module = None,
-                stylized_feats = None,
                 patch_stylized = None,
                 rev_depth:int = None):
-    if stylized_feats is None:
-        stylized_feats = encoder(stylized)
+    stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, style_project=style_project)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, style_project=style_project)
