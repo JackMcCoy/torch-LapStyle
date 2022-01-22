@@ -712,7 +712,6 @@ def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(s_d=256,batch_size=args.batch_size).to(device)
-        style_enc_ = net.StyleProjection(256).to(device)
         if args.load_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -726,7 +725,7 @@ def adaconv_thumb_train():
             disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
         init_weights(style_enc_)
 
-        dec_optimizer = torch.optim.Adam(list(dec_.parameters(recurse=True))+list(style_enc_.parameters()), lr=args.lr)
+        dec_optimizer = torch.optim.Adam(dec_.parameters(recurse=True), lr=args.lr)
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
         if args.load_model == 'none':
             init_weights(dec_)
@@ -764,9 +763,7 @@ def adaconv_thumb_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            style_embedding = style_enc_(sF['r4_1'][:half,:,:,:])
-            style_embedding = torch.cat([style_embedding,style_embedding],0)
-            stylized = dec_(cF,style_enc=style_embedding)
+            stylized = dec_(cF,style_enc=sF['r4_1'],repeat_style=True)
 
             patches = []
             original = []
@@ -774,7 +771,7 @@ def adaconv_thumb_train():
             original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
             cF_patch = enc_(ci[-1])
 
-            patch_stylized = dec_(cF_patch, style_enc=style_embedding, patch=True)
+            patch_stylized = dec_(cF_patch, style_enc=style_embedding, calc_style=False)
             patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
@@ -783,7 +780,7 @@ def adaconv_thumb_train():
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                       remd_loss=remd_loss, style_project = style_enc_,contrastive_loss = True,
+                                       remd_loss=remd_loss, contrastive_loss = True,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
@@ -848,9 +845,6 @@ def adaconv_thumb_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = style_enc_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'style_enc_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')

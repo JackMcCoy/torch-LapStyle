@@ -431,44 +431,6 @@ class DecoderAdaConv(nn.Module):
         return x, style
 
 
-class StyleReprojection(nn.Module):
-    def __init__(self, s_d):
-        super(StyleReprojection, self).__init__()
-        self.s_d = s_d
-        self.style_reprojection = nn.Sequential(
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.LeakyReLU(),
-        )
-    def forward(self,x):
-        b = x.shape[0]
-        style = x.flatten(1)
-        style = style + self.style_reprojection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
-        return style
-
-
-class StyleProjection(nn.Module):
-    def __init__(self, s_d):
-        super(StyleProjection, self).__init__()
-        self.s_d = s_d
-        self.style_encoding = nn.Sequential(
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-        )
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16),
-            nn.LeakyReLU()
-        )
-    def forward(self, sF):
-        b, n, h, w = sF.shape
-        style = self.style_encoding(sF)
-        style = style.flatten(1)
-        style = self.style_projection(style)
-        style = style.reshape(b, self.s_d, 4, 4)
-        return style
-
-
 class ThumbAdaConv(nn.Module):
     def __init__(self, s_d = 64,batch_size = 8):
         super(ThumbAdaConv, self).__init__()
@@ -480,6 +442,15 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 2, batch_size, s_d=self.s_d),
             AdaConv(64, 1, batch_size, s_d=self.s_d)
         ])
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            nn.Flatten(1),
+            nn.Linear(8192, self.s_d * 16),
+            nn.LeakyReLU(),
+            nn.Unflatten(1, (self.s_d, 4, 4))
+        )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
@@ -535,7 +506,14 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, patch = False):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, repeat_style = False, calc_style=True):
+        if calc_style:
+            if repeat_style:
+                b = style_enc.shape[0]
+                style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
+                style_enc = torch.cat([style_enc,style_enc],0)
+            else:
+                style_enc = self.style_encoding(style_enc)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
@@ -870,9 +848,8 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def identity_loss(i, F, encoder, decoder, style_project=None):
-    projection = style_project(F['r4_1'])
-    Icc = decoder(F, style_enc = projection)
+def identity_loss(i, F, encoder, decoder, repeat_style=True):
+    Icc = decoder(F, style_enc = F['r4_1'],repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
@@ -948,13 +925,12 @@ def calc_losses(stylized: torch.Tensor,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
                 contrastive_loss = False,
-                style_project:nn.Module = None,
                 patch_stylized = None,
                 rev_depth:int = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, style_project=style_project)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, style_project=style_project)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
     else:
         l_identity1 = 0
         l_identity2 = 0
