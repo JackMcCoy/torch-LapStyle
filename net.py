@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
         '''
 
         self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(6, 256, kernel_size=1),
+                                                    nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.Conv2d(64, 64, kernel_size=1),
@@ -179,7 +179,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(device)
         input = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(input)
-        out = self.UpBlock(input)
+        out = self.UpBlock(out)
         out = (out + input)
         return out
 
