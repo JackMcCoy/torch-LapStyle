@@ -116,10 +116,12 @@ class SwitchableNoise(nn.Module):
         return self.noise_or_ident(x)
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
+    def __init__(self, s_d = 320):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.ReLU()
+        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -138,14 +140,15 @@ class RevisionNet(nn.Module):
                         ResBlock(64),
                         RiemannNoise(128, 64),
         )
-
+        '''
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d)])
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d)])
+        '''
 
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.UpBlock = nn.Sequential([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
@@ -164,7 +167,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     )])
 
-    def forward(self, input, style):
+    def forward(self, input):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -172,13 +175,12 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        lap_pyr = F.conv2d(F.pad(input.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+                           groups=3).to(device)
+        input = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(input)
-        N, C, h, w = style.shape
-        style = style * self.embedding_scale.view(1,C,h,w)
-        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
-            out = out + adaconv(style, out, norm=True)
-            out = learnable(out)
-        out = (out + input[:,:3,:,:])
+        out = self.UpBlock(input)
+        out = (out + input)
         return out
 
 class Revisors(nn.Module):
@@ -432,15 +434,15 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, s_d = 64,batch_size = 8):
+    def __init__(self, s_d = 64):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 8, batch_size, s_d=self.s_d),
-            AdaConv(256, 4, batch_size, s_d=self.s_d),
-            AdaConv(128, 2, batch_size, s_d=self.s_d),
-            AdaConv(64, 1, batch_size, s_d=self.s_d)
+            AdaConv(512, 8, s_d=self.s_d),
+            AdaConv(256, 4, s_d=self.s_d),
+            AdaConv(128, 2, s_d=self.s_d),
+            AdaConv(64, 1, s_d=self.s_d)
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),

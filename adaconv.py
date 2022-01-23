@@ -3,7 +3,7 @@ from torch import nn
 import typing
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, batch_size: typing.Optional[int], s_d: int = 512, norm:bool=True):
+    def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
         super(AdaConv, self).__init__()
         self.n_groups = int(c_in//p)
         self.pointwise_groups = s_d//p
