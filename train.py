@@ -797,9 +797,9 @@ def adaconv_thumb_train():
                                        patch_loss=False, sF=patch_sF,
                                        split_style=False)
             loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_loss, style_contrastive_lossp, content_contrastive_lossp = patch_losses
-            loss = loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_loss * args.patch_loss + \
+            loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_loss * args.patch_loss + \
                    loss_Gp_GAN * args.gan_loss + mdogp + l_identity1 * 50 + l_identity2p + l_identity3p * 50 + l_identity4p + \
-                   style_contrastive_lossp * 0.3 + content_contrastive_lossp * 0.3
+                   style_contrastive_lossp * 0.3 + content_contrastive_lossp * 0.3)
 
         if ac_enabled:
             disc_scaler.scale(loss_D).backward()
