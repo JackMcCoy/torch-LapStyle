@@ -747,8 +747,8 @@ def adaconv_thumb_train():
         disc_scaler = GradScaler(init_scale=128)
     for n in range(args.max_iter):
         if args.lr_decay!=0:
-            adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
-            adjust_learning_rate(opt_D, i // args.accumulation_steps, args, disc=True)
+            adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
+            adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter)
             si = next(style_iter)
