@@ -713,6 +713,7 @@ def adaconv_thumb_train():
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(s_d=256).to(device)
         rev_ = net.RevisionNet(s_d = 256).to(device)
+        random_crop = transforms.RandomCrop(256)
         if args.load_disc == 1:
             path = args.load_model.split('/')
             path_tokens = args.load_model.split('_')
@@ -732,14 +733,20 @@ def adaconv_thumb_train():
             init_weights(dec_)
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
-            try:
-                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
-            except:
-                'optimizer not loaded'
-            try:
-                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
+            rev_.load_state_dict(torch.load(new_path_func('revisors')))
+            if args.load_optimizer:
+                try:
+                    dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
+                except:
+                    'optimizer not loaded'
+                try:
+                    rev_opt.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
+                except:
+                    'optimizer not loaded'
+                try:
+                    opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+                except:
+                    'discriminator optimizer not loaded'
             dec_optimizer.lr = args.lr
         init_weights(rev_)
         dec_.train()
@@ -762,7 +769,7 @@ def adaconv_thumb_train():
             si = torch.cat([si, si], 0)
             ######
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), si[:,:,:256,:256].to(device)]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), random_crop(si)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
