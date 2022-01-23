@@ -148,7 +148,7 @@ class RevisionNet(nn.Module):
             AdaConv(128, 2, s_d=s_d)])
         '''
 
-        self.UpBlock = nn.Sequential([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
@@ -165,7 +165,7 @@ class RevisionNet(nn.Module):
                                                     nn.LeakyReLU(),),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
-                                                    )])
+                                                    ))
 
     def forward(self, input):
         """
