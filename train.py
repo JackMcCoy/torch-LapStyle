@@ -741,7 +741,7 @@ def adaconv_thumb_train():
             except:
                 'discriminator optimizer not loaded'
             dec_optimizer.lr = args.lr
-        init_weights(rev)
+        init_weights(rev_)
         dec_.train()
         rev_.train()
         enc_.to(device)
