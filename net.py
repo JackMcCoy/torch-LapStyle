@@ -138,7 +138,7 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         # Resblock Middle
                         ResBlock(64),
-                        RiemannNoise(128, 64),
+                        RiemannNoise(128),
         )
         '''
         self.adaconvs = nn.ModuleList([
