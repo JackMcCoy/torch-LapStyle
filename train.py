@@ -745,9 +745,10 @@ def adaconv_thumb_train():
         remd_loss = True if args.remd_loss == 1 else False
         scaler = GradScaler(init_scale=128)
         disc_scaler = GradScaler(init_scale=128)
-    half = args.batch_size//2
     for n in range(args.max_iter):
-        #adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
+        if args.lr_decay!=0:
+            adjust_learning_rate(dec_optimizer, i // args.accumulation_steps, args)
+            adjust_learning_rate(opt_D, i // args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             ci = next(content_iter)
             si = next(style_iter)
