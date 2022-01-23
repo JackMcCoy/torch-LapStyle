@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
         '''
 
         self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
+                                                    nn.Conv2d(6, 256, kernel_size=1),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
                                                     nn.Conv2d(64, 64, kernel_size=1),
