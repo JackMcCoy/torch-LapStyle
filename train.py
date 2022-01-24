@@ -778,7 +778,7 @@ def adaconv_thumb_train():
             loss_D = calc_GAN_loss(si[0].detach(), stylized.clone().detach(), None, disc_)
 
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                       calc_identity=args.identity_loss==1, disc_loss=False,
+                                       calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                        remd_loss=remd_loss, contrastive_loss = False,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
