@@ -769,7 +769,7 @@ def adaconv_thumb_train():
             si = torch.cat([si, si], 0)
             ######
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), random_crop(si)]
+            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), random_crop(si).to(device)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
