@@ -533,7 +533,6 @@ class ThumbAdaConv(nn.Module):
                 x = x + ada(style_enc, cF[mixin])
                 x = self.relu(x)
             x = learnable(x)
-            x = noise(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
         return x, style_enc
