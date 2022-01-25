@@ -138,7 +138,6 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         # Resblock Middle
                         ResBlock(64),
-                        RiemannNoise(128),
         )
         '''
         self.adaconvs = nn.ModuleList([
@@ -497,12 +496,6 @@ class ThumbAdaConv(nn.Module):
             nn.Linear(in_features=256, out_features=128)
         )
 
-        self.noise = nn.ModuleList([
-            RiemannNoise(32),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity()
-        ])
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -526,7 +519,7 @@ class ThumbAdaConv(nn.Module):
                 style_enc = torch.cat([style_enc,style_enc],0)
             else:
                 style_enc = self.style_encoding(style_enc)
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
                 x = self.relu(x)
@@ -534,7 +527,6 @@ class ThumbAdaConv(nn.Module):
                 x = x + ada(style_enc, cF[mixin])
                 x = self.relu(x)
             x = learnable(x)
-            x = noise(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
         return x, style_enc
