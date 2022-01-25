@@ -16,7 +16,9 @@ class AdaConv(nn.Module):
             nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2),
             nn.Unflatten(1,(self.c_out, self.c_in // self.n_groups))
         )
-        self.pointwise_avg_pool = nn.AvgPool2d(4)
+        self.pointwise_avg_pool = nn.Sequential(
+            nn.AvgPool2d(2,2),
+            nn.AvgPool2d(2,2))
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1),
             nn.Unflatten(1,(self.c_out, self.c_out//self.n_groups))
