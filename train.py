@@ -791,7 +791,7 @@ def adaconv_thumb_train():
 
             patch_cF = enc_(ci[-1])
             patch_sF = enc_(si[-1])
-            p_losses = calc_losses(stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc_,
+            p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc_,
                                  calc_identity=args.identity_loss == 1, disc_loss=True,
                                  mdog_losses=args.mdog_loss,
                                  content_all_layers=args.content_all_layers,
