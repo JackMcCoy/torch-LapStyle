@@ -475,10 +475,11 @@ class ThumbAdaConv(nn.Module):
             )])
         self.proj_style = nn.Sequential(
             StyleEncoderBlock(256),
+            nn.AvgPool2d(2,2),
+            StyleEncoderBlock(256),
+            nn.AvgPool2d(2,2),
             StyleEncoderBlock(256),
             StyleEncoderBlock(256),
-            StyleEncoderBlock(256),
-            nn.AvgPool2d(4),
             nn.Flatten(1),
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
@@ -486,9 +487,10 @@ class ThumbAdaConv(nn.Module):
         )
         self.proj_content = nn.Sequential(
             StyleEncoderBlock(512),
+            nn.AvgPool2d(2,2),
             StyleEncoderBlock(512),
+            nn.AvgPool2d(2,2),
             StyleEncoderBlock(512),
-            nn.AvgPool2d(4),
             nn.Flatten(1),
             nn.Linear(in_features=512, out_features=256),
             nn.ReLU(),
