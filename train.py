@@ -710,7 +710,7 @@ def revlap_train():
 
 def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
+        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256)),torch.rand((args.batch_size, 3, 256, 256))), strict=False)
         dec_ = net.ThumbAdaConv(s_d=128).to(device)
         rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
         random_crop = transforms.RandomCrop(256)
@@ -774,7 +774,7 @@ def adaconv_thumb_train():
 
             original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
 
-            patch_stylized = rev_(original[0])
+            patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
 
             loss_D = calc_GAN_loss(si[-1].detach(), patch_stylized.clone().detach(), None, disc_)

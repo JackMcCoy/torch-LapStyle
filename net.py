@@ -167,7 +167,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 3, kernel_size=3)
                                                     ))
 
-    def forward(self, input):
+    def forward(self, input, ci):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -175,7 +175,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        lap_pyr = F.conv2d(F.pad(input.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+        lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
         out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(out)
