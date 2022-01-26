@@ -54,7 +54,7 @@ class Encoder(nn.Module):
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        self.enc_5 = nn.Sequential(*enc_layers[31:44])
+        #self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
     def forward(self, x):
         encodings = {}
@@ -66,8 +66,8 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        x = self.enc_5(x)
-        encodings['r5_1'] = x
+        #x = self.enc_5(x)
+        #encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -453,13 +453,9 @@ class ThumbAdaConv(nn.Module):
             nn.Linear(8192, self.s_d * 16),
             nn.Unflatten(1, (self.s_d, 4, 4))
         )
-        self.content_injection_layer = ['r5_1','r4_1','r3_1','r2_1','r1_1']
+        self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
-            nn.Sequential(
-                ResBlock(512),
-                ConvBlock(512, 512),
-            ),
             nn.Sequential(
                 ResBlock(512),
                 ConvBlock(512, 256),
@@ -514,6 +510,8 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
+            elif mixin !='r1_1':
+                x = x + ada(style_enc, cF[mixin])
             else:
                 x = ada(style_enc, x)
             x = learnable(x)
@@ -853,8 +851,8 @@ def identity_loss(i, F, encoder, decoder, repeat_style=True):
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2
 
-content_layers = ['r1_1','r2_1','r3_1','r4_1','r5_1']
-style_layers = ['r1_1','r2_1','r3_1','r4_1','r5_1']
+content_layers = ['r1_1','r2_1','r3_1','r4_1']
+style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
@@ -941,7 +939,7 @@ def calc_losses(stylized: torch.Tensor,
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key].detach(), norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)+content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
     if split_style:
         sF = []
         b = si.shape[0]
@@ -968,7 +966,7 @@ def calc_losses(stylized: torch.Tensor,
         if content_all_layers:
             content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())+content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
