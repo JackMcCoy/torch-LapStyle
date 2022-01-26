@@ -528,7 +528,7 @@ class ThumbAdaConv(nn.Module):
                 style_enc = self.style_encoding(style_enc)
         x = cF['r4_1']
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = x+ada(style_enc, x)
+            x = x+ada(style_enc, cF[mixin])
             x = learnable(x)
         return x, style_enc
 
