@@ -734,7 +734,7 @@ def adaconv_thumb_train():
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
             if args.load_rev==1:
-                rev_.load_state_dict(torch.load(new_path_func('revisor')))
+                rev_.load_state_dict(torch.load(new_path_func('revisor_')))
             if args.load_optimizer==1:
                 try:
                     dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
