@@ -733,11 +733,17 @@ def adaconv_thumb_train():
             init_weights(dec_)
         else:
             dec_.load_state_dict(torch.load(args.load_model), strict=False)
-            if args.load_optimizer:
+            if args.load_rev==1:
+                rev_.load_state_dict(torch.load(new_path_func('revisor')))
+            if args.load_optimizer==1:
                 try:
                     dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
                 except:
                     'optimizer not loaded'
+                try:
+                    rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
+                except:
+                    'rev_optimizer not loaded'
                 try:
                     opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
                 except:
@@ -799,7 +805,7 @@ def adaconv_thumb_train():
                                  patch_loss=False, patch_stylized=patches, top_level_patch=original,
                                  sF=patch_sF, split_style=False)
             loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
-            loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_lossp * args.patch_loss + \
+            loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
                    loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                    style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
