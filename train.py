@@ -302,7 +302,7 @@ def drafting_train():
             wandb.log(loss_dict, step=i)
 
         with torch.no_grad():
-            if (i + 1) % 250 == 0:
+            if (i) % 250 == 0:
                 stylized = stylized.float().to('cpu')
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
