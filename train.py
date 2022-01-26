@@ -739,7 +739,7 @@ def adaconv_thumb_train():
                 try:
                     dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
                 except:
-                    'optimizer not loaded'
+                    'optimizer not loaded '
                 try:
                     rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
                 except:
