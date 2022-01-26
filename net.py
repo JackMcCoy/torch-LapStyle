@@ -459,7 +459,7 @@ class ThumbAdaConv(nn.Module):
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ResBlock(512),
-                ConvBlock(512, 256),
+                ConvBlock(512, 512),
             ),
             nn.Sequential(
                 ResBlock(512),
@@ -514,13 +514,9 @@ class ThumbAdaConv(nn.Module):
                 style_enc = self.style_encoding(style_enc)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
-                print(cF[mixin].shape)
                 x = ada(style_enc, cF[mixin])
                 x = self.relu(x)
-                print(x.shape)
             else:
-                print(x.shape)
-                print(cF[mixin].shape)
                 x = x + ada(style_enc, cF[mixin])
                 x = self.relu(x)
             x = learnable(x)
