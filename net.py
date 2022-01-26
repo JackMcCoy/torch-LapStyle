@@ -530,8 +530,6 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = ada(style_enc, x)
             x = learnable(x)
-            if idx<(len(self.adaconvs)-1):
-                x = self.upsample(x)
         return x, style_enc
 
 
