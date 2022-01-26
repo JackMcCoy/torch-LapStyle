@@ -440,7 +440,6 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d),
-            AdaConv(512, 1, s_d=self.s_d),
             AdaConv(256, 2, s_d=self.s_d),
             AdaConv(128, 4, s_d=self.s_d),
             AdaConv(64, 8, s_d=self.s_d, norm=False)
