@@ -444,12 +444,6 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d),
             AdaConv(64, 8, s_d=self.s_d, norm=False)
         ])
-        self.riemann = nn.ModuleList([
-            nn.Identity(),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            nn.Identity()
-        ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -512,14 +506,13 @@ class ThumbAdaConv(nn.Module):
                 style_enc = torch.cat([style_enc,style_enc],0)
             else:
                 style_enc = self.style_encoding(style_enc)
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.riemann)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
             elif mixin !='r1_1':
                 x = x + ada(style_enc, cF[mixin])
             else:
                 x = ada(style_enc, x)
-            x = noise(x)
             x = learnable(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
