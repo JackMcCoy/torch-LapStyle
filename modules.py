@@ -114,6 +114,7 @@ class RiemannNoise(nn.Module):
                                         nn.Parameter(nn.init.constant_(torch.ones(1, 1), .5)),
                                         nn.Parameter(nn.init.constant_(torch.ones(1, 1), .5))])
         self.noise = torch.zeros(1, device='cuda:0')
+        self.noise_set = False
         self.noise.requires_grad = False
         self.size=size
         self.relu = nn.ReLU()
@@ -125,8 +126,10 @@ class RiemannNoise(nn.Module):
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
         N, c, h, w = x.shape
+        if self.noise_set == False:
+            self.noise = self.noise.repeat(N,c,h,h).normal_()
+            self.noise_set = True
         A, b, alpha, r = self.spatial_params
-
 
         s = torch.sum(x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2, 3), keepdim=True)
@@ -138,7 +141,7 @@ class RiemannNoise(nn.Module):
         sp_att_mask = (1 - alpha) + alpha * s
         sp_att_mask = sp_att_mask / (torch.linalg.norm(sp_att_mask, dim=1, keepdims=True) + 1e-8)
 
-        x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,c,h,h).normal_())
+        x = r*sp_att_mask * x + r * sp_att_mask * self.noise
         return x
 
 
