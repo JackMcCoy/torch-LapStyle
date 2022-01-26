@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import typing
+from losses import calc_mean_std
 
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
@@ -42,9 +43,8 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            mean = predicted.mean(dim=(2,3), keepdim=True)
-            predicted = predicted -mean
-            predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2,3), keepdim=True)+1e-5)
+            mean, std = calc_mean_std(predicted)
+            predicted = (predicted -mean)/std
         content_out = torch.empty_like(predicted)
         for i in range(a):
             content_out[i] = nn.functional.conv2d(
