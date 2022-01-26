@@ -288,7 +288,7 @@ def drafting_train():
             loss.backward()
             optimizer.step()
 
-        if (i + 1) % 250 == 0:
+        if (i + 1) % 100 == 0:
             loss_dict = {}
             for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized, loss_Gp_GAN, loss_D],
                 ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example', 'Decoder Disc. Loss','Discriminator Loss']):
@@ -302,7 +302,7 @@ def drafting_train():
             wandb.log(loss_dict, step=i)
 
         with torch.no_grad():
-            if (i) % 250 == 0:
+            if (i) % 100 == 0:
                 stylized = stylized.float().to('cpu')
                 styled_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si.float().to('cpu'), nrow=4, scale_each=True)
