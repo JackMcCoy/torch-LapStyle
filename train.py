@@ -222,7 +222,7 @@ def build_disc(disc_state):
 def drafting_train():
     enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
     enc_.train(False)
-    dec_ = net.DecoderAdaConv(args.batch_size)
+    dec_ = net.ThumbAdaConv(s_d=128).to(device)
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -253,7 +253,7 @@ def drafting_train():
             sF = enc_(si)
             #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
             optimizer.zero_grad(set_to_none=True)
-            stylized, style = dec_(sF, cF)
+            stylized, style = dec_(cF, style_enc=sF)
 
             if args.draft_disc:
                 set_requires_grad(disc_, True)
