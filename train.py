@@ -222,7 +222,7 @@ def build_disc(disc_state):
 def drafting_train():
     enc_ = torch.jit.trace(build_enc(vgg),(torch.rand((args.batch_size,3,128,128))), strict=False)
     enc_.train(False)
-    dec_ = net.ThumbAdaConv(s_d=128).to(device)
+    dec_ = net.ThumbAdaConv(s_d=512).to(device)
     if args.load_model == 'none':
         init_weights(dec_)
     else:
