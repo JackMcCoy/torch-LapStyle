@@ -445,9 +445,9 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, norm=False)
         ])
         self.riemann = nn.ModuleList([
-            RiemannNoise(32),
             nn.Identity(),
-            nn.Identity(),
+            RiemannNoise(64),
+            RiemannNoise(128),
             nn.Identity()
         ])
         self.style_encoding = nn.Sequential(
@@ -516,11 +516,11 @@ class ThumbAdaConv(nn.Module):
             if idx == 0:
                 x = ada(style_enc, cF[mixin])
             elif mixin !='r1_1':
+                x = noise(x)
                 x = x + ada(style_enc, cF[mixin])
             else:
                 x = ada(style_enc, x)
             x = learnable(x)
-            x = noise(x)
             if idx<(len(self.adaconvs)-1):
                 x = self.upsample(x)
         return x, style_enc
