@@ -253,7 +253,7 @@ def drafting_train():
             sF = enc_(si)
             #dec_.apply(lambda x: x.set_random() if hasattr(x,'set_random') else 0)
             optimizer.zero_grad(set_to_none=True)
-            stylized, style = dec_(cF, style_enc=sF)
+            stylized, style = dec_(cF, style_enc=sF['r4_1'])
 
             if args.draft_disc:
                 set_requires_grad(disc_, True)
