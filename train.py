@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 from revlap import LapRev
-from functorch import vmap
 
 import copy
 import torch
