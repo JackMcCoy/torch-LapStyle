@@ -54,6 +54,7 @@ class Encoder(nn.Module):
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
+        self.enc_5 = nn.Sequential(*enc_layers[31:44])
 
     def forward(self, x):
         encodings = {}
@@ -65,8 +66,8 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        #x = self.enc_5(x)
-        #encodings['r5_1'] = x
+        x = self.enc_5(x)
+        encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -439,6 +440,7 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 8, s_d=self.s_d),
+            AdaConv(512, 8, s_d=self.s_d),
             AdaConv(256, 4, s_d=self.s_d),
             AdaConv(128, 2, s_d=self.s_d),
             AdaConv(64, 1, s_d=self.s_d)
@@ -452,9 +454,13 @@ class ThumbAdaConv(nn.Module):
             nn.LeakyReLU(),
             nn.Unflatten(1, (self.s_d, 4, 4))
         )
-        self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
+        self.content_injection_layer = ['r5_1','r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
+            nn.Sequential(
+                ResBlock(512),
+                ConvBlock(512, 256),
+            ),
             nn.Sequential(
                 ResBlock(512),
                 ConvBlock(512, 256),
@@ -938,7 +944,7 @@ def calc_losses(stylized: torch.Tensor,
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key].detach(), norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(), norm=True)+content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
     if split_style:
         sF = []
         b = si.shape[0]
@@ -965,7 +971,7 @@ def calc_losses(stylized: torch.Tensor,
         if content_all_layers:
             content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
         else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())+content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
