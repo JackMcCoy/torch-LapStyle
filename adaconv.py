@@ -1,6 +1,20 @@
 import torch
 from torch import nn
 import typing
+from functorch import vmap
+
+def apply_kernel_conv(predicted, depthwise,pointwise_kn,pointwise_bias,n_groups):
+    return nn.functional.conv2d(
+        nn.functional.conv2d(F.pad(predicted, (1, 1), mode='reflect'),
+                             weight=depthwise,
+                             stride=1,
+                             groups=self.n_groups
+                             ),
+        stride=1,
+        weight=pointwise_kn,
+        bias=pointwise_bias,
+        groups=n_groups).squeeze()
+
 
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
@@ -12,6 +26,7 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
+        self.apply_convs = vmap(apply_kernel_conv)
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2),
             nn.Unflatten(1,(self.c_out, self.c_in // self.n_groups))
@@ -45,16 +60,5 @@ class AdaConv(nn.Module):
             mean = predicted.mean(dim=(2,3), keepdim=True)
             predicted = predicted -mean
             predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2,3), keepdim=True)+1e-5)
-        content_out = torch.empty_like(predicted)
-        for i in range(a):
-            content_out[i] = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
-                                             weight=depthwise[i],
-                                             stride=1,
-                                             groups=self.n_groups
-                                             ),
-                                 stride = 1,
-                                 weight=pointwise_kn[i],
-                                 bias=pointwise_bias[i],
-                                 groups=self.n_groups).squeeze()
+        content_out = self.apply_convs(predicted, depthwise,pointwise_kn,pointwise_bias,self.n_groups)
         return content_out
