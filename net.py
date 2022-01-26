@@ -456,22 +456,42 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable=nn.ModuleList([
             nn.Sequential(
-                ResBlock(512),
-                ConvBlock(512, 256),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 256, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                          ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 128, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                ResBlock(256),
-                ConvBlock(256, 128),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 128, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 64, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                ConvBlock(128, 128),
-                ConvBlock(128, 64),
-            ),
-            nn.Sequential(
-                ConvBlock(64, 64),
-                ConvBlock(64, 3),
-                nn.Conv2d(3, 3, kernel_size=1)
-            )])
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 3, (3, 3)))
+        ])
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
