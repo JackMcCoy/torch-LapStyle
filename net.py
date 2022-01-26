@@ -514,8 +514,10 @@ class ThumbAdaConv(nn.Module):
                 style_enc = self.style_encoding(style_enc)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
+                print(cF[mixin].shape)
                 x = ada(style_enc, cF[mixin])
                 x = self.relu(x)
+                print(x.shape)
             else:
                 print(x.shape)
                 print(cF[mixin].shape)
