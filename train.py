@@ -766,7 +766,7 @@ def adaconv_thumb_train():
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
             ci = torch.cat([ci, ci_], 0)
-            rc_si = random_crom(si)
+            rc_si = random_crop(si)
             si = torch.cat([si, si], 0)
             rc_si = torch.cat([rc_si, rc_si], 0)
 
