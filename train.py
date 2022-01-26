@@ -273,7 +273,7 @@ def drafting_train():
                 loss_D = 0
 
             losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_ if args.draft_disc else None,
-                                        calc_identity=False, disc_loss=args.draft_disc, patch_disc=True,
+                                        calc_identity=args.identity_loss==1, disc_loss=args.draft_disc, patch_disc=True,
                                         mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                         remd_loss=remd_loss,
                                         patch_loss=False, sF=sF, split_style=args.split_style)
