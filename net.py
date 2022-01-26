@@ -473,24 +473,11 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(3, 3, kernel_size=1)
             )])
         self.proj_style = nn.Sequential(
-            StyleEncoderBlock(256),
-            nn.AvgPool2d(2,2),
-            StyleEncoderBlock(256),
-            nn.AvgPool2d(2,2),
-            StyleEncoderBlock(256),
-            StyleEncoderBlock(256),
-            nn.Flatten(1),
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
             nn.Linear(in_features=128, out_features=128)
         )
         self.proj_content = nn.Sequential(
-            StyleEncoderBlock(512),
-            nn.AvgPool2d(2,2),
-            StyleEncoderBlock(512),
-            nn.AvgPool2d(2,2),
-            StyleEncoderBlock(512),
-            nn.Flatten(1),
             nn.Linear(in_features=512, out_features=256),
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=128)
@@ -893,13 +880,15 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 def style_feature_contrastive(sF, decoder):
-    out = decoder.proj_style(sF)
+    out = torch.sum(sF, dim=[2, 3])
+    out = decoder.proj_style(out)
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
 def content_feature_contrastive(input, decoder):
     # out = self.enc_content(input)
-    out = decoder.proj_content(input)
+    out = torch.sum(input, dim=[2, 3])
+    out = decoder.proj_content(out)
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
