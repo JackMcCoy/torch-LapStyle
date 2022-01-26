@@ -446,7 +446,7 @@ class ThumbAdaConv(nn.Module):
         ])
         self.riemann = nn.ModuleList([
             RiemannNoise(32),
-            RiemannNoise(64),
+            nn.Identity(),
             nn.Identity(),
             nn.Identity()
         ])
