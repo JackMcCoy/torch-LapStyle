@@ -962,10 +962,7 @@ def calc_losses(stylized: torch.Tensor,
             style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
                          style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
     if remd_loss:
-        if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
-        else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+        content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach()) + content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
