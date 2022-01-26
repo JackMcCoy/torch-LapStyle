@@ -288,7 +288,7 @@ def drafting_train():
             loss.backward()
             optimizer.step()
 
-        if (i + 1) % 10 == 0:
+        if (i + 1) % 50 == 0:
             loss_dict = {}
             for l, s in zip([loss, loss_c,loss_s,style_remd,content_relt, mdog_loss, l_identity1, l_identity2, l_identity3, l_identity4, stylized, loss_Gp_GAN, loss_D],
                 ['Loss', 'Content Loss', 'Style Loss','Style REMD','Content RELT', 'MDOG Loss', 'Identity Loss 1', 'Identity Loss 2', 'Identity Loss 3', 'Identity Loss 4','example', 'Decoder Disc. Loss','Discriminator Loss']):
