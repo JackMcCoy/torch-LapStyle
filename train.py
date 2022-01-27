@@ -799,7 +799,7 @@ def adaconv_thumb_train():
             patches.append(patch_stylized)
 
             set_requires_grad(disc_, True)
-            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc_)
+            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
 
         if ac_enabled:
