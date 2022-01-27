@@ -799,6 +799,7 @@ def adaconv_thumb_train():
             patches.append(patch_stylized)
 
             set_requires_grad(disc_, True)
+            set_requires_grad(disc2_, True)
             loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
 
@@ -815,6 +816,7 @@ def adaconv_thumb_train():
             opt_D2.zero_grad()
 
         set_requires_grad(disc_, False)
+        set_requires_grad(disc2_, False)
 
         with autocast(enabled=ac_enabled):
 
