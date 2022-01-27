@@ -528,9 +528,12 @@ class ThumbAdaConv(nn.Module):
                 style_enc = torch.cat([style_enc,style_enc],0)
             else:
                 style_enc = self.style_encoding(style_enc)
-        x = cF['r4_1']
+
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = x+ada(style_enc, cF[mixin])
+            if idx == 0:
+                x = ada(style_enc, cF[mixin])
+            else:
+                x = x+ada(style_enc, cF[mixin])
             x = learnable(x)
         return x, style_enc
 
