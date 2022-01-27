@@ -136,6 +136,7 @@ parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--momentumnet_beta', type=float, default=.9)
 parser.add_argument('--fp16', type=int, default=0)
+parser.add_argument('--s_d', type=int, default=512)
 parser.add_argument('--draft_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
 parser.add_argument('--split_style', type=int, default=0)
@@ -711,7 +712,7 @@ def revlap_train():
 def adaconv_thumb_train():
     with autocast(enabled=ac_enabled):
         enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.ThumbAdaConv(s_d=128).to(device)
+        dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
         rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
         random_crop = transforms.RandomCrop(256)
         if args.load_disc == 1:
