@@ -177,12 +177,12 @@ with autocast(enabled=ac_enabled):
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
 content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
+    content_dataset, batch_size=args.batch_size//2,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
 style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size,
+    style_dataset, batch_size=args.batch_size//2,
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
@@ -772,17 +772,17 @@ def adaconv_thumb_train():
         with autocast(enabled=ac_enabled):
             ci = next(content_iter)
             si = next(style_iter)
-            '''
+
             ######
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
             ci = torch.cat([ci, ci_], 0)
             
             si = torch.cat([si, si], 0)
+            rc_si = random_crop(si)
             rc_si = torch.cat([rc_si, rc_si], 0)
             ######
-            '''
-            rc_si = random_crop(si)
+
             ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
             si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), rc_si.to(device)]
             cF = enc_(ci[0])
@@ -823,7 +823,7 @@ def adaconv_thumb_train():
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                       remd_loss=remd_loss, contrastive_loss = False,
+                                       remd_loss=remd_loss, contrastive_loss = True,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
@@ -836,7 +836,7 @@ def adaconv_thumb_train():
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss,
                                  content_all_layers=args.content_all_layers,
-                                 remd_loss=remd_loss, contrastive_loss=False,
+                                 remd_loss=remd_loss, contrastive_loss=True,
                                  patch_loss=False, patch_stylized=patches, top_level_patch=original,
                                  sF=patch_sF, split_style=False)
             loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
