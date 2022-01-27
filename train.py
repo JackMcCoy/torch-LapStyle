@@ -217,6 +217,7 @@ def build_disc(disc_state):
             disc.load_state_dict(torch.load(disc_state), strict=False)
         else:
             init_weights(disc)
+            disc.init_spectral_norm()
         disc.to(torch.device('cuda'))
     return disc
 
