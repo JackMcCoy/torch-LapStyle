@@ -821,7 +821,7 @@ class SpectralDiscriminator(nn.Module):
         ch = num_channels
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=False),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=False) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), 1, 3, 1, downsample=False)])
+                                          SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
@@ -887,7 +887,7 @@ gan_first=True
 def calc_GAN_loss_from_pred(prediction: torch.Tensor,
               target_is_real: bool):
     batch_size = prediction.shape[0]
-    c = 1
+    c = 3
     h = 256
     if target_is_real:
         target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
