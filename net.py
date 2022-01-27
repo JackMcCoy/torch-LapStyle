@@ -175,10 +175,10 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
-                           groups=3).to(device)
-        out = torch.cat([input, lap_pyr], dim=1)
-        out = self.Downblock(out)
+        #lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+        #                   groups=3).to(device)
+        #out = torch.cat([input, lap_pyr], dim=1)
+        out = self.Downblock(input)
         out = self.UpBlock(out)
         out = (out + input)
         return out
