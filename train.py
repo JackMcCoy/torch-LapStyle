@@ -790,7 +790,21 @@ def adaconv_thumb_train():
             patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
 
+            set_requires_grad(disc_, True)
             loss_D = calc_GAN_loss(si[-1], patch_stylized.data, None, disc_)
+
+        if ac_enabled:
+            disc_scaler.scale(loss_D).backward()
+            disc_scaler.step(opt_D)
+            disc_scaler.update()
+        else:
+            loss_D.backward()
+            opt_D.step()
+            opt_D.zero_grad()
+
+        set_requires_grad(disc_, False)
+
+        with autocast(enabled=ac_enabled):
 
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=False,
@@ -817,21 +831,16 @@ def adaconv_thumb_train():
                    style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
         if ac_enabled:
-            disc_scaler.scale(loss_D).backward()
-            disc_scaler.step(opt_D)
-            disc_scaler.update()
             scaler.scale(loss).backward()
             scaler.step(dec_optimizer)
+            scaler.step(rev_optimizer)
             scaler.update()
         else:
             loss.backward()
-            loss_D.backward()
             rev_optimizer.step()
             rev_optimizer.zero_grad()
             dec_optimizer.step()
             dec_optimizer.zero_grad()
-            opt_D.step()
-            opt_D.zero_grad()
 
         if (n + 1) % 1 == 0:
 
