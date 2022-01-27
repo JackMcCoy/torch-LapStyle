@@ -492,6 +492,12 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3)))
         ])
+        self.noise = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
+            RiemannNoise(256),
+        ])
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
@@ -527,7 +533,8 @@ class ThumbAdaConv(nn.Module):
             else:
                 style_enc = self.style_encoding(style_enc)
         x = cF['r4_1']
-        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+        for idx, (ada, learnable, mixin,noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
+            x = noise(x)
             x = x+ada(style_enc, cF[mixin])
             x = learnable(x)
         return x, style_enc
