@@ -792,6 +792,7 @@ def adaconv_thumb_train():
 
             set_requires_grad(disc_, True)
             loss_D = calc_GAN_loss(si[-1], patch_stylized.data, None, disc_)
+            loss_D = loss_D + calc_GAN_loss(si[0], stylized.data, None, disc_)
 
         if ac_enabled:
             disc_scaler.scale(loss_D).backward()
@@ -807,7 +808,7 @@ def adaconv_thumb_train():
         with autocast(enabled=ac_enabled):
 
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                       calc_identity=args.identity_loss==1, disc_loss=False,
+                                       calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                        remd_loss=remd_loss, contrastive_loss = False,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
