@@ -815,8 +815,8 @@ class SpectralDiscriminator(nn.Module):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=False),
-                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=False) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
+                                          *[SpectralResBlock(num_channels, num_channels, 3, 1, downsample=False) for i in range(depth-2)],
+                                          SpectralResBlock(num_channels, 3, 3, 1, downsample=False)])
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
