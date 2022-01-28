@@ -650,28 +650,27 @@ class Style_Guided_Discriminator(nn.Module):
             nn.Conv2d(128, 128, kernel_size=1),
             nn.LeakyReLU(.2),
         )
-
         self.style_projection = nn.Sequential(
             nn.Linear(2048, 2048)
         )
-        self.adaconv = AdaConv(64, 8, s_d = 128, norm=False)
-        self.relu = nn.LeakyReLU()
 
         for i in range(depth - 2):
-            self.body.append(
-                nn.Sequential(nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect', bias=False),
+            self.body.append(AdaConv(64, 8, s_d=128, norm=False))
+            self.norms.append(
+                nn.Sequential(nn.LeakyReLU(.2),
+                              nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect',
+                                        bias=False),
                               nn.BatchNorm2d(64),
-                              nn.LeakyReLU()))
-        self.body = nn.Sequential(*self.body)
+                              nn.LeakyReLU(.2), ))
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=3,
                               stride=1,
                               padding=1, padding_mode='reflect')
+        self.relu = nn.LeakyReLU()
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
-
 
     def losses(self, real, fake, style):
         b, n, h, w = style.shape
@@ -690,8 +689,9 @@ class Style_Guided_Discriminator(nn.Module):
 
     def forward(self, x, style):
         x = self.head(x)
-        x = x + self.relu(self.adaconv(style, x))
-        x = self.body(x)
+        for i, norm in zip(self.body, self.norms):
+            x = x + self.relu(i(style, x))
+            x = norm(x)
         x = self.tail(x)
         return x
 
