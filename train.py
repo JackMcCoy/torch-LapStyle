@@ -220,7 +220,7 @@ def build_revlap(depth, state):
     rev.train()
     return rev
 
-def build_disc(disc_state):
+def build_disc(disc_state,device):
     with autocast(enabled=ac_enabled):
         disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
         disc.train()
@@ -774,8 +774,8 @@ def adaconv_thumb_train(index, args):
         disc2_state = None
         init_weights(dec_)
     disc_ = build_disc(
-        disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-    disc2_ = build_disc(disc2_state)
+        disc_state,device)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    disc2_ = build_disc(disc2_state,device)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
