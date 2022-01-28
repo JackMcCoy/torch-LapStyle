@@ -28,7 +28,7 @@ import torch_xla
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.distributed.parallel_loader as pl
-
+import torch_xla.debug.metrics as met
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -842,33 +842,35 @@ def adaconv_thumb_train(index, args):
 
             patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
-
+        try:
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
             loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_, device)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_, device)
 
-        if ac_enabled:
-            scaler.scale(loss_D).backward()
-            scaler.scale(loss_D2).backward()
-        else:
-            loss_D.backward(retain_graph=True)
-            loss_D2.backward(retain_graph=True)
-
-        if n % args.accumulation_steps == 0:
             if ac_enabled:
-                scaler.step(opt_D)
-                scaler.step(opt_D2)
+                scaler.scale(loss_D).backward()
+                scaler.scale(loss_D2).backward()
             else:
-                opt_D.step()
-                opt_D2.step()
-            for param in disc_.parameters():
-                param.grad = None
-            for param in disc2_.parameters():
-                param.grad = None
+                loss_D.backward()
+                loss_D2.backward()
 
-        set_requires_grad(disc_, False)
-        set_requires_grad(disc2_, False)
+            if n % args.accumulation_steps == 0:
+                if ac_enabled:
+                    scaler.step(opt_D)
+                    scaler.step(opt_D2)
+                else:
+                    opt_D.step()
+                    opt_D2.step()
+                for param in disc_.parameters():
+                    param.grad = None
+                for param in disc2_.parameters():
+                    param.grad = None
+
+            set_requires_grad(disc_, False)
+            set_requires_grad(disc2_, False)
+        except:
+            print(met.metrics_report())
 
         with autocast(enabled=ac_enabled):
 
