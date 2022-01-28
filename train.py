@@ -891,7 +891,6 @@ def adaconv_thumb_train():
             if (n + 1) % 50 == 0:
 
                 stylized = stylized.float().to('cpu')
-                patch_stylized = torch.vstack(patches).float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
@@ -905,6 +904,7 @@ def adaconv_thumb_train():
                 save_image(style_source_grid.detach(),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
+                del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
 
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
                 state_dict = dec_.state_dict()
@@ -931,6 +931,7 @@ def adaconv_thumb_train():
                 state_dict = opt_D2.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc2_optimizer.pth.tar')
+                del(state_dict)
         del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
 
 def vq_train():
