@@ -212,9 +212,9 @@ def build_revlap(depth, state):
 
 def build_disc(disc_state):
     with autocast(enabled=ac_enabled):
-        disc = net.SpectralDiscriminator(depth=args.revision_depth, num_channels=args.disc_channels).to(device)
+        disc = net.Style_Guided_Discriminator(depth=args.revision_depth,relgan=False, batch_size=args.batch_size, num_channels=args.disc_channels).to(device)
         disc.train()
-        disc.init_spectral_norm()
+        #disc.init_spectral_norm()
         if not disc_state is None:
             disc.load_state_dict(torch.load(disc_state), strict=False)
         else:
@@ -810,7 +810,7 @@ def adaconv_thumb_train():
                                      mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                                      remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
                                      patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=sF,
-                                     split_style=False)
+                                     split_style=False,style_embedding=style_embedding)
                 loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
                 loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
                        loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
@@ -825,7 +825,7 @@ def adaconv_thumb_train():
                                        content_all_layers=args.content_all_layers,
                                        remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
                                        patch_loss=False, patch_stylized=patches, top_level_patch=original,
-                                       sF=patch_sF, split_style=False)
+                                       sF=patch_sF, split_style=False,style_embedding=style_embedding)
                 loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
                 loss = loss + (
                             loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
@@ -857,8 +857,8 @@ def adaconv_thumb_train():
             if n == 0:
                 stylized= torch.zeros(args.batch_size,3,256,256, device=device)
                 patch_stylized = torch.zeros(args.batch_size, 3, 256, 256, device=device)
-            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
-            loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
+            loss_D2 = disc2_.losses(si[-1], patch_stylized.data, style_embedding)
+            loss_D = disc_.losses(si[0], stylized.data, style_embedding)
 
             if ac_enabled:
                 scaler.scale(loss_D).backward()

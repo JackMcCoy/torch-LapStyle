@@ -657,7 +657,7 @@ class Style_Guided_Discriminator(nn.Module):
 
 
         for i in range(depth - 2):
-            self.body.append(AdaConv(64, 1, s_d = self.s_d))
+            self.body.append(AdaConv(64, 8, s_d = self.s_d))
             self.norms.append(
                 nn.Sequential(nn.LeakyReLU(.2),
                               nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect'),
@@ -949,7 +949,8 @@ def calc_losses(stylized: torch.Tensor,
                 split_style: bool=False,
                 contrastive_loss = False,
                 patch_stylized = None,
-                rev_depth:int = None):
+                rev_depth:int = None,
+                style_embedding = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
@@ -1011,8 +1012,8 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+        fake_loss = disc_(stylized, style_embedding)
+        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 
