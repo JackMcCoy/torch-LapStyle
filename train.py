@@ -136,6 +136,7 @@ parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--momentumnet_beta', type=float, default=.9)
 parser.add_argument('--fp16', type=int, default=0)
+parser.add_argument('--contrastive_loss', type=int, default=0)
 parser.add_argument('--s_d', type=int, default=512)
 parser.add_argument('--draft_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
@@ -827,7 +828,7 @@ def adaconv_thumb_train():
             losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                                        calc_identity=args.identity_loss==1, disc_loss=True,
                                        mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                       remd_loss=remd_loss, contrastive_loss = True,
+                                       remd_loss=remd_loss, contrastive_loss = args.contrastive_loss==1,
                                        patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
             loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
             loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
@@ -841,7 +842,7 @@ def adaconv_thumb_train():
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss,
                                  content_all_layers=args.content_all_layers,
-                                 remd_loss=remd_loss, contrastive_loss=True,
+                                 remd_loss=remd_loss, contrastive_loss=args.contrastive_loss==1,
                                  patch_loss=False, patch_stylized=patches, top_level_patch=original,
                                  sF=patch_sF, split_style=False)
             loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
