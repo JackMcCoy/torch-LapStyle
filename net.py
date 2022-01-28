@@ -1013,7 +1013,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         style_embedding = disc_.style_encoding(style_embedding)
-        style_embedding = disc_.style_projection(style_embedding).reshape(-1, 128, 4, 4)
+        style_embedding = disc_.style_projection(style_embedding.flatten(1)).reshape(-1, 128, 4, 4)
         fake_loss = disc_(stylized, style_embedding)
         loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
