@@ -229,7 +229,7 @@ def build_disc(disc_state,device):
             disc.load_state_dict(torch.load(disc_state), strict=False)
         else:
             init_weights(disc)
-        disc.to(torch.device('cuda'))
+        disc.to(device)
     return disc
 
 def drafting_train():
