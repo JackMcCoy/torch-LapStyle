@@ -852,6 +852,9 @@ def adaconv_thumb_train():
 
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
+            if n == 0:
+                stylized= torch.zeros(args.batch_size,3,256,256, device=device)
+                patch_stylized = torch.zeros(args.batch_size, 3, 256, 256, device=device)
             loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
 
