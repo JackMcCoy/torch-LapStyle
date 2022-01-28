@@ -880,7 +880,7 @@ content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
-
+@torch.jit.script
 def calc_GAN_loss_from_pred(prediction: torch.Tensor,target_is_real: bool, device: torch.device):
     batch_size = prediction.shape[0]
     c = 3
