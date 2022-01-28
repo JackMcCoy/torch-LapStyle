@@ -892,7 +892,6 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,target_is_real: bool, devic
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
-@torch.jit.script
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module, device: torch.device):
     pred_fake = disc_(fake)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False,device)
