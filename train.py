@@ -711,58 +711,57 @@ def revlap_train():
                            'dec_optimizer.pth.tar')
 
 def adaconv_thumb_train():
-    with autocast(enabled=ac_enabled):
-        enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-        dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
-        rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
-        random_crop = transforms.RandomCrop(256)
-        if args.load_disc == 1:
-            path = args.load_model.split('/')
-            path_tokens = args.load_model.split('_')
-            new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-            disc_state = new_path_func('discriminator_')
-            disc2_state = new_path_func('dscriminator_2_')
-        else:
-            disc_state = None
-            disc2_state = None
-            init_weights(dec_)
-        disc_ = build_disc(
-            disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-
-        disc2_ = build_disc(disc2_state)
-        dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
-        rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
-        opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
-        opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
-        if args.load_model == 'none':
-            init_weights(dec_)
-        else:
-            dec_.load_state_dict(torch.load(args.load_model), strict=False)
-            if args.load_rev==1:
-                rev_.load_state_dict(torch.load(new_path_func('revisor_')))
-            if args.load_optimizer==1:
-                try:
-                    dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
-                except:
-                    'optimizer not loaded '
-                try:
-                    rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
-                except:
-                    'rev_optimizer not loaded'
-                try:
-                    opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
-                except:
-                    'discriminator optimizer not loaded'
-                try:
-                    opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
-                except:
-                    'discriminator optimizer not loaded'
-            dec_optimizer.lr = args.lr
-        dec_.train()
-        enc_.to(device)
-        remd_loss = True if args.remd_loss == 1 else False
-        scaler = GradScaler(init_scale=128)
-        disc_scaler = GradScaler(init_scale=128)
+    enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
+    dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
+    random_crop = transforms.RandomCrop(256)
+    if args.load_disc == 1:
+        path = args.load_model.split('/')
+        path_tokens = args.load_model.split('_')
+        new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
+        disc_state = new_path_func('discriminator_')
+        disc2_state = new_path_func('dscriminator_2_')
+    else:
+        disc_state = None
+        disc2_state = None
+        init_weights(dec_)
+    disc_ = build_disc(
+        disc_state)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    disc2_ = build_disc(disc2_state)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    if args.load_model == 'none':
+        init_weights(dec_)
+    else:
+        dec_.load_state_dict(torch.load(args.load_model), strict=False)
+        if args.load_rev==1:
+            rev_.load_state_dict(torch.load(new_path_func('revisor_')))
+        if args.load_optimizer==1:
+            try:
+                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
+            except:
+                'optimizer not loaded '
+            try:
+                rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
+            except:
+                'rev_optimizer not loaded'
+            try:
+                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+            except:
+                'discriminator optimizer not loaded'
+            try:
+                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
+            except:
+                'discriminator optimizer not loaded'
+        dec_optimizer.lr = args.lr
+    dec_.train()
+    enc_.to(device)
+    remd_loss = True if args.remd_loss == 1 else False
+    scaler = GradScaler()
+    disc_scaler = GradScaler()
+    disc2_scaler = GradScaler()
     for n in range(args.max_iter):
         if args.lr_decay!=0:
             adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
@@ -770,22 +769,23 @@ def adaconv_thumb_train():
             adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
             adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
-            ci = next(content_iter)
-            si = next(style_iter)
+            with torch.no_grad():
+                ci = next(content_iter)
+                si = next(style_iter)
 
-            ######
-            ci_ = ci[1:]
-            ci_ = torch.cat([ci_, ci[0:1]], 0)
-            ci = torch.cat([ci, ci_], 0)
-            rc_si = random_crop(si)
-            si = torch.cat([si, si], 0)
-            rc_si = torch.cat([rc_si, rc_si], 0)
-            ######
+                ######
+                ci_ = ci[1:]
+                ci_ = torch.cat([ci_, ci[0:1]], 0)
+                ci = torch.cat([ci, ci_], 0)
+                rc_si = random_crop(si)
+                si = torch.cat([si, si], 0)
+                rc_si = torch.cat([rc_si, rc_si], 0)
+                ######
 
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), rc_si.to(device)]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
+                ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
+                si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), rc_si.to(device)]
+                cF = enc_(ci[0])
+                sF = enc_(si[0])
 
             stylized, style_embedding = dec_(cF,style_enc=sF['r4_1'],repeat_style=True)
 
@@ -806,13 +806,18 @@ def adaconv_thumb_train():
             disc_scaler.scale(loss_D).backward()
             disc_scaler.step(opt_D)
             disc_scaler.update()
+            disc2_scaler.scale(loss_D2).backward()
+            disc2_scaler.step(opt_D2)
+            disc2_scaler.update()
         else:
             loss_D.backward()
             opt_D.step()
-            opt_D.zero_grad()
             loss_D2.backward()
             opt_D2.step()
-            opt_D2.zero_grad()
+        for param in disc_.parameters():
+            param.grad = None
+        for param in disc2_.parameters():
+            param.grad = None
 
         set_requires_grad(disc_, False)
         set_requires_grad(disc2_, False)
@@ -829,8 +834,9 @@ def adaconv_thumb_train():
                    loss_Gp_GAN*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + \
                    style_contrastive_loss*0.5 + content_contrastive_loss*0.3
 
-            patch_cF = enc_(ci[-1])
-            patch_sF = enc_(si[-1])
+            with torch.no_grad():
+                patch_cF = enc_(ci[-1])
+                patch_sF = enc_(si[-1])
             p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss,
@@ -851,9 +857,11 @@ def adaconv_thumb_train():
         else:
             loss.backward()
             rev_optimizer.step()
-            rev_optimizer.zero_grad()
             dec_optimizer.step()
-            dec_optimizer.zero_grad()
+        for param in rev_.parameters():
+            param.grad = None
+        for param in dec_.parameters():
+            param.grad = None
 
         if (n + 1) % 1 == 0:
 
