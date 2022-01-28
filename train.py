@@ -806,10 +806,10 @@ def adaconv_thumb_train():
         if ac_enabled:
             _clip_gradient(disc_)
             _clip_gradient(disc2_)
-            disc_scaler.scale(loss_D).backward()
-            disc_scaler.step(opt_D)
-            disc2_scaler.scale(loss_D2).backward()
-            disc2_scaler.step(opt_D2)
+            scaler.scale(loss_D).backward()
+            scaler.step(opt_D)
+            scaler.scale(loss_D2).backward()
+            scaler.step(opt_D2)
         else:
             loss_D.backward()
             opt_D.step()
@@ -846,16 +846,13 @@ def adaconv_thumb_train():
                                  patch_loss=False, patch_stylized=patches, top_level_patch=original,
                                  sF=patch_sF, split_style=False)
             loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
-            loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
+            p_loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
                    loss_Gp_GANp * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                    style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
         if ac_enabled:
-            scaler.scale(loss).backward()
-            scaler.unscale_(dec_optimizer)
-            scaler.unscale_(rev_optimizer)
-            _clip_gradient(dec_)
-            _clip_gradient(rev_)
+            scaler.scale(loss).backward(retain_graph=True)
+            scaler.scale(p_loss).backward()
             scaler.step(dec_optimizer)
             scaler.step(rev_optimizer)
             scaler.update()
