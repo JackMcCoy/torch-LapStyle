@@ -804,6 +804,8 @@ def adaconv_thumb_train():
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
 
         if ac_enabled:
+            _clip_gradient(disc_)
+            _clip_gradient(disc2_)
             disc_scaler.scale(loss_D).backward()
             disc_scaler.step(opt_D)
             disc_scaler.update()
