@@ -852,8 +852,8 @@ def adaconv_thumb_train(index, args):
             scaler.scale(loss_D).backward()
             scaler.scale(loss_D2).backward()
         else:
-            loss_D.backward()
-            loss_D2.backward()
+            loss_D.backward(retain_graph=True)
+            loss_D2.backward(retain_graph=True)
 
         if n % args.accumulation_steps == 0:
             if ac_enabled:
