@@ -825,7 +825,7 @@ def adaconv_thumb_train():
                                        content_all_layers=args.content_all_layers,
                                        remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
                                        patch_loss=False, patch_stylized=patches, top_level_patch=original,
-                                       sF=patch_sF, split_style=False,style_embedding=style_embeddings)
+                                       sF=patch_sF, split_style=False,style_embedding=style_embedding)
                 loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
                 loss = loss + (
                             loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
