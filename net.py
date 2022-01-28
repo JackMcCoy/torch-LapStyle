@@ -686,7 +686,7 @@ class Style_Guided_Discriminator(nn.Module):
 
         loss_D_fake = self.ganloss(pred_fake, False)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
-        return (loss_D, style)
+        return loss_D
 
     def forward(self, x, style):
         x = self.head(x)
