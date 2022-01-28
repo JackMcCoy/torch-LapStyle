@@ -856,8 +856,6 @@ def adaconv_thumb_train():
             scaler.step(dec_optimizer)
             scaler.step(rev_optimizer)
             scaler.update()
-            disc_scaler.update()
-            disc2_scaler.update()
         else:
             loss.backward()
             rev_optimizer.step()
