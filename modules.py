@@ -148,7 +148,7 @@ class SpectralResBlock(nn.Module):
         self.conv_1 = spectral_norm(nn.Conv2d(in_ch, out_ch, kernel_size=kernel, padding=padding, padding_mode='reflect'))
         self.relu = nn.LeakyReLU()
         self.conv_2 = spectral_norm(nn.Conv2d(out_ch, out_ch, kernel_size=kernel, padding=padding, padding_mode='reflect'))
-        self.downsample = downsample
+        self.downsample = nn.AvgPool2d(2,2) if downsample else nn.Identity()
         self.learnable_sc = (in_ch != out_ch) or downsample
         self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=1, padding=0)
 
@@ -159,13 +159,9 @@ class SpectralResBlock(nn.Module):
         x = self.conv_1(in_feat)
         x = self.relu(x)
         x = self.conv_2(x)
-        if self.downsample:
-            x = nn.functional.avg_pool2d(x, 2)
+        x = self.downsample(x)
         x2 = self.c_sc(in_feat)
-        if self.downsample:
-            x2 = nn.functional.avg_pool2d(x2, 2)
-        else:
-            x2=0
+        x2 = self.downsample(x2)
         x = x+x2
         return x
 
