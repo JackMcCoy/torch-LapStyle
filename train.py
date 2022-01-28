@@ -888,7 +888,7 @@ def adaconv_thumb_train():
             wandb.log(loss_dict, step=n)
 
         with torch.no_grad():
-            if (n + 1) % 50 == 0:
+            if (n + 1) % 10 == 0:
 
                 stylized = stylized.float().to('cpu')
                 draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
