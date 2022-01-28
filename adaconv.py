@@ -3,6 +3,20 @@ from torch import nn
 import typing
 from losses import calc_mean_std
 
+@torch.jit.script
+def apply_kernel(predicted: torch.Tensor,depthwise: torch.Tensor,n_groups: int,pointwise_kn:torch.Tensor,pointwise_bias:torch.Tensor):
+    return nn.functional.conv2d(
+        nn.functional.conv2d(self.pad(predicted.unsqueeze(0)),
+                             weight=depthwise,
+                             stride=1,
+                             groups=n_groups
+                             ),
+        stride=1,
+        weight=pointwise_kn,
+        bias=pointwise_bias,
+        groups=n_groups).squeeze()
+
+
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
         super(AdaConv, self).__init__()
@@ -25,6 +39,7 @@ class AdaConv(nn.Module):
             nn.Unflatten(1,(self.c_out, self.c_out//self.n_groups))
         )
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, kernel_size=1)
+        self.apply_kernel = apply_kernel
         self.apply(self._init_weights)
 
     @staticmethod
@@ -48,14 +63,9 @@ class AdaConv(nn.Module):
             predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
         content_out = torch.empty_like(predicted)
         for i in range(a):
-            content_out[i] = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
-                                             weight=depthwise[i],
-                                             stride=1,
-                                             groups=self.n_groups
-                                             ),
-                                 stride = 1,
-                                 weight=pointwise_kn[i],
-                                 bias=pointwise_bias[i],
-                                 groups=self.n_groups).squeeze()
+            content_out[i] = self.apply_kernel(predicted[i],
+                                               depthwise[i],
+                                               self.n_groups,
+                                               pointwise_kn[i],
+                                               pointwise_bias[i])
         return content_out
