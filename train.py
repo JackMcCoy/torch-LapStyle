@@ -745,13 +745,13 @@ def adaconv_thumb_train(index, args):
         content_dataset, batch_size=args.batch_size//2,
         sampler=content_sampler,
         shuffle=False,
-        num_workers=2,
+        num_workers=1,
         drop_last=True)
     style_iter = data.DataLoader(
         style_dataset, batch_size=args.batch_size//2,
         sampler=style_sampler,
         shuffle=False,
-        num_workers=2,
+        num_workers=1,
         drop_last=True)
     pl_content_iter = pl.ParallelLoader(content_iter, [device]).per_device_loader(device)
     pl_style_iter = pl.ParallelLoader(style_iter, [device]).per_device_loader(device)
