@@ -753,8 +753,8 @@ def adaconv_thumb_train(index, args):
         shuffle=False,
         num_workers=2,
         drop_last=True)
-    pl_content_iter = iter(pl.ParallelLoader(content_iter, [device]).per_device_loader(device))
-    pl_style_iter = iter(pl.ParallelLoader(style_iter, [device]).per_device_loader(device))
+    pl_content_iter = pl.ParallelLoader(content_iter, [device]).per_device_loader(device)
+    pl_style_iter = pl.ParallelLoader(style_iter, [device]).per_device_loader(device)
 
     print(f'make models {index}')
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
@@ -808,7 +808,7 @@ def adaconv_thumb_train(index, args):
     scaler = GradScaler()
     disc_scaler = GradScaler()
     disc2_scaler = GradScaler()
-    for n in range(args.max_iter):
+    for n, (ci,si) in enumerate(zip(pl_content_iter,pl_style_iter)):
         if args.lr_decay!=0:
             adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
             adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
@@ -816,8 +816,6 @@ def adaconv_thumb_train(index, args):
             adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             with torch.no_grad():
-                ci = next(pl_content_iter)
-                si = next(pl_style_iter)
 
                 ######
                 ci_ = ci[1:]
