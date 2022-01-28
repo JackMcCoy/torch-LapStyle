@@ -922,7 +922,8 @@ def adaconv_thumb_train(index, args):
             print(f'zero\'d grads {index}')
         if index == 0:
             if (n + 1) % 1 == 0:
-
+                print(n)
+                '''
                 loss_dict = {}
                 for l, s in zip(
                         [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
@@ -940,7 +941,7 @@ def adaconv_thumb_train(index, args):
                 #print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
                 #wandb.log(loss_dict, step=n)
-
+                '''
             with torch.no_grad():
                 if (n + 1) % 50 == 0:
 
