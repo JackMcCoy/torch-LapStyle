@@ -763,7 +763,7 @@ def adaconv_thumb_train():
     scaler = GradScaler()
     disc_scaler = GradScaler()
     disc2_scaler = GradScaler()
-    for n in tqdm.tqdm(range(args.max_iter), position=0):
+    for n in tqdm(range(args.max_iter), position=0):
         if args.lr_decay!=0:
             adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
             adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
