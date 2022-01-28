@@ -788,15 +788,67 @@ def adaconv_thumb_train():
                 cF = enc_(ci[0])
                 sF = enc_(si[0])
 
+            if n % args.accumulation_steps == 0:
+                for param in dec_.parameters():
+                    param.grad = None
             stylized, style_embedding = dec_(cF,style_enc=sF['r4_1'],repeat_style=True)
 
             patches = []
             original = []
 
             original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
-
+            if n % args.accumulation_steps == 0:
+                for param in rev_.parameters():
+                    param.grad = None
             patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
+
+            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                 calc_identity=args.identity_loss == 1, disc_loss=True,
+                                 mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
+                                 remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                                 patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=sF,
+                                 split_style=False)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
+            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
+                   loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
+                   style_contrastive_loss * 0.5 + content_contrastive_loss * 0.3
+
+            with torch.no_grad():
+                patch_cF = enc_(ci[-1])
+                patch_sF = enc_(si[-1])
+            p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
+                                   calc_identity=False, disc_loss=True,
+                                   mdog_losses=args.mdog_loss,
+                                   content_all_layers=args.content_all_layers,
+                                   remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                                   patch_loss=False, patch_stylized=patches, top_level_patch=original,
+                                   sF=patch_sF, split_style=False)
+            loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
+            loss = loss + (
+                        loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
+                        loss_Gp_GANp * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
+                        style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
+
+        if ac_enabled:
+            scaler.scale(loss).backward(retain_graph=True)
+        else:
+            loss.backward()
+        if n % args.accumulation_steps == 0:
+            if ac_enabled:
+                scaler.step(dec_optimizer)
+                scaler.step(rev_optimizer)
+                scaler.update()
+            else:
+                rev_optimizer.step()
+                dec_optimizer.step()
+
+            if n % args.accumulation_steps == 0:
+                for param in disc_.parameters():
+                    param.grad = None
+                for param in disc2_.parameters():
+                    param.grad = None
+
 
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
@@ -817,59 +869,13 @@ def adaconv_thumb_train():
             else:
                 opt_D.step()
                 opt_D2.step()
-            for param in disc_.parameters():
-                param.grad = None
-            for param in disc2_.parameters():
-                param.grad = None
+
 
         set_requires_grad(disc_, False)
         set_requires_grad(disc2_, False)
 
-        with autocast(enabled=ac_enabled):
 
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                       calc_identity=args.identity_loss==1, disc_loss=True,
-                                       mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                       remd_loss=remd_loss, contrastive_loss = args.contrastive_loss==1,
-                                       patch_loss=True, patch_stylized = patches, top_level_patch = original, sF=sF, split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss +\
-                   loss_Gp_GAN*args.gan_loss +mdog + l_identity1*50 + l_identity2 + l_identity3*50 + l_identity4 + \
-                   style_contrastive_loss*0.5 + content_contrastive_loss*0.3
-
-            with torch.no_grad():
-                patch_cF = enc_(ci[-1])
-                patch_sF = enc_(si[-1])
-            p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
-                                 calc_identity=False, disc_loss=True,
-                                 mdog_losses=args.mdog_loss,
-                                 content_all_layers=args.content_all_layers,
-                                 remd_loss=remd_loss, contrastive_loss=args.contrastive_loss==1,
-                                 patch_loss=False, patch_stylized=patches, top_level_patch=original,
-                                 sF=patch_sF, split_style=False)
-            loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
-            loss = loss + (loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
-                   loss_Gp_GANp * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
-                   style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
-
-        if ac_enabled:
-            scaler.scale(loss).backward(retain_graph=True)
-        else:
-            loss.backward()
-        if n % args.accumulation_steps == 0:
-            if ac_enabled:
-                scaler.step(dec_optimizer)
-                scaler.step(rev_optimizer)
-                scaler.update()
-            else:
-                rev_optimizer.step()
-                dec_optimizer.step()
-        for param in rev_.parameters():
-            param.grad = None
-        for param in dec_.parameters():
-            param.grad = None
-
-        if (n + 1) % 1 == 0:
+        if (n + 1) % 10 == 0:
 
             loss_dict = {}
             for l, s in zip(
