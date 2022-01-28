@@ -19,7 +19,6 @@ from linear_attention_transformer import LinearAttentionTransformer as Transform
 from adaconv import AdaConv
 from vector_quantize_pytorch import VectorQuantize
 
-device = torch.device('cuda')
 
 unfold = torch.nn.Unfold(256,stride=256)
 random_crop = RandomCrop(256)
@@ -882,15 +881,14 @@ style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
-def calc_GAN_loss_from_pred(prediction: torch.Tensor,
-              target_is_real: bool):
+def calc_GAN_loss_from_pred(prediction: torch.Tensor,target_is_real: bool, device: torch.device):
     batch_size = prediction.shape[0]
     c = 3
     h = 256
     if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
+        target_tensor = torch.ones(batch_size, c, h, h, device=device)
     else:
-        target_tensor = torch.zeros(batch_size, c, h, h,device=torch.device('cuda:0'))
+        target_tensor = torch.zeros(batch_size, c, h, h,device=device)
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 

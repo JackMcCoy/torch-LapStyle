@@ -847,8 +847,8 @@ def adaconv_thumb_train(index):
 
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
-            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
-            loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
+            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_, device)
+            loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_, device)
 
         if ac_enabled:
             scaler.scale(loss_D).backward()
