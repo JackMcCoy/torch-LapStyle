@@ -943,7 +943,8 @@ def calc_losses(stylized: torch.Tensor,
                 split_style: bool=False,
                 contrastive_loss = False,
                 patch_stylized = None,
-                rev_depth:int = None):
+                rev_depth:int = None,
+                device:torch.device=None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
@@ -1006,7 +1007,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True, device)
     else:
         loss_Gp_GAN = 0
 
