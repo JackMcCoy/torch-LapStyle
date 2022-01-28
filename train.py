@@ -721,7 +721,7 @@ def adaconv_thumb_train():
         path_tokens = args.load_model.split('_')
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
         disc_state = new_path_func('discriminator_')
-        disc2_state = new_path_func('dscriminator_2_')
+        disc2_state = new_path_func('discriminator_2_')
     else:
         disc_state = None
         disc2_state = None
