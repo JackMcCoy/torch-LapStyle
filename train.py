@@ -933,7 +933,7 @@ def adaconv_thumb_train(index, args):
                          "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
                          'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
                     if type(l) == torch.Tensor:
-                        loss_dict[s] = l.item()
+                        loss_dict[s] = l
                 if(n +1) % 10 ==0:
                     loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
                 print('\n')
