@@ -161,7 +161,7 @@ save_dir = Path(args.save_dir)
 save_dir.mkdir(exist_ok=True, parents=True)
 log_dir = Path(args.log_dir)
 log_dir.mkdir(exist_ok=True, parents=True)
-wandb.init(config=vars(args))
+
 
 def build_enc(vgg):
     enc = net.Encoder(vgg)
@@ -724,7 +724,8 @@ def revlap_train():
 def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
-
+    if index==0:
+        wandb.init(config=vars(args))
     print(f'get datasets {index}')
 
     content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
@@ -922,73 +923,74 @@ def adaconv_thumb_train(index, args):
         for param in dec_.parameters():
             param.grad = None
 
-        if (n + 1) % 1 == 0:
+        if index == 0:
+            if (n + 1) % 1 == 0:
 
-            loss_dict = {}
-            for l, s in zip(
-                    [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
-                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
-                     'Style Contrastive Loss','Content Contrastive Loss',
-                     "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
-                if type(l) == torch.Tensor:
-                    loss_dict[s] = l.item()
-            if(n +1) % 10 ==0:
-                loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
-            print('\n')
-            print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+                loss_dict = {}
+                for l, s in zip(
+                        [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
+                         mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
+                         l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
+                        ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                         'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
+                         'Style Contrastive Loss','Content Contrastive Loss',
+                         "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
+                         'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
+                    if type(l) == torch.Tensor:
+                        loss_dict[s] = l.item()
+                if(n +1) % 10 ==0:
+                    loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                print('\n')
+                print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
-            wandb.log(loss_dict, step=n)
+                wandb.log(loss_dict, step=n)
 
-        with torch.no_grad():
-            if (n + 1) % 50 == 0:
+            with torch.no_grad():
+                if (n + 1) % 50 == 0:
 
-                stylized = stylized.float().to('cpu')
-                draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
-                styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
-                style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(draft_img_grid.detach(),
-                           args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
-                save_image(content_img_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_ci' + str(
-                               n + 1) + '.jpg')
-                save_image(style_source_grid.detach(),
-                           args.save_dir + '/drafting_training_iter_si' + str(
-                               n + 1) + '.jpg')
-                del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
+                    stylized = stylized.float().to('cpu')
+                    draft_img_grid = make_grid(stylized, nrow=4, scale_each=True)
+                    styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
+                    style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
+                    content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
+                    save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                    save_image(draft_img_grid.detach(),
+                               args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
+                    save_image(content_img_grid.detach(),
+                               args.save_dir + '/drafting_training_iter_ci' + str(
+                                   n + 1) + '.jpg')
+                    save_image(style_source_grid.detach(),
+                               args.save_dir + '/drafting_training_iter_si' + str(
+                                   n + 1) + '.jpg')
+                    del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
 
-            if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
-                state_dict = dec_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = dec_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'dec_optimizer.pth.tar')
-                state_dict = rev_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'revisor_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = rev_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'rev_optimizer.pth.tar')
-                state_dict = disc_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'disc_optimizer.pth.tar')
-                state_dict = disc2_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_2_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D2.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'disc2_optimizer.pth.tar')
-                del(state_dict)
-        del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
+                if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
+                    state_dict = dec_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'decoder_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = dec_optimizer.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'dec_optimizer.pth.tar')
+                    state_dict = rev_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'revisor_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = rev_optimizer.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'rev_optimizer.pth.tar')
+                    state_dict = disc_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'discriminator_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = opt_D.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'disc_optimizer.pth.tar')
+                    state_dict = disc2_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'discriminator_2_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = opt_D2.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'disc2_optimizer.pth.tar')
+                    del(state_dict)
+        #del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
 
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
