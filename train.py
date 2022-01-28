@@ -918,7 +918,8 @@ def adaconv_thumb_train(index, args):
             param.grad = None
         for param in dec_.parameters():
             param.grad = None
-
+        if n == 0:
+            print(f'zero\'d grads {index}')
         if index == 0:
             if (n + 1) % 1 == 0:
 
@@ -932,14 +933,13 @@ def adaconv_thumb_train(index, args):
                          'Style Contrastive Loss','Content Contrastive Loss',
                          "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
                          'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
-                    if type(l) == torch.Tensor:
-                        loss_dict[s] = l
-                if(n +1) % 10 ==0:
-                    loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
-                print('\n')
-                print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
+                    print(f'{s}: {l}')
+                #if(n +1) % 10 ==0:
+                #    loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                #print('\n')
+                #print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
-                wandb.log(loss_dict, step=n)
+                #wandb.log(loss_dict, step=n)
 
             with torch.no_grad():
                 if (n + 1) % 50 == 0:
