@@ -7,7 +7,7 @@ from losses import calc_mean_std
 @torch.jit.script
 def apply_kernel(predicted: torch.Tensor,depthwise: torch.Tensor,n_groups: int,pointwise_kn:torch.Tensor,pointwise_bias:torch.Tensor):
     return nn.functional.conv2d(
-        nn.functional.conv2d(F.pad(predicted.unsqueeze(0), (1,1),mode='reflect'),
+        nn.functional.conv2d(F.pad(predicted.unsqueeze(0), (1,1,1,1),mode='reflect'),
                              weight=depthwise,
                              stride=1,
                              groups=n_groups
