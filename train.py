@@ -721,7 +721,7 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
-def adaconv_thumb_train(index):
+def adaconv_thumb_train(index, args):
     torch.manual_seed(1)
     device = xm.xla_device()
 
