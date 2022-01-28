@@ -201,7 +201,7 @@ def make_dataloader(args, content_dataset, style_dataset):
         num_workers=args.n_threads))
     return content_iter, style_iter
 
-def build_rev(depth, state):
+def build_rev(depth, state,device):
     rev = net.RevisionNet(s_d = 128).to(device)
     #if not state is None:
     #    state = torch.load(state)
@@ -761,7 +761,7 @@ def adaconv_thumb_train(index, args):
     print(f'make models {index}')
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
-    rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
+    rev_ = torch.jit.trace(build_rev(args.revision_depth, None, device),(torch.rand(args.batch_size,3,256,256,device=device),torch.rand(args.batch_size,3,256,256,device=device)), check_trace=False, strict=False)
     random_crop = transforms.RandomCrop(256)
     if args.load_disc == 1:
         path = args.load_model.split('/')
