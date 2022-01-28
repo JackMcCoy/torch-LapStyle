@@ -24,6 +24,10 @@ from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
+import torch_xla
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.distributed.parallel_loader as pl
 
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
@@ -166,30 +170,36 @@ def build_enc(vgg):
     return enc
 
 with autocast(enabled=ac_enabled):
-    vgg = vgg.vgg
-
-    vgg.load_state_dict(torch.load(args.vgg))
-    vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
     style_tf = train_transform(args.style_load_size, args.crop_size)
 
-    content_dataset = FlatFolderDataset(args.content_dir, content_tf)
-    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
-
-content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size//2,
-    sampler=InfiniteSamplerWrapper(content_dataset),
-    num_workers=args.n_threads,pin_memory=True))
-
-style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size//2,
-    sampler=InfiniteSamplerWrapper(style_dataset),
-    num_workers=args.n_threads,pin_memory=True))
-
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
 
+def get_vgg(args):
+    import vgg
+    vgg = vgg.vgg
+
+    vgg.load_state_dict(torch.load(args.vgg))
+    vgg = nn.Sequential(*list(vgg.children()))
+    return vgg
+
+def get_datasets(args, content_tf,style_tf):
+    content_dataset = FlatFolderDataset(args.content_dir, content_tf)
+    style_dataset = FlatFolderDataset(args.style_dir, style_tf)
+    return content_dataset, style_dataset
+
+def make_dataloader(args, content_dataset, style_dataset):
+    content_iter = iter(data.DataLoader(
+        content_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(content_dataset),
+        num_workers=args.n_threads))
+    style_iter = iter(data.DataLoader(
+        style_dataset, batch_size=args.batch_size,
+        sampler=InfiniteSamplerWrapper(style_dataset),
+        num_workers=args.n_threads))
+    return content_iter, style_iter
 
 def build_rev(depth, state):
     rev = net.RevisionNet(s_d = 128).to(device)
@@ -711,7 +721,44 @@ def revlap_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
 
-def adaconv_thumb_train():
+def adaconv_thumb_train(index):
+    torch.manual_seed(1)
+    device = xm.xla_device()
+
+    print(f'get datasets {index}')
+
+    content_dataset, style_dataset = get_datasets(args, content_tf, style_tf)
+
+    vgg = get_vgg(args)
+
+    content_sampler = torch.utils.data.distributed.DistributedSampler(
+        content_dataset,
+        num_replicas=xm.xrt_world_size(),
+        rank=xm.get_ordinal(),
+        shuffle=True)
+
+    style_sampler = torch.utils.data.distributed.DistributedSampler(
+        style_dataset,
+        num_replicas=xm.xrt_world_size(),
+        rank=xm.get_ordinal(),
+        shuffle=False)
+
+    content_iter = data.DataLoader(
+        content_dataset, batch_size=args.batch_size//2,
+        sampler=content_sampler,
+        shuffle=False,
+        num_workers=2,
+        drop_last=True)
+    style_iter = data.DataLoader(
+        style_dataset, batch_size=args.batch_size//2,
+        sampler=style_sampler,
+        shuffle=False,
+        num_workers=2,
+        drop_last=True)
+    pl_content_iter = iter(pl.ParallelLoader(content_iter, [device]).per_device_loader(device))
+    pl_style_iter = iter(pl.ParallelLoader(style_iter, [device]).per_device_loader(device))
+
+    print(f'make models {index}')
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
     rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,3,256,256,device='cuda:0')), check_trace=False, strict=False)
@@ -771,8 +818,8 @@ def adaconv_thumb_train():
             adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with autocast(enabled=ac_enabled):
             with torch.no_grad():
-                ci = next(content_iter)
-                si = next(style_iter)
+                ci = next(pl_content_iter)
+                si = next(pl_style_iter)
 
                 ######
                 ci_ = ci[1:]
@@ -864,6 +911,12 @@ def adaconv_thumb_train():
             else:
                 rev_optimizer.step()
                 dec_optimizer.step()
+                if n == 0:
+                    print(f'finished first step {index}')
+                xm.optimizer_step(dec_optimizer)
+                xm.optimizer_step(rev_optimizer)
+                xm.optimizer_step(opt_D)
+                xm.optimizer_step(opt_D2)
         for param in rev_.parameters():
             param.grad = None
         for param in dec_.parameters():
@@ -980,6 +1033,6 @@ elif args.train_model == 'revision':
 elif args.train_model == 'revlap':
     revlap_train()
 elif args.train_model == 'adaconv_thumb':
-    adaconv_thumb_train()
+    xmp.spawn(adaconv_thumb_train, args=(args,), nprocs=8, start_method='fork')
 elif args.train_model == 'vqvae_pretrain':
     vq_train()
