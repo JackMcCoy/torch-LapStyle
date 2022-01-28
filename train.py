@@ -842,35 +842,34 @@ def adaconv_thumb_train(index, args):
 
             patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
-        try:
+
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
             loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_, device)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_, device)
 
+        if ac_enabled:
+            scaler.scale(loss_D).backward()
+            scaler.scale(loss_D2).backward()
+        else:
+            loss_D.backward()
+            loss_D2.backward()
+
+        if n % args.accumulation_steps == 0:
             if ac_enabled:
-                scaler.scale(loss_D).backward()
-                scaler.scale(loss_D2).backward()
+                scaler.step(opt_D)
+                scaler.step(opt_D2)
             else:
-                loss_D.backward()
-                loss_D2.backward()
+                opt_D.step()
+                opt_D2.step()
+            for param in disc_.parameters():
+                param.grad = None
+            for param in disc2_.parameters():
+                param.grad = None
 
-            if n % args.accumulation_steps == 0:
-                if ac_enabled:
-                    scaler.step(opt_D)
-                    scaler.step(opt_D2)
-                else:
-                    opt_D.step()
-                    opt_D2.step()
-                for param in disc_.parameters():
-                    param.grad = None
-                for param in disc2_.parameters():
-                    param.grad = None
+        set_requires_grad(disc_, False)
+        set_requires_grad(disc2_, False)
 
-            set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
-        except:
-            print(met.metrics_report())
 
         with autocast(enabled=ac_enabled):
 
