@@ -573,9 +573,6 @@ def revlap_train():
                          strict=False,check_trace=False)
     disc_state = None
     rev_ = LapRev(512, 512, args.batch_size, 512, args.momentumnet_beta).to(device)
-    # (torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')),
-    # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda')),
-    # torch.rand(args.batch_size, 3, 512, 512).to(torch.device('cuda'))),check_trace=False, strict=False)
     if args.load_rev == 1 or args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
@@ -775,7 +772,7 @@ def adaconv_thumb_train(index, args):
         disc2_state = None
         init_weights(dec_)
     disc_ = build_disc(
-        disc_state,device)  # , torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+        disc_state,device)
     disc2_ = build_disc(disc2_state,device)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
