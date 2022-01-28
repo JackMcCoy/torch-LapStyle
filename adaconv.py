@@ -29,7 +29,7 @@ class AdaConv(nn.Module):
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
         self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2),
+            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2,stride=2,padding=1,padding_mode='reflect'),
             nn.Unflatten(1,(self.c_out, self.c_in // self.n_groups))
         )
         self.pointwise_avg_pool = nn.Sequential(
