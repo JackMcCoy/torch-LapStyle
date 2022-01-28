@@ -647,7 +647,7 @@ class Style_Guided_Discriminator(nn.Module):
         self.norms = nn.ModuleList([])
         self.s_d = 128
         self.style_encoding = nn.Sequential(
-            nn.Conv2d(512, 128, kernel_size=1),
+            nn.Conv2d(128, 128, kernel_size=1),
             nn.LeakyReLU(.2),
         )
 
