@@ -107,7 +107,7 @@ class GANLoss(nn.Module):
     that has the same size as the input.
     """
     def __init__(self,
-                 gan_mode, depth=5, conv_ch=64, batch_size=5):
+                 gan_mode, depth=5, conv_ch=64, batch_size=6):
         """ Initialize the GANLoss class.
 
         Args:
@@ -130,7 +130,7 @@ class GANLoss(nn.Module):
 
         #c = int(conv_ch*2**(depth-2))
         #h = int(256/2**(depth-1))
-        c = 64
+        c = 1
         h = 256
         self.target_real = torch.ones(batch_size,c,h,h).to(torch.device('cuda'))
         self.target_fake = torch.zeros(batch_size,c,h,h).to(torch.device('cuda'))
@@ -216,6 +216,8 @@ def calc_mean_std(feat, eps=1e-5):
     """
     size = feat.shape
     assert (len(size) == 4)
-    feat_std = torch.std(feat, dim = (2,3), keepdim=True, unbiased=True)
-    feat_mean = feat.mean(dim= (2,3), keepdim=True)
+    N, C = size[:2]
+    feat_var = feat.view(N, C, -1).var(dim=2) + eps
+    feat_std = feat_var.sqrt().view(N, C, 1, 1)
+    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
     return feat_mean, feat_std

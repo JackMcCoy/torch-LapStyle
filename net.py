@@ -19,6 +19,10 @@ from linear_attention_transformer import LinearAttentionTransformer as Transform
 from adaconv import AdaConv
 from vector_quantize_pytorch import VectorQuantize
 
+gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
+
+device = torch.device('cuda')
+
 unfold = torch.nn.Unfold(256,stride=256)
 random_crop = RandomCrop(256)
 
@@ -45,41 +49,25 @@ class Encoder(nn.Module):
     def __init__(self, vggs):
         super(Encoder,(self)).__init__()
         enc_layers = list(vggs.children())
-        '''
+
         self.enc_1 = nn.Sequential(*enc_layers[:4])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[4:11])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[11:18])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[18:31])  # relu3_1 -> relu4_1
-        '''
         #self.enc_5 = nn.Sequential(*enc_layers[31:44])
-        self.encoder_module = nn.ModuleList([
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[:4]),
-                nn.Sequential(*enc_layers[4:8]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[8:11]),
-                nn.Sequential(*enc_layers[11:15]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[15:18]),
-                nn.Sequential(*enc_layers[18:21]),
-                nn.Sequential(*enc_layers[21:24]),
-                nn.Sequential(*enc_layers[24:27]),
-            ]),
-            nn.ModuleList([
-                nn.Sequential(*enc_layers[27:31]),
-            ])
-        ])
-
 
     def forward(self, x):
         encodings = {}
-        for idx,module in enumerate(self.encoder_module):
-            for jdx, sequence in enumerate(module):
-                x = sequence(x)
-                encodings[f'r{idx+1}_{jdx+1}']=x
-
+        x = self.enc_1(x)
+        encodings['r1_1'] = x
+        x = self.enc_2(x)
+        encodings['r2_1'] = x
+        x = self.enc_3(x)
+        encodings['r3_1'] = x
+        x = self.enc_4(x)
+        encodings['r4_1'] = x
+        #x = self.enc_5(x)
+        #encodings['r5_1'] = x
         return encodings
 
 class Decoder(nn.Module):
@@ -129,14 +117,16 @@ class SwitchableNoise(nn.Module):
         return self.noise_or_ident(x)
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320, batch_size=8, input_nc=6, first_layer=True):
+    def __init__(self, s_d = 320):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.ReLU()
-        self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
+        #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
+        #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(6, 128, kernel_size=3),
+                        nn.Conv2d(3, 128, kernel_size=3),
                         nn.LeakyReLU(),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(128, 128, kernel_size=3, stride=1),
@@ -149,16 +139,16 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         # Resblock Middle
                         ResBlock(64),
-                        RiemannNoise(128, 64),
         )
-
+        '''
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(64, 1, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d),
-            AdaConv(128, 2, batch_size, s_d=s_d)])
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(64, 1, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d),
+            AdaConv(128, 2, s_d=s_d)])
+        '''
 
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
@@ -175,9 +165,9 @@ class RevisionNet(nn.Module):
                                                     nn.LeakyReLU(),),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=3)
-                                                    )])
+                                                    ))
 
-    def forward(self, input, style):
+    def forward(self, input, ci):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -185,13 +175,12 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        #lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+        #                   groups=3).to(device)
+        #out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(input)
-        N, C, h, w = style.shape
-        style = style * self.embedding_scale.view(1,C,h,w)
-        for adaconv, learnable in zip(self.adaconvs, self.UpBlock):
-            out = out + adaconv(style, out, norm=True)
-            out = learnable(out)
-        out = (out + input[:,:3,:,:])
+        out = self.UpBlock(out)
+        out = (out + input)
         return out
 
 class Revisors(nn.Module):
@@ -445,83 +434,79 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size = 8, style_encoding=True, device=None):
+    def __init__(self, s_d = 64):
         super(ThumbAdaConv, self).__init__()
-        self.s_d = 64
-        if style_encoding:
-            self.style_encoding = nn.Sequential(
-                StyleEncoderBlock(512),
-                StyleEncoderBlock(512),
-                StyleEncoderBlock(512),
-            )
+        self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 8, batch_size, s_d=self.s_d),
-            AdaConv(256, 4, batch_size, s_d=self.s_d),
-            AdaConv(128, 2, batch_size, s_d=self.s_d),
-            AdaConv(64, 1, batch_size, s_d=self.s_d)
+            AdaConv(512, 1, s_d=self.s_d),
+            AdaConv(256, 2, s_d=self.s_d),
+            AdaConv(128, 4, s_d=self.s_d),
+            AdaConv(64, 8, s_d=self.s_d)
         ])
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
+            nn.Flatten(1),
+            nn.Linear(8192, self.s_d * 16),
+            nn.Unflatten(1, (self.s_d, 4, 4))
+        )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
-        self.style_projection = nn.Sequential(
-            nn.Linear(8192, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d*16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.LeakyReLU(),
-        )
-        self.riemann_a = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
-        self.riemann_b = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
-        self.riemann_c = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
-        self.riemann_d = nn.ModuleList([
-            RiemannNoise(32, device),
-            RiemannNoise(64, device),
-            RiemannNoise(128, device),
-            RiemannNoise(256, device),
-        ])
         self.learnable=nn.ModuleList([
             nn.Sequential(
-                ResBlock(512),
-                ConvBlock(512, 256),
-                nn.Upsample(scale_factor=2, mode='nearest')
-            ),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 256, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                          ),
             nn.Sequential(
-                ResBlock(256),
-                ConvBlock(256, 128),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 128, (3, 3)),
+                nn.ReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                ConvBlock(128, 128),
-                ConvBlock(128, 64),
-                nn.Upsample(scale_factor=2, mode='nearest')
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 128, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 64, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                ConvBlock(64, 64),
-                ConvBlock(64, 3),
-                nn.Conv2d(3, 3, kernel_size=1)
-            )])
-        self.out_conv = nn.Conv2d(3,3,kernel_size=1)
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 3, (3, 3)))
+        ])
+
+        self.proj_style = nn.Sequential(
+            nn.Linear(in_features=256, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=128)
+        )
+        self.proj_content = nn.Sequential(
+            nn.Linear(in_features=512, out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=128)
+        )
+
+
+        self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.relu = nn.ReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -535,29 +520,22 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, sF: typing.Dict[str, torch.Tensor], cF: typing.Dict[str, torch.Tensor], style_enc=None, patch_num = 0):
-        b, n, h, w = cF['r4_1'].shape
-        if style_enc is None:
-            style = self.style_encoding(sF['r4_1'])
-            style = style.flatten(1)
-            style = self.style_projection(style)
-            style = style.reshape(b, self.s_d, 4, 4)
-        else:
-            style = style_enc
-        if patch_num==0:
-            letter='a'
-        elif patch_num==1:
-            letter='b'
-        elif patch_num==2:
-            letter='c'
-        else:
-            letter='d'
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, eval('self.riemann_'+letter))):
-            x = ada(style, cF[mixin])
-            x = self.relu(x)
-            x = noise(x)
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, repeat_style = False, calc_style=True):
+        if calc_style:
+            if repeat_style:
+                b = style_enc.shape[0]
+                style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
+                style_enc = torch.cat([style_enc,style_enc],0)
+            else:
+                style_enc = self.style_encoding(style_enc)
+
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+            if idx == 0:
+                x = ada(style_enc, cF[mixin])
+            else:
+                x = x+ada(style_enc, cF[mixin])
             x = learnable(x)
-        return x, style
+        return x, style_enc
 
 
 class DecoderVQGAN(nn.Module):
@@ -757,28 +735,27 @@ class Discriminator(nn.Module):
             pred_fake = pred_fake.view(-1)
         else:
             loss_D_fake = self.ganloss(pred_fake, self.false)
-        for i in torch.split(real.detach(),256,dim=2):
-            for j in torch.split(i.detach(), 256,dim=3):
-                pred_real = self(j)
-                if self.relgan:
-                    pred_real = pred_real.view(-1)
-                    if idx==0:
-                        loss_D = (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        )
-                    else:
-                        loss_D += (
-                                torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                                torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                        ).data
-                else:
-                    loss_D_real = self.ganloss(pred_real, self.true)
-                    if idx ==0:
-                        loss_D = ((loss_D_real + loss_D_fake) * 0.5)
-                    else:
-                        loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
-                idx += 1
+
+        pred_real = self(real)
+        if self.relgan:
+            pred_real = pred_real.view(-1)
+            if idx==0:
+                loss_D = (
+                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                )
+            else:
+                loss_D += (
+                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
+                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
+                ).data
+        else:
+            loss_D_real = self.ganloss(pred_real, self.true)
+            if idx ==0:
+                loss_D = ((loss_D_real + loss_D_fake) * 0.5)
+            else:
+                loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
+
         return loss_D
 
     def forward(self, x):
@@ -807,15 +784,17 @@ class SNLinear(nn.Linear):
 class OptimizedBlock(nn.Module):
     def __init__(self, in_channels: int, dim: int, kernel: int, padding: int, downsample: bool=False):
         super(OptimizedBlock, self).__init__()
-        self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
+        self.conv_1 = nn.Conv2d(in_channels, dim, kernel_size=kernel, padding=padding, padding_mode='reflect')
         self.relu = nn.LeakyReLU()
-        self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding,padding_mode='reflect')
+        self.conv_2 = nn.Conv2d(dim, dim, kernel_size=kernel, padding=padding, padding_mode='reflect')
         self.c_sc = nn.Conv2d(in_channels, dim, kernel_size=1)
         self.downsample = nn.AvgPool2d(2) if downsample else nn.Identity()
 
     def init_spectral_norm(self):
-        self.conv_1 = spectral_norm(self.conv_1)
-        self.conv_2 = spectral_norm(self.conv_2)
+        self.conv_1 = spectral_norm(self.conv_1).to(device)
+        self.conv_2 = spectral_norm(self.conv_2).to(device)
+        self.c_sc = spectral_norm(self.c_sc).to(device)
+
 
     def forward(self, in_feat):
         x = self.conv_1(in_feat)
@@ -840,8 +819,8 @@ class SpectralDiscriminator(nn.Module):
     def __init__(self, depth:int=5, num_channels: int=64):
         super(SpectralDiscriminator, self).__init__()
         ch = num_channels
-        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
-                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
+        self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=False),
+                                          *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=False) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
 
     def init_spectral_norm(self):
@@ -890,8 +869,8 @@ content_emd_loss = CalcContentReltLoss()
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def identity_loss(i, F, encoder, decoder):
-    Icc, ada = decoder(F, F)
+def identity_loss(i, F, encoder, decoder, repeat_style=True):
+    Icc, _ = decoder(F, style_enc = F['r4_1'],repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
@@ -901,35 +880,52 @@ def identity_loss(i, F, encoder, decoder):
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
-style_layers = ['r1_1','r1_2','r2_1','r2_2','r3_1','r3_2','r3_3','r3_4','r4_1']
+style_layers = ['r1_1','r2_1','r3_1','r4_1']
 gan_first=True
 
 
 def calc_GAN_loss_from_pred(prediction: torch.Tensor,
-              target_is_real: bool, device):
+              target_is_real: bool):
     batch_size = prediction.shape[0]
     c = 3
-    h = 64
+    h = 256
     if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h, device=device)
+        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
     else:
-        target_tensor = torch.zeros(batch_size, c, h, h,device=device)
-    loss = F.mse_loss(torch.nan_to_num(prediction), torch.nan_to_num(target_tensor.detach()))
+        target_tensor = torch.zeros(batch_size, c, h, h,device=torch.device('cuda:0'))
+    loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module, device):
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
     pred_fake = disc_(fake)
-    pred_fake = torch.clamp(pred_fake,0,1)
-    loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False, device)
+    loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
     pred_real = disc_(real)
-    pred_real = torch.clamp(pred_real,0,1)
-    loss_D_real = calc_GAN_loss_from_pred(pred_real, True, device)
+    loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
 
 def calc_patch_loss(stylized_feats, patch_feats):
     patch_loss = content_loss(stylized_feats['r4_1'], patch_feats['r4_1'])
     return patch_loss
+
+def style_feature_contrastive(sF, decoder):
+    out = torch.sum(sF, dim=[2, 3])
+    out = decoder.proj_style(out)
+    out = out / torch.norm(out, p=2, dim=1, keepdim=True)
+    return out
+
+def content_feature_contrastive(input, decoder):
+    # out = self.enc_content(input)
+    out = torch.sum(input, dim=[2, 3])
+    out = decoder.proj_content(out)
+    out = out / torch.norm(out, p=2, dim=1, keepdim=True)
+    return out
+
+def compute_contrastive_loss(feat_q, feat_k, tau, index):
+    out = torch.mm(feat_q, feat_k.transpose(1, 0)) / tau
+    #loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
+    loss = F.cross_entropy(out, torch.tensor([index], device=feat_q.device))
+    return loss
 
 
 def calc_losses(stylized: torch.Tensor,
@@ -951,15 +947,13 @@ def calc_losses(stylized: torch.Tensor,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
+                contrastive_loss = False,
                 patch_stylized = None,
-                rev_depth:int = None,
-                device=None):
+                rev_depth:int = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
-        l_identity1 = 0
-        l_identity2 = 0
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
     else:
         l_identity1 = 0
         l_identity2 = 0
@@ -997,10 +991,7 @@ def calc_losses(stylized: torch.Tensor,
             style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
                          style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
     if remd_loss:
-        if content_all_layers:
-            content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())+content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
-        else:
-            content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+        content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
@@ -1021,25 +1012,102 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True,device)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
+
+    if contrastive_loss:
+        half = stylized_feats['r4_1'].shape[0]//2
+        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
+        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
+        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
+        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
+
+        style_contrastive_loss = 0
+        for i in range(half):
+            reference_style = style_up[i:i + 1]
+
+            if i == 0:
+                style_comparisons = torch.cat([style_down[0:half - 1], style_up[1:]], 0)
+            elif i == 1:
+                style_comparisons = torch.cat([style_down[1:], style_up[0:1], style_up[2:]], 0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_down[half - 1:], style_down[0:half - 2], style_up[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat([style_down[i:], style_down[0:i - 1], style_up[0:i], style_up[i + 1:]], 0)
+
+            style_contrastive_loss = style_contrastive_loss + compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+
+        for i in range(half):
+            reference_style = style_down[i:i + 1]
+
+            if i == 0:
+                style_comparisons = torch.cat([style_up[0:1], style_up[2:], style_down[1:]], 0)
+            elif i == (half - 2):
+                style_comparisons = torch.cat(
+                    [style_up[half - 2:half - 1], style_up[0:half - 2], style_down[0:half - 2], style_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_up[half - 1:], style_up[1:half - 1], style_down[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat(
+                    [style_up[i:i + 1], style_up[0:i], style_up[i + 2:], style_down[0:i], style_down[i + 1:]], 0)
+
+            style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.3, 0)
+
+        content_contrastive_loss = 0
+        for i in range(half):
+            reference_content = content_up[i:i + 1]
+
+            if i == 0:
+                content_comparisons = torch.cat([content_down[half - 1:], content_down[1:half - 1], content_up[1:]], 0)
+            elif i == 1:
+                content_comparisons = torch.cat([content_down[0:1], content_down[2:], content_up[0:1], content_up[2:]],
+                                                0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat(
+                    [content_down[half - 2:half - 1], content_down[0:half - 2], content_up[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_down[i - 1:i], content_down[0:i - 1], content_down[i + 1:], content_up[0:i],
+                     content_up[i + 1:]], 0)
+
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+
+        for i in range(half):
+            reference_content = content_down[i:i + 1]
+
+            if i == 0:
+                content_comparisons = torch.cat([content_up[1:], content_down[1:]], 0)
+            elif i == (half - 2):
+                content_comparisons = torch.cat(
+                    [content_up[half - 1:], content_up[0:half - 2], content_down[0:half - 2], content_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat([content_up[0:half - 1], content_down[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
+                     content_down[i + 1:]], 0)
+
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)
+    else:
+        content_contrastive_loss=0
+        style_contrastive_loss=0
 
     if patch_loss:
         if patch_stylized is None:
             upscaled_patch_feats = stylized_feats['r4_1']
-            patch_loss = content_loss(upscaled_patch_feats, (patch_feats['r4_1']+1), norm=False)
+            patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
         else:
             patch_disc_loss = 0
             patch_loss = 0
             for idx, (i,j) in enumerate(zip(patch_stylized, top_level_patch)):
-                patch_disc = disc_(j)
-                patch_disc_loss = patch_disc_loss+calc_GAN_loss_from_pred(patch_disc, True,device)
-                patch_feats = encoder(i)['r4_1']
-                upscaled_patch_feats = encoder(j)['r4_1']
-                patch_loss = patch_loss + content_loss(torch.nan_to_num(patch_feats), torch.nan_to_num(upscaled_patch_feats), norm=False)
+                patch_feats = encoder(i)
+                upscaled_patch_feats = encoder(j)
+                patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, patch_disc_loss
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss
 

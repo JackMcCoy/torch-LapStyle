@@ -82,7 +82,7 @@ class FusedConvNoiseBias(nn.Module):
             self.noise = RiemannNoise(hw)
         self.bias = nn.Parameter(nn.init.constant_(torch.ones(ch_out, ), .01))
         self.act = nn.LeakyReLU()
-        self.res_scale = torch.rsqrt((torch.ones(1,device=device)*2))
+        self.res_scale = torch.rsqrt((torch.ones(1,device='cuda:0')*2))
         self.apply(self._init_weights)
 
     @staticmethod
@@ -106,14 +106,14 @@ class FusedConvNoiseBias(nn.Module):
 
 class RiemannNoise(nn.Module):
 
-    def __init__(self, size:int, device):
+    def __init__(self, size:int):
         super(RiemannNoise, self).__init__()
         self.size = size
         self.spatial_params = nn.ParameterList([nn.Parameter(nn.init.normal_(torch.ones(size, size))),
                                         nn.Parameter(nn.init.normal_(torch.ones(size, size))),
-                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5)),
-                                        nn.Parameter(nn.init.constant_(torch.ones(1, ), .5))])
-        self.noise = torch.zeros(1, device=device)
+                                        nn.Parameter(nn.init.constant_(torch.ones(1, 1), .5)),
+                                        nn.Parameter(nn.init.constant_(torch.ones(1, 1), .5))])
+        self.noise = torch.zeros(1, device='cuda:0')
         self.noise.requires_grad = False
         self.size=size
         self.relu = nn.ReLU()
@@ -145,12 +145,12 @@ class RiemannNoise(nn.Module):
 class SpectralResBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel,padding, downsample=False):
         super(SpectralResBlock, self).__init__()
-        self.conv_1 = nn.Conv2d(in_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
+        self.conv_1 = nn.Conv2d(in_ch, out_ch, kernel_size=kernel, padding=padding, padding_mode='reflect')
         self.relu = nn.LeakyReLU()
-        self.conv_2 = nn.Conv2d(out_ch, out_ch, kernel_size = kernel,padding=padding,padding_mode='reflect')
+        self.conv_2 = nn.Conv2d(out_ch, out_ch, kernel_size=kernel, padding=padding, padding_mode='reflect')
         self.downsample = downsample
         self.learnable_sc = (in_ch != out_ch) or downsample
-        self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size= 1, stride = 1, padding = 0)
+        self.c_sc = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=1, padding=0)
 
     def init_spectral_norm(self):
         self.conv_1 = spectral_norm(self.conv_1)
@@ -162,11 +162,11 @@ class SpectralResBlock(nn.Module):
         x = self.conv_2(x)
         if self.downsample:
             x = nn.functional.avg_pool2d(x, 2)
+        x2 = self.c_sc(in_feat)
         if self.downsample:
-            x2 = self.c_sc(in_feat)
             x2 = nn.functional.avg_pool2d(x2, 2)
         else:
-            x2 = 0
+            x2=0
         x = x+x2
         return x
 
