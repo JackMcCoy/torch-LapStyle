@@ -654,8 +654,8 @@ class Style_Guided_Discriminator(nn.Module):
         self.style_projection = nn.Sequential(
             nn.Linear(2048, 2048)
         )
-        self.adaconv = nn.Sequential(AdaConv(64, 8, s_d = 128, norm=False),
-                                     nn.LeakyReLU())
+        self.adaconv = AdaConv(64, 8, s_d = 128, norm=False)
+        self.relu = nn.LeakyReLU()
 
         for i in range(depth - 2):
             self.body.append(
@@ -690,7 +690,7 @@ class Style_Guided_Discriminator(nn.Module):
 
     def forward(self, x, style):
         x = self.head(x)
-        x = x + self.adaconv(style, x)
+        x = x + self.relu(self.adaconv(style, x))
         x = self.body(x)
         x = self.tail(x)
         return x
