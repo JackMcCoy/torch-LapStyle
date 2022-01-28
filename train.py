@@ -808,10 +808,8 @@ def adaconv_thumb_train():
             _clip_gradient(disc2_)
             disc_scaler.scale(loss_D).backward()
             disc_scaler.step(opt_D)
-            disc_scaler.update()
             disc2_scaler.scale(loss_D2).backward()
             disc2_scaler.step(opt_D2)
-            disc2_scaler.update()
         else:
             loss_D.backward()
             opt_D.step()
@@ -859,6 +857,8 @@ def adaconv_thumb_train():
             scaler.step(dec_optimizer)
             scaler.step(rev_optimizer)
             scaler.update()
+            disc_scaler.update()
+            disc2_scaler.update()
         else:
             loss.backward()
             rev_optimizer.step()
