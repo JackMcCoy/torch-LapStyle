@@ -851,6 +851,8 @@ def adaconv_thumb_train():
                    style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
         if ac_enabled:
+            _clip_gradient(dec_)
+            _clip_gradient(rev_)
             scaler.scale(loss).backward()
             scaler.step(dec_optimizer)
             scaler.step(rev_optimizer)
