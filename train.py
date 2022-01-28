@@ -851,7 +851,7 @@ def adaconv_thumb_train():
                     for param in disc2_.parameters():
                         param.grad = None
 
-
+        with autocast(enabled=ac_enabled):
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
             if n == 0:
@@ -860,24 +860,24 @@ def adaconv_thumb_train():
             loss_D2 = calc_GAN_loss(si[-1], patch_stylized.data, None, disc2_)
             loss_D = calc_GAN_loss(si[0], stylized.data, None, disc_)
 
-        if ac_enabled:
-            scaler.scale(loss_D).backward()
-            scaler.scale(loss_D2).backward()
-        else:
-            loss_D.backward()
-            loss_D2.backward()
-
-        if n % args.accumulation_steps == 0:
             if ac_enabled:
-                scaler.step(opt_D)
-                scaler.step(opt_D2)
+                scaler.scale(loss_D).backward()
+                scaler.scale(loss_D2).backward()
             else:
-                opt_D.step()
-                opt_D2.step()
+                loss_D.backward()
+                loss_D2.backward()
+
+            if n % args.accumulation_steps == 0:
+                if ac_enabled:
+                    scaler.step(opt_D)
+                    scaler.step(opt_D2)
+                else:
+                    opt_D.step()
+                    opt_D2.step()
 
 
-        set_requires_grad(disc_, False)
-        set_requires_grad(disc2_, False)
+            set_requires_grad(disc_, False)
+            set_requires_grad(disc2_, False)
 
 
         if (n + 1) % 10 == 0:
