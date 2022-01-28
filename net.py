@@ -6,7 +6,6 @@ from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
-from torch.cuda.amp import autocast
 #from revlib.utils import sequential_to_momentum_net
 
 from gaussian_diff import xdog, make_gaussians
@@ -911,21 +910,21 @@ def calc_patch_loss(stylized_feats, patch_feats):
 
 def style_feature_contrastive(sF, decoder):
     out = torch.sum(sF, dim=[2, 3])
-    out = decoder.proj_style(out.float())
+    out = decoder.proj_style(out)
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
 def content_feature_contrastive(input, decoder):
     # out = self.enc_content(input)
     out = torch.sum(input, dim=[2, 3])
-    out = decoder.proj_content(out.float())
+    out = decoder.proj_content(out)
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
 def compute_contrastive_loss(feat_q, feat_k, tau, index):
     out = torch.mm(feat_q, feat_k.transpose(1, 0)) / tau
     #loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
-    loss = F.binary_cross_entropy_with_logits(out, torch.tensor([index], device=feat_q.device).float().expand(1,4))
+    loss = F.cross_entropy(out, torch.tensor([index], dtype=torch.long, device=feat_q.device))
     return loss
 
 
@@ -1018,81 +1017,80 @@ def calc_losses(stylized: torch.Tensor,
         loss_Gp_GAN = 0
 
     if contrastive_loss:
-        with autocast(False):
-            half = stylized_feats['r4_1'].shape[0]//2
-            style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
-            style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
-            content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
-            content_down = content_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
+        half = stylized_feats['r4_1'].shape[0]//2
+        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
+        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
+        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
+        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
 
-            style_contrastive_loss = 0
-            for i in range(half):
-                reference_style = style_up[i:i + 1]
+        style_contrastive_loss = 0
+        for i in range(half):
+            reference_style = style_up[i:i + 1]
 
-                if i == 0:
-                    style_comparisons = torch.cat([style_down[0:half - 1], style_up[1:]], 0)
-                elif i == 1:
-                    style_comparisons = torch.cat([style_down[1:], style_up[0:1], style_up[2:]], 0)
-                elif i == (half - 1):
-                    style_comparisons = torch.cat([style_down[half - 1:], style_down[0:half - 2], style_up[0:half - 1]], 0)
-                else:
-                    style_comparisons = torch.cat([style_down[i:], style_down[0:i - 1], style_up[0:i], style_up[i + 1:]], 0)
+            if i == 0:
+                style_comparisons = torch.cat([style_down[0:half - 1], style_up[1:]], 0)
+            elif i == 1:
+                style_comparisons = torch.cat([style_down[1:], style_up[0:1], style_up[2:]], 0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_down[half - 1:], style_down[0:half - 2], style_up[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat([style_down[i:], style_down[0:i - 1], style_up[0:i], style_up[i + 1:]], 0)
 
-                style_contrastive_loss = style_contrastive_loss + compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+            style_contrastive_loss = style_contrastive_loss + compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
 
-            for i in range(half):
-                reference_style = style_down[i:i + 1]
+        for i in range(half):
+            reference_style = style_down[i:i + 1]
 
-                if i == 0:
-                    style_comparisons = torch.cat([style_up[0:1], style_up[2:], style_down[1:]], 0)
-                elif i == (half - 2):
-                    style_comparisons = torch.cat(
-                        [style_up[half - 2:half - 1], style_up[0:half - 2], style_down[0:half - 2], style_down[half - 1:]],
-                        0)
-                elif i == (half - 1):
-                    style_comparisons = torch.cat([style_up[half - 1:], style_up[1:half - 1], style_down[0:half - 1]], 0)
-                else:
-                    style_comparisons = torch.cat(
-                        [style_up[i:i + 1], style_up[0:i], style_up[i + 2:], style_down[0:i], style_down[i + 1:]], 0)
+            if i == 0:
+                style_comparisons = torch.cat([style_up[0:1], style_up[2:], style_down[1:]], 0)
+            elif i == (half - 2):
+                style_comparisons = torch.cat(
+                    [style_up[half - 2:half - 1], style_up[0:half - 2], style_down[0:half - 2], style_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                style_comparisons = torch.cat([style_up[half - 1:], style_up[1:half - 1], style_down[0:half - 1]], 0)
+            else:
+                style_comparisons = torch.cat(
+                    [style_up[i:i + 1], style_up[0:i], style_up[i + 2:], style_down[0:i], style_down[i + 1:]], 0)
 
-                style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.3, 0)
+            style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.3, 0)
 
-            content_contrastive_loss = 0
-            for i in range(half):
-                reference_content = content_up[i:i + 1]
+        content_contrastive_loss = 0
+        for i in range(half):
+            reference_content = content_up[i:i + 1]
 
-                if i == 0:
-                    content_comparisons = torch.cat([content_down[half - 1:], content_down[1:half - 1], content_up[1:]], 0)
-                elif i == 1:
-                    content_comparisons = torch.cat([content_down[0:1], content_down[2:], content_up[0:1], content_up[2:]],
-                                                    0)
-                elif i == (half - 1):
-                    content_comparisons = torch.cat(
-                        [content_down[half - 2:half - 1], content_down[0:half - 2], content_up[0:half - 1]], 0)
-                else:
-                    content_comparisons = torch.cat(
-                        [content_down[i - 1:i], content_down[0:i - 1], content_down[i + 1:], content_up[0:i],
-                         content_up[i + 1:]], 0)
+            if i == 0:
+                content_comparisons = torch.cat([content_down[half - 1:], content_down[1:half - 1], content_up[1:]], 0)
+            elif i == 1:
+                content_comparisons = torch.cat([content_down[0:1], content_down[2:], content_up[0:1], content_up[2:]],
+                                                0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat(
+                    [content_down[half - 2:half - 1], content_down[0:half - 2], content_up[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_down[i - 1:i], content_down[0:i - 1], content_down[i + 1:], content_up[0:i],
+                     content_up[i + 1:]], 0)
 
-                content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
 
-            for i in range(half):
-                reference_content = content_down[i:i + 1]
+        for i in range(half):
+            reference_content = content_down[i:i + 1]
 
-                if i == 0:
-                    content_comparisons = torch.cat([content_up[1:], content_down[1:]], 0)
-                elif i == (half - 2):
-                    content_comparisons = torch.cat(
-                        [content_up[half - 1:], content_up[0:half - 2], content_down[0:half - 2], content_down[half - 1:]],
-                        0)
-                elif i == (half - 1):
-                    content_comparisons = torch.cat([content_up[0:half - 1], content_down[0:half - 1]], 0)
-                else:
-                    content_comparisons = torch.cat(
-                        [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
-                         content_down[i + 1:]], 0)
+            if i == 0:
+                content_comparisons = torch.cat([content_up[1:], content_down[1:]], 0)
+            elif i == (half - 2):
+                content_comparisons = torch.cat(
+                    [content_up[half - 1:], content_up[0:half - 2], content_down[0:half - 2], content_down[half - 1:]],
+                    0)
+            elif i == (half - 1):
+                content_comparisons = torch.cat([content_up[0:half - 1], content_down[0:half - 1]], 0)
+            else:
+                content_comparisons = torch.cat(
+                    [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
+                     content_down[i + 1:]], 0)
 
-                content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)
     else:
         content_contrastive_loss=0
         style_contrastive_loss=0
