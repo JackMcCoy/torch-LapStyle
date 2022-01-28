@@ -911,14 +911,14 @@ def calc_patch_loss(stylized_feats, patch_feats):
 
 def style_feature_contrastive(sF, decoder):
     out = torch.sum(sF, dim=[2, 3])
-    out = decoder.proj_style(out)
+    out = decoder.proj_style(out.float())
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
 def content_feature_contrastive(input, decoder):
     # out = self.enc_content(input)
     out = torch.sum(input, dim=[2, 3])
-    out = decoder.proj_content(out)
+    out = decoder.proj_content(out.float())
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
