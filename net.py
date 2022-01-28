@@ -924,7 +924,7 @@ def content_feature_contrastive(input, decoder):
 def compute_contrastive_loss(feat_q, feat_k, tau, index):
     out = torch.mm(feat_q, feat_k.transpose(1, 0)) / tau
     #loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
-    loss = F.cross_entropy(out.to(torch.float32), torch.tensor([index], device=feat_q.device, type=torch.float32), reduction='sum')
+    loss = F.cross_entropy(out.to(torch.float32), torch.tensor([index], device=feat_q.device, dtype=torch.float32), reduction='sum')
     return loss
 
 
