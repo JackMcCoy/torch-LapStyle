@@ -763,7 +763,7 @@ def adaconv_thumb_train():
     scaler = GradScaler()
     disc_scaler = GradScaler()
     disc2_scaler = GradScaler()
-    for n in range(args.max_iter):
+    for n in tqdm.tqdm(range(args.max_iter), position=0):
         if args.lr_decay!=0:
             adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
             adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
@@ -802,33 +802,33 @@ def adaconv_thumb_train():
                     param.grad = None
             patch_stylized = rev_(original[0], ci[-1])
             patches.append(patch_stylized)
+            if n>0:
+                losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                                     calc_identity=args.identity_loss == 1, disc_loss=True,
+                                     mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
+                                     remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                                     patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=sF,
+                                     split_style=False)
+                loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
+                loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
+                       loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
+                       style_contrastive_loss * 0.5 + content_contrastive_loss * 0.3
 
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                                 calc_identity=args.identity_loss == 1, disc_loss=True,
-                                 mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                                 remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
-                                 patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=sF,
-                                 split_style=False)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
-            loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
-                   loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
-                   style_contrastive_loss * 0.5 + content_contrastive_loss * 0.3
-
-            with torch.no_grad():
-                patch_cF = enc_(ci[-1])
-                patch_sF = enc_(si[-1])
-            p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
-                                   calc_identity=False, disc_loss=True,
-                                   mdog_losses=args.mdog_loss,
-                                   content_all_layers=args.content_all_layers,
-                                   remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
-                                   patch_loss=False, patch_stylized=patches, top_level_patch=original,
-                                   sF=patch_sF, split_style=False)
-            loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
-            loss = loss + (
-                        loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
-                        loss_Gp_GANp * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
-                        style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
+                with torch.no_grad():
+                    patch_cF = enc_(ci[-1])
+                    patch_sF = enc_(si[-1])
+                p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
+                                       calc_identity=False, disc_loss=True,
+                                       mdog_losses=args.mdog_loss,
+                                       content_all_layers=args.content_all_layers,
+                                       remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                                       patch_loss=False, patch_stylized=patches, top_level_patch=original,
+                                       sF=patch_sF, split_style=False)
+                loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
+                loss = loss + (
+                            loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
+                            loss_Gp_GANp * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
+                            style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
         if ac_enabled:
             scaler.scale(loss).backward(retain_graph=True)
@@ -891,7 +891,6 @@ def adaconv_thumb_train():
                     loss_dict[s] = l.item()
             if(n +1) % 10 ==0:
                 loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
-            print('\n')
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
             wandb.log(loss_dict, step=n)
