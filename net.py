@@ -137,6 +137,7 @@ class RevisionNet(nn.Module):
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 64, kernel_size=3, stride=2),
                         nn.LeakyReLU(),
+                        RiemannNoise(128),
                         # Resblock Middle
                         ResBlock(64),
         )
