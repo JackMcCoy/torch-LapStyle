@@ -666,7 +666,7 @@ class Style_Guided_Discriminator(nn.Module):
         )
 
         for i in range(depth - 2):
-            self.body.append(AdaConv(num_channels, 3, s_d=self.s_d, norm=False))
+            self.body.append(AdaConv(num_channels, 8, s_d=self.s_d, norm=True))
             self.norms.append(
                 nn.Sequential(nn.LeakyReLU(.2),
                               nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect',
