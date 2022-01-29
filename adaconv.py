@@ -34,27 +34,27 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N, self.c_out, self.c_in // self.n_groups, 3, 3)
+        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_kn = self.pw_cn_kn(s_d).view(N, self.c_out, self.c_out // self.n_groups, 1, 1)
-        pointwise_bias = self.pw_cn_bias(s_d).view(N, self.c_out)
+        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
+        pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
         if self.norm:
             mean,std = calc_mean_std(predicted)
             predicted = predicted - mean
             predicted = predicted / std
-        content_out = []
-        for i in range(a):
-            content_out.append(nn.functional.conv2d(
+
+        predicted = predicted.view(1,a*b,c,d)
+        content_out = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
                                      weight=depthwise[i],
                                      stride=1,
-                                     groups=self.n_groups
+                                     groups=self.n_groups*a
                                      ),
                 stride=1,
                 weight=pointwise_kn[i],
                 bias=pointwise_bias[i],
-                groups=self.n_groups))
-        content_out = torch.cat(content_out,0)
+                groups=self.n_groups*a)
+        content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
         return content_out
