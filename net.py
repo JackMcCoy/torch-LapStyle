@@ -740,6 +740,7 @@ class Discriminator(nn.Module):
         self.relgan = relgan
         self.quantize = quantize
 
+    @torch.jit.script
     def losses(self, real, fake):
 
         pred_real = self(real)
