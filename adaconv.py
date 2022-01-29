@@ -8,7 +8,7 @@ from losses import calc_mean_std
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
         super(AdaConv, self).__init__()
-        self.n_groups = int(c_in//p)
+        self.n_groups = c_in//p
         self.pointwise_groups = s_d//p
         self.c_out = c_in
         self.c_in = c_in

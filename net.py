@@ -740,18 +740,18 @@ class Discriminator(nn.Module):
         self.relgan = relgan
         self.quantize = quantize
 
-    def losses(self, real, fake, style):
+    def losses(self, real, fake):
 
-        pred_real = self(real, None)
+        pred_real = self(real)
         loss_D_real = self.ganloss(pred_real, True)
 
-        pred_fake = self(fake, None)
+        pred_fake = self(fake)
 
         loss_D_fake = self.ganloss(pred_fake, False)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
-    def forward(self, x, style):
+    def forward(self, x):
         x = self.head(x)
         x = self.norms(x)
         x = self.tail(x)
@@ -1005,7 +1005,7 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(stylized, None)
+        fake_loss = disc_(stylized)
         loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
