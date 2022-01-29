@@ -854,7 +854,7 @@ def adaconv_thumb_train():
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
             set_requires_grad(dec_, False)
-            set_requires_grad(enc, False)
+            set_requires_grad(enc_, False)
             stylized.grad=None
             patch_stylized.grad=None
             loss_D2 = disc2_.losses(si[-1], patch_stylized)
@@ -879,7 +879,7 @@ def adaconv_thumb_train():
             set_requires_grad(disc_, False)
             set_requires_grad(disc2_, False)
             set_requires_grad(dec_, True)
-            set_requires_grad(enc, True)
+            set_requires_grad(enc_, True)
 
 
         if (n + 1) % 10 == 0:
