@@ -148,7 +148,6 @@ class RevisionNet(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 8, s_d=s_d),
             AdaConv(64, 8, s_d=s_d),
-            AdaConv(128, 4, s_d=s_d),
             AdaConv(128, 4, s_d=s_d)])
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
