@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
     def __init__(self, s_d = 320):
         super(RevisionNet, self).__init__()
 
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
@@ -144,15 +144,14 @@ class RevisionNet(nn.Module):
                         nn.BatchNorm2d(64),
                         nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'))
-        '''
-        self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d),
-            AdaConv(128, 2, s_d=s_d)])
-        '''
 
-        self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.adaconvs = nn.ModuleList([
+            AdaConv(64, 8, s_d=s_d),
+            AdaConv(64, 8, s_d=s_d),
+            AdaConv(128, 4, s_d=s_d),
+            AdaConv(128, 4, s_d=s_d)])
+
+        self.UpBlock = nn.ModuleList(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.BatchNorm2d(64),
                                                     nn.LeakyReLU(),
@@ -174,7 +173,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 3, kernel_size=1)
                                                     ))
 
-    def forward(self, input, ci):
+    def forward(self, input, style):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -186,6 +185,9 @@ class RevisionNet(nn.Module):
         #                   groups=3).to(device)
         #out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(input)
+        for ada, learnable in zip(self.adaconvs,self.UpBlock):
+            out = out + self.relu(ada(style, out))
+            out = learnable(out)
         out = self.UpBlock(out)
         out = (out + input)
         return out

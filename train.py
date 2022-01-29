@@ -192,7 +192,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.RevisionNet(s_d = 128).to(device)
+    rev = net.RevisionNet(s_d = args.s_d).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
@@ -800,7 +800,7 @@ def adaconv_thumb_train():
             if n % args.accumulation_steps == 0:
                 for param in rev_.parameters():
                     param.grad = None
-            patch_stylized = rev_(original[0], ci[-1])
+            patch_stylized = rev_(original[0], style_embedding)
             patches.append(patch_stylized)
 
         if n>0:
