@@ -713,69 +713,48 @@ class Style_Guided_Discriminator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, depth=5, num_channels=64, relgan=True):
+    def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Discriminator, self).__init__()
         self.head = nn.Sequential(
-            nn.Conv2d(3,num_channels,3,stride=1,padding=1),
+            nn.Conv2d(3, num_channels, 1, stride=1),
             nn.BatchNorm2d(num_channels),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(.2),
             )
-        self.body = []
+        self.body = nn.ModuleList([])
+        self.norms = nn.ModuleList([])
+
+
         for i in range(depth - 2):
-            self.body.append(
-                nn.Conv2d(num_channels,
-                          num_channels,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1))
-            self.body.append(nn.BatchNorm2d(num_channels))
-            self.body.append(nn.LeakyReLU(0.2))
-        self.body = nn.Sequential(*self.body)
+            self.norms.append(
+                nn.Sequential(nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect',
+                                        bias=False),
+                              nn.BatchNorm2d(num_channels),
+                              nn.LeakyReLU(.2), ))
         self.tail = nn.Conv2d(num_channels,
                               1,
-                              kernel_size=3,
+                              kernel_size=1,
                               stride=1,
-                              padding=1)
-        self.ganloss = GANLoss('lsgan')
+                              )
+        self.relu = nn.LeakyReLU()
+        self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
-        self.true = torch.Tensor([True]).float().to(device)
-        self.true.requires_grad = False
-        self.false = torch.Tensor([False]).float().to(device)
-        self.false.requires_grad = False
+        self.quantize = quantize
 
-    def losses(self, real, fake):
-        idx=0
-        pred_fake = self(fake)
-        if self.relgan:
-            pred_fake = pred_fake.view(-1)
-        else:
-            loss_D_fake = self.ganloss(pred_fake, self.false)
+    def losses(self, real, fake, style):
 
-        pred_real = self(real)
-        if self.relgan:
-            pred_real = pred_real.view(-1)
-            if idx==0:
-                loss_D = (
-                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                )
-            else:
-                loss_D += (
-                        torch.mean((pred_real - torch.mean(pred_fake) - 1) ** 2) +
-                        torch.mean((pred_fake - torch.mean(pred_real) + 1) ** 2)
-                ).data
-        else:
-            loss_D_real = self.ganloss(pred_real, self.true)
-            if idx ==0:
-                loss_D = ((loss_D_real + loss_D_fake) * 0.5)
-            else:
-                loss_D = loss_D + ((loss_D_real + loss_D_fake) * 0.5)
+        pred_real = self(real, None)
+        loss_D_real = self.ganloss(pred_real, True)
 
+        pred_fake = self(fake, None)
+
+        loss_D_fake = self.ganloss(pred_fake, False)
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
-    def forward(self, x):
+    def forward(self, x, style):
         x = self.head(x)
-        x = self.body(x)
+        for i, norm in zip(self.norms):
+            x = norm(x)
         x = self.tail(x)
         return x
 
