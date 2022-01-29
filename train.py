@@ -853,10 +853,10 @@ def adaconv_thumb_train():
         with autocast(enabled=ac_enabled):
             set_requires_grad(disc_, True)
             set_requires_grad(disc2_, True)
-            stylized= torch.zeros(args.batch_size,3,256,256, device=device)
-            patch_stylized = torch.zeros(args.batch_size, 3, 256, 256, device=device)
-            loss_D2 = disc2_.losses(si[-1], patch_stylized.data)
-            loss_D = disc_.losses(si[0], stylized.data)
+            patch_stylized.grad=None
+            stylized.grad=None
+            loss_D2 = disc2_.losses(si[-1], patch_stylized)
+            loss_D = disc_.losses(si[0], stylized)
 
             if ac_enabled:
                 scaler.scale(loss_D).backward()
