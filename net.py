@@ -720,8 +720,7 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(num_channels),
             nn.LeakyReLU(.2),
             )
-        self.body = nn.ModuleList([])
-        self.norms = nn.ModuleList([])
+        self.norms = []
 
 
         for i in range(depth - 2):
@@ -735,6 +734,7 @@ class Discriminator(nn.Module):
                               kernel_size=1,
                               stride=1,
                               )
+        self.norms = nn.Sequential(self.norms)
         self.relu = nn.LeakyReLU()
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
@@ -753,8 +753,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x, style):
         x = self.head(x)
-        for i, norm in self.norms:
-            x = norm(x)
+        x = norm(x)
         x = self.tail(x)
         return x
 
