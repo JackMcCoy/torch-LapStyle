@@ -146,7 +146,11 @@ class RevisionNet(nn.Module):
             AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
 
         self.style_conv = nn.Sequential(
-            nn.Conv2d(s_d,s_d*2,kernel_size=1),
+            nn.Flatten(1),
+            nn.Linear(s_d*16,s_d*32),
+            nn.LeakyReLU(),
+            nn.Linear(s_d * 32, s_d * 16),
+            nn.Unflatten(1,(s_d,4,4))
         )
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -176,6 +180,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         out = self.Downblock(input)
+        style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             if idx in [0, 1]:
                 out = out + self.relu(ada(style, out))
