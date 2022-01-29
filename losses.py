@@ -144,7 +144,7 @@ class GANLoss(nn.Module):
             raise NotImplementedError('gan mode %s not implemented' % gan_mode)
 
 
-    def __call__(self,
+    def forward(self,
                  prediction,
                  target_is_real: bool):
         """Calculate loss given Discriminator's output and grount truth labels.
