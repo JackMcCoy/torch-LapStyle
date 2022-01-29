@@ -28,7 +28,7 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
-        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2,stride=2,padding=1,padding_mode='reflect'),
+        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2,stride=2,padding=1,padding_mode='reflect')
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AvgPool2d(2,2),
