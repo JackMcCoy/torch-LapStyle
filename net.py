@@ -128,12 +128,15 @@ class RevisionNet(nn.Module):
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(3, 128, kernel_size=3),
                         nn.LeakyReLU(),
+                        RiemannNoise(256),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(128, 128, kernel_size=3, stride=1),
                         nn.LeakyReLU(),
+                        RiemannNoise(256),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(128, 64, kernel_size=3, stride=1),
                         nn.LeakyReLU(),
+                        RiemannNoise(256),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 64, kernel_size=3, stride=2),
                         nn.LeakyReLU(),
@@ -150,7 +153,6 @@ class RevisionNet(nn.Module):
         '''
 
         self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    RiemannNoise(130),
                                                     nn.Conv2d(64, 256, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                     nn.PixelShuffle(2),
