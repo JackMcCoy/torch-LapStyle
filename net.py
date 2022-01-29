@@ -651,33 +651,33 @@ class Style_Guided_Discriminator(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(3,3,3,stride=1,padding=1, padding_mode='reflect'),
             nn.LeakyReLU(.2),
-            nn.Conv2d(3, num_channels, 3, stride=1, padding=1, padding_mode='reflect'),
+            nn.Conv2d(3, num_channels, 1, stride=1),
             nn.LeakyReLU(.2),
             )
         self.body = nn.ModuleList([])
         self.norms = nn.ModuleList([])
         self.s_d = 128
         self.style_encoding = nn.Sequential(
-            nn.Conv2d(128, 128, kernel_size=1),
+            nn.Conv2d(128, self.s_d, kernel_size=1),
             nn.LeakyReLU(.2),
         )
         self.style_projection = nn.Sequential(
-            nn.Linear(2048, 2048)
+            nn.Linear(2048, self.s_d*16)
         )
 
         for i in range(depth - 2):
-            self.body.append(AdaConv(64, 8, s_d=128, norm=False))
+            self.body.append(AdaConv(num_channels, 3, s_d=self.s_d, norm=False))
             self.norms.append(
                 nn.Sequential(nn.LeakyReLU(.2),
-                              nn.Conv2d(64, 64, 3, stride=1, padding=1, padding_mode='reflect',
+                              nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect',
                                         bias=False),
-                              nn.BatchNorm2d(64),
+                              nn.BatchNorm2d(num_channels),
                               nn.LeakyReLU(.2), ))
         self.tail = nn.Conv2d(num_channels,
                               1,
-                              kernel_size=3,
+                              kernel_size=1,
                               stride=1,
-                              padding=1, padding_mode='reflect')
+                              )
         self.relu = nn.LeakyReLU()
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
@@ -689,10 +689,10 @@ class Style_Guided_Discriminator(nn.Module):
         style = self.style_encoding(style.clone().detach())
         style = self.style_projection(style.flatten(1)).reshape(b, self.s_d, 4, 4)
 
-        pred_real = self(real.detach(), style)
+        pred_real = self(real, style)
         loss_D_real = self.ganloss(pred_real, True)
 
-        pred_fake = self(fake.detach(), style)
+        pred_fake = self(fake, style)
 
         loss_D_fake = self.ganloss(pred_fake, False)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
