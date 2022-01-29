@@ -150,11 +150,6 @@ class RevisionNet(nn.Module):
             AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
             nn.Identity()])
 
-        self.style_conv = nn.Sequential(
-            nn.Conv2d(s_d,s_d*2,kernel_size=1),
-            nn.LeakyReLU(),
-            nn.Conv2d(s_d * 2,s_d, kernel_size=1),
-        )
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
