@@ -137,10 +137,9 @@ class RevisionNet(nn.Module):
                         nn.Conv2d(128, 64, kernel_size=3, stride=1),
                         nn.LeakyReLU(),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=2),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=1),
                         nn.LeakyReLU(),
-                        # Resblock Middle
-                        ResBlock(64),
+                        nn.Upsample(scale_factor=.5, mode='nearest'))
         )
         '''
         self.adaconvs = nn.ModuleList([
@@ -152,12 +151,9 @@ class RevisionNet(nn.Module):
 
         self.UpBlock = nn.Sequential(nn.Sequential(RiemannNoise(128),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(64, 256, kernel_size=3),
+                                                    nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.LeakyReLU(),
-                                                    nn.PixelShuffle(2),
-                                                    nn.Conv2d(64, 64, kernel_size=1),
-                                                    nn.LeakyReLU(),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
+                                                    nn.Upsample(scale_factor=2, mode='nearest'),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     nn.LeakyReLU(),
                                                    ),
@@ -169,7 +165,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.LeakyReLU(),),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
-                                                    nn.Conv2d(128, 3, kernel_size=3)
+                                                    nn.Conv2d(128, 3, kernel_size=1)
                                                     ))
 
     def forward(self, input, ci):
