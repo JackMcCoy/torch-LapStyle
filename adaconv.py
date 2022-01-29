@@ -41,9 +41,9 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            mean = predicted.mean(dim=(2, 3), keepdim=True)
+            mean,std = calc_mean_std(predicted)
             predicted = predicted - mean
-            predicted = predicted * torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
+            predicted = predicted / std
         content_out = []
         for i in range(a):
             content_out.append(nn.functional.conv2d(
