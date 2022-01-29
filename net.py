@@ -137,7 +137,8 @@ class RevisionNet(nn.Module):
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 64, kernel_size=3, stride=1),
                         nn.LeakyReLU(.15),
-                        nn.Upsample(scale_factor=.5, mode='nearest'))
+                        nn.Upsample(scale_factor=.5, mode='nearest'),
+                        RiemannNoise(128))
 
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
