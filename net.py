@@ -519,14 +519,13 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc=None, repeat_style = False, calc_style=True):
-        if calc_style:
-            if repeat_style:
-                b = style_enc.shape[0]
-                style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
-                style_enc = torch.cat([style_enc,style_enc],0)
-            else:
-                style_enc = self.style_encoding(style_enc)
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, repeat_style = True):
+        if repeat_style:
+            b = style_enc.shape[0]
+            style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
+            style_enc = torch.cat([style_enc,style_enc],0)
+        else:
+            style_enc = self.style_encoding(style_enc)
 
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
