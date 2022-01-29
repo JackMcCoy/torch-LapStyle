@@ -192,7 +192,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.RevisionNet(s_d = args.s_d).to(device)
+    rev = net.RevisionNet(batch_size=args.batch_size,s_d = args.s_d).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
@@ -713,7 +713,7 @@ def revlap_train():
 
 def adaconv_thumb_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device)
     rev_ = torch.jit.trace(build_rev(args.revision_depth, None),(torch.rand(args.batch_size,3,256,256,device='cuda:0'),torch.rand(args.batch_size,args.s_d,4,4,device='cuda:0')), check_trace=False, strict=False)
     random_crop = transforms.RandomCrop(256)
     if args.load_disc == 1:

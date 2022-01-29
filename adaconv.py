@@ -6,9 +6,10 @@ from losses import calc_mean_std
 
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, s_d: int = 512, norm:bool=True):
+    def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True):
         super(AdaConv, self).__init__()
-        self.n_groups = c_in//p
+        self.n_groups = (c_in//p)
+        self.batch_groups = batch_size * (c_in // p)
         self.pointwise_groups = s_d//p
         self.c_out = c_in
         self.c_in = c_in
@@ -50,11 +51,11 @@ class AdaConv(nn.Module):
                 nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
-                                     groups=self.n_groups*a
+                                     groups=self.batch_groups
                                      ),
                 stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
-                groups=self.n_groups*a)
+                groups=self.batch_groups)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
         return content_out

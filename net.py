@@ -117,7 +117,7 @@ class SwitchableNoise(nn.Module):
         return self.noise_or_ident(x)
 
 class RevisionNet(nn.Module):
-    def __init__(self, s_d = 320):
+    def __init__(self, batch_size=8, s_d = 320):
         super(RevisionNet, self).__init__()
 
         self.relu = nn.LeakyReLU()
@@ -146,8 +146,8 @@ class RevisionNet(nn.Module):
                         nn.Upsample(scale_factor=.5, mode='nearest'))
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d),
-            AdaConv(64, 1, s_d=s_d),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
             nn.Identity()])
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -441,15 +441,15 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, s_d = 64):
+    def __init__(self, batch_size=8, s_d = 64):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d),
-            AdaConv(256, 2, s_d=self.s_d),
-            AdaConv(128, 4, s_d=self.s_d),
-            AdaConv(64, 8, s_d=self.s_d)
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
