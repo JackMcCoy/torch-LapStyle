@@ -47,14 +47,14 @@ class AdaConv(nn.Module):
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted[i].unsqueeze(0)),
-                                     weight=depthwise[i],
+                nn.functional.conv2d(self.pad(predicted),
+                                     weight=depthwise,
                                      stride=1,
                                      groups=self.n_groups*a
                                      ),
                 stride=1,
-                weight=pointwise_kn[i],
-                bias=pointwise_bias[i],
+                weight=pointwise_kn,
+                bias=pointwise_bias,
                 groups=self.n_groups*a)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
         return content_out
