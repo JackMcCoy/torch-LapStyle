@@ -785,7 +785,7 @@ def adaconv_thumb_train():
 
         for param in dec_.parameters():
             param.grad = None
-        stylized, style_embedding = dec_(cF,style_enc=sF['r4_1'],repeat_style=True)
+        stylized, style_embedding = torch.utils.checkpoint.checkpoint(dec_,(cF,sF['r4_1'],True))
 
         patches = []
         original = []
@@ -793,7 +793,7 @@ def adaconv_thumb_train():
         original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
         for param in rev_.parameters():
             param.grad = None
-        patch_stylized = rev_(original[0], style_embedding)
+        patch_stylized = torch.utils.checkpoint.checkpoint(rev_,(original[0], style_embedding))
         patches.append(patch_stylized)
 
 
@@ -839,8 +839,8 @@ def adaconv_thumb_train():
         set_requires_grad(dec_, False)
         set_requires_grad(enc_, False)
 
-        loss_D2 = disc2_.losses(si[-1], patch_stylized.data)
-        loss_D = disc_.losses(si[0], stylized.data)
+        loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,(si[-1], patch_stylized.data))
+        loss_D = torch.utils.checkpoint.checkpoint(disc_.losses, (si[0], stylized.data))
 
         loss_D.backward()
         loss_D2.backward()
