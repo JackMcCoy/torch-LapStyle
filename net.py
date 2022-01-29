@@ -140,7 +140,6 @@ class RevisionNet(nn.Module):
                         nn.Conv2d(64, 64, kernel_size=3, stride=1),
                         nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'))
-        )
         '''
         self.adaconvs = nn.ModuleList([
             AdaConv(64, 1, s_d=s_d),
