@@ -182,6 +182,7 @@ class RevisionNet(nn.Module):
 
         out = self.Downblock(input)
         out = out + self.adaconvs(style, out)
+        out = self.UpBlock[0](out)
         for learnable in self.UpBlock[1:]:
             out = learnable(out)
         return out
