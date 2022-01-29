@@ -796,12 +796,14 @@ def adaconv_thumb_train():
         patch_stylized = torch.utils.checkpoint.checkpoint(rev_,original[0].clone().detach(), style_embedding.clone().detach())
         patches.append(patch_stylized)
 
-
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+        with torch.no_grad():
+            test_cF = enc_(ci[-1])
+            test_sF = enc_(si[-1])
+        losses = calc_losses(stylized, ci[0], si[0], test_cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                              remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
-                             patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=sF,
+                             patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=test_sF,
                              split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
