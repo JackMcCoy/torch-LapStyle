@@ -156,6 +156,7 @@ class RevisionNet(nn.Module):
                                                     RiemannNoise(128),
                                                     nn.LeakyReLU(),
                                                     nn.Upsample(scale_factor=2, mode='nearest'),
+                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     RiemannNoise(256),
                                                     nn.LeakyReLU(),
