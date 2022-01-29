@@ -803,7 +803,7 @@ def adaconv_thumb_train():
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                              remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
-                             patch_loss=True, patch_stylized=patches, top_level_patch=original, sF=test_sF,
+                             patch_loss=False, sF=test_sF,
                              split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
@@ -818,7 +818,7 @@ def adaconv_thumb_train():
                                mdog_losses=args.mdog_loss,
                                content_all_layers=args.content_all_layers,
                                remd_loss=remd_loss, contrastive_loss=False,
-                               patch_loss=False, patch_stylized=patches, top_level_patch=original,
+                               patch_loss=True, patch_stylized=patches, top_level_patch=original,
                                sF=patch_sF, split_style=False,style_embedding=style_embedding)
         loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
         loss = loss + (
