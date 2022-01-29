@@ -145,13 +145,8 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'))
 
-        self.adaconvs = nn.ModuleList([
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            nn.Identity()])
 
-
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
+        self.UpBlock = nn.Sequential(nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     RiemannNoise(128),
                                                     nn.LeakyReLU(),
@@ -171,9 +166,9 @@ class RevisionNet(nn.Module):
                                                     nn.LeakyReLU(),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=1)
-                                                    )])
+                                                    ))
 
-    def forward(self, input, style):
+    def forward(self, input):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -181,12 +176,8 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-
         out = self.Downblock(input)
-        for idx, (ada, learnable) in enumerate(zip(self.adaconvs,self.UpBlock)):
-            if idx in [0,1]:
-                out = out + self.relu(ada(style, out))
-            out = learnable(out)
+        out = self.UpBlock(out)
         return out
 
 class Revisors(nn.Module):
