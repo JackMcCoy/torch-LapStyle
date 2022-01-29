@@ -185,7 +185,8 @@ class RevisionNet(nn.Module):
         #out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(input)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs,self.UpBlock)):
-            out = out + self.relu(ada(style, out))
+            if idx in [0,1]:
+                out = out + self.relu(ada(style, out))
             out = learnable(out)
         return out
 
