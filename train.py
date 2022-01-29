@@ -785,12 +785,11 @@ def adaconv_thumb_train():
 
         for param in dec_.parameters():
             param.grad = None
-        print('dec')
-        stylized, style_embedding = torch.utils.checkpoint.checkpoint(dec_,cF,sF['r4_1'])
+        dummy = torch.ones(1).requires_grad_(True)
+        stylized, style_embedding = torch.utils.checkpoint.checkpoint(dec_,cF,sF['r4_1'], dummy)
 
         patches = []
         original = []
-        print('rev')
         original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
         for param in rev_.parameters():
             param.grad = None

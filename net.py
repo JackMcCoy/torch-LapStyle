@@ -519,7 +519,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, repeat_style = True):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True):
         if repeat_style:
             b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
@@ -845,7 +845,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, style_enc = F['r4_1'],repeat_style=repeat_style)
+    Icc, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
