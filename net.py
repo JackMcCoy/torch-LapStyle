@@ -734,7 +734,7 @@ class Discriminator(nn.Module):
                               kernel_size=1,
                               stride=1,
                               )
-        self.norms = nn.Sequential(self.norms)
+        self.norms = nn.Sequential(*self.norms)
         self.relu = nn.LeakyReLU()
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
