@@ -188,8 +188,6 @@ class RevisionNet(nn.Module):
         for ada, learnable in zip(self.adaconvs,self.UpBlock):
             out = out + self.relu(ada(style, out))
             out = learnable(out)
-        out = self.UpBlock(out)
-        out = (out + input)
         return out
 
 class Revisors(nn.Module):
