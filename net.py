@@ -120,7 +120,7 @@ class RevisionNet(nn.Module):
     def __init__(self, batch_size=8, s_d = 320):
         super(RevisionNet, self).__init__()
 
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.LeakyReLU(.15)
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
@@ -128,21 +128,21 @@ class RevisionNet(nn.Module):
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(3, 128, kernel_size=3),
                         nn.BatchNorm2d(128),
-                        nn.LeakyReLU(.05),
+                        nn.LeakyReLU(.15),
                         #RiemannNoise(256),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(128, 128, kernel_size=3, stride=1),
                         nn.BatchNorm2d(128),
-                        nn.LeakyReLU(.05),
+                        nn.LeakyReLU(.15),
                         #RiemannNoise(256),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(128, 64, kernel_size=3, stride=1),
                         nn.BatchNorm2d(64),
-                        nn.LeakyReLU(.05),
+                        nn.LeakyReLU(.15),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(64, 64, kernel_size=3, stride=1),
                         nn.BatchNorm2d(64),
-                        nn.LeakyReLU(.05),
+                        nn.LeakyReLU(.15),
                         nn.Upsample(scale_factor=.5, mode='nearest'))
 
         self.adaconvs = AdaConv(64, 8, s_d=s_d, batch_size=batch_size)
@@ -154,19 +154,19 @@ class RevisionNet(nn.Module):
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
                                                     RiemannNoise(128),
-                                                    nn.LeakyReLU(.05),
+                                                    nn.LeakyReLU(.15),
                                                     nn.Upsample(scale_factor=2, mode='nearest'),
                                                     nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
-                                                    nn.LeakyReLU(.05),
+                                                    nn.LeakyReLU(.15),
                                                    ),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 128, kernel_size=3),
-                                                    nn.LeakyReLU(.05),
+                                                    nn.LeakyReLU(.15),
                                                     ),
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
-                                                    nn.LeakyReLU(.05),
+                                                    nn.LeakyReLU(.15),
                                                     nn.Conv2d(128, 3, kernel_size=1)
                                                     )])
 
@@ -470,34 +470,34 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 nn.BatchNorm2d(256),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 RiemannNoise(64),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 nn.BatchNorm2d(256),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3)),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3)),
                 RiemannNoise(128),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3)),
-                nn.LeakyReLU(.05),
+                nn.LeakyReLU(.15),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3)))
         ])
@@ -711,7 +711,7 @@ class Discriminator(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, 1, stride=1),
             nn.BatchNorm2d(num_channels),
-            nn.LeakyReLU(.2),
+            nn.ReLU(),
             )
         self.norms = []
 
@@ -721,7 +721,7 @@ class Discriminator(nn.Module):
                 nn.Sequential(nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1, padding_mode='reflect',
                                         bias=False),
                               nn.BatchNorm2d(num_channels),
-                              nn.LeakyReLU(.2), ))
+                              nn.ReLU(), ))
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=1,
