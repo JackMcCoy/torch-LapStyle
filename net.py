@@ -753,7 +753,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x, style):
         x = self.head(x)
-        x = norm(x)
+        x = self.norm(x)
         x = self.tail(x)
         return x
 
