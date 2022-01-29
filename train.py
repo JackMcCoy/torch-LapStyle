@@ -786,7 +786,7 @@ def adaconv_thumb_train():
         for param in dec_.parameters():
             param.grad = None
         dummy = torch.ones(1).requires_grad_(True)
-        stylized, style_embedding = torch.utils.checkpoint.checkpoint(dec_,cF,sF['r4_1'], dummy)
+        stylized, style_embedding = dec_(cF,sF['r4_1'], dummy)
 
         patches = []
         original = []
