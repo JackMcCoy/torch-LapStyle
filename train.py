@@ -838,7 +838,8 @@ def adaconv_thumb_train():
         set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(enc_, False)
-
+        si[0].requires_grad=True
+        si[-1].requires_grad = True
         loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,si[-1], patch_stylized)
         loss_D = torch.utils.checkpoint.checkpoint(disc_.losses, si[0], stylized)
 
