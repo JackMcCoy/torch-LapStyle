@@ -168,7 +168,6 @@ class RevisionNet(nn.Module):
                                       nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 128, kernel_size=3),
                                                     nn.LeakyReLU(),
-                                                    nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(128, 3, kernel_size=1)
                                                     )])
 
