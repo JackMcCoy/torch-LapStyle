@@ -146,9 +146,15 @@ class RevisionNet(nn.Module):
                         nn.Upsample(scale_factor=.5, mode='nearest'))
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            nn.Identity()])
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=s_d, batch_size=batch_size),])
+
+        self.style_conv = nn.Sequential(
+            nn.Conv2d(s_d,s_d*2,kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(s_d * 2,s_d, kernel_size=1),
+        )
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
@@ -180,13 +186,11 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        #lap_pyr = F.conv2d(F.pad(ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
-        #                   groups=3).to(device)
-        #out = torch.cat([input, lap_pyr], dim=1)
+
         out = self.Downblock(input)
+        style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs,self.UpBlock)):
-            if idx in [0,1]:
-                out = out + self.relu(ada(style, out))
+            out = out + self.relu(ada(style, out))
             out = learnable(out)
         return out
 
