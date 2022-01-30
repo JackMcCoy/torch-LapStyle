@@ -123,9 +123,7 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
-        self.grid = 2 * torch.arange(256).view(1, 256).float() / max(float(512) - 1., 1.) - 1.
-        self.grid = (self.grid * self.grid.T).to(device)
-        self.grid.requires_grad = False
+
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
@@ -178,7 +176,9 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = input + self.grid
+        grid = 2 * torch.arange(256, device='cuda').view(1, 256).float() / max(float(512) - 1., 1.) - 1.
+        grid = (grid * grid.T)
+        out = input + grid
         out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
