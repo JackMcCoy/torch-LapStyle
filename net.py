@@ -123,21 +123,25 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
+        self.grid = 2 * torch.arange(256).view(1, 256).float() / max(float(512) - 1., 1.) - 1.
+        self.grid = (self.grid * self.grid.T).to(device)
+        self.grid.requires_grad = False
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
-        self.Downblock = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3,padding=1),
+        self.Downblock = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3,padding=1, padding_mode='reflect'),
                         nn.LeakyReLU(),
-                        nn.Conv2d(128, 128, kernel_size=3, stride=1,padding=1),
+                        nn.Conv2d(128, 128, kernel_size=3, stride=1,padding=1, padding_mode='reflect'),
                         nn.LeakyReLU(),
-                        nn.Conv2d(128, 64, kernel_size=3, stride=1,padding=1),
+                        nn.Conv2d(128, 64, kernel_size=3, stride=1,padding=1, padding_mode='reflect'),
                         nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=1,padding=1),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=1,padding=1, padding_mode='reflect'),
                         nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'),
-                        nn.Conv2d(64,64,kernel_size=1)
+                        nn.Conv2d(64,64,kernel_size=1),
+                        nn.LeakyReLU()
                         )
 
         self.adaconvs = nn.ModuleList([
@@ -146,19 +150,21 @@ class RevisionNet(nn.Module):
             AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
 
         self.style_conv = nn.Sequential(
-            nn.Conv2d(s_d,s_d,kernel_size=3,padding=1),
+            nn.Conv2d(s_d,s_d,kernel_size=1),
             nn.LeakyReLU())
 
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.Conv2d(64, 64, kernel_size=3,padding=1),
+        self.UpBlock = nn.ModuleList([nn.Sequential(nn.Conv2d(64, 64, kernel_size=3,padding=1, padding_mode='reflect'),
                                                     nn.LeakyReLU(),
                                                     nn.Upsample(scale_factor=2, mode='nearest'),
-                                                    nn.Conv2d(64, 64, kernel_size=3,padding=1),
+                                                    nn.Conv2d(64, 64, kernel_size=1),
+                                                    nn.LeakyReLU,
+                                                    nn.Conv2d(64, 64, kernel_size=3,padding=1, padding_mode='reflect'),
                                                     nn.LeakyReLU(),
                                                    ),
-                                      nn.Sequential(nn.Conv2d(64, 128, kernel_size=3,padding=1),
+                                      nn.Sequential(nn.Conv2d(64, 128, kernel_size=3,padding=1, padding_mode='reflect'),
                                                     nn.LeakyReLU(),
                                                     ),
-                                      nn.Sequential(nn.Conv2d(128, 128, kernel_size=3,padding=1),
+                                      nn.Sequential(nn.Conv2d(128, 128, kernel_size=3,padding=1, padding_mode='reflect'),
                                                     nn.LeakyReLU(),
                                                     nn.Conv2d(128, 3, kernel_size=1)
                                                     )])
@@ -172,7 +178,8 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = self.Downblock(input)
+        out = input + self.grid
+        out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out))
