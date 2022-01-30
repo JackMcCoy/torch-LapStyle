@@ -18,7 +18,7 @@ from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from adaconv import AdaConv
 from vector_quantize_pytorch import VectorQuantize
-from function import CartesianGrid as Grid
+from function import positionalencoding2d as pos_enc
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -174,9 +174,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(256) - 1., 1.) - 1.
-        grid = (grid * grid.T)
-        out = input + grid
+        out = input + pos_enc(3,256,256)
         out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
@@ -737,9 +735,7 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
-        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(256) - 1., 1.) - 1.
-        grid = (grid * grid.T)
-        x = x + grid
+        x = x + pos_enc(3,256,256)
         x = self.head(x)
         x = self.norms(x)
         x = self.tail(x)
