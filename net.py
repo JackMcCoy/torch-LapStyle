@@ -148,9 +148,7 @@ class RevisionNet(nn.Module):
 
         self.style_conv = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(s_d*16,s_d*32),
-            nn.LeakyReLU(),
-            nn.Linear(s_d * 32, s_d * 16)
+            nn.Linear(s_d*16,s_d*16)
         )
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
