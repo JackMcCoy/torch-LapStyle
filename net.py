@@ -143,8 +143,8 @@ class RevisionNet(nn.Module):
                         )
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
             AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
 
         self.style_conv = nn.Sequential(
