@@ -719,6 +719,9 @@ class Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
+        self.grid = 2 * torch.arange(256).view(1, 256).float() / max(float(512) - 1., 1.) - 1.
+        self.grid = (self.grid * self.grid.T).to(device)
+        self.grid.requires_grad = False
 
     def losses(self, real, fake):
 
@@ -732,6 +735,7 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
+        x = x + self.grid
         x = self.head(x)
         x = self.norms(x)
         x = self.tail(x)

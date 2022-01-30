@@ -118,6 +118,7 @@ parser.add_argument('--load_model', type=str, default='none')
 # Revision model options
 parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
+parser.add_argument('--disc2_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
 parser.add_argument('--accumulation_steps', type=int, default=1)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
@@ -134,6 +135,7 @@ parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
+parser.add_argument('--gan_loss2', type=float, default=2.5)
 parser.add_argument('--momentumnet_beta', type=float, default=.9)
 parser.add_argument('--fp16', type=int, default=0)
 parser.add_argument('--contrastive_loss', type=int, default=0)
@@ -210,9 +212,9 @@ def build_revlap(depth, state):
     rev.train()
     return rev
 
-def build_disc(disc_state):
-    with autocast(enabled=ac_enabled):
-        disc = net.Discriminator(depth=args.revision_depth,relgan=False, batch_size=args.batch_size, num_channels=args.disc_channels).to(device)
+def build_disc(disc_state, depth):
+    with autocast(depth = 5,enabled=ac_enabled):
+        disc = net.Discriminator(depth=depth,relgan=False, batch_size=args.batch_size, num_channels=args.disc_channels).to(device)
         disc.train()
         #disc.init_spectral_norm()
         if not disc_state is None:
@@ -727,8 +729,8 @@ def adaconv_thumb_train():
         disc2_state = None
         init_weights(dec_)
     disc_ = build_disc(
-        disc_state) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-    disc2_ = build_disc(disc2_state)
+        disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    disc2_ = build_disc(disc2_state, args.disc2_depth)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
@@ -856,7 +858,7 @@ def adaconv_thumb_train():
         loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
         loss = loss + (
                     loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_lossp * args.patch_loss + \
-                    loss_Gp_GANp * args.gan_loss +\
+                    loss_Gp_GANp * args.gan_loss2 +\
                     style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
         loss.backward()
