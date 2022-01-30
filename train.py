@@ -766,10 +766,10 @@ def adaconv_thumb_train():
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
     for n in tqdm(range(args.max_iter), position=0):
-        #adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
-        #adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
-        #adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
-        #adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
+        adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
+        adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
+        adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
+        adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with torch.no_grad():
             ci = next(content_iter)
             si = next(style_iter)
@@ -869,10 +869,10 @@ def adaconv_thumb_train():
 
             loss_dict = {}
             for l, s in zip(
-                    [loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
+                    [dec_optimizer.lr, loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
                      l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
-                    ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
+                    ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
                      "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
