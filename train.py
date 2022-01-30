@@ -797,7 +797,7 @@ def adaconv_thumb_train():
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256)
             original.append(res_in)
-            res_in = grid_pos(res_in) + res_in
+            res_in = grid + res_in
         for param in rev_.parameters():
             param.grad = None
         patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
