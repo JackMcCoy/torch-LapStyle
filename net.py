@@ -126,7 +126,6 @@ class RevisionNet(nn.Module):
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
-        self.grid = Grid()
         self.Downblock = nn.Sequential(#Downblock
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(3, 128, kernel_size=3),
@@ -185,7 +184,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = self.Downblock(self.grid(input)+input)
+        out = self.Downblock(input)
         style = self.style_conv(style).view(N,self.s_d,4,4)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out))

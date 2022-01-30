@@ -24,7 +24,7 @@ from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
-
+from function import CartesianGrid as Grid
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -733,6 +733,7 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    grid_pos = Grid().to(device)
     wandb.watch((dec_,rev_,disc_,disc2_), log='all', log_freq=50)
     if args.load_model == 'none':
         init_weights(dec_)
@@ -791,10 +792,13 @@ def adaconv_thumb_train():
 
         patches = []
         original = []
-        original.append(F.interpolate(stylized[:,:,0:128,0:128],256))
+        with torch.no_grad():
+            res_in = F.interpolate(stylized, 512)
+            original.append(res_in[:,:,:256,:256])
+            res_in = grid_pos(res_in)[:,:,:256,256] + res_in[:,:,:256,:256]
         for param in rev_.parameters():
             param.grad = None
-        patch_stylized = rev_(original[0].clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
+        patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
         patches.append(patch_stylized)
 
         with torch.no_grad():
