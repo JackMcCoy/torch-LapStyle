@@ -151,10 +151,7 @@ class RevisionNet(nn.Module):
             AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
             AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
 
-        self.style_conv = nn.Sequential(
-            nn.Flatten(1),
-            nn.Linear(s_d*16,s_d*16)
-        )
+        self.style_conv = nn.Conv2d(s_d,s_d,kernel_size=1)
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.ReflectionPad2d((1, 1, 1, 1)),
                                                     nn.Conv2d(64, 64, kernel_size=3),
@@ -452,9 +449,6 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        self.grid = 2 * torch.arange(32,device='cuda',dtype=torch.float32).view(1,32) / max(float(32) - 1., 1.) - 1.
-        self.grid = (self.grid*self.grid.T)
-        self.grid.requires_grad=False
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
