@@ -710,10 +710,10 @@ class Discriminator(nn.Module):
 
         for i in range(depth - 2):
             self.norms.append(
-                nn.Sequential(nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1
+                nn.Sequential(nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1,
                                         bias=False),
                               nn.BatchNorm2d(num_channels),
-                              nn.ReLU(), ))
+                              nn.ReLU()))
         self.tail = nn.Conv2d(num_channels,
                               1,
                               kernel_size=1,
