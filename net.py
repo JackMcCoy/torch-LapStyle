@@ -126,8 +126,8 @@ class RevisionNet(nn.Module):
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
+        self.grid = Grid()
         self.Downblock = nn.Sequential(#Downblock
-                        Grid(),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(3, 128, kernel_size=3),
                         nn.BatchNorm2d(128),
@@ -185,7 +185,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = self.Downblock(input)
+        out = self.Downblock(self.grid(input)+input)
         style = self.style_conv(style).view(N,self.s_d,4,4)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out))
@@ -453,8 +453,8 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
+        self.grid = Grid()
         self.style_encoding = nn.Sequential(
-            Grid(),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -532,6 +532,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True):
+        style_enc = style_enc + self.grid(style_enc)
         if repeat_style:
             b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
