@@ -176,7 +176,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = self.head(input) + pos_enc(128,256,256)
+        out = self.head(input)
         out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
@@ -739,7 +739,6 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.head(x)
-        x = x + pos_enc(self.num_channels, 256, 256)
         x = self.norms(x)
         x = self.tail(x)
         return x
