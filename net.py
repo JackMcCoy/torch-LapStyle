@@ -134,6 +134,8 @@ class RevisionNet(nn.Module):
                         nn.LeakyReLU(),
                         nn.Conv2d(64, 64, kernel_size=3, stride=1,padding=1),
                         nn.LeakyReLU(),
+                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+                        nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'),
                         nn.Conv2d(64,64,kernel_size=1)
                         )
@@ -171,7 +173,7 @@ class RevisionNet(nn.Module):
         """
         N = style.shape[0]
         out = self.Downblock(input)
-        style = self.style_conv(style).view(N,self.s_d,4,4)
+        style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out))
             out = learnable(out)
