@@ -18,6 +18,7 @@ from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
 from adaconv import AdaConv
 from vector_quantize_pytorch import VectorQuantize
+from function import CartesianGrid as Grid
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -126,6 +127,7 @@ class RevisionNet(nn.Module):
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(#Downblock
+                        Grid(),
                         nn.ReflectionPad2d((1, 1, 1, 1)),
                         nn.Conv2d(3, 128, kernel_size=3),
                         nn.BatchNorm2d(128),
@@ -452,6 +454,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
         self.style_encoding = nn.Sequential(
+            Grid(),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
