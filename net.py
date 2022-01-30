@@ -452,8 +452,8 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        self.grid = 2 * torch.arange(32).view(1,32) / max(float(32) - 1., 1.) - 1.
-        self.grid = self.grid*self.grid.T
+        self.grid = 2 * torch.arange(32,device='cuda').view(1,32) / max(float(32) - 1., 1.) - 1.
+        self.grid = (self.grid*self.grid.T)
         self.grid.requires_grad=False
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
