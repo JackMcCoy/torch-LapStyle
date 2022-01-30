@@ -1034,6 +1034,7 @@ def calc_losses(stylized: torch.Tensor,
             style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.3, 0)
 
         content_contrastive_loss = 0
+        '''
         for i in range(half):
             reference_content = content_up[i:i + 1]
 
@@ -1068,7 +1069,7 @@ def calc_losses(stylized: torch.Tensor,
                     [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
                      content_down[i + 1:]], 0)
 
-            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)'''
     else:
         content_contrastive_loss=0
         style_contrastive_loss=0
