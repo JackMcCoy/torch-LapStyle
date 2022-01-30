@@ -880,7 +880,8 @@ def adaconv_thumb_train():
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:
-                    loss_dict[s] = l
+                    if l != 0:
+                        loss_dict[s] = l
             if(n +1) % 10 ==0:
                 loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
