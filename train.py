@@ -789,10 +789,7 @@ def adaconv_thumb_train():
             stylized, style_embedding = dec_(cF, sF['r4_1'], None)
 
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bicubic')
-            original.append(res_in)
-            res_in = res_in
-            patch_stylized = rev_(res_in.clone().detach().requires_grad_(True),
-                                  style_embedding.clone().detach().requires_grad_(True))
+            patch_stylized = rev_(res_in, style_embedding)
 
 
         for param in disc_.parameters():
