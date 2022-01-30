@@ -823,7 +823,7 @@ def adaconv_thumb_train():
                                sF=patch_sF, split_style=False,style_embedding=style_embedding)
         loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GANp, patch_lossp, style_contrastive_lossp, content_contrastive_lossp = p_losses
         loss = loss + (
-                    loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * 16 + patch_lossp * args.patch_loss + \
+                    loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_lossp * args.patch_loss + \
                     loss_Gp_GANp * args.gan_loss +\
                     style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
 
@@ -861,7 +861,7 @@ def adaconv_thumb_train():
 
             loss_dict = {}
             for l, s in zip(
-                    [loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
+                    [loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
                      l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
                     ['Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
