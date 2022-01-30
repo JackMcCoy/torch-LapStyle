@@ -533,6 +533,8 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True):
         grid = self.grid(style_enc)
         print(grid)
+        print(type(grid))
+        print(grid.shape)
         style_enc = style_enc + grid
         if repeat_style:
             b = style_enc.shape[0]
