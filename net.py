@@ -157,7 +157,7 @@ class RevisionNet(nn.Module):
                                                     nn.LeakyReLU(),
                                                     nn.Upsample(scale_factor=2, mode='nearest'),
                                                     nn.Conv2d(64, 64, kernel_size=1),
-                                                    nn.LeakyReLU,
+                                                    nn.LeakyReLU(),
                                                     nn.Conv2d(64, 64, kernel_size=3,padding=1, padding_mode='reflect'),
                                                     nn.LeakyReLU(),
                                                    ),
