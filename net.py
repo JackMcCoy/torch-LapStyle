@@ -174,7 +174,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(512) - 1., 1.) - 1.
+        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(256) - 1., 1.) - 1.
         grid = (grid * grid.T)
         out = input + grid
         out = self.Downblock(out)
@@ -737,7 +737,7 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
-        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(512) - 1., 1.) - 1.
+        grid = 2 * torch.arange(256, device='cuda').requires_grad_(False).view(1, 256) / max(float(256) - 1., 1.) - 1.
         grid = (grid * grid.T)
         x = x + grid
         x = self.head(x)
