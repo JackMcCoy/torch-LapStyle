@@ -869,7 +869,7 @@ def adaconv_thumb_train():
 
             loss_dict = {}
             for l, s in zip(
-                    [dec_optimizer.param_groups[0].lr, loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
+                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
                      l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
@@ -879,6 +879,8 @@ def adaconv_thumb_train():
                      'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
+                elif type(l) == float or type(l)==int:
+                    loss_dict[s] = l
             if(n +1) % 10 ==0:
                 loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
