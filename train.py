@@ -733,6 +733,7 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    wandb.watch(dec_,rev_,disc_,disc2_, log='all', log_freq=50)
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -753,7 +754,7 @@ def adaconv_thumb_train():
             except:
                 'discriminator optimizer not loaded'
             try:
-                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
+                opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
             except:
                 'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
