@@ -733,7 +733,9 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
-    grid_pos = Grid().to(device)
+    grid = 2 * torch.arange(512).view(1,512) / max(float(512) - 1., 1.) - 1.
+    grid = (grid * grid.T).to(device)[:256,:256]
+    grid.requires_grad = False
     wandb.watch((dec_,rev_,disc_,disc2_), log='all', log_freq=50)
     if args.load_model == 'none':
         init_weights(dec_)
@@ -793,9 +795,9 @@ def adaconv_thumb_train():
         patches = []
         original = []
         with torch.no_grad():
-            res_in = F.interpolate(stylized, 512)
-            original.append(res_in[:,:,:256,:256])
-            res_in = grid_pos(res_in)[:,:,:256,256] + res_in[:,:,:256,:256]
+            res_in = F.interpolate(stylized[:,:,:128,:128], 256)
+            original.append(res_in)
+            res_in = grid_pos(res_in) + res_in
         for param in rev_.parameters():
             param.grad = None
         patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))

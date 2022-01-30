@@ -452,7 +452,9 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        self.grid = Grid()
+        self.grid = 2 * torch.arange(32).view(1,32) / max(float(32) - 1., 1.) - 1.
+        self.grid = self.grid*self.grid.T
+        self.grid.requires_grad=False
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -531,11 +533,8 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True):
-        grid = self.grid(style_enc[0])
-        print(grid)
-        print(type(grid))
-        print(grid.shape)
-        style_enc = style_enc + grid
+
+        style_enc = style_enc + self.grid
         if repeat_style:
             b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
