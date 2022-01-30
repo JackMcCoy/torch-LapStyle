@@ -127,7 +127,9 @@ class RevisionNet(nn.Module):
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
-        self.Downblock = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3,padding=1),
+        self.head = nn.Sequential(nn.Conv2d(3,128,kernel_size=1),
+                                  nn.LeakyReLU())
+        self.Downblock = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3,padding=1),
                         nn.LeakyReLU(),
                         nn.Conv2d(128, 128, kernel_size=3, stride=1,padding=1),
                         nn.LeakyReLU(),
@@ -174,7 +176,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = input + pos_enc(3,256,256)
+        out = self.head(input) + pos_enc(128,256,256)
         out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
@@ -722,6 +724,7 @@ class Discriminator(nn.Module):
         self.ganloss = GANLoss('lsgan', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
+        self.num_channels = num_channels
 
     def losses(self, real, fake):
 
@@ -735,8 +738,8 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
-        x = x + pos_enc(3,256,256)
         x = self.head(x)
+        x = x + pos_enc(self.num_channels, 256, 256)
         x = self.norms(x)
         x = self.tail(x)
         return x
