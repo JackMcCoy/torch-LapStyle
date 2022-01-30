@@ -733,6 +733,9 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
+    #grid = (grid * grid.T).to(device)[:256,:256]
+    #grid.requires_grad = False
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -778,8 +781,8 @@ def adaconv_thumb_train():
             rc_si = torch.cat([rc_si, rc_si], 0)
             ######
 
-            ci = [F.interpolate(ci, size=256, mode='bicubic', align_corners=True).to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic', align_corners=True).to(device), rc_si.to(device)]
+            ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
+            si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
@@ -791,7 +794,7 @@ def adaconv_thumb_train():
         patches = []
         original = []
         with torch.no_grad():
-            res_in = F.interpolate(stylized[:,:,:128,:128], 256)
+            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='bicubic')
             original.append(res_in)
             res_in = res_in
         for param in rev_.parameters():

@@ -127,18 +127,15 @@ class RevisionNet(nn.Module):
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.Downblock = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3,padding=1),
-                        nn.BatchNorm2d(128),
                         nn.LeakyReLU(),
                         nn.Conv2d(128, 128, kernel_size=3, stride=1,padding=1),
-                        nn.BatchNorm2d(128),
                         nn.LeakyReLU(),
                         nn.Conv2d(128, 64, kernel_size=3, stride=1,padding=1),
-                        nn.BatchNorm2d(64),
                         nn.LeakyReLU(),
                         nn.Conv2d(64, 64, kernel_size=3, stride=1,padding=1),
-                        nn.BatchNorm2d(64),
                         nn.LeakyReLU(),
                         nn.Upsample(scale_factor=.5, mode='nearest'),
+                        nn.Conv2d(64,64,kernel_size=1)
                         )
 
         self.adaconvs = nn.ModuleList([
@@ -151,7 +148,6 @@ class RevisionNet(nn.Module):
             nn.LeakyReLU())
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.Conv2d(64, 64, kernel_size=3,padding=1),
-                                                    RiemannNoise(128),
                                                     nn.LeakyReLU(),
                                                     nn.Upsample(scale_factor=2, mode='nearest'),
                                                     nn.Conv2d(64, 64, kernel_size=3,padding=1),
