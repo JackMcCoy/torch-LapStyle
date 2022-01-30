@@ -149,9 +149,7 @@ class RevisionNet(nn.Module):
             AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
             AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
 
-        self.style_conv = nn.Sequential(
-            nn.Conv2d(s_d,s_d,kernel_size=1),
-            nn.LeakyReLU())
+        self.style_conv = nn.Conv2d(s_d,s_d,kernel_size=1)
 
         self.UpBlock = nn.ModuleList([nn.Sequential(nn.Conv2d(64, 64, kernel_size=3,padding=1),
                                                     nn.LeakyReLU(),
@@ -451,7 +449,6 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             nn.Flatten(1),
             nn.Linear(8192, self.s_d * 16),
-            nn.LeakyReLU(),
             nn.Unflatten(1, (self.s_d, 4, 4))
         )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
