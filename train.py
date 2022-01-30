@@ -733,7 +733,7 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
-    grid = 2 * torch.arange(512).view(1,512) / max(float(512) - 1., 1.) - 1.
+    grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     grid = (grid * grid.T).to(device)[:256,:256]
     grid.requires_grad = False
     if args.load_model == 'none':
