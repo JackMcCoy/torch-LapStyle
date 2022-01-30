@@ -213,7 +213,7 @@ def build_revlap(depth, state):
     return rev
 
 def build_disc(disc_state, depth):
-    with autocast(depth = 5,enabled=ac_enabled):
+    with autocast(enabled=ac_enabled):
         disc = net.Discriminator(depth=depth,relgan=False, batch_size=args.batch_size, num_channels=args.disc_channels).to(device)
         disc.train()
         #disc.init_spectral_norm()
