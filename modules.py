@@ -251,10 +251,10 @@ class ConvBlock(nn.Module):
             self.skip = nn.Conv2d(dim1, dim2, kernel_size=1)
         self.conv_block = nn.Sequential(
             nn.Conv2d(dim1, dim2, kernel_size=3,padding=1),
-            nn.BatchNorm2d(dim2, momentum=.2),
+            #nn.BatchNorm2d(dim2, momentum=.2),
             nn.LeakyReLU(),
             nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1),
-            nn.BatchNorm2d(dim2, momentum=.2),
+            #nn.BatchNorm2d(dim2, momentum=.2),
             self.blurpool
             )
         self.skip = nn.Sequential(self.skip,self.blurpool)
