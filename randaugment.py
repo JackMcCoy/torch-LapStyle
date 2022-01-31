@@ -54,7 +54,7 @@ def Rotate(img, v):  # [-30, 30]
     assert -30 <= v <= 30
     if random.random() > 0.5:
         v = -v
-    return img.rotate(v)
+    return img.rotate(v,expand=True)
 
 
 def AutoContrast(img, _):
@@ -183,6 +183,7 @@ def augment_list():  # 16 oeprations and their ranges
         (AutoContrast, 0, 1),
         (Equalize, 0, 1),
         (Invert, 0, 1),
+        (Rotate, 0, 30),
         (Posterize, 0, 4),
         (Solarize, 0, 256),
         (SolarizeAdd, 0, 110),
@@ -190,6 +191,7 @@ def augment_list():  # 16 oeprations and their ranges
         (Contrast, 0.1, 1.9),
         (Brightness, 0.1, 1.9),
         (Sharpness, 0.1, 1.9),
+
         (CutoutAbs, 0, 40),
 
     ]
