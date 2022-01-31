@@ -477,21 +477,25 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True, saved_stats = None, precalced_emb=False):
         if repeat_style:
             b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
             style_enc = torch.cat([style_enc,style_enc],0)
+        elif precalced_emb:
+            pass
         else:
             style_enc = self.style_encoding(style_enc)
-
+        stats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+            ada_out, s = ada(style_enc, cF[mixin], thumb_stats = saved_stats if saved_stats is None else saved_stats[idx])
+            stats.append(s)
             if idx == 0:
-                x = self.relu(ada(style_enc, cF[mixin]))
+                x = self.relu(ada_out)
             else:
-                x = x+self.relu(ada(style_enc, cF[mixin]))
+                x = x+self.relu(ada_out)
             x = learnable(x)
-        return x, style_enc
+        return x, style_enc, stats
 
 
 class DecoderVQGAN(nn.Module):
@@ -804,7 +808,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
+    Icc, _, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)

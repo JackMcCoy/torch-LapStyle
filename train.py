@@ -716,25 +716,25 @@ def revlap_train():
 def adaconv_thumb_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device)
-    rev_ = build_rev(args.revision_depth, None)
+    #rev_ = build_rev(args.revision_depth, None)
     random_crop = transforms.RandomCrop(256)
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
         disc_state = new_path_func('discriminator_')
-        disc2_state = new_path_func('discriminator_2_')
+        #disc2_state = new_path_func('discriminator_2_')
     else:
         disc_state = None
-        disc2_state = None
+        #disc2_state = None
         init_weights(dec_)
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-    disc2_ = build_disc(disc2_state, args.disc2_depth)
+    #disc2_ = build_disc(disc2_state, args.disc2_depth)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
-    rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
+    #rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
-    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    #opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
@@ -757,10 +757,10 @@ def adaconv_thumb_train():
                 opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
             except:
                 'discriminator optimizer not loaded'
-            try:
-                opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
+            #try:
+            #    opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
+            #except:
+            #    'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
@@ -788,40 +788,41 @@ def adaconv_thumb_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style_embedding = dec_(cF, sF['r4_1'], None)
-
+            stylized, style_embedding, patch_stats = dec_(cF, sF['r4_1'], None)
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bicubic')
-            patch_stylized = rev_(res_in, style_embedding)
+            patch_cF = enc_(ci[-1])
+            #patch_stylized = rev_(res_in, style_embedding)
 
+            patch_stylized, _, _ = dec_(patch_cF, style_embedding,saved_stats = patch_stats,precalced_emb=True)
 
         for param in disc_.parameters():
             param.grad = None
-        for param in disc2_.parameters():
-            param.grad = None
+        #for param in disc2_.parameters():
+         #   param.grad = None
 
         set_requires_grad(disc_, True)
-        set_requires_grad(disc2_, True)
+        #set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(rev_, False)
         si[0].requires_grad=True
-        si[-1].requires_grad = True
-        loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,si[-1], patch_stylized)
+        #si[-1].requires_grad = True
+        #loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,si[-1], patch_stylized)
         loss_D = torch.utils.checkpoint.checkpoint(disc_.losses, si[0], stylized)
 
         loss_D.backward()
-        loss_D2.backward()
+        #loss_D2.backward()
         opt_D.step()
-        opt_D2.step()
+        #opt_D2.step()
 
         set_requires_grad(disc_, False)
-        set_requires_grad(disc2_, False)
+        #set_requires_grad(disc2_, False)
         set_requires_grad(dec_, True)
-        set_requires_grad(rev_, True)
+        #set_requires_grad(rev_, True)
 
         for param in dec_.parameters():
             param.grad = None
         dummy = torch.ones(1).requires_grad_(True)
-        stylized, style_embedding = dec_(cF,sF['r4_1'], dummy)
+        stylized, style_embedding, patch_stats = dec_(cF,sF['r4_1'], dummy)
 
         patches = []
         original = []
@@ -831,22 +832,22 @@ def adaconv_thumb_train():
             res_in = res_in
         for param in rev_.parameters():
             param.grad = None
-        patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
+        #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
+        patch_stylized, _, _ = dec_(patch_cF, style_embedding, saved_stats=patch_stats, precalced_emb=True)
         patches.append(patch_stylized)
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                              remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
-                             patch_loss=False, sF=sF,
+                             patch_loss=True, sF=sF, patch_stylized=patches, top_level_patch=original,
                              split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
         loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.5
-
+        '''
         with torch.no_grad():
-            patch_cF = enc_(ci[-1])
             patch_sF = enc_(si[-1])
         p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
                                calc_identity=False, disc_loss=True,
@@ -860,9 +861,9 @@ def adaconv_thumb_train():
                     loss_cp * args.content_weight + args.style_weight * loss_sp + content_reltp * args.content_relt + style_remdp * args.style_remd + patch_lossp * args.patch_loss + \
                     loss_Gp_GANp * args.gan_loss2 +\
                     style_contrastive_lossp * 0.8 + content_contrastive_lossp * 0.3)
-
+        '''
         loss.backward()
-        rev_optimizer.step()
+        #rev_optimizer.step()
         dec_optimizer.step()
 
         if (n + 1) % 10 == 0:
@@ -871,12 +872,12 @@ def adaconv_thumb_train():
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp,loss_D2],
+                     l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
                      "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Patch Style Contrastive Loss','Patch Content Contrastive Loss', 'Discriminator Loss (detail']):
+                     'Patch Style Contrastive Loss','Patch Content Contrastive Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:
@@ -914,25 +915,29 @@ def adaconv_thumb_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
+                '''
                 state_dict = rev_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'revisor_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = rev_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'rev_optimizer.pth.tar')
+                '''
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
+                '''
                 state_dict = disc2_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_2_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = opt_D2.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc2_optimizer.pth.tar')
-        del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
+                '''
+        #del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
 
 def vq_train():
     dec_ = net.VQGANTrain(args.vgg)
