@@ -147,9 +147,9 @@ class RevisionNet(nn.Module):
         self.UpBlock = nn.ModuleList([nn.Sequential(ConvBlock(64, 64, scale_change='up'),
                                                     ConvBlock(64, 64, scale_change=''),
                                                    ),
+                                      ConvBlock(64, 128, scale_change=''),
                                       nn.Sequential(ConvBlock(128, 128, scale_change=''),
-                                                    ConvBlock(128, 3, scale_change=''),
-                                                    nn.Conv2d(3, 3, kernel_size=1)
+                                                    nn.Conv2d(128, 3, kernel_size=1)
                                                     )])
 
     def forward(self, input, style):
