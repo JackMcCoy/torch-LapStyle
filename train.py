@@ -41,6 +41,15 @@ def train_transform(load_size, crop_size):
     ]
     return transforms.Compose(transform_list)
 
+def style_transform(load_size, crop_size):
+    transform_list = [
+        transforms.Resize(size=(load_size, load_size)),
+        transforms.RandomCrop(crop_size),
+        RandAugment(2, 9),
+        transforms.ToTensor()
+    ]
+    return transforms.Compose(transform_list)
+
 
 class FlatFolderDataset(data.Dataset):
     def __init__(self, root, transform):
@@ -175,7 +184,7 @@ with autocast(enabled=ac_enabled):
     vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
-    style_tf = train_transform(args.style_load_size, args.crop_size)
+    style_tf = style_transform(args.style_load_size, args.crop_size)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
@@ -983,7 +992,6 @@ def adaconv_urst():
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
-    augment=RandAugment(2,9)
     remd_loss = True if args.remd_loss == 1 else False
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
@@ -992,7 +1000,7 @@ def adaconv_urst():
         #adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with torch.no_grad():
             ci = next(content_iter)
-            si = augment(next(style_iter))
+            si = next(style_iter)
 
             ######
             ci_ = ci[1:]
