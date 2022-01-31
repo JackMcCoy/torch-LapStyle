@@ -181,13 +181,22 @@ class Bias(nn.Module):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,noise=0):
+    def __init__(self, dim1, dim2,scale_change=''):
         super(ConvBlock, self).__init__()
-        layers = [nn.ReflectionPad2d((1, 1, 1, 1)),
-                  nn.Conv2d(dim1, dim2, kernel_size=3),
-                  nn.ReLU()]
-
-        self.conv_block = nn.Sequential(*layers)
+        self.resize=nn.Identity()
+        self.skip = nn.Identity()
+        if scale_change == 'up':
+            self.resize = nn.Upsample(scale_factor=2, mode='nearest')
+        elif scale_change == 'down':
+            self.resize = nn.Upsample(scale_factor=.5, mode='nearest')
+        if dim2 != dim1:
+            self.skip = nn.Conv2d(dim1, dim2, kernel_size=1)
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(dim1, dim2, kernel_size=3,padding=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(dim2, dim2, kernel_size = 1)
+            )
+        self.relu = nn.LeakyReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -201,6 +210,9 @@ class ConvBlock(nn.Module):
 
     def forward(self, x):
         out = self.conv_block(x)
+        skip = self.skip(x)
+        out = self.relu(out + skip)
+        out = self.resize(out)
         return out
 
 

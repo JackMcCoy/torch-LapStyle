@@ -129,19 +129,12 @@ class RevisionNet(nn.Module):
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.head = nn.Sequential(nn.Conv2d(3,128,kernel_size=1),
                                   nn.LeakyReLU())
-        self.Downblock = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3,padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 128, kernel_size=3, stride=1,padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 64, kernel_size=3, stride=1,padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=1,padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Upsample(scale_factor=.5, mode='nearest'),
-                        nn.Conv2d(64,64,kernel_size=1),
-                        nn.LeakyReLU()
+        self.Downblock = nn.Sequential(
+                        ConvBlock(128,128,scale_change=''),
+                        ConvBlock(128, 128, scale_change=''),
+                        ConvBlock(128, 64, scale_change=''),
+                        ConvBlock(64, 64, scale_change=''),
+                        ConvBlock(64, 64, scale_change='down'),
                         )
 
         self.adaconvs = nn.ModuleList([
@@ -151,18 +144,12 @@ class RevisionNet(nn.Module):
 
         self.style_conv = nn.Conv2d(s_d,s_d,kernel_size=1)
 
-        self.UpBlock = nn.ModuleList([nn.Sequential(nn.Conv2d(64, 64, kernel_size=3,padding=1),
-                                                    nn.LeakyReLU(),
-                                                    nn.Upsample(scale_factor=2, mode='nearest'),
-                                                    nn.Conv2d(64, 64, kernel_size=3,padding=1),
-                                                    nn.LeakyReLU(),
+        self.UpBlock = nn.ModuleList([nn.Sequential(ConvBlock(64, 64, scale_change='up'),
+                                                    ConvBlock(64, 64, scale_change=''),
                                                    ),
-                                      nn.Sequential(nn.Conv2d(64, 128, kernel_size=3,padding=1),
-                                                    nn.LeakyReLU(),
-                                                    ),
-                                      nn.Sequential(nn.Conv2d(128, 128, kernel_size=3,padding=1),
-                                                    nn.LeakyReLU(),
-                                                    nn.Conv2d(128, 3, kernel_size=1)
+                                      nn.Sequential(ConvBlock(128, 128, scale_change=''),
+                                                    ConvBlock(128, 3, scale_change=''),
+                                                    nn.Conv2d(3, 3, kernel_size=1)
                                                     )])
 
     def forward(self, input, style):
