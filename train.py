@@ -985,9 +985,9 @@ def adaconv_urst():
     remd_loss = True if args.remd_loss == 1 else False
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
-        adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
+        #adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
         adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
-        adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
+        #adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with torch.no_grad():
             ci = next(content_iter)
             si = next(style_iter)
@@ -1021,7 +1021,7 @@ def adaconv_urst():
         set_requires_grad(disc_, True)
         #set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
-        set_requires_grad(rev_, False)
+        #set_requires_grad(rev_, False)
         si[0].requires_grad=True
         #si[-1].requires_grad = True
         #loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,si[-1], patch_stylized)
@@ -1047,9 +1047,8 @@ def adaconv_urst():
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='bicubic')
             original.append(res_in)
-            res_in = res_in
-        for param in rev_.parameters():
-            param.grad = None
+        #for param in rev_.parameters():
+        #    param.grad = None
         #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
         patch_stylized, _, _ = dec_(patch_cF, style_embedding, saved_stats=patch_stats, precalced_emb=True)
         patches.append(patch_stylized)
@@ -1090,12 +1089,11 @@ def adaconv_urst():
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_lossp,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, style_contrastive_lossp, content_contrastive_lossp],
+                     l_identity1,l_identity2,l_identity3,l_identity4],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
-                     "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Patch Style Contrastive Loss','Patch Content Contrastive Loss']):
+                     "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss"]):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:
