@@ -185,9 +185,9 @@ class GramErrors():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        gram_pred = torch.clip(self.gram_matrix(pred), min = -1, max = 1)
-        gram_target = torch.clip(self.gram_matrix(target), min = -1, max = 1)
-        return torch.clip(self.mse_loss(gram_pred, gram_target), min = -1, max = 1)
+        gram_pred = self.gram_matrix(pred)
+        gram_target = self.gram_matrix(target)
+        return self.mse_loss(gram_pred, gram_target)
 
 def mean_variance_norm(feat):
     """mean_variance_norm.
