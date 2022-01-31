@@ -47,7 +47,7 @@ class AdaConv(nn.Module):
             predicted = predicted * std_div
         else:
             mean = None
-            std_dive = None
+            std_div = None
             predicted = predicted - thumb_stats[0].detach()
             predicted = predicted * thumb_stats[1].detach()
 
