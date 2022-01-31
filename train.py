@@ -45,7 +45,7 @@ def style_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
-        RandAugment(2, 9),
+        RandAugment(2, 4),
         transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
