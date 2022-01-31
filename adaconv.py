@@ -46,6 +46,8 @@ class AdaConv(nn.Module):
             std_div = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
             predicted = predicted * std_div
         else:
+            mean = None
+            std_dive = None
             predicted = predicted - thumb_stats[0].detach()
             predicted = predicted * thumb_stats[1].detach()
 
