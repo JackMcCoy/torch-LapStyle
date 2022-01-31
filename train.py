@@ -1011,7 +1011,7 @@ def adaconv_urst():
             patch_cF = enc_(ci[-1])
             #patch_stylized = rev_(res_in, style_embedding)
 
-            patch_stylized, _, _ = dec_(patch_cF, style_embedding,saved_stats = patch_stats,precalced_emb=True)
+            patch_stylized, _, _ = dec_(patch_cF, style_embedding,None,saved_stats = patch_stats,precalced_emb=True)
 
         for param in disc_.parameters():
             param.grad = None
