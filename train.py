@@ -25,6 +25,7 @@ from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
 from function import CartesianGrid as Grid
+from randaugment import RandAugment
 
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
@@ -982,6 +983,7 @@ def adaconv_urst():
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
+    augment=RandAugment(2,9)
     remd_loss = True if args.remd_loss == 1 else False
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
@@ -990,7 +992,7 @@ def adaconv_urst():
         #adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with torch.no_grad():
             ci = next(content_iter)
-            si = next(style_iter)
+            si = augment(next(style_iter))
 
             ######
             ci_ = ci[1:]
