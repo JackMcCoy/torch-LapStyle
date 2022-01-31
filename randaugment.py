@@ -183,7 +183,6 @@ def augment_list():  # 16 oeprations and their ranges
         (AutoContrast, 0, 1),
         (Equalize, 0, 1),
         (Invert, 0, 1),
-        (Rotate, 0, 30),
         (Posterize, 0, 4),
         (Solarize, 0, 256),
         (SolarizeAdd, 0, 110),
@@ -191,11 +190,8 @@ def augment_list():  # 16 oeprations and their ranges
         (Contrast, 0.1, 1.9),
         (Brightness, 0.1, 1.9),
         (Sharpness, 0.1, 1.9),
-        (ShearX, 0., 0.3),
-        (ShearY, 0., 0.3),
         (CutoutAbs, 0, 40),
-        (TranslateXabs, 0., 100),
-        (TranslateYabs, 0., 100),
+
     ]
 
     return l
