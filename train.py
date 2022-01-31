@@ -1051,7 +1051,7 @@ def adaconv_urst():
         #    param.grad = None
         #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
         dummy2 = torch.ones(1).requires_grad_(True)
-        patch_stylized, _, _ = torch.utils.checkpoint.checkpoint(dec_,patch_cF, style_embedding, dummy2, patch_stats, True)
+        patch_stylized, _, _ = torch.utils.checkpoint.checkpoint(dec_,patch_cF, style_embedding, dummy2, saved_stats=patch_stats, precalced_emb=True)
         patches.append(patch_stylized)
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
