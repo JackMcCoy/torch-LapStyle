@@ -5,6 +5,7 @@ import typing
 from function import normalized_feat
 from adaconv import AdaConv
 import numpy as np
+from torch.nn import functional as F
 
 
 class BlurPool(nn.Module):
