@@ -445,8 +445,8 @@ class ThumbAdaConv(nn.Module):
             ),
             ConvBlock(128, 64, scale_change='up'),
             nn.Sequential(
-                ConvBlock(64, 64, scale_change=''),
-                nn.Conv2d(64, 3,kernel_size=3,padding=1))
+                ConvBlock(64, 3, scale_change=''),
+                nn.Conv2d(3, 3,kernel_size=1))
         ])
 
         self.proj_style = nn.Sequential(
@@ -487,16 +487,12 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(style_enc)
         stats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+            ada_out, s = ada(style_enc, cF[mixin], thumb_stats = saved_stats if saved_stats is None else saved_stats[idx])
+            stats.append(s)
             if idx == 0:
-                ada_out, s = ada(style_enc, cF[mixin],
-                                 thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
-                stats.append(s)
-                x = cF[mixin]+self.relu(ada_out)
-            else:
-                ada_out, s = ada(style_enc, x,
-                                 thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
-                stats.append(s)
                 x = self.relu(ada_out)
+            else:
+                x = x+self.relu(ada_out)
             x = learnable(x)
         return x, style_enc, stats
 
@@ -998,7 +994,7 @@ def calc_losses(stylized: torch.Tensor,
             style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.3, 0)
 
         content_contrastive_loss = 0
-
+        '''
         for i in range(half):
             reference_content = content_up[i:i + 1]
 
@@ -1033,7 +1029,7 @@ def calc_losses(stylized: torch.Tensor,
                     [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
                      content_down[i + 1:]], 0)
 
-            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)
+            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.3, 0)'''
     else:
         content_contrastive_loss=0
         style_contrastive_loss=0
