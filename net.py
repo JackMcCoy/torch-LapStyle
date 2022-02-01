@@ -438,9 +438,9 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable=nn.ModuleList([
             nn.Sequential(
-                ConvBlock(512, 512, scale_change=''),
                 ConvBlock(512, 256, scale_change='up')),
             nn.Sequential(
+                ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 128, scale_change='up'),
