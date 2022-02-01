@@ -130,7 +130,7 @@ class RevisionNet(nn.Module):
         self.head = nn.Sequential(nn.Conv2d(3,128,kernel_size=1),
                                   nn.LeakyReLU())
         self.Downblock = nn.Sequential(
-
+                        ConvBlock(3, 128, scale_change='', padding_mode='reflect'),
                         ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                         ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
@@ -157,8 +157,7 @@ class RevisionNet(nn.Module):
             Tensor: (b, 3, 256, 256).
         """
         N = style.shape[0]
-        out = self.head(input)
-        out = self.Downblock(out)
+        out = self.Downblock(input)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
