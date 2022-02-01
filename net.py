@@ -489,9 +489,9 @@ class ThumbAdaConv(nn.Module):
             cb_loss = None
         elif repeat_style:
             b = style_enc.shape[0]
-            style_enc = self.style_encoding(style_enc[:b//2,:,:,:]).view(N,self.s_d,16)
+            style_enc = self.style_encoding(style_enc[:b//2,:,:,:]).view(N//2,self.s_d,16)
             style_enc, indices, cb_loss= self.quantize(style_enc)
-            style_enc = style_enc.view(N,self.s_d,4,4)
+            style_enc = style_enc.view(N//2,self.s_d,4,4)
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
             style_enc = self.style_encoding(style_enc).view(N,self.s_d,16)
