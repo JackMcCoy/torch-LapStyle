@@ -191,7 +191,7 @@ class ConvMixer(nn.Module):
                     nn.BatchNorm2d(dim)
             )
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
-        self.tail = nn.Sequential(nn.Conv2d(dim, 3, kernel_size=3, padding=1))
+        self.tail = nn.Sequential(nn.Conv2d(dim//2, 3, kernel_size=3, padding=1))
 
     def forward(self, x):
         out = self.head(x)
@@ -1080,10 +1080,9 @@ def calc_losses(stylized: torch.Tensor,
         else:
             patch_disc_loss = 0
             patch_loss = 0
-            for idx, (i,j) in enumerate(zip(patch_stylized, top_level_patch)):
-                patch_feats = encoder(i)
-                upscaled_patch_feats = encoder(j.detach())
-                patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
+            patch_feats = encoder(patch_stylized)
+            upscaled_patch_feats = encoder(top_level_patch.detach())
+            patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
 
