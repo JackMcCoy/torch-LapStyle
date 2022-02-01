@@ -622,7 +622,7 @@ def revlap_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style = dec_(sF, cF)
+            stylized, style, patch_stats = dec_(sF, cF)
 
             rev_stylized = rev_(stylized, ci[-1])
             si_cropped = random_crop(si[-1])
