@@ -431,7 +431,8 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             nn.Flatten(1),
             nn.Linear(8192, self.s_d * 16),
-            nn.LeakyReLU()
+            nn.LeakyReLU(),
+            nn.Unfold(1,(self.s_d,16))
         )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
         self.quantize = VectorQuantize(
