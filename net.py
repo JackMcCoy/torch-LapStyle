@@ -709,6 +709,7 @@ class Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Discriminator, self).__init__()
         kernel_size=9
+        patch_size=8
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
