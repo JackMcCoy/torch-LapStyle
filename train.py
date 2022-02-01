@@ -854,6 +854,7 @@ def adaconv_thumb_train():
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.5
 
         with torch.no_grad():
+            patch_cF = enc_(ci[-1])
             patch_sF = enc_(si[-1])
         p_losses = calc_losses(patch_stylized, ci[-1], si[-1], patch_cF, enc_, dec_, None, disc2_,
                                calc_identity=False, disc_loss=True,
