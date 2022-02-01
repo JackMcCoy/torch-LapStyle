@@ -11,7 +11,7 @@ import numpy as np
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
+from modules import ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from losses import GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -451,7 +451,7 @@ class ThumbAdaConv(nn.Module):
         ])
         self.tail = nn.Sequential(
                 ConvBlock(64, 64, scale_change=''),
-                ConvBlock(64, 64, scale_change=''),
+                ConvBlock(64, 64, scale_change='last'),
                 nn.Conv2d(64, 3,kernel_size=3, padding=1))
 
         self.proj_style = nn.Sequential(
@@ -950,7 +950,7 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])
         mxdog_content_contraint = content_loss(cdogF['r4_1'], cXF['r4_1'])
         mxdog_style = mse_loss(cdogF['r3_1'],sXF['r3_1']) + mse_loss(cdogF['r4_1'],sXF['r4_1'])
-        mxdog_losses = mxdog_content * .1 + mxdog_content_contraint *100 + mxdog_style * 1000
+        mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
     else:
         mxdog_losses = 0
 
