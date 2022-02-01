@@ -528,9 +528,9 @@ class ThumbAdaConv(nn.Module):
 
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
-                x = ada(style_enc, cF[mixin])
+                x, _ = ada(style_enc, cF[mixin])
             else:
-                x = x+ada(style_enc, cF[mixin])
+                x = x + ada(style_enc, cF[mixin])[0]
             x = learnable(x)
         return x, style_enc
 
