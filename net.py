@@ -491,12 +491,12 @@ class ThumbAdaConv(nn.Module):
                 ada_out, s = ada(style_enc, cF[mixin],
                                  thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
                 stats.append(s)
-                x = self.relu(cF[mixin]+ada_out)
+                x = cF[mixin]+self.relu(ada_out)
             else:
                 ada_out, s = ada(style_enc, x,
                                  thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
                 stats.append(s)
-                x = self.relu(x + ada_out)
+                x = x + self.relu(ada_out)
             x = learnable(x)
         return x, style_enc, stats
 
