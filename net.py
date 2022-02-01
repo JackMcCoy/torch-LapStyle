@@ -182,7 +182,7 @@ class ConvMixer(nn.Module):
             nn.BatchNorm2d(dim))
         cell = nn.Sequential(
                     Residual(nn.Sequential(
-                        nn.Conv2d(dim//2, dim//2, kernel_size, groups=dim//2, padding="same"),
+                        nn.Conv2d(dim//2, dim//2, kernel_size, groups=dim//2, padding="same", padding_mode='reflect'),
                         nn.GELU(),
                         nn.BatchNorm2d(dim//2)
                     )),
@@ -199,7 +199,7 @@ class ConvMixer(nn.Module):
             nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             nn.BatchNorm2d(dim),
-            nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same'),
+            nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
             nn.Conv2d(3, 3, kernel_size=3, padding=1)
         )
