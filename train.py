@@ -208,6 +208,7 @@ def build_rev(depth, state):
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
+    init_weights(rev)
     rev.train()
 
     return rev
