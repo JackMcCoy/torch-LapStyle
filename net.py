@@ -161,7 +161,7 @@ class RevisionNet(nn.Module):
         out = self.Downblock(out)
         style = self.style_conv(style)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
-            out = out + self.relu(ada(style, out))[0]
+            out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
         out = input + out
         return out
