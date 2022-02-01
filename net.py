@@ -182,13 +182,13 @@ class ConvMixer(nn.Module):
             nn.BatchNorm2d(dim))
         cell = nn.Sequential(
                     Residual(nn.Sequential(
-                        nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same"),
+                        nn.Conv2d(dim//2, dim//2, kernel_size, groups=dim//2, padding="same"),
                         nn.GELU(),
-                        nn.BatchNorm2d(dim)
+                        nn.BatchNorm2d(dim//2)
                     )),
-                    nn.Conv2d(dim, dim, kernel_size=1),
+                    nn.Conv2d(dim//2, dim//2, kernel_size=1),
                     nn.GELU(),
-                    nn.BatchNorm2d(dim)
+                    nn.BatchNorm2d(dim//2)
             )
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
         self.tail = nn.Sequential(nn.Conv2d(dim//2, 3, kernel_size=3, padding=1))
