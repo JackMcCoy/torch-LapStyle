@@ -436,9 +436,10 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
         self.quantize = VectorQuantize(
             dim=16,
-            codebook_size=512,
+            codebook_size=1024,
             decay=0.8,
-            use_cosine_sim=True
+            use_cosine_sim=True,
+            threshold_ema_dead_code=4
         )
         self.learnable=nn.ModuleList([
             nn.Sequential(
