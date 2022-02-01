@@ -192,7 +192,7 @@ class ConvMixer(nn.Module):
             )
         self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
-        self.tail = nn.ConvTranspose2d(dim, 3, kernel_size=patch_size, stride=patch_size)
+        self.tail = nn.ConvTranspose2d(dim, 3, kernel_size=patch_size, stride=patch_size, groups=3)
 
     def forward(self, x):
         out = self.head(x)
