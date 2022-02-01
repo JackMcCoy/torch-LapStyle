@@ -438,42 +438,15 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
+            ConvBlock(512, 256, scale_change='up'),
             nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest'),
+                ConvBlock(256, 256, scale_change=''),
+                ConvBlock(256, 128, scale_change='up'),
             ),
+            ConvBlock(128, 64, scale_change='up'),
             nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3)),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-            ),
-            nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3)),
-                nn.LeakyReLU(),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3)),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-            ),
-            nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
-                nn.LeakyReLU(),
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3)))
+                ConvBlock(64, 3, scale_change=''),
+                nn.Conv2d(3, 3,kernel_size=1))
         ])
 
         self.proj_style = nn.Sequential(
@@ -517,7 +490,7 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             ada_out, s = ada(style_enc, x, thumb_stats = saved_stats if saved_stats is None else saved_stats[idx])
             stats.append(s)
-            x = self.relu(ada_out)
+            x = x+self.relu(ada_out)
             x = learnable(x)
         return x, style_enc, stats
 
