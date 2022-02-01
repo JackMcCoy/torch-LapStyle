@@ -190,7 +190,6 @@ class ConvMixer(nn.Module):
                     nn.GELU(),
                     nn.BatchNorm2d(dim//2)
             )
-        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=1, d=1)
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
@@ -709,28 +708,27 @@ class Style_Guided_Discriminator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Discriminator, self).__init__()
+        kernel_size=9
         self.head = nn.Sequential(
-            nn.Conv2d(3, num_channels, 1, stride=1),
-            nn.BatchNorm2d(num_channels),
-            nn.ReLU(),
-            )
-        self.norms = []
-
-
-        for i in range(depth - 2):
-            self.norms.append(
-                nn.Sequential(nn.Conv2d(num_channels, num_channels, 3, stride=1, padding=1,
-                                        bias=False),
-                              nn.BatchNorm2d(num_channels),
-                              nn.ReLU()))
-        self.tail = nn.Conv2d(num_channels,
-                              1,
-                              kernel_size=1,
-                              stride=1,
-                              )
-        self.norms = nn.Sequential(*self.norms)
-        self.relu = nn.LeakyReLU()
-        self.ganloss = GANLoss('lsgan', batch_size=batch_size)
+            nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
+            nn.GELU(),
+            nn.BatchNorm2d(num_channels))
+        cell = nn.Sequential(
+            Residual(nn.Sequential(
+                nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=dim // 2, padding="same",
+                          padding_mode='reflect'),
+                nn.GELU(),
+                nn.BatchNorm2d(num_channels // 2)
+            )),
+            nn.Conv2d(dim // 2, num_channels // 2, kernel_size=1),
+            nn.GELU(),
+            nn.BatchNorm2d(num_channels // 2)
+        )
+        self.body = momentum_net(*[cell for i in range(depth-2)], target_device='cuda')
+        self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
+        nn.Flatten(),
+        nn.Linear(num_channels, 1))
+        self.ganloss = GANLoss('vanilla', batch_size)
         self.relgan = relgan
         self.quantize = quantize
         self.num_channels = num_channels
@@ -748,7 +746,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.head(x)
-        x = self.norms(x)
+        x = self.body(x)
         x = self.tail(x)
         return x
 
