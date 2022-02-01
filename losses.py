@@ -157,7 +157,7 @@ class GANLoss(nn.Module):
             the calculated loss.
         """
         if target_is_real:
-            target_tensor = torch.tensor([1],device='cuda',dtype=torch.float).view(1,1).expand(batch_size,1)
+            target_tensor = self.target_real
         else:
             target_tensor = self.target_fake
         loss = self.loss(prediction, target_tensor.detach())
