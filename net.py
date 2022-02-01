@@ -191,7 +191,7 @@ class ConvMixer(nn.Module):
                     nn.BatchNorm2d(dim//2)
             )
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
-        self.tail = nn.Sequential(nn.Conv2d(dim//2, 3, kernel_size=3, padding=1))
+        self.tail = nn.Sequential(nn.Conv2d(dim, 3, kernel_size=3, padding=1))
 
     def forward(self, x):
         out = self.head(x)
