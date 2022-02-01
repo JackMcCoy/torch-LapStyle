@@ -6,7 +6,7 @@ from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
-#from revlib.utils import sequential_to_momentum_net
+from revlib.utils import momentum_net
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -163,6 +163,32 @@ class RevisionNet(nn.Module):
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
+        return out
+
+class ConvMixer(nn.Module):
+    def __init__(dim, depth, kernel_size=9, patch_size=7, n_classes=1000):
+        super(ConvMixer,self).__init__()
+        self.head = nn.Sequential(
+            nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size),
+            nn.GELU(),
+            nn.BatchNorm2d(dim))
+        cell = nn.Sequential(
+                    Residual(nn.Sequential(
+                        nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same"),
+                        nn.GELU(),
+                        nn.BatchNorm2d(dim)
+                    )),
+                    nn.Conv2d(dim, dim, kernel_size=1),
+                    nn.GELU(),
+                    nn.BatchNorm2d(dim)
+            )
+        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
+        self.tail = nn.Sequential(nn.Conv2d(dim, 3, kernel_size=3, padding=1))
+
+    def forward(self, x):
+        out = self.head(x)
+        out = self.body(out)
+        out = self.tail(out)
         return out
 
 class Revisors(nn.Module):
