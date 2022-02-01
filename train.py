@@ -758,7 +758,7 @@ def adaconv_thumb_train(index, args):
 
     print(f'make models {index}')
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.ThumbAdaConv(s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(batch_size = args.batch_size, s_d=args.s_d).to(device)
     rev_ = torch.jit.trace(build_rev(args.revision_depth, None, device),(torch.rand(args.batch_size,3,256,256,device=device),torch.rand(args.batch_size,3,256,256,device=device)), check_trace=False, strict=False)
     random_crop = transforms.RandomCrop(256)
     if args.load_disc == 1:

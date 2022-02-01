@@ -431,15 +431,15 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, s_d = 64):
+    def __init__(self, batch_size = 16, s_d = 64):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d),
-            AdaConv(256, 2, s_d=self.s_d),
-            AdaConv(128, 4, s_d=self.s_d),
-            AdaConv(64, 8, s_d=self.s_d)
+            AdaConv(512, 1, batch_size = batch_size, s_d=self.s_d),
+            AdaConv(256, 2, batch_size = batch_size, s_d=self.s_d),
+            AdaConv(128, 4, batch_size = batch_size, s_d=self.s_d),
+            AdaConv(64, 8, batch_size = batch_size, s_d=self.s_d)
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
