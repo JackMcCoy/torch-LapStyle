@@ -165,6 +165,14 @@ class RevisionNet(nn.Module):
             out = learnable(out)
         return out
 
+class Residual(nn.Module):
+    def __init__(self, fn):
+        super().__init__()
+        self.fn = fn
+
+    def forward(self, x):
+        return self.fn(x) + x
+
 class ConvMixer(nn.Module):
     def __init__(self, dim, depth, kernel_size=9, patch_size=7):
         super(ConvMixer,self).__init__()
