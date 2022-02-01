@@ -712,8 +712,7 @@ class Discriminator(nn.Module):
         patch_size=8
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
-            nn.GELU(),
-            nn.BatchNorm2d(num_channels))
+            nn.GELU())
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=num_channels // 2, padding="same",
