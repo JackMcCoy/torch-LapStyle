@@ -130,8 +130,8 @@ class GANLoss(nn.Module):
         #c = int(conv_ch*2**(depth-2))
         #h = int(256/2**(depth-1))
         c = 1
-        self.target_real = torch.tensor([1],device='cuda',dtype=torch.float).view(1,1).expand(batch_size,1)
-        self.target_fake = torch.tensor([0],device='cuda',dtype=torch.float).view(1,1).expand(batch_size,1)
+        self.target_real = torch.ones((batch_size,1),device='cuda',dtype=torch.float)
+        self.target_fake = torch.zeros((batch_size,1),device='cuda',dtype=torch.float)
         self.loss_weight = loss_weight
 
         self.gan_mode = gan_mode
@@ -157,7 +157,7 @@ class GANLoss(nn.Module):
             the calculated loss.
         """
         if target_is_real:
-            target_tensor = self.target_real
+            target_tensor = torch.tensor([1],device='cuda',dtype=torch.float).view(1,1).expand(batch_size,1)
         else:
             target_tensor = self.target_fake
         loss = self.loss(prediction, target_tensor.detach())

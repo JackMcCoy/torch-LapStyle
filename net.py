@@ -728,7 +728,7 @@ class Discriminator(nn.Module):
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
         nn.Flatten(),
         nn.Linear(num_channels, 1))
-        self.ganloss = GANLoss('vanilla', batch_size)
+        self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
         self.num_channels = num_channels
