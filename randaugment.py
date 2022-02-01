@@ -191,7 +191,6 @@ def augment_list():  # 16 oeprations and their ranges
         (Contrast, 0.1, 1.9),
         (Brightness, 0.1, 1.9),
         (Sharpness, 0.1, 1.9),
-        (Identity, 0., 1.0),
         (CutoutAbs, 0, 40),
 
     ]
