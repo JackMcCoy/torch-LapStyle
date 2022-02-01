@@ -163,7 +163,6 @@ class RevisionNet(nn.Module):
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
-        out = input + out
         return out
 
 class Revisors(nn.Module):
