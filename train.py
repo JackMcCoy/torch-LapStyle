@@ -1018,8 +1018,7 @@ def adaconv_urst():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style_embedding, patch_stats = dec_(cF, sF['r4_1'], None)
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bicubic')
+            stylized, style_embedding, patch_stats,_ = dec_(cF, sF['r4_1'], None)
             patch_cF = enc_(ci[-1])
             #patch_stylized = rev_(res_in, style_embedding)
 
@@ -1052,7 +1051,7 @@ def adaconv_urst():
         for param in dec_.parameters():
             param.grad = None
         dummy = torch.ones(1).requires_grad_(True)
-        stylized, style_embedding, patch_stats = dec_(cF,sF['r4_1'], dummy)
+        stylized, style_embedding, patch_stats, cb_loss = dec_(cF,sF['r4_1'], dummy)
 
         patches = []
         original = []
@@ -1063,7 +1062,7 @@ def adaconv_urst():
         #    param.grad = None
         #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), style_embedding.clone().detach().requires_grad_(True))
         dummy2 = torch.ones(1).requires_grad_(True)
-        patch_stylized, _, _ = dec_(patch_cF, style_embedding, dummy2, saved_stats=patch_stats, precalced_emb=True)
+        patch_stylized, _, _, _ = dec_(patch_cF, style_embedding, dummy2, saved_stats=patch_stats, precalced_emb=True)
         patches.append(patch_stylized)
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
@@ -1073,7 +1072,7 @@ def adaconv_urst():
                              patch_loss=True, sF=sF, patch_stylized=patches, top_level_patch=original,
                              split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
-        loss = loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
+        loss = cb_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.5
         '''
