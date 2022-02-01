@@ -439,7 +439,7 @@ class ThumbAdaConv(nn.Module):
             codebook_size=1024,
             decay=0.8,
             use_cosine_sim=True,
-            threshold_ema_dead_code=4
+            threshold_ema_dead_code=2
         )
         self.learnable=nn.ModuleList([
             nn.Sequential(
