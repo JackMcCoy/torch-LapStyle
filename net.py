@@ -438,15 +438,15 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
-            ConvBlock(512, 256, scale_change='up', padding_mode='reflect'),
+            ConvBlock(512, 256, scale_change='up'),
             nn.Sequential(
-                ConvBlock(256, 256, scale_change='', padding_mode='reflect'),
-                ConvBlock(256, 128, scale_change='up', padding_mode='reflect'),
+                ConvBlock(256, 256, scale_change=''),
+                ConvBlock(256, 128, scale_change='up'),
             ),
-            ConvBlock(128, 64, scale_change='up', padding_mode='reflect'),
+            ConvBlock(128, 64, scale_change='up'),
             nn.Sequential(
-                ConvBlock(64, 64, scale_change='', padding_mode='reflect'),
-                nn.Conv2d(64, 3,kernel_size=3, padding=1, padding_mode='reflect'))
+                ConvBlock(64, 3, scale_change=''),
+                nn.Conv2d(3, 3,kernel_size=1))
         ])
 
         self.proj_style = nn.Sequential(
