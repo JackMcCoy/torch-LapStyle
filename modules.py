@@ -264,11 +264,13 @@ class ConvBlock(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
+            nn.init.normal_(m.weight.data)
+            if not m.bias is None:
+                nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad = True
         elif isinstance(m, nn.Linear):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 1e-9)
+            nn.init.normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, x):
         out = self.conv_block(x)
