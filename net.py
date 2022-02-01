@@ -131,8 +131,8 @@ class RevisionNet(nn.Module):
                                   nn.LeakyReLU())
         self.Downblock = nn.Sequential(
 
-                        ConvBlock(128, 64, scale_change=''),
-                        ConvBlock(64, 64, scale_change='down'),
+                        ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
+                        ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
 
         self.adaconvs = nn.ModuleList([
@@ -142,10 +142,10 @@ class RevisionNet(nn.Module):
 
         self.style_conv = nn.Conv2d(s_d,s_d,kernel_size=1)
 
-        self.UpBlock = nn.ModuleList([ConvBlock(64, 64, scale_change='up'),
-                                      ConvBlock(64, 128, scale_change=''),
-                                      nn.Sequential(ConvBlock(128, 128, scale_change=''),
-                                                    nn.Conv2d(128, 3, kernel_size=1)
+        self.UpBlock = nn.ModuleList([ConvBlock(64, 64, scale_change='up', padding_mode='reflect'),
+                                      ConvBlock(64, 128, scale_change='', padding_mode='reflect'),
+                                      nn.Sequential(ConvBlock(128, 128, scale_change='', padding_mode='reflect'),
+                                                    nn.Conv2d(128, 3, kernel_size=1, padding_mode='reflect')
                                                     )])
 
     def forward(self, input, style):

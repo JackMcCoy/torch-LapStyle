@@ -236,7 +236,7 @@ class Bias(nn.Module):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,scale_change=''):
+    def __init__(self, dim1, dim2,scale_change='', padding_mode='zeros'):
         super(ConvBlock, self).__init__()
         self.resize=nn.Identity()
         self.skip = nn.Identity()
@@ -250,10 +250,10 @@ class ConvBlock(nn.Module):
         if dim2 != dim1:
             self.skip = nn.Conv2d(dim1, dim2, kernel_size=1)
         self.conv_block = nn.Sequential(
-            nn.Conv2d(dim1, dim2, kernel_size=3,padding=1),
+            nn.Conv2d(dim1, dim2, kernel_size=3,padding=1, padding_mode=padding_mode),
             #nn.BatchNorm2d(dim2, momentum=.2),
             nn.LeakyReLU(),
-            nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1),
+            nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode),
             #nn.BatchNorm2d(dim2, momentum=.2),
             self.blurpool
             )
