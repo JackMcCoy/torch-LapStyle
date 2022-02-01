@@ -450,8 +450,9 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(128, 64, scale_change='up'))
         ])
         self.tail = nn.Sequential(
-                ConvBlock(64, 3, scale_change=''),
-                nn.Conv2d(3, 3,kernel_size=1))
+                ConvBlock(64, 64, scale_change=''),
+                ConvBlock(64, 64, scale_change=''),
+                nn.Conv2d(64, 3,kernel_size=3, padding=1))
 
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
