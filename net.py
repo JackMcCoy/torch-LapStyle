@@ -196,7 +196,7 @@ class ConvMixer(nn.Module):
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.ConvTranspose2d(dim, 3, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
-            nn.Conv2d(3,3,kernel_size=8,padding='same'))
+            nn.Conv2d(3,3,kernel_size=9,padding='same'))
 
     def forward(self, x):
         out = self.head(x)
