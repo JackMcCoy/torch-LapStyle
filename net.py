@@ -166,7 +166,7 @@ class RevisionNet(nn.Module):
         return out
 
 class ConvMixer(nn.Module):
-    def __init__(dim, depth, kernel_size=9, patch_size=7):
+    def __init__(self, dim, depth, kernel_size=9, patch_size=7):
         super(ConvMixer,self).__init__()
         self.head = nn.Sequential(
             nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size),
