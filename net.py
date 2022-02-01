@@ -721,7 +721,7 @@ class Discriminator(nn.Module):
                 nn.GELU(),
                 nn.BatchNorm2d(num_channels // 2)
             )),
-            nn.Conv2d(dim // 2, num_channels // 2, kernel_size=1),
+            nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size=1),
             nn.GELU(),
             nn.BatchNorm2d(num_channels // 2)
         )
