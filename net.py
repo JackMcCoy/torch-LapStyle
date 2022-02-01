@@ -159,7 +159,7 @@ class RevisionNet(nn.Module):
         """
         N = style.shape[0]
         out = self.Downblock(input)
-        #style = self.style_project(style).view(N,self.s_d,4,4)
+        style = self.style_project(style).view(N,self.s_d,4,4)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
