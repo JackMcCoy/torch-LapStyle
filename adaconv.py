@@ -22,6 +22,7 @@ class AdaConv(nn.Module):
             nn.AvgPool2d(4))
         self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, kernel_size=1)
+        self.relu=nn.LeakyReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -53,11 +54,11 @@ class AdaConv(nn.Module):
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted),
+                self.relu(nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
                                      groups=self.batch_groups
-                                     ),
+                                     )),
                 stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
