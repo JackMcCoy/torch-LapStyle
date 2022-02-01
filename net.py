@@ -443,11 +443,11 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 128, scale_change='up'),
             ),
-            ConvBlock(128, 64, scale_change='up'),
-            nn.Sequential(
+            ConvBlock(128, 64, scale_change='up')
+        ])
+        self.tail = nn.Sequential(
                 ConvBlock(64, 3, scale_change=''),
                 nn.Conv2d(3, 3,kernel_size=1))
-        ])
 
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
@@ -488,10 +488,14 @@ class ThumbAdaConv(nn.Module):
         stats = []
         x = cF['r4_1']
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            ada_out, s = ada(style_enc, x, thumb_stats = saved_stats if saved_stats is None else saved_stats[idx])
+            ada_out, s = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             stats.append(s)
-            x = x+self.relu(ada_out)
+            if idx == 0:
+                x = self.relu(ada_out)
+            else:
+                x = x + self.relu(ada_out)
             x = learnable(x)
+        x = self.tail(x)
         return x, style_enc, stats
 
 
