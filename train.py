@@ -741,11 +741,9 @@ def adaconv_thumb_train():
         init_weights(dec_)
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-    disc2_ = build_disc(disc2_state, args.disc2_depth)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
-    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
@@ -768,10 +766,6 @@ def adaconv_thumb_train():
                 opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
             except:
                 'discriminator optimizer not loaded'
-            try:
-                opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
@@ -780,7 +774,6 @@ def adaconv_thumb_train():
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
         adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
         adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
-        adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
         with torch.no_grad():
             ci = next(content_iter)
             si = next(style_iter)
@@ -907,13 +900,7 @@ def adaconv_thumb_train():
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
-                state_dict = disc2_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_2_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D2.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'disc2_optimizer.pth.tar')
-        del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
+        #del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, p_losses,losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
 
 def adaconv_urst():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
