@@ -204,7 +204,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.ConvMixer(batch_size=args.batch_size,s_d = args.s_d).to(device)
+    rev = net.ConvMixer(64, 32, kernel_size=9, patch_size=8).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
