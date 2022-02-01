@@ -264,7 +264,7 @@ class ConvBlock(nn.Module):
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.normal_(m.weight.data)
+            nn.init.kaiming_normal_(m.weight.data)
             if not m.bias is None:
                 nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad = True
