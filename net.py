@@ -716,7 +716,7 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(num_channels))
         cell = nn.Sequential(
             Residual(nn.Sequential(
-                nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=dim // 2, padding="same",
+                nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=num_channels // 2, padding="same",
                           padding_mode='reflect'),
                 nn.GELU(),
                 nn.BatchNorm2d(num_channels // 2)
