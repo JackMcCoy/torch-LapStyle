@@ -998,7 +998,7 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = 0
 
     if disc_loss:
-        fake_loss = disc_(patch_stylized)
+        fake_loss = disc_(stylized)
         loss_Gp_GAN = disc_.ganloss(fake_loss, True)
     else:
         loss_Gp_GAN = 0
