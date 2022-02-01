@@ -432,20 +432,16 @@ class ThumbAdaConv(nn.Module):
             nn.Flatten(1),
             nn.Linear(8192, self.s_d * 16),
             nn.LeakyReLU(),
+            nn.Unflatten(1, (self.s_d, 4, 4))
         )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
-        self.quantize = VectorQuantize(
-            dim=16,
-            codebook_size=512,
-            decay=0.8,
-            use_cosine_sim=True,
-            threshold_ema_dead_code=2
-        )
+
         self.learnable=nn.ModuleList([
             nn.Sequential(
                 ConvBlock(512, 512, scale_change=''),
                 ConvBlock(512, 256, scale_change='up')),
             nn.Sequential(
+                ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 256, scale_change=''),
                 ConvBlock(256, 128, scale_change='up'),
             ),
@@ -485,19 +481,14 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True, saved_stats = None, precalced_emb=False):
-        N = cF['r4_1'].shape[0]
         if precalced_emb:
-            cb_loss = None
+            pass
         elif repeat_style:
             b = style_enc.shape[0]
-            style_enc = self.style_encoding(style_enc[:b//2,:,:,:]).view(N//2,self.s_d,16)
-            style_enc, indices, cb_loss= self.quantize(style_enc)
-            style_enc = style_enc.view(N//2,self.s_d,4,4)
+            style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
-            style_enc = self.style_encoding(style_enc).view(N,self.s_d,16)
-            style_enc, indices, cb_loss = self.quantize(style_enc)
-            style_enc = style_enc.view(N, self.s_d, 4, 4)
+            style_enc = self.style_encoding(style_enc)
         stats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             ada_out, s = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
@@ -508,7 +499,7 @@ class ThumbAdaConv(nn.Module):
                 x = x + self.relu(ada_out)
             x = learnable(x)
         x = self.tail(x)
-        return x, style_enc, stats, cb_loss
+        return x, style_enc, stats
 
 
 class DecoderVQGAN(nn.Module):
@@ -821,7 +812,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _, _, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
+    Icc, _, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
