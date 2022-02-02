@@ -198,13 +198,9 @@ class ConvMixer(nn.Module):
             nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             nn.BatchNorm2d(dim),
-            nn.Conv2d(dim, dim // 2, kernel_size=3, padding='same', padding_mode='reflect'),
+            nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.BatchNorm2d(dim//2),
-            nn.Conv2d(dim//2, 3, kernel_size=3, padding='same', padding_mode='reflect'),
-            nn.GELU(),
-            nn.BatchNorm2d(3),
-            nn.Conv2d(3, 3, kernel_size=3, padding='same', padding_mode='reflect'),
+            nn.Conv2d(3, 3, kernel_size=3, padding=1)
         )
 
     def forward(self, x):
@@ -731,7 +727,7 @@ class Discriminator(nn.Module):
         self.body = momentum_net(*[cell for i in range(depth-2)], target_device='cuda')
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
         nn.Flatten(),
-        nn.Linear(num_channels, 1))
+        nn.Linear(num_channels, 2))
         self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
