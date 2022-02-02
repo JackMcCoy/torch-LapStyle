@@ -35,9 +35,9 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     # Link : http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.365.151&rep=rep1&type=pdf
     #imf1 = paddle.concat(x=[g(paddle.unsqueeze(im[:,0,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,1,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,2,:,:].detach(),axis=1))],axis=1)
 
-    imf2 = F.conv2d(F.pad(im, (5, 5, 5, 5), mode='reflect'), weight=g2,
+    imf2 = F.conv2d(F.pad(im, (10, 10, 10, 10), mode='reflect'), weight=g2,
                                groups=3)
-    imf1 = F.conv2d(F.pad(im, (10, 10, 10, 10), mode='reflect'), weight=g,
+    imf1 = F.conv2d(F.pad(im, (5, 5, 5, 5), mode='reflect'), weight=g,
                     groups=3)
     #imf2 = g2(im.detach())
     imdiff = imf1 - gamma * imf2
