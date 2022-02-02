@@ -473,12 +473,6 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
-        self.blurpools = nn.ModuleList([
-            BlurPool(512, pad_type='reflect', filt_size=7, stride=1, pad_off=0),
-            BlurPool(256, pad_type='reflect', filt_size=5, stride=1, pad_off=0),
-            BlurPool(128, pad_type='reflect', filt_size=3, stride=1, pad_off=0),
-            nn.Identity()
-        ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -544,12 +538,12 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
             style_enc = self.style_encoding(style_enc)
-        for idx, (ada, learnable, mixin, blurpool) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.blurpools)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             ada_out = ada(style_enc, blurpool(cF[mixin]), thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
-                x = x + self.relu(ada_out)
+                x = (x + self.relu(ada_out)) * (1 / np.sqrt(2))
             x = learnable(x)
         return x, style_enc
 
