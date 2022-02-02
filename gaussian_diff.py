@@ -68,7 +68,7 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     return passed, [min,max,mean]
 
 def make_gaussians(device):
-    gaussian_filter = gaussian(11,1).expand(3,1,11,11)
-    gaussian_filter2 = gaussian(21,3).expand(3,1,21,21)
-    morph_conv = torch.ones(3,1,3,3,)
+    gaussian_filter = gaussian(11,1).expand(3,1,11,11).to(device)
+    gaussian_filter2 = gaussian(21,3).expand(3,1,21,21).to(device)
+    morph_conv = torch.ones(3,1,3,3,).to(device)
     return gaussian_filter, gaussian_filter2, morph_conv
