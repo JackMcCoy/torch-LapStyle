@@ -134,6 +134,7 @@ parser.add_argument('--accumulation_steps', type=int, default=1)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
+parser.add_argument('--mdog_weight', type=float, default=.66)
 parser.add_argument('--thumbnail_loss', type=float, default=.75)
 parser.add_argument('--load_rev', type=int, default=0)
 parser.add_argument('--load_disc', type=int, default=0)
@@ -849,7 +850,7 @@ def adaconv_thumb_train():
         fake_loss = disc2_(patch_stylized)
         loss_patch_disc = disc2_.ganloss(fake_loss, True)
         loss = loss_patch_disc * args.gan2_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
-               loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
+               loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.5
 
         loss.backward()
