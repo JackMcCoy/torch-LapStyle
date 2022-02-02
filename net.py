@@ -200,7 +200,7 @@ class ConvMixer(nn.Module):
             nn.BatchNorm2d(dim),
             nn.Conv2d(dim, dim//2, kernel_size=3, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.BatchNorm2d(dim),
+            nn.BatchNorm2d(dim//2),
             nn.Conv2d(dim // 2, 3, kernel_size=3, padding='same', padding_mode='reflect'),
         )
 
