@@ -712,16 +712,16 @@ class Discriminator(nn.Module):
         patch_size=16
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
-            nn.GELU())
+            nn.ReLU())
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=num_channels // 2, padding="same",
                           padding_mode='reflect'),
-                nn.GELU(),
+                nn.ReLU(),
                 nn.BatchNorm2d(num_channels // 2)
             )),
             nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size=1),
-            nn.GELU(),
+            nn.ReLU(),
             nn.BatchNorm2d(num_channels // 2)
         )
         self.body = momentum_net(*[cell for i in range(depth-2)], target_device='cuda')
