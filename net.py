@@ -468,8 +468,9 @@ class ThumbAdaConv(nn.Module):
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        self.tail_adaconv = AdaConv(64,8, s_d=self.s_d, batch_size=batch_size)
+
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -492,12 +493,12 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 ConvBlock(128, 128, scale_change=''),
-                ConvBlock(128, 64, scale_change='up'))
-        ])
-        self.tail = nn.Sequential(
+                ConvBlock(128, 64, scale_change='up')),
+            nn.Sequential(
                 ConvBlock(64, 64, scale_change=''),
                 ConvBlock(64, 3, scale_change=''),
-                nn.Conv2d(3, 3,kernel_size=3, padding=1))
+                nn.Conv2d(3, 3, kernel_size=3, padding=1))
+        ])
 
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
@@ -542,8 +543,6 @@ class ThumbAdaConv(nn.Module):
             else:
                 x = x + self.relu(ada_out)
             x = learnable(x)
-        x = self.tail_adaconv(style_enc, x, thumb_stats=saved_stats if saved_stats is None else saved_stats[-1])
-        x = self.tail(x)
         return x, style_enc
 
 
