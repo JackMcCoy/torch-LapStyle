@@ -814,8 +814,8 @@ def adaconv_thumb_train():
         set_requires_grad(rev_, False)
         si[0].requires_grad=True
         si[-1].requires_grad = True
-        loss_D2 = torch.utils.checkpoint.checkpoint(disc2_.losses,si[-1], patch_stylized)
-        loss_D = torch.utils.checkpoint.checkpoint(disc_.losses, si[0], stylized)
+        loss_D2 = disc2_.losses(si[-1], patch_stylized)
+        loss_D = disc_.losses(si[0], stylized)
 
         loss_D.backward()
         loss_D2.backward()
@@ -848,7 +848,7 @@ def adaconv_thumb_train():
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
         fake_loss = disc2_(patch_stylized)
         loss_patch_disc = disc2_.ganloss(fake_loss, True)
-        loss = loss_patch_disc + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
+        loss = loss_patch_disc * args.gan_loss + loss_c * args.content_weight + args.style_weight * loss_s + content_relt * args.content_relt + style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog + l_identity1 * 50 + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.5
 
