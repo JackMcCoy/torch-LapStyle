@@ -1101,11 +1101,6 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
-    laplace_loss = 0
-    target = encoder(F.conv2d(F.pad(si.detach(), (1, 1, 1, 1), mode='reflect'), weight=lap_weight,
-                               groups=3).to(device))
-    predicted = encoder(F.conv2d(F.pad(stylized, (1, 1, 1, 1), mode='reflect'), weight=lap_weight,
-                               groups=3).to(device))
-    laplace_loss = mse_loss(predicted['r2_1'],target['r2_1']) + mse_loss(predicted['r1_1'],target['r1_1'])
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, laplace_loss
+
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss
 
