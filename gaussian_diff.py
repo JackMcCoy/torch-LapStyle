@@ -58,11 +58,11 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
         mean=minmax[2]
     exmean=mean
     for i in range(morphs):
-        morphed=F.conv2d(F.pad(imdiff, (5, 5, 5, 5), mode='reflect'), weight=morph_conv,
+        morphed=F.conv2d(F.pad(imdiff, (1,1,1,1), mode='reflect'), weight=morph_conv,
                                groups=3)
         passedlow= torch.multiply((imdiff>= exmean).float(),(morphed>= morph_cutoff).float())
     for i in range(morphs):
-        passed = F.conv2d(F.pad(passedlow, (5, 5, 5, 5), mode='reflect'), weight=morph_conv,
+        passed = F.conv2d(F.pad(passedlow, (1,1,1,1), mode='reflect'), weight=morph_conv,
                            groups=3)
         passed= (passed>0).float()
     return passed, [min,max,mean]
