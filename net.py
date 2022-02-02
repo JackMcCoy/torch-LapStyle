@@ -467,8 +467,9 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size)
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
         ])
+        self.tail_adaconv = AdaConv(64,8, s_d=self.s_d, batch_size=batch_size)
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
@@ -534,17 +535,16 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
             style_enc = self.style_encoding(style_enc)
-        stats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            ada_out, s = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
-            stats.append(s)
+            ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
                 x = x + self.relu(ada_out)
             x = learnable(x)
+        x = self.tail_adaconv(style_enc, x, thumb_stats=saved_stats if saved_stats is None else saved_stats[-1])
         x = self.tail(x)
-        return x, style_enc, stats
+        return x, style_enc
 
 
 class DecoderVQGAN(nn.Module):
@@ -709,7 +709,7 @@ class Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Discriminator, self).__init__()
         kernel_size=9
-        patch_size=8
+        patch_size=16
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
             nn.GELU())
@@ -856,7 +856,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
+    Icc, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)

@@ -204,7 +204,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.ConvMixer(256, 16, kernel_size=9, patch_size=8).to(device)
+    rev = net.ConvMixer(128, 16, kernel_size=9, patch_size=8).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
@@ -799,7 +799,7 @@ def adaconv_thumb_train():
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
-            stylized, style_embedding, patch_stats = dec_(cF, sF['r4_1'], None)
+            stylized, style_embedding = dec_(cF, sF['r4_1'], None)
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bicubic')
             patch_stylized = rev_(res_in)
 
@@ -830,7 +830,7 @@ def adaconv_thumb_train():
         for param in dec_.parameters():
             param.grad = None
         dummy = torch.ones(1).requires_grad_(True)
-        stylized, style_embedding, _ = dec_(cF,sF['r4_1'], dummy)
+        stylized, style_embedding = dec_(cF,sF['r4_1'], dummy)
 
         patches = []
         with torch.no_grad():
