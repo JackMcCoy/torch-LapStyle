@@ -1106,6 +1106,6 @@ def calc_losses(stylized: torch.Tensor,
                                groups=3).to(device))
     predicted = encoder(F.conv2d(F.pad(stylized, (1, 1, 1, 1), mode='reflect'), weight=lap_weight,
                                groups=3).to(device))
-    laplace_loss = (mse_loss(predicted['r3_1'],target['r3_1']) + mse_loss(predicted['r4_1'],target['r4_1'])) * 1000
+    laplace_loss = mse_loss(predicted['r3_1'],target['r3_1']) + mse_loss(predicted['r4_1'],target['r4_1'])
     return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, laplace_loss
 
