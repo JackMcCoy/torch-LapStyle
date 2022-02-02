@@ -543,7 +543,7 @@ class ThumbAdaConv(nn.Module):
             else:
                 x = x + self.relu(ada_out)
             x = learnable(x)
-        x = self.relu(self.tail_adaconv(style_enc, x))
+        x = x + self.relu(self.tail_adaconv(style_enc, x))
         x = self.tail(x)
         return x, style_enc
 
