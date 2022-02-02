@@ -24,6 +24,9 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
 device = torch.device('cuda')
 
+lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+lap_weight = torch.Tensor(self.lap_weight).to(device)
+
 unfold = torch.nn.Unfold(256,stride=256)
 random_crop = RandomCrop(256)
 
@@ -1098,6 +1101,11 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
-
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss
+    laplace_loss = 0
+    target = encoder(F.conv2d(F.pad(si.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+                               groups=3).to(device))
+    predicted = encoder(F.conv2d(F.pad(stylized, (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+                               groups=3).to(device))
+    laplace_loss = (mse_loss(predicted['r3_1'],target['r3_1']) + mse_loss(predicted['r4_1'],target['r4_1'])) * 1000
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, laplace_loss
 
