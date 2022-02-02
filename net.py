@@ -982,17 +982,17 @@ def calc_losses(stylized: torch.Tensor,
         content_relt = 0
         style_remd = 0
     if mdog_losses:
-        cX,_ = xdog(ci.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-        sX,_ = xdog(si.detach(),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-        cXF = encoder(cX)
-        sXF = encoder(sX)
+        cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        cXF = encoder(F.leaky_relu(cX))
+        sXF = encoder(F.leaky_relu(sX))
         stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-        cdogF = encoder(stylized_dog)
+        cdogF = encoder(F.leaky_relu(stylized_dog))
 
         mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])
         mxdog_content_contraint = content_loss(cdogF['r4_1'], cXF['r4_1'])
         mxdog_style = mse_loss(cdogF['r3_1'],sXF['r3_1']) + mse_loss(cdogF['r4_1'],sXF['r4_1'])
-        mxdog_losses = mxdog_content * .3 + mxdog_content_contraint *100 + mxdog_style * 1000
+        mxdog_losses = mxdog_content * .1 + mxdog_content_contraint *100 + mxdog_style * 1000
     else:
         mxdog_losses = 0
 

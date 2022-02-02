@@ -34,10 +34,10 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     # Link : http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.365.151&rep=rep1&type=pdf
     #imf1 = paddle.concat(x=[g(paddle.unsqueeze(im[:,0,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,1,:,:].detach(),axis=1)),g(paddle.unsqueeze(im[:,2,:,:].detach(),axis=1))],axis=1)
 
-    imf2=g2(im)
-    imf1=g(im)
-    imf1.stop_gradient = True
-    imf2.stop_gradient = True
+    imf2 = F.conv2d(F.pad(im, (5, 5, 5, 5), mode='reflect'), weight=g2,
+                               groups=3)
+    imf1 = F.conv2d(F.pad(im, (10, 10, 10, 10), mode='reflect'), weight=g,
+                    groups=3)
     #imf2 = g2(im.detach())
     imdiff = imf1 - gamma * imf2
     imdiff = (imdiff < eps).float() * 1.0  + (imdiff >= eps).float() * (1.0 + torch.tanh(phi * imdiff))
@@ -49,41 +49,25 @@ def xdog(im, g, g2,morph_conv,gamma=.94, phi=50, eps=-.5, morph_cutoff=8.88,morp
     else:
         min=minmax[0]
         max=minmax[1]
-    imdiff -= min.expand_as(imdiff)
-    imdiff /= max.expand_as(imdiff)
+    imdiff -= min
+    imdiff /= max
     if type(minmax)==bool:
         mean = imdiff.mean(axis=[2,3],keepdim=True)
     else:
         mean=minmax[2]
-    exmean=mean.expand_as(imdiff)
+    exmean=mean
     for i in range(morphs):
-        morphed=morph_conv(imdiff)
-        morphed.stop_gradient=True
+        morphed=F.conv2d(F.pad(imdiff, (5, 5, 5, 5), mode='reflect'), weight=morph_conv,
+                               groups=3)
         passedlow= torch.multiply((imdiff>= exmean).float(),(morphed>= morph_cutoff).float())
     for i in range(morphs):
-        passed = morph_conv(passedlow)
+        passed = F.conv2d(F.pad(passedlow, (5, 5, 5, 5), mode='reflect'), weight=morph_conv,
+                           groups=3)
         passed= (passed>0).float()
     return passed, [min,max,mean]
 
 def make_gaussians(device):
-    symm_gauss_1 = np.repeat(gaussian(11, 1).numpy(), 3, axis=0)
-    symm_gauss_2 = np.repeat(gaussian(21, 3).numpy(), 3, axis=0)
-    gaussian_filter = torch.nn.Conv2d(3, 3, 11,
-                            groups=3, bias=False, stride=1,
-                            padding=5, padding_mode='reflect'
-                            ).to(device)
-    gaussian_filter.weight = torch.nn.parameter.Parameter(torch.Tensor(symm_gauss_1).to(device),requires_grad=False)
-    gaussian_filter2 = torch.nn.Conv2d(3, 3, 21,
-                            groups=3, bias=False, stride = 1,
-                            padding=10, padding_mode='reflect'
-                            ).to(device)
-    gaussian_filter2.weight = torch.nn.parameter.Parameter(torch.Tensor(symm_gauss_2).to(device),requires_grad=False)
-    morph_conv = torch.nn.Conv2d(3, 3, 3, stride= 1, padding=1, groups=3,
-                                           padding_mode='reflect', bias=False,
-                                           ).to(device)
-    torch.nn.init.constant_(morph_conv.weight,1)
-    morph_conv.weight.requires_grad = False
-    gaussian_filter.requires_grad = False
-    gaussian_filter2.requires_grad = False
-    morph_conv.requires_grad = False
+    gaussian_filter = torch.tensor(gaussian(11,1),device='cuda',dtype=torch.float32).expand(3,1,11,11)
+    gaussian_filter2 = torch.tensor(gaussian(21,3),device='cuda',dtype=torch.float32).expand(3,1,21,21)
+    morph_conv = torch.ones(3,1,3,3,)
     return gaussian_filter, gaussian_filter2, morph_conv
