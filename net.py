@@ -198,9 +198,10 @@ class ConvMixer(nn.Module):
             nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             nn.BatchNorm2d(dim),
-            nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
+            nn.Conv2d(dim, dim//2, kernel_size=3, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.Conv2d(3, 3, kernel_size=3, padding=1)
+            nn.BatchNorm2d(dim),
+            nn.Conv2d(dim // 2, 3, kernel_size=3, padding='same', padding_mode='reflect'),
         )
 
     def forward(self, x):
