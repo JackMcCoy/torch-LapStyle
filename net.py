@@ -474,10 +474,10 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         self.blurpools = nn.ModuleList([
-            nn.Identity(),
-            BlurPool(256, pad_type='reflect', filt_size=3, stride=1, pad_off=0),
-            BlurPool(128, pad_type='reflect', filt_size=5, stride=1, pad_off=0),
-            BlurPool(64, pad_type='reflect', filt_size=7, stride=1, pad_off=0),
+            BlurPool(512, pad_type='reflect', filt_size=7, stride=1, pad_off=0),
+            BlurPool(256, pad_type='reflect', filt_size=5, stride=1, pad_off=0),
+            BlurPool(128, pad_type='reflect', filt_size=3, stride=1, pad_off=0),
+            nn.Identity()
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
