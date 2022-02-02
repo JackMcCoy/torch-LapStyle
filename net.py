@@ -539,7 +539,7 @@ class ThumbAdaConv(nn.Module):
         else:
             style_enc = self.style_encoding(style_enc)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            ada_out = ada(style_enc, blurpool(cF[mixin]), thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
+            ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
