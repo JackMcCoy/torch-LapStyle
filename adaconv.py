@@ -41,16 +41,11 @@ class AdaConv(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
-        if thumb_stats is None:
+        if self.norm:
             mean = predicted.mean(dim=(2, 3), keepdim=True)
             predicted = predicted - mean
             std_div = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
             predicted = predicted * std_div
-        else:
-            mean = None
-            std_div = None
-            predicted = predicted - thumb_stats[0].detach()
-            predicted = predicted * thumb_stats[1].detach()
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
