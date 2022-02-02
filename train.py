@@ -801,7 +801,7 @@ def adaconv_thumb_train():
             sF = enc_(si[0])
 
             stylized, style_embedding = dec_(cF, sF['r4_1'], None)
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bicubic')
+            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
             patch_stylized = rev_(res_in)
 
         for param in disc_.parameters():
@@ -835,7 +835,7 @@ def adaconv_thumb_train():
 
         patches = []
         with torch.no_grad():
-            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='bicubic')
+            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
         for param in rev_.parameters():
             param.grad = None
         patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))

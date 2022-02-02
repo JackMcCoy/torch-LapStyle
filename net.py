@@ -25,7 +25,7 @@ gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 device = torch.device('cuda')
 
 lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-lap_weight = torch.Tensor(self.lap_weight).to(device)
+lap_weight = torch.Tensor(lap_weight).to(device)
 
 unfold = torch.nn.Unfold(256,stride=256)
 random_crop = RandomCrop(256)
