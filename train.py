@@ -191,7 +191,7 @@ def build_enc(vgg):
 with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
 
-    vgg.load_state_dict(torch.load(args.vgg))
+    vgg.load_state_dict(torch.load(args.vgg), strict=False)
     vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
