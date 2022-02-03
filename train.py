@@ -785,7 +785,7 @@ def adaconv_thumb_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    wandb.watch((dec_,rev_,disc2_),log='all')
+    wandb.watch((dec_,rev_,disc2_),log='all', log_freq=19)
 
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
