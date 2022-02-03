@@ -95,7 +95,6 @@ class VGG(nn.Module):
         self, features: nn.Module, num_classes: int = 1000, init_weights: bool = True, dropout: float = 0.5
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         self.features = features
         if init_weights:
             for m in self.modules():
