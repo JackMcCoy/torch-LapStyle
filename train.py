@@ -567,7 +567,6 @@ def revision_train():
                            'disc_optimizer.pth.tar')
 
 def revlap_train():
-    setup_torch(0)
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
