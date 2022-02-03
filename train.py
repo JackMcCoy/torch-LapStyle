@@ -54,7 +54,7 @@ def postp(tensor): # to clip results in the range [0,1]
     t = t[torch.LongTensor([2, 1, 0]),:,:]  # turn to BGR
     t[t>1] = 1
     t[t<0] = 0
-    img = postpb(t)
+    img = postpb((((t) * 255) + .5).cpu().int())
     return img
 
 def style_transform(load_size, crop_size):
