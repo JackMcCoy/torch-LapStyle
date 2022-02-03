@@ -184,14 +184,16 @@ log_dir.mkdir(exist_ok=True, parents=True)
 wandb.init(config=vars(args))
 
 def build_enc(vgg):
-    enc = net.Encoder(args.vgg)
-
+    enc = net.Encoder(vgg)
     set_requires_grad(enc, False)
     enc.train(False)
     return enc
 
 with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
+
+    vgg.load_state_dict(torch.load(args.vgg), strict=False)
+    vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
     style_tf = train_transform(args.style_load_size, args.crop_size)
@@ -816,33 +818,33 @@ def adaconv_thumb_train():
             stylized, style_embedding = dec_(cF, sF['r4_1'], None)
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
             patch_stylized = rev_(res_in)
-        if (n+1)%3==0:
-            #for param in disc_.parameters():
-            #    param.grad = None
-            for param in disc2_.parameters():
-                param.grad = None
 
-            #set_requires_grad(disc_, True)
-            set_requires_grad(disc2_, True)
-            set_requires_grad(dec_, False)
-            set_requires_grad(rev_, False)
-            si[0].requires_grad=True
-            si[-1].requires_grad = True
-            loss_D2 = disc2_.losses(si[-1], patch_stylized)
-            #loss_D = disc_.losses(si[0], stylized)
+        #for param in disc_.parameters():
+        #    param.grad = None
+        for param in disc2_.parameters():
+            param.grad = None
 
-            #loss_D.backward()
-            loss_D2.backward()
-            #opt_D.step()
-            opt_D2.step()
+        #set_requires_grad(disc_, True)
+        set_requires_grad(disc2_, True)
+        set_requires_grad(dec_, False)
+        set_requires_grad(rev_, False)
+        si[0].requires_grad=True
+        si[-1].requires_grad = True
+        loss_D2 = disc2_.losses(si[-1], patch_stylized)
+        #loss_D = disc_.losses(si[0], stylized)
 
-            #set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
-            set_requires_grad(dec_, True)
-            set_requires_grad(rev_, True)
+        #loss_D.backward()
+        loss_D2.backward()
+        #opt_D.step()
+        opt_D2.step()
 
-            dec_.train()
-            rev_.train()
+        #set_requires_grad(disc_, False)
+        set_requires_grad(disc2_, False)
+        set_requires_grad(dec_, True)
+        set_requires_grad(rev_, True)
+
+        dec_.train()
+        rev_.train()
 
         for param in dec_.parameters():
             param.grad = None
