@@ -796,29 +796,29 @@ def adaconv_thumb_train():
         adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
         #adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
         adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
-        with torch.no_grad():
-            ci = next(content_iter)
-            si = next(style_iter)
 
-            '''
-            ######
-            ci_ = ci[1:]
-            ci_ = torch.cat([ci_, ci[0:1]], 0)
-            ci = torch.cat([ci, ci_], 0)
-            rc_si = random_crop(si)
-            si = torch.cat([si, si], 0)
-            rc_si = torch.cat([rc_si, rc_si], 0)
-            ######
-            '''
-            ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic').to(device), random_crop(si).to(device)]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
-            dec_.eval()
-            rev_.eval()
-            stylized, style_embedding = dec_(cF, sF['r4_1'], None)
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
-            patch_stylized = rev_(res_in)
+        ci = next(content_iter)
+        si = next(style_iter)
+
+        '''
+        ######
+        ci_ = ci[1:]
+        ci_ = torch.cat([ci_, ci[0:1]], 0)
+        ci = torch.cat([ci, ci_], 0)
+        rc_si = random_crop(si)
+        si = torch.cat([si, si], 0)
+        rc_si = torch.cat([rc_si, rc_si], 0)
+        ######
+        '''
+        ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
+        si = [F.interpolate(si, size=256, mode='bicubic').to(device), random_crop(si).to(device)]
+        cF = enc_(ci[0])
+        sF = enc_(si[0])
+        dec_.eval()
+        rev_.eval()
+        stylized, style_embedding = dec_(cF, sF['r4_1'], None)
+        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
+        patch_stylized = rev_(res_in)
 
         #for param in disc_.parameters():
         #    param.grad = None
