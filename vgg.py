@@ -1,7 +1,6 @@
 import torch.nn as nn
 
 vgg = nn.Sequential(
-    nn.Conv2d(3, 3, kernel_size=1),
     nn.ReflectionPad2d((1, 1, 1, 1)),
     nn.Conv2d(3, 64, kernel_size=3),
     nn.ReLU(),  # relu1-1
