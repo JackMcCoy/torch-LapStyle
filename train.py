@@ -36,10 +36,26 @@ ac_enabled = False
 def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
+        transforms.Lambda(lambda x: x[torch.LongTensor([2, 1, 0])]),  # turn to BGR
+        transforms.Normalize(mean=[0.40760392, 0.45795686, 0.48501961],  # subtract imagenet mean
+                             std=[1, 1, 1]),
         transforms.RandomCrop(crop_size),
         transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
+
+postpa = transforms.Compose([transforms.Lambda(lambda x: x.mul_(1./255)),
+                           transforms.Normalize(mean=[-0.40760392, -0.45795686, -0.48501961], #add imagenet mean
+                                                std=[1,1,1]),
+                           transforms.Lambda(lambda x: x[torch.LongTensor([2,1,0])]), #turn to RGB
+                           ])
+postpb = transforms.Compose([transforms.ToPILImage()])
+def postp(tensor): # to clip results in the range [0,1]
+    t = postpa(tensor)
+    t[t>1] = 1
+    t[t<0] = 0
+    img = postpb(t)
+    return img
 
 def style_transform(load_size, crop_size):
     transform_list = [
@@ -879,7 +895,7 @@ def adaconv_thumb_train():
                     if l != 0:
                         loss_dict[s] = l
             if(n +1) % 10 ==0:
-                loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
+                loss_dict['example'] = wandb.Image(postp(stylized[0]))
             print(str(n)+'/'+str(args.max_iter)+': '+'\t'.join([str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
 
             wandb.log(loss_dict, step=n)
@@ -1112,13 +1128,13 @@ def adaconv_urst():
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(draft_img_grid.detach(),
+                save_image(postpa(styled_img_grid), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                save_image(postpa(draft_img_grid),
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
-                save_image(content_img_grid.detach(),
+                save_image(postpa(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                n + 1) + '.jpg')
-                save_image(style_source_grid.detach(),
+                save_image(postpa(style_source_grid),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
