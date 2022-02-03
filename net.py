@@ -212,7 +212,9 @@ class ConvMixer(nn.Module):
     def forward(self, x):
         out = self.head(x)
         out = self.body(out)
+        print(out.grad_fn)
         out = self.tail(out)
+        print(out.grad_fn)
         return out
 
 class Revisors(nn.Module):
@@ -533,8 +535,6 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = False, saved_stats = None, precalced_emb=False):
-        for i in self.content_injection_layer:
-            print(cF[i].requires_grad)
         if precalced_emb:
             pass
         elif repeat_style:

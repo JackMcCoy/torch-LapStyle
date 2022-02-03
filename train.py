@@ -29,6 +29,7 @@ from torch.cuda.amp import autocast, GradScaler
 from function import CartesianGrid as Grid
 from randaugment import RandAugment
 
+setup_torch(0)
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -737,7 +738,6 @@ def revlap_train():
                            'dec_optimizer.pth.tar')
 
 def adaconv_thumb_train():
-    setup_torch(0)
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device)
     rev_ = build_rev(args.revision_depth, None)
@@ -849,14 +849,16 @@ def adaconv_thumb_train():
 
         for param in dec_.parameters():
             param.grad = None
+        for param in rev_.parameters():
+            param.grad = None
+
         dummy = torch.ones(1).requires_grad_(True)
         stylized, style_embedding = dec_(cF,sF['r4_1'], dummy)
 
         patches = []
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
-        for param in rev_.parameters():
-            param.grad = None
+
         patch_stylized = rev_(res_in)
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
