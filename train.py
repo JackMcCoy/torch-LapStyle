@@ -174,7 +174,7 @@ log_dir.mkdir(exist_ok=True, parents=True)
 wandb.init(config=vars(args))
 
 def build_enc(vgg):
-    enc = net.Encoder(torch.load(args.vgg))
+    enc = net.Encoder(args.vgg)
 
     set_requires_grad(enc, False)
     enc.train(False)

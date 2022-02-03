@@ -52,7 +52,7 @@ def max_singular_value(W, u=None, Ip=1):
     return sigma, _u
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, vgg_path):
         super(Encoder,(self)).__init__()
         '''
         self.enc_1 = nn.Sequential(*enc_layers[:3])  # input -> relu1_1
@@ -70,6 +70,7 @@ class Encoder(nn.Module):
                      'features.29':'r5_1'
                      }
         m = vgg19()
+        m.load_state_dict(torch.load(vgg_path))
         for i in m.features:
             if type(i)==nn.Conv2d:
                 i.padding_mode='reflect'
