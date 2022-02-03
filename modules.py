@@ -234,13 +234,20 @@ class Bias(nn.Module):
         x = x+self.bias
         return x
 
+'''
 def ConvMixer(h, depth, kernel_size=9, patch_size=7):
     Seq, ActBn = nn.Sequential, lambda x: Seq(x, nn.GELU(), nn.BatchNorm2d(h))
     Residual = type('Residual', (Seq,), {'forward': lambda self, x: self[0](x) + x})
     return Seq(ActBn(nn.Conv2d(h, h, patch_size, stride=patch_size)),
     [Seq(Residual(ActBn(nn.Conv2d(h, h, kernel_size, groups=h, padding="same"))),
     ActBn(nn.Conv2d(h, h, 1))) for i in range(depth)])
-
+'''
+def ConvMixer(h, depth, kernel_size=9, patch_size=7):
+    Seq, ActBn = nn.Sequential, lambda x: Seq(x, nn.GELU())
+    Residual = type('Residual', (Seq,), {'forward': lambda self, x: self[0](x) + x})
+    return Seq(ActBn(nn.Conv2d(h, h, patch_size, stride=patch_size)),
+    [Seq(Residual(ActBn(nn.Conv2d(h, h, kernel_size, groups=h, padding="same"))),
+    ActBn(nn.Conv2d(h, h, 1))) for i in range(depth)])
 
 class ConvBlock(nn.Module):
 
