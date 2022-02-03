@@ -1128,13 +1128,13 @@ def adaconv_urst():
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(postpa(styled_img_grid), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(postpa(draft_img_grid),
+                postpa(styled_img_grid).save(args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                postpa(draft_img_grid).save(
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
-                save_image(postpa(content_img_grid),
+                postpa(content_img_grid).save(
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                n + 1) + '.jpg')
-                save_image(postpa(style_source_grid),
+                postpa(style_source_grid).save(
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
