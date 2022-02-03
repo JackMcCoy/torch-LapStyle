@@ -60,8 +60,7 @@ class Encoder(nn.Module):
         self.enc_2 = nn.Sequential(*enc_layers[2:7])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[7:12])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[12:21])  # relu3_1 -> relu4_1
-        self.enc_4_2 = nn.Sequential(*enc_layers[21:23])
-        self.enc_5 = nn.Sequential(*enc_layers[23:30])
+        self.enc_5 = nn.Sequential(*enc_layers[21:30])
 
     def forward(self, x):
         encodings = {}
@@ -73,8 +72,6 @@ class Encoder(nn.Module):
         encodings['r3_1'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
-        x = self.enc_4_2(x)
-        encodings['r4_2'] = x
         x = self.enc_5(x)
         encodings['r5_1'] = x
         return encodings
@@ -961,7 +958,7 @@ def calc_losses(stylized: torch.Tensor,
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key].detach(),norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_2'], cF['r4_2'].detach(),norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(),norm=True)
     if split_style:
         sF = []
         b = si.shape[0]
