@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image, ImageFile
 import wandb
 from torchvision import transforms
+from torchvision.io import read_image
 from tqdm import tqdm
 from torchvision.utils import save_image, make_grid
 import re, os
@@ -73,7 +74,7 @@ class FlatFolderDataset(data.Dataset):
 
     def __getitem__(self, index):
         path = self.paths[index]
-        img = Image.open(str(path)).convert('RGB')
+        img = read_image(str(path))
         img = self.transform(img)
         return img
 
