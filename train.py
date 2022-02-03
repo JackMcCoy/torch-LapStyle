@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import numpy as np
 from PIL import Image, ImageFile
 import wandb
+import torchvision
 from torchvision import transforms
 from torchvision.io import read_image
 from tqdm import tqdm
@@ -31,7 +32,7 @@ from randaugment import RandAugment
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
+torchvision.set_image_backend('accimage')
 ac_enabled = False
 
 
@@ -45,8 +46,6 @@ def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
-        transforms.ToTensor(),
-
     ]
     return transforms.Compose(transform_list)
 
@@ -57,7 +56,6 @@ def style_transform(load_size, crop_size):
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
         RandAugment(1, 2),
-        transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
 
