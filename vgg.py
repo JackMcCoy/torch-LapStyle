@@ -115,7 +115,7 @@ class VGG(nn.Module):
         return x
 
 
-def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequential:
+def make_layers(cfg, batch_norm: bool = False) -> nn.Sequential:
     layers: List[nn.Module] = []
     in_channels = 3
     for v in cfg:
@@ -140,7 +140,7 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool, **kwargs: Any) -> VGG:
+def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool, **kwargs):
     if pretrained:
         kwargs["init_weights"] = False
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
