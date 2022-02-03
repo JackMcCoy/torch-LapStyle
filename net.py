@@ -188,15 +188,15 @@ class ConvMixer(nn.Module):
             nn.BatchNorm2d(dim))
         cell = nn.Sequential(
             Residual(nn.Sequential(
-                nn.Conv2d(dim // 2, dim // 2, kernel_size, groups=dim // 2, padding="same", padding_mode='reflect'),
+                nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
                 nn.GELU(),
-                nn.BatchNorm2d(dim // 2)
+                nn.BatchNorm2d(dim)
             )),
-            nn.Conv2d(dim // 2, dim // 2, kernel_size=1),
+            nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
-            nn.BatchNorm2d(dim // 2)
+            nn.BatchNorm2d(dim)
         )
-        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
+        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda', split_dim=-1)
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
@@ -719,16 +719,16 @@ class Discriminator(nn.Module):
             nn.ReLU())
         cell = nn.Sequential(
             Residual(nn.Sequential(
-                nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=num_channels // 2, padding="same",
+                nn.Conv2d(num_channels, num_channels, kernel_size, groups=num_channels, padding="same",
                           padding_mode='reflect'),
                 nn.GELU(),
-                nn.BatchNorm2d(num_channels // 2)
+                nn.BatchNorm2d(num_channels)
             )),
-            nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size=1),
+            nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.GELU(),
-            nn.BatchNorm2d(num_channels // 2)
+            nn.BatchNorm2d(num_channels)
         )
-        self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
+        self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda', split_dim=-1)
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
             nn.Flatten(),
             nn.Linear(num_channels, 1))
