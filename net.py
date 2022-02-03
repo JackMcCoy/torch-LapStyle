@@ -538,7 +538,7 @@ class ThumbAdaConv(nn.Module):
             pass
         elif repeat_style:
             b = style_enc.shape[0]
-            style_enc = self.style_encoding(style_enc[:b//2,:,:,:].detach()* dummy_ones)
+            style_enc = self.style_encoding(style_enc[:b//2,:,:,:].detach()* dummy_ones[:b//2,:,:,:])
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
             style_enc = self.style_encoding(style_enc.detach()* dummy_ones)
