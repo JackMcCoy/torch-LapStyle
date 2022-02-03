@@ -53,7 +53,7 @@ def max_singular_value(W, u=None, Ip=1):
     return sigma, _u
 
 class Encoder(nn.Module):
-    def __init__(self, vgg_path):
+    def __init__(self, vggs):
         super(Encoder,(self)).__init__()
         enc_layers = list(vggs.children())
         self.enc_1 = nn.Sequential(*enc_layers[:2])  # input -> relu1_1
