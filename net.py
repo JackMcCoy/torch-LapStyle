@@ -171,6 +171,7 @@ class RevisionNet(nn.Module):
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
+        out = out+input
         return out
 
 class Residual(nn.Module):
