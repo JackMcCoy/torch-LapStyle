@@ -7,6 +7,8 @@ from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
 from revlib.utils import momentum_net
+from torchvision.models import vgg19
+from torchvision.models.feature_extraction import create_feature_extractor
 
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
@@ -50,31 +52,32 @@ def max_singular_value(W, u=None, Ip=1):
     return sigma, _u
 
 class Encoder(nn.Module):
-    def __init__(self, vggs):
+    def __init__(self):
         super(Encoder,(self)).__init__()
-        enc_layers = list(vggs.children())
-
+        '''
         self.enc_1 = nn.Sequential(*enc_layers[:3])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[3:10])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[10:17])  # relu2_1 -> relu3_1
         self.enc_4 = nn.Sequential(*enc_layers[17:30])  # relu3_1 -> relu4_1
         self.enc_4_2 = nn.Sequential(*enc_layers[30:33])
         self.enc_5 = nn.Sequential(*enc_layers[33:43])
+        '''
+        feat_list = {'features.1':'r1_1',
+                     'features.6':'r2_1',
+                     'features.11':'r3_1',
+                     'features.20':'r4_1',
+                     'feature.22':'r4_2',
+                     'features.29':'r5_1'
+                     }
+        m = vgg19()
+        for i in m.features:
+            if type(i)==nn.Conv2d:
+                i.padding_mode='reflect'
+        self.body = create_feature_extractor(
+            m, return_nodes=feat_list)
 
     def forward(self, x):
-        encodings = {}
-        x = self.enc_1(x)
-        encodings['r1_1'] = x
-        x = self.enc_2(x)
-        encodings['r2_1'] = x
-        x = self.enc_3(x)
-        encodings['r3_1'] = x
-        x = self.enc_4(x)
-        encodings['r4_1'] = x
-        x = self.enc_4_2(x)
-        encodings['r4_2'] = x
-        x = self.enc_5(x)
-        encodings['r5_1'] = x
+        encodings = self.body(x)
         return encodings
 
 class Decoder(nn.Module):
