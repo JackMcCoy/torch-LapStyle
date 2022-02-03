@@ -201,7 +201,7 @@ class ConvMixer(nn.Module):
                     nn.GELU(),
                     nn.BatchNorm2d(dim//2)
             )
-        self.body = nn.Sequential(*[cell for i in range(depth)],target_device='cuda')
+        self.body = nn.Sequential(*[cell for i in range(depth)])
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
@@ -733,7 +733,7 @@ class Discriminator(nn.Module):
             nn.ReLU(),
             nn.BatchNorm2d(num_channels // 2)
         )
-        self.body = nn.Sequential(*[cell for i in range(depth-2)], target_device='cuda')
+        self.body = nn.Sequential(*[cell for i in range(depth-2)])
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
         nn.Flatten(),
         nn.Linear(num_channels, 1))
