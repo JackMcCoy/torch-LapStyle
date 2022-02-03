@@ -132,7 +132,7 @@ def make_layers(cfg, batch_norm: bool = False) -> nn.Sequential:
     return nn.Sequential(*layers)
 
 
-cfgs: Dict[str, List[Union[str, int]]] = {
+cfgs = {
     "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
     "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
     "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
@@ -146,6 +146,6 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     return model
 
-def vgg19(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
+def vgg19(pretrained: bool = False, progress: bool = True, **kwargs):
 
     return _vgg("vgg19", "E", False, pretrained, progress, **kwargs)
