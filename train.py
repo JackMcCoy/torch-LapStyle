@@ -810,7 +810,8 @@ def adaconv_thumb_train():
             si = [F.interpolate(si, size=256, mode='bicubic').to(device), random_crop(si).to(device)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
-
+            dec_.eval()
+            rev_.eval()
             stylized, style_embedding = dec_(cF, sF['r4_1'], None)
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
             patch_stylized = rev_(res_in)
@@ -838,6 +839,9 @@ def adaconv_thumb_train():
         set_requires_grad(disc2_, False)
         set_requires_grad(dec_, True)
         set_requires_grad(rev_, True)
+
+        dec_.train()
+        rev_.train()
 
         for param in dec_.parameters():
             param.grad = None
