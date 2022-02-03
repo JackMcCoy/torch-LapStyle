@@ -807,7 +807,7 @@ def adaconv_thumb_train():
             ######
             '''
             ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
+            si = [F.interpolate(si, size=256, mode='bicubic').to(device), random_crop(si).to(device)]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
