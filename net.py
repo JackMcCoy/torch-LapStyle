@@ -212,9 +212,7 @@ class ConvMixer(nn.Module):
     def forward(self, x):
         out = self.head(x)
         out = self.body(out)
-        print(out.grad_fn)
         out = self.tail(out)
-        print(out.grad_fn)
         return out
 
 class Revisors(nn.Module):
