@@ -193,13 +193,13 @@ class ConvMixer(nn.Module):
             nn.BatchNorm2d(dim))
         cell = nn.Sequential(
                     Residual(nn.Sequential(
-                        nn.Conv2d(dim//2, dim//2, kernel_size, groups=dim//2, padding="same", padding_mode='reflect'),
+                        nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
                         nn.GELU(),
-                        nn.BatchNorm2d(dim//2)
+                        nn.BatchNorm2d(dim)
                     )),
-                    nn.Conv2d(dim//2, dim//2, kernel_size=1),
+                    nn.Conv2d(dim, dim, kernel_size=1),
                     nn.GELU(),
-                    nn.BatchNorm2d(dim//2)
+                    nn.BatchNorm2d(dim)
             )
         self.body = nn.Sequential(*[cell for i in range(depth)])
         self.tail = nn.Sequential(
@@ -724,14 +724,14 @@ class Discriminator(nn.Module):
             nn.ReLU())
         cell = nn.Sequential(
             Residual(nn.Sequential(
-                nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size, groups=num_channels // 2, padding="same",
+                nn.Conv2d(num_channels, num_channels, kernel_size, groups=num_channels // 2, padding="same",
                           padding_mode='reflect'),
                 nn.ReLU(),
-                nn.BatchNorm2d(num_channels // 2)
+                nn.BatchNorm2d(num_channels)
             )),
-            nn.Conv2d(num_channels // 2, num_channels // 2, kernel_size=1),
+            nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.ReLU(),
-            nn.BatchNorm2d(num_channels // 2)
+            nn.BatchNorm2d(num_channels)
         )
         self.body = nn.Sequential(*[cell for i in range(depth-2)])
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
