@@ -567,6 +567,7 @@ def revision_train():
                            'disc_optimizer.pth.tar')
 
 def revlap_train():
+    setup_torch(0)
     rev_start = True
     random_crop = transforms.RandomCrop(256)
     if args.split_style:
@@ -736,6 +737,7 @@ def revlap_train():
                            'dec_optimizer.pth.tar')
 
 def adaconv_thumb_train():
+    setup_torch(0)
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device)
     rev_ = build_rev(args.revision_depth, None)
