@@ -46,7 +46,7 @@ def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
-        transforms.Lambda(lambda x: x.repeat(3,1,1) if x.size()[0]==1 else x)
+        transforms.Lambda(lambda x: x.repeat(3,1,1) if x.size()[0]==1 else x),
         transforms.Lambda(lambda x: x.float().div(255))
     ]
     return transforms.Compose(transform_list)
