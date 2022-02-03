@@ -848,7 +848,7 @@ def adaconv_thumb_train():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
         for param in rev_.parameters():
             param.grad = None
-        patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
+        patch_stylized = rev_(res_in)
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
