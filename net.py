@@ -6,6 +6,7 @@ from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
 import torch.nn.functional as F
 import numpy as np
+import vgg
 from revlib.utils import momentum_net
 from torchvision.models import vgg19
 from torchvision.models.feature_extraction import create_feature_extractor
@@ -69,8 +70,8 @@ class Encoder(nn.Module):
                      'features.22':'r4_2',
                      'features.29':'r5_1'
                      }
-        m = vgg19()
-        m.load_state_dict(torch.load(vgg_path))
+        m = vgg.vgg19()
+        m.load_state_dict(torch.load(vgg_path), strict=False)
         for i in m.features:
             if type(i)==nn.Conv2d:
                 i.padding_mode='reflect'
