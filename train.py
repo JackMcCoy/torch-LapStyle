@@ -897,8 +897,8 @@ def adaconv_thumb_train():
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(invTrans(styled_img_grid), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(invTrans(draft_img_grid),
+                save_image(styled_img_grid, args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
