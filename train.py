@@ -33,19 +33,19 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 ac_enabled = False
 
-'''
-invTrans = transforms.Compose([ transforms.Normalize(mean = [ 0., 0., 0. ],
-                                                     std = [ 1/0.229, 1/0.224, 1/0.225 ]),
-                                transforms.Normalize(mean = [ -0.485, -0.456, -0.406 ],
-                                                     std = [ 1., 1., 1. ]),
-                               ])
-'''
+
+invTrans = transforms.Compose(transforms.Normalize(
+    mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
+    std=[1/0.229, 1/0.224, 1/0.225]
+))
+
 invTrans = nn.Identity()
 def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
         transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
     return transforms.Compose(transform_list)
 
