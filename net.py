@@ -66,7 +66,7 @@ class Encoder(nn.Module):
                      'features.6':'r2_1',
                      'features.11':'r3_1',
                      'features.20':'r4_1',
-                     'feature.22':'r4_2',
+                     'features.22':'r4_2',
                      'features.29':'r5_1'
                      }
         m = vgg19()
