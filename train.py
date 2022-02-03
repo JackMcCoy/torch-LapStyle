@@ -45,9 +45,12 @@ def train_transform(load_size, crop_size):
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
         transforms.ToTensor(),
+
     ]
     return transforms.Compose(transform_list)
 
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
 def style_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
@@ -1007,6 +1010,8 @@ def adaconv_urst():
 
             ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
             si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
+            ci = [normalize(ci[0]),normalize(ci[1])]
+            si = [normalize(si[0]), normalize(si[1])]
             cF = enc_(ci[0])
             sF = enc_(si[0])
 
