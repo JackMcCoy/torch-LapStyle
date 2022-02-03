@@ -538,17 +538,16 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True, saved_stats = None, precalced_emb=False):
-        dummy_ones = torch.ones_like(style_enc).requires_grad_(True)
         if precalced_emb:
             pass
         elif repeat_style:
             b = style_enc.shape[0]
-            style_enc = self.style_encoding(style_enc[:b//2,:,:,:].detach()* dummy_ones[:b//2,:,:,:])
+            style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
             style_enc = torch.cat([style_enc,style_enc],0)
         else:
-            style_enc = self.style_encoding(style_enc.detach()* dummy_ones)
+            style_enc = self.style_encoding(style_enc)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            ada_out = ada(style_enc, cF[mixin].detach(), thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
+            ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
