@@ -36,22 +36,22 @@ ac_enabled = False
 def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
-        transforms.Lambda(lambda x: x[torch.LongTensor([2, 1, 0])]),  # turn to BGR
         transforms.Normalize(mean=[0.40760392, 0.45795686, 0.48501961],  # subtract imagenet mean
                              std=[1, 1, 1]),
         transforms.RandomCrop(crop_size),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: x[torch.LongTensor([2, 1, 0])]),  # turn to BGR
     ]
     return transforms.Compose(transform_list)
 
-postpa = transforms.Compose([transforms.Lambda(lambda x: x.mul_(1./255)),
+postpa = transforms.Compose([
                            transforms.Normalize(mean=[-0.40760392, -0.45795686, -0.48501961], #add imagenet mean
                                                 std=[1,1,1]),
-                           transforms.Lambda(lambda x: x[torch.LongTensor([2,1,0])]), #turn to RGB
                            ])
 postpb = transforms.Compose([transforms.ToPILImage()])
 def postp(tensor): # to clip results in the range [0,1]
     t = postpa(tensor)
+    t = t[:,torch.LongTensor([2, 1, 0]),:,:]  # turn to BGR
     t[t>1] = 1
     t[t<0] = 0
     img = postpb(t)
