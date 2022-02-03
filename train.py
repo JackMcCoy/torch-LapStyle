@@ -51,7 +51,7 @@ postpa = transforms.Compose([
 postpb = transforms.Compose([transforms.ToPILImage()])
 def postp(tensor): # to clip results in the range [0,1]
     t = postpa(tensor)
-    t = t[:,torch.LongTensor([2, 1, 0]),:,:]  # turn to BGR
+    t = t[torch.LongTensor([2, 1, 0]),:,:]  # turn to BGR
     t[t>1] = 1
     t[t<0] = 0
     img = postpb(t)
