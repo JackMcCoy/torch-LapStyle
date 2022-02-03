@@ -199,12 +199,12 @@ with autocast(enabled=ac_enabled):
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
 content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size//2,
+    content_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
 style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size//2,
+    style_dataset, batch_size=args.batch_size,
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
@@ -796,6 +796,7 @@ def adaconv_thumb_train():
             ci = next(content_iter)
             si = next(style_iter)
 
+            '''
             ######
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
@@ -804,7 +805,7 @@ def adaconv_thumb_train():
             si = torch.cat([si, si], 0)
             rc_si = torch.cat([rc_si, rc_si], 0)
             ######
-
+            '''
             ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
             si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
             cF = enc_(ci[0])

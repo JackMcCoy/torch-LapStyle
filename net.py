@@ -537,7 +537,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = True, saved_stats = None, precalced_emb=False):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = False, saved_stats = None, precalced_emb=False):
         if precalced_emb:
             pass
         elif repeat_style:
