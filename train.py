@@ -183,14 +183,16 @@ log_dir.mkdir(exist_ok=True, parents=True)
 wandb.init(config=vars(args))
 
 def build_enc(vgg):
-    enc = net.Encoder(args.vgg)
-
+    enc = net.Encoder(vgg)
     set_requires_grad(enc, False)
     enc.train(False)
     return enc
 
 with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
+
+    vgg.load_state_dict(torch.load(args.vgg))
+    vgg = nn.Sequential(*list(vgg.children()))
 
     content_tf = train_transform(args.load_size, args.crop_size)
     style_tf = train_transform(args.style_load_size, args.crop_size)
