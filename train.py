@@ -930,10 +930,12 @@ def adaconv_thumb_train():
         with torch.no_grad():
             if (n + 1) % 50 == 0:
                 draft_img_grid = make_grid(invStyleTrans(stylized), nrow=4, scale_each=True)
+                draft_coco_grid = make_grid(invTrans(stylized), nrow=4, scale_each=True)
                 styled_img_grid = make_grid(invStyleTrans(patch_stylized), nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
                 save_image(styled_img_grid, args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                save_image(draft_coco_grid, args.save_dir + '/drafting_mscoco_iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
