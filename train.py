@@ -860,7 +860,7 @@ def adaconv_thumb_train():
         loss_D2.backward()
         #opt_D.step()
         if n>0:
-            #_clip_gradient(disc2_)
+            _clip_gradient(disc2_)
             opt_D2.step()
 
         #set_requires_grad(disc_, False)
@@ -903,8 +903,8 @@ def adaconv_thumb_train():
 
         loss.backward()
         if n > 0:
-            #_clip_gradient(rev_)
-            #_clip_gradient(dec_)
+            _clip_gradient(rev_)
+            _clip_gradient(dec_)
             rev_optimizer.step()
             dec_optimizer.step()
         disc2_.train()
