@@ -485,8 +485,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             nn.Flatten(1),
             nn.Linear(8192, self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.Unflatten(1, (self.s_d, 4, 4))
+            nn.LeakyReLU()
         )
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
@@ -541,9 +540,9 @@ class ThumbAdaConv(nn.Module):
         elif repeat_style:
             b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
-            style_enc = torch.cat([style_enc,style_enc],0)
+            style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,4,4)
         else:
-            style_enc = self.style_encoding(style_enc)
+            style_enc = self.style_encoding(style_enc).view(b,self.s_d, 4, 4)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
