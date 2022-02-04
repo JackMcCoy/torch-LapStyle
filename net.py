@@ -981,8 +981,8 @@ def calc_losses(stylized: torch.Tensor,
             loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach()) * style_weights[0]
         else:
             loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
-        for idx, key in enumerate(style_layers[1:]):
-            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach()) * style_weights[idx]
+        for hdx, key in enumerate(style_layers[1:]):
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach()) * style_weights[hdx]
         if remd_loss:
             if idx == 0:
                 style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
