@@ -889,7 +889,7 @@ def adaconv_thumb_train():
                style_contrastive_loss * 0.3 + content_contrastive_loss * 0.3
 
         loss.backward()
-        jf n > 0:
+        if n > 0:
             _clip_gradient(rev_)
             _clip_gradient(disc_)
             rev_optimizer.step()
