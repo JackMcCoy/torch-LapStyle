@@ -749,13 +749,8 @@ def adaconv_thumb_train():
                                                    torch.rand(args.batch_size, 256, 64, 64).to(torch.device('cuda')),
                                                    torch.rand(args.batch_size, 512, 32, 32).to(torch.device('cuda')),
                                                    torch.rand(args.batch_size, 512, 16, 16).to(torch.device('cuda'))])},
-                            {k: v for k, v in zip(['r1_1', 'r2_1', 'r3_1', 'r4_1','r5_1'],
-                                                  [torch.rand(args.batch_size, 64, 256, 256).to(torch.device('cuda')),
-                                                   torch.rand(args.batch_size, 128, 128, 128).to(torch.device('cuda')),
-                                                   torch.rand(args.batch_size, 256, 64, 64).to(torch.device('cuda')),
-                                                   torch.rand(args.batch_size, 512, 32, 32).to(
-                                                       torch.device('cuda')),
-                                                   torch.rand(args.batch_size, 512, 16, 16).to(torch.device('cuda'))])}),
+                            torch.rand(args.batch_size, 512, 32, 32).to(
+                                                       torch.device('cuda'))),
                            strict=False, check_trace=False)
     rev_ = build_rev(args.revision_depth, None)
     random_crop = transforms.RandomCrop(256)
