@@ -891,7 +891,7 @@ def adaconv_thumb_train():
         loss.backward()
         if n > 0:
             _clip_gradient(rev_)
-            _clip_gradient(disc_)
+            _clip_gradient(dec_)
             rev_optimizer.step()
             dec_optimizer.step()
         loss_D = 0
