@@ -878,6 +878,7 @@ def identity_loss(i, F, encoder, decoder, repeat_style=True):
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r1_1','r2_1','r3_1','r4_1','r5_1']
+style_weights = [1e3/n**2 for n in [64,128,256,512,512]]
 gan_first=True
 
 @torch.jit.script
@@ -977,11 +978,11 @@ def calc_losses(stylized: torch.Tensor,
         sF = [sF]
     for idx, s in enumerate(sF):
         if idx == 0:
-            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
+            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach()) * style_weights[0]
         else:
             loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
-        for key in style_layers[1:]:
-            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
+        for idx, key in enumerate(style_layers[1:]):
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach()) * style_weights[idx]
         if remd_loss:
             if idx == 0:
                 style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
