@@ -853,7 +853,7 @@ def adaconv_thumb_train():
         set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(rev_, False)
-        loss_D2 = disc2_.losses(si[-1], patch_stylized.detach())
+        loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
         #loss_D = disc_.losses(si[0], stylized)
 
         #loss_D.backward()
