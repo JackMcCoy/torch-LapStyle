@@ -41,6 +41,10 @@ invTrans = transforms.Compose([transforms.Normalize(
     mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
     std=[1/0.229, 1/0.224, 1/0.225]
 )])
+invStyleTrans = transforms.Compose([transforms.Normalize(
+    mean=[-0.339/0.157, -0.385/0.164, -0.465/0.159],
+    std=[1/0.157, 1/0.164, 1/0.159]
+)])
 
 content_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
@@ -931,13 +935,13 @@ def adaconv_thumb_train():
                 styled_img_grid = make_grid(patch_stylized, nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
-                save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
-                save_image(draft_img_grid.detach(),
+                save_image(invStyleTrans(styled_img_grid), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
+                save_image(invStyleTrans(draft_img_grid),
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                n + 1) + '.jpg')
-                save_image(invTrans(style_source_grid),
+                save_image(invStyleTrans(style_source_grid),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
