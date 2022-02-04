@@ -535,10 +535,10 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, repeat_style = False, saved_stats = None, precalced_emb=False):
+        b = style_enc.shape[0]
         if precalced_emb:
             pass
         elif repeat_style:
-            b = style_enc.shape[0]
             style_enc = self.style_encoding(style_enc[:b//2,:,:,:])
             style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,4,4)
         else:
