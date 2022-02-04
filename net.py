@@ -742,13 +742,11 @@ class Discriminator(nn.Module):
         self.num_channels = num_channels
 
     def losses(self, real, fake):
+        N = fake.shape[0]
+        pred = self(torch.cat([real,fake],0))
+        loss_D_real = self.ganloss(pred[:N,:,:,:], True)
 
-        pred_real = self(real)
-        loss_D_real = self.ganloss(pred_real, True)
-
-        pred_fake = self(fake)
-
-        loss_D_fake = self.ganloss(pred_fake, False)
+        loss_D_fake = self.ganloss(pred[N:,:,:,:], False)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         return loss_D
 
