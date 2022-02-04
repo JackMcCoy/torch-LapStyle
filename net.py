@@ -734,9 +734,9 @@ class Discriminator(nn.Module):
         )
         self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
         self.tail = nn.Sequential(
-            nn.Conv2d(dim, dim, kernel_size=1),
+            nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(dim, 3, kernel_size=1),
+            nn.Conv2d(num_channels, 1, kernel_size=1),
         )
         self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
