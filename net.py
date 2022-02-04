@@ -733,9 +733,11 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(num_channels)
         )
         self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
-        self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
-            nn.Flatten(),
-            nn.Linear(num_channels, 1))
+        self.tail = nn.Sequential(
+            nn.Conv2d(dim, dim, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(dim, 3, kernel_size=1),
+        )
         self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
