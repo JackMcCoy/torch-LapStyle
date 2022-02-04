@@ -507,7 +507,7 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 3, scale_change=''),
                 nn.Conv2d(3, 3, kernel_size=3, padding=1))
         ])
-
+        '''
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
@@ -518,7 +518,7 @@ class ThumbAdaConv(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=128)
         )
-
+        '''
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -535,7 +535,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, dummy, repeat_style = False, saved_stats = None, precalced_emb=False):
+    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc, repeat_style = False, saved_stats = None, precalced_emb=False):
         if precalced_emb:
             pass
         elif repeat_style:
@@ -866,7 +866,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, F['r4_1'], None, repeat_style=repeat_style)
+    Icc, _ = decoder(F, F['r4_1'], repeat_style=repeat_style)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
