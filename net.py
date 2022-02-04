@@ -472,7 +472,7 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, batch_size=8, s_d = 64):
+    def __init__(self, contrastive_loss=False,batch_size=8, s_d = 64):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
@@ -510,16 +510,17 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
         ])
 
-        self.proj_style = nn.Sequential(
-            nn.Linear(in_features=256, out_features=128),
-            nn.ReLU(),
-            nn.Linear(in_features=128, out_features=128)
-        )
-        self.proj_content = nn.Sequential(
-            nn.Linear(in_features=512, out_features=256),
-            nn.ReLU(),
-            nn.Linear(in_features=256, out_features=128)
-        )
+        if contrastive_loss:
+            self.proj_style = nn.Sequential(
+                nn.Linear(in_features=256, out_features=128),
+                nn.ReLU(),
+                nn.Linear(in_features=128, out_features=128)
+            )
+            self.proj_content = nn.Sequential(
+                nn.Linear(in_features=512, out_features=256),
+                nn.ReLU(),
+                nn.Linear(in_features=256, out_features=128)
+            )
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')

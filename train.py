@@ -751,7 +751,7 @@ def revlap_train():
 
 def adaconv_thumb_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(contrastive_loss=args.contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
     '''
     dec_ = torch.jit.trace(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device),
                            ({k: v for k, v in zip(['r1_1', 'r2_1', 'r3_1', 'r4_1','r5_1'],
