@@ -213,13 +213,14 @@ with autocast(enabled=ac_enabled):
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
+batch = args.batch_size if args.contrastive_loss==0 else args.batch_size//2
 content_iter = iter(data.DataLoader(
-    content_dataset, batch_size=args.batch_size,
+    content_dataset, batch_size=batch,
     sampler=InfiniteSamplerWrapper(content_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
 style_iter = iter(data.DataLoader(
-    style_dataset, batch_size=args.batch_size,
+    style_dataset, batch_size=batch,
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads,pin_memory=True))
 
@@ -823,23 +824,23 @@ def adaconv_thumb_train():
         ci = content_normalize(next(content_iter))
         si = style_normalize(next(style_iter))
 
-        '''
-        ######
-        ci_ = ci[1:]
-        ci_ = torch.cat([ci_, ci[0:1]], 0)
-        ci = torch.cat([ci, ci_], 0)
-        rc_si = random_crop(si)
-        si = torch.cat([si, si], 0)
-        rc_si = torch.cat([rc_si, rc_si], 0)
-        ######
-        '''
+        if args.identity_loss == 1:
+            ci_ = ci[1:]
+            ci_ = torch.cat([ci_, ci[0:1]], 0)
+            ci = torch.cat([ci, ci_], 0)
+            rc_si = random_crop(si)
+            si = torch.cat([si, si], 0)
+            rc_si = torch.cat([rc_si, rc_si], 0)
+        else:
+            rc_si = random_crop(si)
+
         ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
-        si = [F.interpolate(si, size=256, mode='bicubic').to(device), random_crop(si).to(device)]
+        si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
         cF = enc_(ci[0])
         sF = enc_(si[0])
         dec_.eval()
         rev_.eval()
-        stylized, style_embedding = dec_(cF, sF['r4_1'])
+        stylized, style_embedding = dec_(cF, sF['r4_1'],repeat_style=True)
         res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_stylized = rev_(res_in)
 
@@ -875,7 +876,7 @@ def adaconv_thumb_train():
         for param in rev_.parameters():
             param.grad = None
 
-        stylized, style_embedding = dec_(cF,sF['r4_1'])
+        stylized, style_embedding = dec_(cF,sF['r4_1'],repeat_style=True)
 
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')

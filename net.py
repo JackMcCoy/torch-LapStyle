@@ -509,7 +509,7 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 3, scale_change=''),
                 nn.Conv2d(3, 3, kernel_size=3, padding=1))
         ])
-        '''
+
         self.proj_style = nn.Sequential(
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU(),
@@ -520,7 +520,6 @@ class ThumbAdaConv(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=128)
         )
-        '''
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
