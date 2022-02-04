@@ -42,6 +42,11 @@ invTrans = transforms.Compose([transforms.Normalize(
     std=[1/0.229, 1/0.224, 1/0.225]
 )])
 
+content_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+style_normalize = transforms.Normalize(mean=[0.339, 0.385, 0.465],
+                             std=[0.157, 0.164, 0.159])
+
 #invTrans = nn.Identity()
 def train_transform(load_size, crop_size):
     transform_list = [
@@ -49,8 +54,6 @@ def train_transform(load_size, crop_size):
         transforms.RandomCrop(crop_size),
         transforms.Lambda(lambda x: x.repeat(3,1,1) if x.size()[0]==1 else x),
         transforms.Lambda(lambda x: x.float().div(255)),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
     ]
     return transforms.Compose(transform_list)
 
@@ -811,8 +814,8 @@ def adaconv_thumb_train():
         #adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
         adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
 
-        ci = next(content_iter)
-        si = next(style_iter)
+        ci = content_normalize(next(content_iter))
+        si = style_normalize(next(style_iter))
 
         '''
         ######
