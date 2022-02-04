@@ -747,7 +747,7 @@ class Discriminator(nn.Module):
         loss_D_real = self.ganloss(pred[:N,:], True)
 
         loss_D_fake = self.ganloss(pred[N:,:], False)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        loss_D = loss_D_real + loss_D_fake
         return loss_D
 
     def forward(self, x):
