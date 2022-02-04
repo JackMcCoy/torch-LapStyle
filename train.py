@@ -48,7 +48,9 @@ def train_transform(load_size, crop_size):
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
         transforms.Lambda(lambda x: x.repeat(3,1,1) if x.size()[0]==1 else x),
-        transforms.Lambda(lambda x: x.float().div(255))
+        transforms.Lambda(lambda x: x.float().div(255)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ]
     return transforms.Compose(transform_list)
 
@@ -914,10 +916,10 @@ def adaconv_thumb_train():
                 save_image(styled_img_grid.detach(), args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid.detach(),
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
-                save_image(content_img_grid.detach(),
+                save_image(invTrans(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                n + 1) + '.jpg')
-                save_image(style_source_grid.detach(),
+                save_image(invTrans(style_source_grid),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
