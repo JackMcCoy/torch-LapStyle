@@ -217,7 +217,7 @@ class ConvMixer(nn.Module):
         out = self.body(out)
         out = out[:,:C,:,:]
         out = self.tail(out)
-        out = self.relu(x + out)
+        out = x + out
         return out
 
 class Revisors(nn.Module):
