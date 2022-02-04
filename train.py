@@ -37,10 +37,10 @@ torchvision.set_image_backend('accimage')
 ac_enabled = False
 
 
-invTrans = transforms.Compose(transforms.Normalize(
+invTrans = transforms.Compose([transforms.Normalize(
     mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
     std=[1/0.229, 1/0.224, 1/0.225]
-))
+)])
 
 #invTrans = nn.Identity()
 def train_transform(load_size, crop_size):
