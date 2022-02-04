@@ -507,7 +507,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 ConvBlock(64, 64, scale_change=''),
                 ConvBlock(64, 3, scale_change=''),
-                nn.Conv2d(3, 3, kernel_size=3, padding=1))
+                nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
         ])
 
         self.proj_style = nn.Sequential(

@@ -849,25 +849,24 @@ def adaconv_thumb_train():
         for param in disc2_.parameters():
             param.grad = None
 
-        if (n+1)%2==0:
-            #set_requires_grad(disc_, True)
-            set_requires_grad(disc2_, True)
-            set_requires_grad(dec_, False)
-            set_requires_grad(rev_, False)
-            loss_D2 = disc2_.losses(si[-1], patch_stylized)
-            #loss_D = disc_.losses(si[0], stylized)
+        #set_requires_grad(disc_, True)
+        set_requires_grad(disc2_, True)
+        set_requires_grad(dec_, False)
+        set_requires_grad(rev_, False)
+        loss_D2 = disc2_.losses(si[-1], patch_stylized)
+        #loss_D = disc_.losses(si[0], stylized)
 
-            #loss_D.backward()
-            loss_D2.backward()
-            #opt_D.step()
-            if n>0:
-                _clip_gradient(disc2_)
-                opt_D2.step()
+        #loss_D.backward()
+        loss_D2.backward()
+        #opt_D.step()
+        if n>0:
+            _clip_gradient(disc2_)
+            opt_D2.step()
 
-            #set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
-            set_requires_grad(dec_, True)
-            set_requires_grad(rev_, True)
+        #set_requires_grad(disc_, False)
+        set_requires_grad(disc2_, False)
+        set_requires_grad(dec_, True)
+        set_requires_grad(rev_, True)
 
         dec_.train()
         rev_.train()
