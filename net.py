@@ -196,7 +196,7 @@ class ConvMixer(nn.Module):
             nn.GELU(),
             nn.BatchNorm2d(dim)
         )
-        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda', split_dim=-1)
+        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
@@ -211,7 +211,10 @@ class ConvMixer(nn.Module):
 
     def forward(self, x):
         out = self.head(x)
+        N, C, *_ = out.shape
+        out = out.repeat(1,2,1,1)
         out = self.body(out)
+        out = out[:,:C,:,:]
         out = self.tail(out)
         return out
 
@@ -728,7 +731,7 @@ class Discriminator(nn.Module):
             nn.GELU(),
             nn.BatchNorm2d(num_channels)
         )
-        self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda', split_dim=-1)
+        self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
         self.tail = nn.Sequential(nn.AdaptiveAvgPool2d((1,1)),
             nn.Flatten(),
             nn.Linear(num_channels, 1))
@@ -750,7 +753,10 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.head(x)
+        N, C, *_ = x.shape
+        x = x.repeat(1, 2, 1, 1)
         x = self.body(x)
+        x = x[:, :C, :, :]
         x = self.tail(x)
         return x
 
