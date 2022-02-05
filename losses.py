@@ -17,9 +17,9 @@ def pairwise_distances_sq_l2(x, y):
     return torch.clamp(dist, 1e-5, 1e5)/x.size(1)
 
 def rgb_to_yuv(rgb):
-    C = torch.Tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]]).to(rgb.device)
+    C = torch.tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]]).to(rgb.device)
     yuv = torch.mm(C,rgb)
-    return
+    return yuv
 
 
 class CalcStyleEmdLoss():
