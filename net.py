@@ -181,7 +181,7 @@ class Residual(nn.Module):
         return self.fn(x) + x
 
 class ConvMixer(nn.Module):
-    def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False):
+    def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False, final_bias=True):
         super(ConvMixer,self).__init__()
         self.in_eq_out = in_dim==out_dim
         self.relu = nn.LeakyReLU()
@@ -212,7 +212,7 @@ class ConvMixer(nn.Module):
             #nn.BatchNorm2d(dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect')
+            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
     def forward(self, x):
@@ -497,12 +497,13 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
-            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=512, out_dim=256, upscale=True, final_bias=False),
             ConvMixer(256, 8, kernel_size=5, patch_size=4, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(128, 12, kernel_size=7, patch_size=8, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(128, 12, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
         ])
+        self.lay_4_bias = nn.Parameter(nn.init.normal_(torch.ones(1, 256)))
         '''
         nn.Sequential(
             ConvBlock(512, 256, scale_change='up')),
@@ -533,12 +534,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.GELU = nn.GELU()
-        self.noise = nn.ModuleList(
-            [RiemannNoise(32),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),]
-        )
+        self.noise = RiemannNoise(64)
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -564,11 +560,13 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,7,7)
         else:
             style_enc = self.style_encoding(style_enc).view(b,self.s_d, 7,7)
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer,self.noise)):
-            ada_out = ada(style_enc, noise(cF[mixin]), thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+            ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
+                if idx==1:
+                    x = self.noise(x) + self.lay_4_bias
                 x = self.GELU(x) + self.relu(ada_out)
             x = learnable(x)
         return x, style_enc
