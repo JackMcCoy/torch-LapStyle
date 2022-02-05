@@ -63,7 +63,7 @@ def calc_emd_loss(pred, target):
     return dist
 
 @torch.jit.script
-def CalcContentReltLoss():
+def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
     X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
