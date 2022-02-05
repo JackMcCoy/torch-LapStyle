@@ -503,7 +503,7 @@ class ThumbAdaConv(nn.Module):
             ConvMixer(128, 12, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
         ])
-        self.lay_4_bias = nn.Parameter(nn.init.normal_(torch.ones(1, 256)))
+        self.lay_4_bias = nn.Parameter(nn.init.normal_(torch.ones(1, 256, 1, 1)))
         '''
         nn.Sequential(
             ConvBlock(512, 256, scale_change='up')),
