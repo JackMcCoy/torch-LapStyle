@@ -776,12 +776,12 @@ def adaconv_thumb_train():
         disc_state = None
         disc2_state = None
         init_weights(dec_)
-    #disc_ = build_disc(
-    #    disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    disc_ = build_disc(
+        disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
     disc2_ = build_disc(disc2_state, args.disc2_depth)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
-    #opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     #grid = (grid * grid.T).to(device)[:256,:256]
@@ -818,7 +818,7 @@ def adaconv_thumb_train():
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
         adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
-        #adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
+        adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
         adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
 
         ci = content_normalize(next(content_iter))
@@ -844,26 +844,28 @@ def adaconv_thumb_train():
         res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_stylized = rev_(res_in)
 
-        #for param in disc_.parameters():
-        #    param.grad = None
+        for param in disc_.parameters():
+            param.grad = None
         for param in disc2_.parameters():
             param.grad = None
 
-        #set_requires_grad(disc_, True)
+        set_requires_grad(disc_, True)
         set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(rev_, False)
         loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
-        #loss_D = disc_.losses(si[0], stylized)
+        loss_D = disc_.losses(si[0], stylized)
 
-        #loss_D.backward()
+        loss_D.backward()
         loss_D2.backward()
-        #opt_D.step()
+
         if n>0:
             _clip_gradient(disc2_)
+            _clip_gradient(disc_)
             opt_D2.step()
+            opt_D.step()
 
-        #set_requires_grad(disc_, False)
+        set_requires_grad(disc_, False)
         set_requires_grad(disc2_, False)
         set_requires_grad(dec_, True)
         set_requires_grad(rev_, True)
@@ -882,9 +884,9 @@ def adaconv_thumb_train():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
 
         patch_stylized = rev_(res_in)
-
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
-                             calc_identity=args.identity_loss == 1, disc_loss=False,
+        disc_.eval()
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
+                             calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                              remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
                              patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
@@ -908,7 +910,7 @@ def adaconv_thumb_train():
             rev_optimizer.step()
             dec_optimizer.step()
         disc2_.train()
-        loss_D = 0
+        disc_.train()
         if (n + 1) % 10 == 0:
 
             loss_dict = {}
