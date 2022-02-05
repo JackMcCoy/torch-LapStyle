@@ -91,6 +91,8 @@ class CalcContentReltLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
         loss = 0.
+        X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+        Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
         X = X.squeeze().t()
         Y = Y.squeeze().t()
 
