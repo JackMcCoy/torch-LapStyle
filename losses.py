@@ -16,6 +16,13 @@ def pairwise_distances_sq_l2(x, y):
     dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
     return torch.clamp(dist, 1e-5, 1e5)/x.size(1)
 
+def distmat(x, y, cos_d=True):
+    if cos_d:
+        M = pairwise_distances_cos(x, y)
+    else:
+        M = torch.sqrt(pairwise_distances_sq_l2(x, y))
+    return M
+
 def rgb_to_yuv(rgb):
     C = torch.tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]]).to(rgb.device)
     yuv = torch.mm(C,rgb)
@@ -69,13 +76,6 @@ def calc_emd_loss(pred, target):
     similarity = cosinesimilarity(pred, target)
     dist = 1. - similarity
     return dist
-
-def distmat(x, y, cos_d=True):
-    if cos_d:
-        M = pairwise_distances_cos(x, y)
-    else:
-        M = torch.sqrt(pairwise_distances_sq_l2(x, y))
-    return M
 
 class CalcContentReltLoss():
     """Calc Content Relt Loss.
