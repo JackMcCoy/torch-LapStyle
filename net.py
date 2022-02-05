@@ -180,14 +180,15 @@ class Residual(nn.Module):
         return self.fn(x) + x
 
 class ConvMixer(nn.Module):
-    def __init__(self, dim, depth, kernel_size=9, patch_size=7):
+    def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False):
         super(ConvMixer,self).__init__()
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
-            nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size),
+            nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             #nn.BatchNorm2d(dim)
             )
+
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
@@ -199,16 +200,17 @@ class ConvMixer(nn.Module):
             #nn.BatchNorm2d(dim)
         )
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
+        trans_kernel_size=patch_size if not upscale else patch_size*2
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
             #nn.BatchNorm2d(dim),
-            nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
+            nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.GELU(),
             #nn.BatchNorm2d(dim),
-            nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
+            nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.Conv2d(3, 3, kernel_size=3, padding=1, padding_mode='reflect')
+            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect')
         )
 
     def forward(self, x):
@@ -492,6 +494,11 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
+            ConvMixer(512, 8, kernel_size=3, patch_size=2, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(256, 8, kernel_size=3, patch_size=4, in_dim=256, out_dim=128, upscale=True),
+            ConvMixer(128, 12, kernel_size=5, patch_size=8, in_dim=128, out_dim=64, upscale=True),
+            ConvMixer(128, 12, kernel_size=5, patch_size=8, in_dim=64, out_dim=3, upscale=False),
+            '''
             nn.Sequential(
                 ConvBlock(512, 256, scale_change='up')),
             nn.Sequential(
@@ -507,6 +514,7 @@ class ThumbAdaConv(nn.Module):
                 ConvBlock(64, 64, scale_change=''),
                 ConvBlock(64, 3, scale_change=''),
                 nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
+            '''
         ])
 
         if contrastive_loss:
