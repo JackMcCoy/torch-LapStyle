@@ -498,24 +498,25 @@ class ThumbAdaConv(nn.Module):
             ConvMixer(256, 8, kernel_size=3, patch_size=4, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(128, 12, kernel_size=5, patch_size=8, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(128, 12, kernel_size=5, patch_size=8, in_dim=64, out_dim=3, upscale=False),
-            '''
-            nn.Sequential(
-                ConvBlock(512, 256, scale_change='up')),
-            nn.Sequential(
-                ConvBlock(256, 256, scale_change=''),
-                ConvBlock(256, 256, scale_change=''),
-                ConvBlock(256, 256, scale_change=''),
-                ConvBlock(256, 128, scale_change='up'),
-            ),
-            nn.Sequential(
-                ConvBlock(128, 128, scale_change=''),
-                ConvBlock(128, 64, scale_change='up')),
-            nn.Sequential(
-                ConvBlock(64, 64, scale_change=''),
-                ConvBlock(64, 3, scale_change=''),
-                nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
-            '''
+
         ])
+        '''
+        nn.Sequential(
+            ConvBlock(512, 256, scale_change='up')),
+        nn.Sequential(
+            ConvBlock(256, 256, scale_change=''),
+            ConvBlock(256, 256, scale_change=''),
+            ConvBlock(256, 256, scale_change=''),
+            ConvBlock(256, 128, scale_change='up'),
+        ),
+        nn.Sequential(
+            ConvBlock(128, 128, scale_change=''),
+            ConvBlock(128, 64, scale_change='up')),
+        nn.Sequential(
+            ConvBlock(64, 64, scale_change=''),
+            ConvBlock(64, 3, scale_change=''),
+            nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
+        '''
 
         if contrastive_loss:
             self.proj_style = nn.Sequential(
