@@ -520,6 +520,12 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        self.noise = nn.ModuleList(
+            RiemannNoise(32),
+            nn.Identity(),
+            nn.Identity(),
+            nn.Identity(),
+        )
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -545,8 +551,8 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,7,7)
         else:
             style_enc = self.style_encoding(style_enc).view(b,self.s_d, 7,7)
-        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer,self.noise)):
+            ada_out = ada(style_enc, noise(cF[mixin]), thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
