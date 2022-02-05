@@ -16,10 +16,10 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
-        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2,stride=2,padding=1)
+        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
         self.pointwise_avg_pool = nn.Sequential(
-            nn.AvgPool2d(4))
+            nn.AdaptiveAvgPool2d(1))
         self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, kernel_size=1)
         self.relu=nn.LeakyReLU()
@@ -49,7 +49,7 @@ class AdaConv(nn.Module):
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
-                nn.functional.conv2d(self.pad(predicted),
+                nn.functional.conv2d(predicted,
                                      weight=depthwise,
                                      stride=1,
                                      groups=self.batch_groups
