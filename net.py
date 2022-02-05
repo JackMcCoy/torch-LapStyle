@@ -186,26 +186,26 @@ class ConvMixer(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
-            nn.BatchNorm2d(dim)
+            #nn.BatchNorm2d(dim)
             )
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
                 nn.GELU(),
-                nn.BatchNorm2d(dim)
+                #nn.BatchNorm2d(dim)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
-            nn.BatchNorm2d(dim)
+            #nn.BatchNorm2d(dim)
         )
         self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
-            nn.BatchNorm2d(dim),
+            #nn.BatchNorm2d(dim),
             nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
-            nn.BatchNorm2d(dim),
+            #nn.BatchNorm2d(dim),
             nn.Conv2d(dim, 3, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
             nn.Conv2d(3, 3, kernel_size=3, padding=1, padding_mode='reflect')
@@ -727,11 +727,11 @@ class Discriminator(nn.Module):
                 nn.Conv2d(num_channels, num_channels, kernel_size, groups=num_channels, padding="same",
                           padding_mode='reflect'),
                 nn.LeakyReLU(),
-                nn.BatchNorm2d(num_channels)
+                #nn.BatchNorm2d(num_channels)
             )),
             nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.LeakyReLU(),
-            nn.BatchNorm2d(num_channels)
+            #nn.BatchNorm2d(num_channels)
         )
         self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
         self.tail = nn.Sequential(
