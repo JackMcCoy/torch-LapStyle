@@ -28,6 +28,7 @@ class CalcStyleEmdLoss():
     def __init__(self):
         super(CalcStyleEmdLoss, self).__init__()
 
+    @torch.jit.script
     def __call__(self, X, Y):
         """Forward Function.
 
@@ -83,6 +84,7 @@ class CalcContentReltLoss():
         super(CalcContentReltLoss, self).__init__()
         self.eps = eps
 
+    @torch.jit.script
     def __call__(self, X, Y):
         """Forward Function.
 
