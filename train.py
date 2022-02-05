@@ -779,10 +779,10 @@ def adaconv_thumb_train():
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
     disc2_ = build_disc(disc2_state, args.disc2_depth)
-    dec_optimizer = torch.optim.SGD(dec_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,eps=0.001)
-    rev_optimizer = torch.optim.SGD(rev_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,eps=0.001)
-    opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,eps=0.001)
-    opt_D2 = torch.optim.SGD(disc2_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,eps=0.001)
+    dec_optimizer = torch.optim.RMSprop(dec_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,eps=0.001)
+    rev_optimizer = torch.optim.RMSprop(rev_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,eps=0.001)
+    opt_D = torch.optim.RMSprop(disc_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,eps=0.001)
+    opt_D2 = torch.optim.RMSprop(disc2_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,eps=0.001)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
