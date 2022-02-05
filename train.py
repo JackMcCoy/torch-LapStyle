@@ -779,14 +779,10 @@ def adaconv_thumb_train():
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
     disc2_ = build_disc(disc2_state, args.disc2_depth)
-    dec_optimizer = torch.optim.RMSprop(dec_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,
-                                        eps=0.001)
-    rev_optimizer = torch.optim.RMSprop(rev_.parameters(recurse=True), lr=args.lr, momentum=.9, weight_decay=.9,
-                                        eps=0.001)
-    opt_D = torch.optim.RMSprop(disc_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,
-                                eps=0.001)
-    opt_D2 = torch.optim.RMSprop(disc2_.parameters(recurse=True), lr=args.disc_lr, momentum=.9, weight_decay=.9,
-                                 eps=0.001)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr, weight_decay=.1)
+    rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr, weight_decay=.1)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr, weight_decay=.1)
+    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr, weight_decay=.1)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
@@ -868,8 +864,8 @@ def adaconv_thumb_train():
         loss_D2.backward()
 
         if n>0:
-            #_clip_gradient(disc2_)
-            #_clip_gradient(disc_)
+            _clip_gradient(disc2_)
+            _clip_gradient(disc_)
             opt_D2.step()
             opt_D.step()
 
@@ -913,8 +909,8 @@ def adaconv_thumb_train():
 
         loss.backward()
         if n > 0:
-            #_clip_gradient(rev_)
-            #_clip_gradient(dec_)
+            _clip_gradient(rev_)
+            _clip_gradient(dec_)
             rev_optimizer.step()
             dec_optimizer.step()
         disc2_.train()
