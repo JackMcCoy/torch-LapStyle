@@ -901,7 +901,7 @@ def adaconv_thumb_train():
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * 0.3 + content_contrastive_loss * 0.3
+               style_contrastive_loss * 0.1 + content_contrastive_loss * 0.45
 
         loss.backward()
         if n > 0:
