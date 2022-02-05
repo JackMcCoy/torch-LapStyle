@@ -14,7 +14,7 @@ class AdaConv(nn.Module):
         self.c_out = c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
-        self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
+        self.pad = nn.ReflectionPad2d((2, 2, 2, 2))
         self.norm = norm
         self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
