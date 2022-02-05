@@ -521,10 +521,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.noise = nn.ModuleList(
-            RiemannNoise(32),
+            [RiemannNoise(32),
             nn.Identity(),
             nn.Identity(),
-            nn.Identity(),
+            nn.Identity(),]
         )
 
         self.relu = nn.LeakyReLU()
