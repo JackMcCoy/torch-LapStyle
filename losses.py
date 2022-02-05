@@ -69,6 +69,12 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
+def distmat(x, y, cos_d=True):
+    if cos_d:
+        M = pairwise_distances_cos(x, y)
+    else:
+        M = torch.sqrt(pairwise_distances_sq_l2(x, y))
+    return M
 
 class CalcContentReltLoss():
     """Calc Content Relt Loss.
@@ -92,21 +98,21 @@ class CalcContentReltLoss():
         mu_y = torch.mean(Y, 0, keepdim=True)
         mu_d = torch.abs(mu_x - mu_y).mean()
 
-        if 1 in moments:
-            # print(mu_x.shape)
-            loss = loss + mu_d
+        #if 1 in moments
+        # print(mu_x.shape)
+        loss = loss + mu_d
 
-        if 2 in moments:
-            X_c = X - mu_x
-            Y_c = Y - mu_y
-            X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
-            Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
+        #if 2 in moments
+        X_c = X - mu_x
+        Y_c = Y - mu_y
+        X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
+        Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
 
-            # print(X_cov.shape)
-            # exit(1)
+        # print(X_cov.shape)
+        # exit(1)
 
-            D_cov = torch.abs(X_cov - Y_cov).mean()
-            loss = loss + D_cov
+        D_cov = torch.abs(X_cov - Y_cov).mean()
+        loss = loss + D_cov
         return loss
 
 
