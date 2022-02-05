@@ -532,6 +532,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        self.GELU = nn.GELU()
         self.noise = nn.ModuleList(
             [RiemannNoise(32),
             nn.Identity(),
@@ -568,7 +569,7 @@ class ThumbAdaConv(nn.Module):
             if idx == 0:
                 x = self.relu(ada_out)
             else:
-                x = x + self.relu(ada_out)
+                x = self.GELU(x) + self.relu(ada_out)
             x = learnable(x)
         return x, style_enc
 
