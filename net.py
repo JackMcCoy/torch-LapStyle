@@ -497,8 +497,8 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
-            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=512, out_dim=256, upscale=True, final_bias=False),
-            ConvMixer(256, 8, kernel_size=5, patch_size=4, in_dim=256, out_dim=128, upscale=True, final_bias=False),
+            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(256, 8, kernel_size=5, patch_size=4, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(128, 12, kernel_size=7, patch_size=8, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(128, 12, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
@@ -534,16 +534,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.GELU = nn.GELU()
-        self.bias = nn.ParameterList([
-            nn.Parameter(nn.init.normal_(torch.ones(1, 256, 1, 1))),
-            nn.Parameter(nn.init.normal_(torch.ones(1, 128, 1, 1))),
-            ])
-        self.noise = nn.ModuleList([
-            nn.Identity(),
-            RiemannNoise(64),
-            RiemannNoise(128),
-            nn.Identity()
-            ])
+
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -569,13 +560,11 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,7,7)
         else:
             style_enc = self.style_encoding(style_enc).view(b,self.s_d, 7,7)
-        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
+        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
-                if idx in [1,2]:
-                    x = noise(x) + self.bias[idx-1]
                 x = self.GELU(x) + self.relu(ada_out)
             x = learnable(x)
         return x, style_enc
