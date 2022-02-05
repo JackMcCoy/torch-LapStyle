@@ -22,6 +22,7 @@ from linear_attention_transformer import LinearAttentionTransformer as Transform
 from adaconv import AdaConv
 from vector_quantize_pytorch import VectorQuantize
 from function import positionalencoding2d as pos_enc
+import copy
 
 gaus_1, gaus_2, morph = make_gaussians(torch.device('cuda'))
 
@@ -200,7 +201,7 @@ class ConvMixer(nn.Module):
             nn.GELU(),
             #nn.BatchNorm2d(dim)
         )
-        self.body = momentum_net(*[cell for i in range(depth)],target_device='cuda')
+        self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
@@ -750,7 +751,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(),
             nn.BatchNorm2d(num_channels)
         )
-        self.body = momentum_net(*[cell for i in range(depth - 2)], target_device='cuda')
+        self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth - 2)], target_device='cuda')
         self.tail = nn.Sequential(
             nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.LeakyReLU(),
