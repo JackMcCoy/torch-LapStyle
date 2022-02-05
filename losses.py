@@ -1,24 +1,59 @@
 import torch.nn as nn
 import torch
 device = torch.device('cuda')
+
+def pairwise_distances_cos(x, y):
+    x_norm = torch.sqrt((x**2).sum(1).view(-1, 1))
+    y_t = torch.transpose(y, 0, 1)
+    y_norm = torch.sqrt((y**2).sum(1).view(1, -1))
+    dist = 1.-torch.mm(x, y_t)/x_norm/y_norm
+    return dist
+
+def pairwise_distances_sq_l2(x, y):
+    x_norm = (x**2).sum(1).view(-1, 1)
+    y_t = torch.transpose(y, 0, 1)
+    y_norm = (y**2).sum(1).view(1, -1)
+    dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
+    return torch.clamp(dist, 1e-5, 1e5)/x.size(1)
+
+def rgb_to_yuv(rgb):
+    C = torch.Tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]]).to(rgb.device)
+    yuv = torch.mm(C,rgb)
+    return
+
+
 class CalcStyleEmdLoss():
     """Calc Style Emd Loss.
     """
     def __init__(self):
         super(CalcStyleEmdLoss, self).__init__()
 
-    def __call__(self, pred, target):
+    def __call__(self, X, Y):
         """Forward Function.
 
         Args:
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        CX_M = calc_emd_loss(pred, target)
-        m1, _ = CX_M.min(2)
-        m2, _ = CX_M.min(1)
-        loss_remd = torch.max(torch.mean(m1),torch.mean(m2))
-        return loss_remd
+        d = X.shape[1]
+
+        if d == 3:
+            X = rgb_to_yuv(X.transpose(0, 1).contiguous().view(d, -1)).transpose(0, 1)
+            Y = rgb_to_yuv(Y.transpose(0, 1).contiguous().view(d, -1)).transpose(0, 1)
+        else:
+            X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+            Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+
+        # Relaxed EMD
+        CX_M = distmat(X, Y, cos_d=True)
+
+        if d == 3: CX_M = CX_M + distmat(X, Y, cos_d=False)
+
+        m1, m1_inds = CX_M.min(1)
+        m2, m2_inds = CX_M.min(0)
+
+        remd = torch.max(m1.mean(), m2.mean())
+        return remd
 
 cosinesimilarity = nn.CosineSimilarity()
 
@@ -49,14 +84,30 @@ class CalcContentReltLoss():
             pred (Tensor): of shape (N, C, H, W). Predicted tensor.
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
         """
-        dM = 1.
-        Mx = 1-calc_emd_loss(pred, pred.transpose(3,2))
-        Mx = Mx / (Mx.sum(dim=(1,2), keepdim=True)+self.eps)
-        My = 1-calc_emd_loss(target, target.transpose(3,2))
-        My = My / (My.sum(dim=(1,2), keepdim=True)+self.eps)
-        loss_content = torch.abs(
-            (My.mean(dim=1)-Mx.mean(dim=1))).sum() * 1/(pred.shape[2] * pred.shape[3])**2
-        return loss_content
+        loss = 0.
+        X = X.squeeze().t()
+        Y = Y.squeeze().t()
+
+        mu_x = torch.mean(X, 0, keepdim=True)
+        mu_y = torch.mean(Y, 0, keepdim=True)
+        mu_d = torch.abs(mu_x - mu_y).mean()
+
+        if 1 in moments:
+            # print(mu_x.shape)
+            loss = loss + mu_d
+
+        if 2 in moments:
+            X_c = X - mu_x
+            Y_c = Y - mu_y
+            X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
+            Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
+
+            # print(X_cov.shape)
+            # exit(1)
+
+            D_cov = torch.abs(X_cov - Y_cov).mean()
+            loss = loss + D_cov
+        return loss
 
 
 class CalcContentLoss():
