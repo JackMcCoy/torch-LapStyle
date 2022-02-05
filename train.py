@@ -130,6 +130,7 @@ parser.add_argument('--vgg', type=str, default='models/vgg_normalised.pth')
 parser.add_argument('--load_size', type=int, default=128)
 parser.add_argument('--style_load_size', type=int, default=128)
 parser.add_argument('--crop_size', type=int, default=128)
+parser.add_argument('--log_every_', type=int, default=10)
 
 # training options
 parser.add_argument('--save_dir', default='./experiments',
@@ -817,7 +818,7 @@ def adaconv_thumb_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    wandb.watch((dec_,rev_,disc2_),log='all', log_freq=19)
+    wandb.watch((dec_,rev_,disc2_),log='all', log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
         adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
@@ -915,7 +916,7 @@ def adaconv_thumb_train():
             dec_optimizer.step()
         disc2_.train()
         disc_.train()
-        if (n + 1) % 10 == 0:
+        if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
             for l, s in zip(
