@@ -49,11 +49,11 @@ class AdaConv(nn.Module):
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
-                self.relu(nn.functional.conv2d(self.pad(predicted),
+                nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
                                      groups=self.batch_groups
-                                     )),
+                                     ),
                 stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
