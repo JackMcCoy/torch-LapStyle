@@ -789,6 +789,10 @@ def adaconv_thumb_train():
     if args.load_model == 'none':
         init_weights(dec_)
     else:
+        path = args.load_model.split('/')
+        path_tokens = args.load_model.split('_')
+        new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
+
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
         if args.load_rev==1:
             rev_.load_state_dict(torch.load(new_path_func('revisor_')),strict=False)
