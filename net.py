@@ -188,6 +188,8 @@ class ConvMixer(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
+            nn.Conv2d(dim, dim, kernel_size=1),
+            nn.GELU(),
             #nn.BatchNorm2d(dim)
             )
 
