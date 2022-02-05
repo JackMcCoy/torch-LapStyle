@@ -498,9 +498,9 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable=nn.ModuleList([
             ConvMixer(512, 8, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
-            ConvMixer(256, 8, kernel_size=5, patch_size=1, in_dim=256, out_dim=128, upscale=True),
-            ConvMixer(512, 12, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
-            ConvMixer(512, 12, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
+            ConvMixer(512, 12, kernel_size=5, patch_size=4, in_dim=256, out_dim=128, upscale=True),
+            ConvMixer(512, 8, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
+            ConvMixer(512, 8, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
         ])
 
