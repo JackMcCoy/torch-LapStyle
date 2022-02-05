@@ -182,6 +182,7 @@ class Residual(nn.Module):
 class ConvMixer(nn.Module):
     def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False):
         super(ConvMixer,self).__init__()
+        self.in_eq_out = in_dim==out_dim
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
@@ -220,7 +221,8 @@ class ConvMixer(nn.Module):
         out = self.body(out)
         out = out[:,:C,:,:]
         out = self.tail(out)
-        out = x + out
+        if self.in_eq_out:
+            out = x + out
         return out
 
 class Revisors(nn.Module):
