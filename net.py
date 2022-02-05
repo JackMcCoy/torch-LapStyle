@@ -888,8 +888,8 @@ class ResDiscriminator(nn.Module):
         return pred
 
 mse_loss = GramErrors()
-style_remd_loss = CalcStyleEmdLoss()
-content_emd_loss = CalcContentReltLoss()
+style_remd_loss = CalcStyleEmdLoss
+content_emd_loss = CalcContentReltLoss
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 

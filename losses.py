@@ -30,34 +30,23 @@ def rgb_to_yuv(rgb):
     yuv = torch.mm(C,rgb)
     return yuv
 
-
-class CalcStyleEmdLoss():
+@torch.jit.script
+def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    def __init__(self):
-        super(CalcStyleEmdLoss, self).__init__()
+    d = X.shape[1]
 
-    @torch.jit.script
-    def __call__(self, X, Y):
-        """Forward Function.
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
-        Args:
-            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
-            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
-        """
-        d = X.shape[1]
+    # Relaxed EMD
+    CX_M = cosd_dist(X, Y)
 
-        X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-        Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    m1, m1_inds = CX_M.min(1)
+    m2, m2_inds = CX_M.min(0)
 
-        # Relaxed EMD
-        CX_M = cosd_dist(X, Y)
-
-        m1, m1_inds = CX_M.min(1)
-        m2, m2_inds = CX_M.min(0)
-
-        remd = torch.max(m1.mean(), m2.mean())
-        return remd
+    remd = torch.max(m1.mean(), m2.mean())
+    return remd
 
 cosinesimilarity = nn.CosineSimilarity()
 
@@ -73,48 +62,35 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
-class CalcContentReltLoss():
-    """Calc Content Relt Loss.
-    """
-    def __init__(self, eps=1e-5):
-        super(CalcContentReltLoss, self).__init__()
-        self.eps = eps
+@torch.jit.script
+def CalcContentReltLoss():
+    loss = 0.
+    d = X.shape[1]
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    X = X.squeeze().t()
+    Y = Y.squeeze().t()
 
-    @torch.jit.script
-    def __call__(self, X, Y):
-        """Forward Function.
+    mu_x = torch.mean(X, 0, keepdim=True)
+    mu_y = torch.mean(Y, 0, keepdim=True)
+    mu_d = (torch.abs(mu_x - mu_y)+1e-5).mean()
 
-        Args:
-            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
-            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
-        """
-        loss = 0.
-        d = X.shape[1]
-        X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-        Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-        X = X.squeeze().t()
-        Y = Y.squeeze().t()
+    #if 1 in moments
+    # print(mu_x.shape)
+    loss = loss + mu_d
 
-        mu_x = torch.mean(X, 0, keepdim=True)
-        mu_y = torch.mean(Y, 0, keepdim=True)
-        mu_d = torch.abs(mu_x - mu_y).mean()
+    #if 2 in moments
+    X_c = X - mu_x
+    Y_c = Y - mu_y
+    X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
+    Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
 
-        #if 1 in moments
-        # print(mu_x.shape)
-        loss = loss + mu_d
+    # print(X_cov.shape)
+    # exit(1)
 
-        #if 2 in moments
-        X_c = X - mu_x
-        Y_c = Y - mu_y
-        X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
-        Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
-
-        # print(X_cov.shape)
-        # exit(1)
-
-        D_cov = torch.abs(X_cov - Y_cov).mean()
-        loss = loss + D_cov
-        return loss
+    D_cov = torch.abs(X_cov - Y_cov).mean()
+    loss = loss + D_cov
+    return loss
 
 
 class CalcContentLoss():
