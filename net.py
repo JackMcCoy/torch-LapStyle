@@ -534,11 +534,9 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.GELU = nn.GELU()
-        self.bias = nn.ModuleList([
-            nn.Identity(),
+        self.bias = nn.ParameterList([
             nn.Parameter(nn.init.normal_(torch.ones(1, 256, 1, 1))),
             nn.Parameter(nn.init.normal_(torch.ones(1, 128, 1, 1))),
-            nn.Identity()
             ])
         self.noise = nn.ModuleList([
             nn.Identity(),
@@ -571,13 +569,13 @@ class ThumbAdaConv(nn.Module):
             style_enc = torch.cat([style_enc,style_enc],0).view(b,self.s_d,7,7)
         else:
             style_enc = self.style_encoding(style_enc).view(b,self.s_d, 7,7)
-        for idx, (ada, learnable, mixin, noise, bias) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise, self.bias)):
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
             ada_out = ada(style_enc, cF[mixin], thumb_stats=saved_stats if saved_stats is None else saved_stats[idx])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
                 if idx in [1,2]:
-                    x = noise(x) + bias
+                    x = noise(x) + self.bias[idx-1]
                 x = self.GELU(x) + self.relu(ada_out)
             x = learnable(x)
         return x, style_enc
