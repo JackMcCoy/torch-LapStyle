@@ -83,7 +83,7 @@ class CalcContentReltLoss():
         super(CalcContentReltLoss, self).__init__()
         self.eps = eps
 
-    def __call__(self, pred, target):
+    def __call__(self, X, Y):
         """Forward Function.
 
         Args:
