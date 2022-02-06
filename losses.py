@@ -8,9 +8,9 @@ FastMatSqrt=MPA_Lya.apply
 
 def pairwise_distances_cos(x, y):
     N,C,*_ = x.shape
-    x_norm = FastMatSqrt((x ** 2).sum(1).view(N,C,1))
+    x_norm = FastMatSqrt((x ** 2).sum(1).view(N,C,-1))
     y_t = torch.transpose(y, 0, 1)
-    y_norm = FastMatSqrt((y ** 2).sum(1).view(N,C,1)).transpose(1,2)
+    y_norm = FastMatSqrt((y ** 2).sum(1).view(N,C,-1)).transpose(1,2)
 
     print(x_norm)
     print(y_norm)
