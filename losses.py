@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from fastmatsqrt import MPA_Lya
 device = torch.device('cuda')
 
+FastMatSqrt=MPA_Lya.apply
+
 def pairwise_distances_cos(x, y):
-    x_norm = torch.sqrt((x**2).sum(1).view(-1, 1))
+    x_norm = FastMatSqrt((x**2).sum(1).view(-1, 1))
     y_t = torch.transpose(y, 0, 1)
-    y_norm = torch.sqrt((y**2).sum(1).view(1, -1))
+    y_norm = FastMatSqrt((y**2).sum(1).view(1, -1))
     dist = 1.-torch.mm(x, y_t)/x_norm/y_norm
     return dist
 
