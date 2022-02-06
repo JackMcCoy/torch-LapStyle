@@ -11,10 +11,6 @@ def pairwise_distances_cos(x, y):
     y_t = torch.transpose(y, 0, 1)
     y_norm = torch.sqrt((y ** 2).sum(1).view(1, -1))
 
-    print(x_norm)
-    print(y_norm)
-    print(x_norm.shape)
-    print(y_norm.shape)
     dist = 1. - torch.mm(x, y_t) / x_norm / y_norm
     return dist
 
@@ -77,10 +73,10 @@ def CalcContentReltLoss(X,Y):
     Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
-    Mx = get_DMat(X, X)
+    Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(0, keepdim=True)
 
-    My = get_DMat(Y, Y)
+    My = cosd_dist(Y, Y)
     My = My / My.sum(0, keepdim=True)
 
     d = torch.abs(Mx - My).mean() * X.size(0)
