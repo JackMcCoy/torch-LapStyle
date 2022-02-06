@@ -11,15 +11,15 @@ def pairwise_distances_cos(pred, target, eps = 1e-5):
     """
     b, _, h, w = pred.shape
     pred = pred.reshape([b, -1, w * h])
-    pred_norm = torch.sqrt(torch.clamp((pred**2).sum(1).reshape([b, -1, 1]),min=eps))
+    pred_norm = torch.sqrt((torch.clamp(pred,min=eps)2).sum(1).reshape([b, -1, 1]))
     pred = pred.transpose(1,2)
     target_t = target.reshape([b, -1, w * h])
-    target_norm = torch.sqrt(torch.clamp((target**2).sum(1).reshape([b, 1, -1]),min=eps))
-    similarity = torch.bmm(pred, target_t) / torch.clamp(pred_norm,min=eps) / torch.clamp(target_norm,min=eps)
+    target_norm = torch.sqrt((torch.clamp(target,min=eps)2).sum(1).reshape([b, 1, -1]))
+    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
     dist = 1. - similarity
     return dist
 
-def faster_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
+def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
     a = a.transpose(0, 1).flatten(1).transpose(0, 1)
     b = b.transpose(0, 1).flatten(1).transpose(0, 1)
 
