@@ -10,9 +10,10 @@ def pairwise_distances_cos(pred, target, eps = 1e-5):
     target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
     b, _, h, w = pred.shape
-    pred = pred.reshape([b, -1, w * h])
+    pred = torch.clamp(pred.reshape([b, -1, w * h]),min=eps)
     pred_norm = torch.sqrt((pred ** 2).sum(1).reshape([b, -1, 1]))
     pred = pred.transpose(1,2)
+    target = torch.clamp(target,min=eps)
     target_t = target.reshape([b, -1, w * h])
     target_norm = torch.sqrt((target ** 2).sum(1).reshape([b, 1, -1]))
     similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
