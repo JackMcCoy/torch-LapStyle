@@ -69,10 +69,10 @@ def CalcContentReltLoss(X,Y):
     X = X.transpose(0, 1).view(d, -1).transpose(0, 1)
     Y = Y.transpose(0, 1).view(d, -1).transpose(0, 1)
 
-    Mx = cosd_dist(X, X, 1., cos_d=True, splits=[X.size(1)])
+    Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(0, keepdim=True)
 
-    My = cosd_dist(Y, Y, 1., cos_d=True, splits=[X.size(1)])
+    My = cosd_dist(Y, Y)
     My = My / My.sum(0, keepdim=True)
 
     d = torch.abs(dM * (Mx - My)).mean() * X.size(0)
