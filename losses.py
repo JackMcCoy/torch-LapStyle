@@ -69,14 +69,15 @@ def CalcContentReltLoss(X,Y):
     X = X.transpose(0, 1).view(d, -1).transpose(0, 1)
     Y = Y.transpose(0, 1).view(d, -1).transpose(0, 1)
 
-    Mx = cosd_dist(X, X)
-    Mx = Mx / Mx.sum(0, keepdim=True)
+    # Relaxed EMD
+    CX_M = cosd_dist(X, Y)
 
-    My = cosd_dist(Y, Y)
-    My = My / My.sum(0, keepdim=True)
+    m1, m1_inds = CX_M.min(1)
+    m2, m2_inds = CX_M.min(0)
 
-    d = torch.abs(dM * (Mx - My)).mean() * X.size(0)
-    return d
+    remd = torch.max(m1.mean(), m2.mean())
+
+    return remd
 
 
 class CalcContentLoss():
