@@ -17,7 +17,7 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((2, 2, 2, 2))
         self.norm = norm
-        self.sqrt = MPA_Lya
+        self.sqrt = MPA_Lya.apply
         self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
         self.pointwise_avg_pool = nn.Sequential(
