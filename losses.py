@@ -98,7 +98,8 @@ class CalcContentLoss():
         if (norm == False):
             return self.mse_loss(pred, target)
         else:
-            return torch.linalg.vector_norm(F.normalize(pred)-F.normalize(target))
+            return self.mse_loss(mean_variance_norm(pred),
+                                 mean_variance_norm(target))
 
 
 class CalcStyleLoss():
