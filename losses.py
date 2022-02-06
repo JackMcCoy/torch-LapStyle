@@ -16,6 +16,7 @@ def pairwise_distances_cos(x, y):
     y = y.flatten(1).transpose(0,1)
     dist = torch.matmul(x, y)
     print(dist)
+    print(dist.shape)
     dist = torch.mm(x,y)
     dist = dist/x_norm/y_norm
     dist = 1-dist
