@@ -7,7 +7,7 @@ device = torch.device('cuda')
 FastMatSqrt=MPA_Lya.apply
 
 @torch.jit.script
-def pairwise_distances_cos(a, b, eps:float=1e-5):
+def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor, eps:float=1e-5):
     N,C = a.shape
     a_n, b_n = a.norm(dim=1).view(C,1), b.norm(dim=1).view(C,1)
     a_norm = a / torch.clamp(a_n, min=eps)
