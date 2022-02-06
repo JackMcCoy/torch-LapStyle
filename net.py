@@ -1006,7 +1006,7 @@ def calc_losses(stylized: torch.Tensor,
             style_remd = style_remd + style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
                          style_remd_loss(stylized_feats['r4_1'], s['r4_1'].detach())
     if remd_loss:
-        content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+        content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach()) + content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     else:
         content_relt = 0
         style_remd = 0
@@ -1121,7 +1121,7 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = 0
             patch_feats = encoder(patch_stylized)
             upscaled_patch_feats = encoder(top_level_patch.detach())
-            patch_loss = patch_loss + content_loss(patch_feats['r3_1'], upscaled_patch_feats['r3_1'], norm=False) + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
+            patch_loss = patch_loss + torch.linalg.vector_norm(patch_feats['r3_1']-upscaled_patch_feats['r3_1']) + torch.linalg.vector_norm(patch_feats['r4_1']-upscaled_patch_feats['r4_1'])
     else:
         patch_loss = 0
 
