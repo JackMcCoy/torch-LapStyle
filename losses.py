@@ -1,24 +1,23 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from fastmatsqrt import MPA_Lya
 device = torch.device('cuda')
 
-FastMatSqrt=MPA_Lya.apply
-
-
-
-@torch.jit.script
-def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
-    a = a.transpose(0, 1).flatten(1).transpose(0, 1)
-    b = b.transpose(0, 1).flatten(1).transpose(0, 1)
-
-    N,C = a.shape
-    a_n, b_n = a.norm(dim=1,p=2).view(N,1), b.norm(dim=1,p=2).view(N,1)
-    a_norm = a / torch.clamp(a_n, min=eps)
-    b_norm = b / torch.clamp(b_n, min=eps)
-    sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
-    return sim_mt
+def pairwise_distances_cos(pred, target):
+    """calculate emd loss.
+    Args:
+    pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+    target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+    """
+    b, _, h, w = pred.shape
+    pred = pred.reshape([b, -1, w * h])
+    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))
+    pred = pred.transpose(1,2)
+    target_t = target.reshape([b, -1, w * h])
+    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))
+    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
+    dist = 1. - similarity
+    return dist
 
 def pairwise_distances_sq_l2(x, y):
     N,C,*_ = x.shape
