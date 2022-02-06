@@ -7,14 +7,9 @@ device = torch.device('cuda')
 FastMatSqrt=MPA_Lya.apply
 
 def pairwise_distances_cos(x, y):
-    N,C,*_ = x.shape
-    x = x.flatten(2)
-    y = y.flatten(2)
-    x_norm = (x ** 2).sum(1).view(N,-1,1)
-    x_norm = FastMatSqrt(x_norm)
+    x_norm = torch.sqrt((x ** 2).sum(1).view(-1, 1))
     y_t = torch.transpose(y, 0, 1)
-    y_norm = (y ** 2).sum(1).view(N,-1,1)
-    y_norm = FastMatSqrt(y_norm).transpose(1,2)
+    y_norm = torch.sqrt((y ** 2).sum(1).view(1, -1))
 
     print(x_norm)
     print(y_norm)
@@ -49,8 +44,8 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     d = X.shape[1]
-    #X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    #Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
     CX_M = cosd_dist(X, Y)
@@ -78,18 +73,19 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
-    #X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    #Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
-    CX_M = cosd_dist(X, Y)
+    Mx = get_DMat(X, X)
+    Mx = Mx / Mx.sum(0, keepdim=True)
 
-    m1, m1_inds = CX_M.min(1)
-    m2, m2_inds = CX_M.min(0)
+    My = get_DMat(Y, Y)
+    My = My / My.sum(0, keepdim=True)
 
-    remd = torch.max(m1.mean(), m2.mean())
+    d = torch.abs(Mx - My).mean() * X.size(0)
 
-    return remd
+    return d
 
 
 class CalcContentLoss():
