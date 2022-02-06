@@ -897,6 +897,7 @@ style_layers = ['r1_1','r2_1','r3_1','r4_1','r5_1']
 style_weights = [1e3/n**2 for n in [64,128,256,512,512]]
 gan_first=True
 
+@torch.jit.script
 def calc_GAN_loss_from_pred(prediction: torch.Tensor,
               target_is_real: bool):
     batch_size = prediction.shape[0]
