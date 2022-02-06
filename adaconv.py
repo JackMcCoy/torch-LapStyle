@@ -3,6 +3,7 @@ from torch import nn
 import typing
 import torch.nn.functional as F
 from losses import calc_mean_std
+from fastmatsqrt import MPA_Lya
 
 
 class AdaConv(nn.Module):
@@ -16,6 +17,7 @@ class AdaConv(nn.Module):
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((2, 2, 2, 2))
         self.norm = norm
+        self.sqrt = MPA_Lya
         self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
         self.pointwise_avg_pool = nn.Sequential(
@@ -44,7 +46,7 @@ class AdaConv(nn.Module):
         if self.norm:
             mean = predicted.mean(dim=(2, 3), keepdim=True)
             predicted = predicted - mean
-            std_div = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
+            std_div = 1/MPA_Lya(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
             predicted = predicted * std_div
 
         predicted = predicted.view(1,a*b,c,d)
