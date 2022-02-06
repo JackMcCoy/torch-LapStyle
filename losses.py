@@ -44,6 +44,8 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     d = X.shape[1]
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
     CX_M = cosd_dist(X, Y)
@@ -71,6 +73,8 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
     CX_M = cosd_dist(X, Y)
