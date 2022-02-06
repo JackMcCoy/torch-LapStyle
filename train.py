@@ -780,10 +780,10 @@ def adaconv_thumb_train():
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
     disc2_ = build_disc(disc2_state, args.disc2_depth)
-    dec_optimizer = torch.optim.SGD(dec_.parameters(recurse=True), lr=args.lr, momentum=.98)
-    rev_optimizer = torch.optim.SGD(rev_.parameters(recurse=True), lr=args.lr, momentum=.98)
-    opt_D = torch.optim.SGD(disc_.parameters(recurse=True), lr=args.disc_lr, momentum=.98)
-    opt_D2 = torch.optim.SGD(disc2_.parameters(recurse=True), lr=args.disc_lr, momentum=.98)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     # #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
