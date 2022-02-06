@@ -8,7 +8,8 @@ FastMatSqrt=MPA_Lya.apply
 
 @torch.jit.script
 def pairwise_distances_cos(a, b, eps:float=1e-5):
-    a_n, b_n = a.norm(dim=1)[:, None], b.norm(dim=1)[:, None]
+    N,C = a.shape
+    a_n, b_n = a.norm(dim=1).view(C,1), b.norm(dim=1).view(C,1)
     a_norm = a / torch.clamp(a_n, min=eps)
     b_norm = b / torch.clamp(b_n, min=eps)
     sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
