@@ -19,7 +19,7 @@ def pairwise_distances_cos(pred, target, eps = 1e-5):
     dist = 1. - similarity
     return dist
 
-def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
+def fast_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
     a = a.transpose(0, 1).flatten(1).transpose(0, 1)
     b = b.transpose(0, 1).flatten(1).transpose(0, 1)
 
