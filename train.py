@@ -31,11 +31,11 @@ from function import CartesianGrid as Grid
 from randaugment import RandAugment
 
 setup_torch(0)
-warnings.simplefilter("ignore")
+#warnings.simplefilter("ignore")
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-torchvision.set_image_backend('accimage')
+#torchvision.set_image_backend('accimage')
 ac_enabled = False
 
 
@@ -58,8 +58,7 @@ def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
-        transforms.Lambda(lambda x: x.repeat(3,1,1) if x.size()[0]==1 else x),
-        transforms.Lambda(lambda x: x.float().div(255)),
+        transforms.ToTensor()
     ]
     return transforms.Compose(transform_list)
 
@@ -86,7 +85,7 @@ class FlatFolderDataset(data.Dataset):
 
     def __getitem__(self, index):
         path = self.paths[index]
-        img = read_image(str(path))
+        img = Image.open(str(path)).convert('RGB')
         img = self.transform(img)
         return img
 
