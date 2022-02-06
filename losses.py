@@ -31,7 +31,6 @@ def rgb_to_yuv(rgb):
     yuv = torch.mm(C,rgb)
     return yuv
 
-@torch.jit.script
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
@@ -63,7 +62,6 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
-@torch.jit.script
 def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
