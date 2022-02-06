@@ -1,5 +1,6 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 device = torch.device('cuda')
 
 def pairwise_distances_cos(x, y):
