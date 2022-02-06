@@ -15,7 +15,7 @@ def pairwise_distances_cos(pred, target, eps = 1e-5):
     pred = pred.transpose(1,2)
     target_t = target.reshape([b, -1, w * h])
     target_norm = torch.sqrt(torch.clamp((target**2).sum(1).reshape([b, 1, -1]),min=eps))
-    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
+    similarity = torch.bmm(pred, target_t) / torch.clamp(pred_norm,min=eps) / torch.clamp(target_norm,min=eps)
     dist = 1. - similarity
     return dist
 
