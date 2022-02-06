@@ -47,7 +47,8 @@ class AdaConv(nn.Module):
             mean = predicted.mean(dim=(2, 3), keepdim=True)
             predicted = predicted - mean
             denom = predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5
-            std_div = 1/self.sqrt(denom)
+            std_div = self.sqrt(denom)
+            std_div = 1/std_div
             predicted = predicted * std_div
 
         predicted = predicted.view(1,a*b,c,d)
