@@ -11,7 +11,7 @@ def pairwise_distances_cos(x, y):
     x = x.flatten(2)
     y = y.flatten(2)
     x_norm = FastMatSqrt((x**2).sum(1).view(N, -1, 1))
-    y_norm = FastMatSqrt((y**2).sum(1).view(N, -1, 1)).view(N,1,-1)
+    y_norm = FastMatSqrt((y**2).sum(1).view(N, 1, -1))
     x = x.flatten(1)
     y = y.flatten(1).transpose(0,1)
     dist = torch.matmul(x, y)
