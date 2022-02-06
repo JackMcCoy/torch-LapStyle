@@ -36,8 +36,8 @@ def CalcStyleEmdLoss(X, Y):
     """
     d = X.shape[1]
 
-    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    X = X.transpose(0, 1).view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).view(d, -1).transpose(0, 1)
 
     # Relaxed EMD
     CX_M = cosd_dist(X, Y)
@@ -66,31 +66,17 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
-    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    X = X.squeeze().t()
-    Y = Y.squeeze().t()
+    X = X.transpose(0, 1).view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).view(d, -1).transpose(0, 1)
 
-    mu_x = torch.mean(X, 0, keepdim=True)
-    mu_y = torch.mean(Y, 0, keepdim=True)
-    mu_d = (torch.abs(mu_x - mu_y)+1e-5).mean()
+    Mx = cosd_dist(X, X, 1., cos_d=True, splits=[X.size(1)])
+    Mx = Mx / Mx.sum(0, keepdim=True)
 
-    #if 1 in moments
-    # print(mu_x.shape)
-    loss = loss + mu_d
+    My = cosd_dist(Y, Y, 1., cos_d=True, splits=[X.size(1)])
+    My = My / My.sum(0, keepdim=True)
 
-    #if 2 in moments
-    X_c = X - mu_x
-    Y_c = Y - mu_y
-    X_cov = torch.mm(X_c.t(), X_c) / (X.shape[0] - 1)
-    Y_cov = torch.mm(Y_c.t(), Y_c) / (Y.shape[0] - 1)
-
-    # print(X_cov.shape)
-    # exit(1)
-
-    D_cov = torch.abs(X_cov - Y_cov).mean()
-    loss = loss + D_cov
-    return loss
+    d = torch.abs(dM * (Mx - My)).mean() * X.size(0)
+    return d
 
 
 class CalcContentLoss():
