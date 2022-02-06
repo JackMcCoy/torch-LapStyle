@@ -10,8 +10,8 @@ def pairwise_distances_cos(x, y):
     N, C, *_ = x.shape
     x = x.flatten(2)
     y = y.flatten(2)
-    x_norm = FastMatSqrt((x**2).sum(1).view(N,C, 1))
-    y_norm = FastMatSqrt((y**2).sum(1).view(N,C, 1).transpose(1,2))
+    x_norm = FastMatSqrt((x**2).sum(1).view(N,1, -1))
+    y_norm = FastMatSqrt((y**2).sum(1).view(N,1, -1).transpose(1,2))
     dist = 1.-torch.mm(x, y)/x_norm/y_norm
     return dist
 
