@@ -90,9 +90,10 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     return d
 
 def pixel_loss(pred, target):
-    with torch.no_grad():
-        pred = rgb_to_yuv(pred.flatten(2)).transpose(1,2)[:,:,:-2]
-        target = rgb_to_yuv(target.flatten(2)).transpose(1,2)[:,:,:-2]
+    pred = F.interpolate(pred,size=32)
+    target = F.interpolate(target, size=32)
+    pred = rgb_to_yuv(pred.flatten(2)).transpose(1,2)
+    target = rgb_to_yuv(target.flatten(2)).transpose(1,2)
     remd = remd_loss(pred,target)
     return remd
 
