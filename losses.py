@@ -51,8 +51,10 @@ def CalcStyleEmdLoss(X, Y):
 
     m1, m1_inds = CX_M.min(2)
     m2, m2_inds = CX_M.min(1)
-
+    print(m1.shape)
+    print(m2.shape)
     remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
+    print(remd)
     remd = remd.mean()
     return remd
 
