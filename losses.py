@@ -18,6 +18,7 @@ def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
     a_norm = a / torch.clamp(a_n, min=eps)
     b_norm = b / torch.clamp(b_n, min=eps)
     sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
+    sim_mt = 1-sim_mt
     return sim_mt
 
 def pairwise_distances_sq_l2(x, y):
