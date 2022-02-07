@@ -186,6 +186,8 @@ class ConvMixer(nn.Module):
         self.in_eq_out = in_dim==out_dim
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
+            nn.Conv2d(in_dim, in_dim, kernel_size=1, stride=1),
+            nn.LeakyReLU(),
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.LeakyReLU(),
             #nn.BatchNorm2d(dim)
@@ -498,7 +500,7 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable=nn.ModuleList([
             ConvMixer(512, 8, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
-            ConvMixer(512, 12, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
+            ConvMixer(512, 12, kernel_size=3, patch_size=2, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(512, 8, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(512, 8, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
