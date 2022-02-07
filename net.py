@@ -996,11 +996,11 @@ def calc_losses(stylized: torch.Tensor,
         sF = [sF]
     for idx, s in enumerate(sF):
         if idx == 0:
-            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach()) * style_weights[0]
+            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         else:
             loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         for hdx, key in enumerate(style_layers[1:]):
-            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach()) * style_weights[hdx]
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
         if remd_loss:
             if idx == 0:
                 style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
