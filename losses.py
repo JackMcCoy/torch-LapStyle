@@ -40,6 +40,7 @@ def rgb_to_yuv(rgb):
     return yuv
 
 def remd_loss(X,Y):
+    b = X.shape[0]
     CX_M = cosd_dist(X, Y)
 
     m1, m1_inds = CX_M.min(2)
