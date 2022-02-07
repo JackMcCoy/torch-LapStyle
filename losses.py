@@ -76,8 +76,8 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y, eps=1e-5):
     loss = 0.
     d = X.shape[1]
-    X = X.flatten(2).transpose(1, 2)
-    Y = Y.flatten(2).transpose(1, 2)
+    X = X.flatten(2)
+    Y = Y.flatten(2)
     # Relaxed EMD
     Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(1, keepdim=True)
