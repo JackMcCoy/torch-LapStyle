@@ -53,8 +53,8 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     b,d = X.shape[:2]
-    X = X.flatten(2).transpose(1, 2)
-    Y = Y.flatten(2).transpose(1, 2)
+    X = X.flatten(2)
+    Y = Y.flatten(2)
 
     remd = remd_loss(X,Y)
     return remd
