@@ -10,15 +10,11 @@ FastMatSqrt=MPA_Lya.apply
 
 @torch.jit.script
 def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
-    a = a.transpose(0, 1).flatten(1).transpose(0, 1)
-    b = b.transpose(0, 1).flatten(1).transpose(0, 1)
-
-    N,C = a.shape
-    a_n, b_n = a.norm(dim=1,p=2).view(N,1), b.norm(dim=1,p=2).view(N,1)
-    a_norm = a / torch.clamp(a_n, min=eps)
-    b_norm = b / torch.clamp(b_n, min=eps)
-    sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
-    sim_mt = 1-sim_mt
+    a_n, b_n = a.norm(dim=2)[:, :, None], b.norm(dim=2)[:, :, None]
+    a_norm = a / torch.max(a_n, eps * torch.ones_like(a_n))
+    b_norm = b / torch.max(b_n, eps * torch.ones_like(b_n))
+    sim_mt = torch.bmm(a_norm, b_norm.transpose(1, 2))
+    sim_mt = 1 - sim_mt
     return sim_mt
 
 def pairwise_distances_sq_l2(x, y):
@@ -47,13 +43,14 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     d = X.shape[1]
-
+    X = X.flatten(2).transpose(1, 2)
+    Y = Y.flatten(2).transpose(1, 2)
 
     # Relaxed EMD
     CX_M = cosd_dist(X, Y)
 
-    m1, m1_inds = CX_M.min(1)
-    m2, m2_inds = CX_M.min(0)
+    m1, m1_inds = CX_M.min(2)
+    m2, m2_inds = CX_M.min(1)
 
     remd = torch.max(m1.mean(), m2.mean())
     return remd
@@ -75,7 +72,8 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y):
     loss = 0.
     d = X.shape[1]
-
+    X = X.flatten(2).transpose(1, 2)
+    Y = Y.flatten(2).transpose(1, 2)
     # Relaxed EMD
     Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(0, keepdim=True)
