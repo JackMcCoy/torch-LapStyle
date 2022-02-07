@@ -52,7 +52,6 @@ def CalcStyleEmdLoss(X, Y):
     m1, m1_inds = CX_M.min(2)
     m2, m2_inds = CX_M.min(1)
     remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
-    print(f'style remd: {remd}')
     remd = remd.mean()
     return remd
 
@@ -84,7 +83,6 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
 
     d = torch.abs(Mx - My).mean(1) * X.size(1)
     d = d.mean()
-    print(f'content relt: {d}')
     return d
 
 
