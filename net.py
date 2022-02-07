@@ -186,21 +186,19 @@ class ConvMixer(nn.Module):
         self.in_eq_out = in_dim==out_dim
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
-            nn.Conv2d(in_dim, in_dim, kernel_size=1, stride=1),
-            nn.LeakyReLU(),
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
-            nn.LeakyReLU(),
-            #nn.BatchNorm2d(dim)
+            nn.GELU(),
+            nn.BatchNorm2d(dim)
             )
 
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 #nn.BatchNorm2d(dim)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.GELU(),
             #nn.BatchNorm2d(dim)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
