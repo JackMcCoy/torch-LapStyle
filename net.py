@@ -224,30 +224,30 @@ class ConvMixer(nn.Module):
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
-            nn.GELU(),
-            nn.InstanceNorm2d(dim, affine=True)
+            nn.LeakyReLU(),
+            #nn.InstanceNorm2d(dim, affine=True)
             )
 
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
-                nn.GELU(),
-                nn.InstanceNorm2d(dim, affine=True)
+                nn.LeakyReLU(),
+                #nn.InstanceNorm2d(dim, affine=True)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
-            nn.GELU(),
-            nn.InstanceNorm2d(dim, affine=True)
+            nn.LeakyReLU(),
+            #nn.InstanceNorm2d(dim, affine=True)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
 
         self.tail = nn.Sequential(
             nn.ConvTranspose2d(dim*2, out_dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
-            nn.GELU(),
-            nn.InstanceNorm2d(out_dim, affine=True),
+            nn.LeakyReLU(),
+            #nn.InstanceNorm2d(out_dim, affine=True),
             nn.Conv2d(out_dim, out_dim, kernel_size=1),
-            nn.GELU(),
-            nn.InstanceNorm2d(out_dim, affine=True),
+            nn.LeakyReLU(),
+            #nn.InstanceNorm2d(out_dim, affine=True),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
