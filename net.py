@@ -479,7 +479,7 @@ class DecoderAdaConv(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, contrastive_loss=False,batch_size=8, s_d = 64):
+    def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
@@ -524,12 +524,13 @@ class ThumbAdaConv(nn.Module):
             nn.Conv2d(3, 3, kernel_size=3, padding=1,padding_mode='reflect'))
         '''
 
-        if contrastive_loss:
+        if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
                 nn.ReLU(),
                 nn.Linear(in_features=128, out_features=128)
             )
+        if content_contrastive_loss:
             self.proj_content = nn.Sequential(
                 nn.Linear(in_features=512, out_features=256),
                 nn.ReLU(),
@@ -963,7 +964,8 @@ def calc_losses(stylized: torch.Tensor,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
                 split_style: bool=False,
-                contrastive_loss = False,
+                style_contrastive_loss = False,
+                content_contrastive_loss = False,
                 patch_stylized = None,
                 rev_depth:int = None,
                 style_embedding = None):
@@ -1033,14 +1035,13 @@ def calc_losses(stylized: torch.Tensor,
     else:
         loss_Gp_GAN = 0
 
-    if contrastive_loss:
+    style_contrastive_loss = 0
+    content_contrastive_loss = 0
+    if style_contrastive_loss:
         half = stylized_feats['r4_1'].shape[0]//2
         style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
         style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
-        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
-        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
 
-        style_contrastive_loss = 0
         for i in range(half):
             reference_style = style_up[i:i + 1]
 
@@ -1072,8 +1073,9 @@ def calc_losses(stylized: torch.Tensor,
 
             style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
 
-        content_contrastive_loss = 0
-
+    if content_contrastive_loss:
+        content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half], decoder)
+        content_down = content_feature_contrastive(stylized_feats['r4_1'][half:], decoder)
         for i in range(half):
             reference_content = content_up[i:i + 1]
 
@@ -1109,10 +1111,6 @@ def calc_losses(stylized: torch.Tensor,
                      content_down[i + 1:]], 0)
 
             content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
-
-    else:
-        content_contrastive_loss=0
-        style_contrastive_loss=0
 
     if patch_loss:
         if patch_stylized is None:

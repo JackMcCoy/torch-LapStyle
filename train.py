@@ -172,7 +172,8 @@ parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--gan_loss2', type=float, default=2.5)
 parser.add_argument('--momentumnet_beta', type=float, default=.9)
 parser.add_argument('--fp16', type=int, default=0)
-parser.add_argument('--contrastive_loss', type=int, default=0)
+parser.add_argument('--style_contrastive_loss', type=int, default=0)
+parser.add_argument('--content_contrastive_loss', type=int, default=0)
 parser.add_argument('--s_d', type=int, default=512)
 parser.add_argument('--draft_disc', type=int, default=0)
 parser.add_argument('--content_all_layers', type=int, default=0)
@@ -213,7 +214,7 @@ with autocast(enabled=ac_enabled):
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
-batch = args.batch_size if args.contrastive_loss==0 else args.batch_size//2
+batch = args.batch_size if args.style_contrastive_loss==0 else args.batch_size//2
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=batch,
     sampler=InfiniteSamplerWrapper(content_dataset),
@@ -751,7 +752,7 @@ def revlap_train():
 
 def adaconv_thumb_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    dec_ = net.ThumbAdaConv(contrastive_loss=args.contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
     '''
     dec_ = torch.jit.trace(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device),
                            ({k: v for k, v in zip(['r1_1', 'r2_1', 'r3_1', 'r4_1','r5_1'],
@@ -828,7 +829,7 @@ def adaconv_thumb_train():
         ci = content_normalize(next(content_iter))
         si = style_normalize(next(style_iter))
 
-        if args.contrastive_loss == 1:
+        if args.style_contrastive_loss == 1:
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
             ci = torch.cat([ci, ci_], 0)
@@ -844,7 +845,7 @@ def adaconv_thumb_train():
         sF = enc_(si[0])
         dec_.eval()
         rev_.eval()
-        stylized, style_embedding = dec_(cF, sF['r4_1'],repeat_style=args.contrastive_loss==1)
+        stylized, style_embedding = dec_(cF, sF['r4_1'],repeat_style=args.style_contrastive_loss==1)
         res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_stylized = rev_(res_in)
 
@@ -882,7 +883,7 @@ def adaconv_thumb_train():
         for param in rev_.parameters():
             param.grad = None
 
-        stylized, style_embedding = dec_(cF,sF['r4_1'],repeat_style=args.contrastive_loss==1)
+        stylized, style_embedding = dec_(cF,sF['r4_1'],repeat_style=args.style_contrastive_loss==1)
 
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
@@ -892,7 +893,8 @@ def adaconv_thumb_train():
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                             remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                             remd_loss=remd_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
+                             content_contrastive_loss=args.content_contrastive_loss == 1,
                              patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
                              sF=sF, split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
@@ -1109,7 +1111,7 @@ def adaconv_urst():
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                             remd_loss=remd_loss, contrastive_loss=args.contrastive_loss == 1,
+                             remd_loss=remd_loss, contrastive_loss=args.style_contrastive_loss == 1,
                              patch_loss=True, sF=sF, patch_stylized=patches, top_level_patch=original,
                              split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
