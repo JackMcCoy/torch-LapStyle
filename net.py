@@ -242,10 +242,10 @@ class ConvMixer(nn.Module):
         trans_kernel_size=patch_size if not upscale else patch_size*2
 
         self.tail = nn.Sequential(
-            nn.Conv2d(dim, dim, kernel_size=1),
+            nn.ConvTranspose2d(dim*2, out_dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.GELU(),
-            nn.InstanceNorm2d(dim, affine=True),
-            nn.ConvTranspose2d(dim, out_dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
+            nn.InstanceNorm2d(out_dim, affine=True),
+            nn.Conv2d(out_dim, out_dim, kernel_size=1),
             nn.GELU(),
             nn.InstanceNorm2d(out_dim, affine=True),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
@@ -256,7 +256,6 @@ class ConvMixer(nn.Module):
         N, C, *_ = out.shape
         out = out.repeat(1,2,1,1)
         out = self.body(out)
-        out = out[:,:C,:,:]
         out = self.tail(out)
         if self.in_eq_out:
             out = x + out
