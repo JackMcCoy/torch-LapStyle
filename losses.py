@@ -42,7 +42,7 @@ def rgb_to_yuv(rgb):
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    d = X.shape[1]
+    b,d = X.shape[:2]
     X = X.flatten(2).transpose(1, 2)
     Y = Y.flatten(2).transpose(1, 2)
 
@@ -51,9 +51,9 @@ def CalcStyleEmdLoss(X, Y):
 
     m1, m1_inds = CX_M.min(2)
     m2, m2_inds = CX_M.min(1)
-    print(m1)
-    print(m1.shape)
-    remd = torch.max(m1.mean(), m2.mean())
+
+    remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
+    remd = remd.mean()
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
