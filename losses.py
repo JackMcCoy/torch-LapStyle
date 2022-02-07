@@ -51,10 +51,8 @@ def CalcStyleEmdLoss(X, Y):
 
     m1, m1_inds = CX_M.min(2)
     m2, m2_inds = CX_M.min(1)
-    print(m1.shape)
-    print(m2.shape)
     remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
-    print(remd)
+    print(f'style remd: {remd}')
     remd = remd.mean()
     return remd
 
@@ -72,20 +70,21 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
-def CalcContentReltLoss(X,Y):
+def CalcContentReltLoss(X,Y, eps=1e-5):
     loss = 0.
     d = X.shape[1]
     X = X.flatten(2).transpose(1, 2)
     Y = Y.flatten(2).transpose(1, 2)
     # Relaxed EMD
     Mx = cosd_dist(X, X)
-    Mx = Mx / Mx.sum(0, keepdim=True)
+    Mx = Mx / Mx.sum(1, keepdim=True)
 
     My = cosd_dist(Y, Y)
-    My = My / My.sum(0, keepdim=True)
+    My = My / My.sum(1, keepdim=True)
 
-    d = torch.abs(Mx - My).mean() * X.size(0)
-
+    d = torch.abs(Mx - My).mean(1) * X.size(1)
+    d = d.mean()
+    print(f'content relt: {d}')
     return d
 
 
