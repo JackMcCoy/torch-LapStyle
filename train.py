@@ -898,7 +898,7 @@ def adaconv_thumb_train():
                              patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
                              sF=sF, split_style=False,style_embedding=style_embedding)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss = losses
+        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         disc2_.eval()
         fake_loss = disc2_(patch_stylized)
         loss_patch_disc = disc2_.ganloss(fake_loss, True)
@@ -907,7 +907,7 @@ def adaconv_thumb_train():
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6
+               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss
 
         loss.backward()
         if n > 0:
@@ -923,12 +923,12 @@ def adaconv_thumb_train():
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2,loss_patch_disc],
+                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2,loss_patch_disc,pixel_loss],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
                      "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Discriminator Loss (detail','Revision Disc. Loss']):
+                     'Discriminator Loss (detail','Revision Disc. Loss','Pixel Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:

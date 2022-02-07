@@ -35,9 +35,18 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    C = torch.tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]]).to(rgb.device)
-    yuv = torch.mm(C,rgb)
+    C = torch.tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]],device='cuda').view(1,3,3).expand(rgb.shape[0],3,3)
+    yuv = torch.bmm(C,rgb)
     return yuv
+
+def remd_loss(X,Y):
+    CX_M = cosd_dist(X, Y)
+
+    m1, m1_inds = CX_M.min(2)
+    m2, m2_inds = CX_M.min(1)
+    remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
+    remd = remd.mean()
+    return remd
 
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
@@ -46,13 +55,7 @@ def CalcStyleEmdLoss(X, Y):
     X = X.flatten(2).transpose(1, 2)
     Y = Y.flatten(2).transpose(1, 2)
 
-    # Relaxed EMD
-    CX_M = cosd_dist(X, Y)
-
-    m1, m1_inds = CX_M.min(2)
-    m2, m2_inds = CX_M.min(1)
-    remd, remd_ins = torch.cat([m1.mean(1).view(1,b),m2.mean(1).view(1,b)],dim=0).max(1)
-    remd = remd.mean()
+    remd = remd_loss(X,Y)
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
@@ -85,6 +88,11 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     d = d.mean()
     return d
 
+def pixel_loss(pred, target):
+    pred = rgb_to_yuv(pred.flatten(2)).transpose(1,2)
+    target = rgb_to_yuv(target.flatten(2)).transpose(1,2)
+    remd = remd_loss(pred,target)
+    return remd
 
 class CalcContentLoss():
     """Calc Content Loss.
