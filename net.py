@@ -1035,8 +1035,8 @@ def calc_losses(stylized: torch.Tensor,
     else:
         loss_Gp_GAN = 0
 
-    style_contrastive_loss = 0
-    content_contrastive_loss = 0
+    s_contrastive_loss = 0
+    c_contrastive_loss = 0
     if style_contrastive_loss:
         half = stylized_feats['r4_1'].shape[0]//2
         style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
@@ -1054,7 +1054,7 @@ def calc_losses(stylized: torch.Tensor,
             else:
                 style_comparisons = torch.cat([style_down[i:], style_down[0:i - 1], style_up[0:i], style_up[i + 1:]], 0)
 
-            style_contrastive_loss = style_contrastive_loss + compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+            s_contrastive_loss = s_contrastive_loss + compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
 
         for i in range(half):
             reference_style = style_down[i:i + 1]
@@ -1071,7 +1071,7 @@ def calc_losses(stylized: torch.Tensor,
                 style_comparisons = torch.cat(
                     [style_up[i:i + 1], style_up[0:i], style_up[i + 2:], style_down[0:i], style_down[i + 1:]], 0)
 
-            style_contrastive_loss = style_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
+            s_contrastive_loss = s_contrastive_loss+compute_contrastive_loss(reference_style, style_comparisons, 0.2, 0)
 
     if content_contrastive_loss:
         content_up = content_feature_contrastive(stylized_feats['r4_1'][0:half], decoder)
@@ -1092,7 +1092,7 @@ def calc_losses(stylized: torch.Tensor,
                     [content_down[i - 1:i], content_down[0:i - 1], content_down[i + 1:], content_up[0:i],
                      content_up[i + 1:]], 0)
 
-            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+            c_contrastive_loss = c_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
 
         for i in range(half):
             reference_content = content_down[i:i + 1]
@@ -1110,7 +1110,7 @@ def calc_losses(stylized: torch.Tensor,
                     [content_up[i + 1:i + 2], content_up[0:i], content_up[i + 2:], content_down[0:i],
                      content_down[i + 1:]], 0)
 
-            content_contrastive_loss = content_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
+            c_contrastive_loss = c_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
 
     if patch_loss:
         if patch_stylized is None:
@@ -1125,5 +1125,5 @@ def calc_losses(stylized: torch.Tensor,
     else:
         patch_loss = 0
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, s_contrastive_loss, c_contrastive_loss
 
