@@ -203,14 +203,12 @@ class ConvMixer(nn.Module):
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
+
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
             nn.InstanceNorm2d(dim),
-            nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
-            nn.GELU(),
-            nn.InstanceNorm2d(dim),
-            nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
+            nn.ConvTranspose2d(dim, out_dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.GELU(),
             nn.InstanceNorm2d(out_dim),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
@@ -498,10 +496,10 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
-            ConvMixer(512, 8, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
-            ConvMixer(512, 12, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
+            ConvMixer(512, 4, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(512, 8, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
-            ConvMixer(512, 8, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
+            ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
         ])
 
