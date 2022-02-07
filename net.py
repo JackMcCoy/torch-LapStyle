@@ -205,13 +205,13 @@ class ConvMixer(nn.Module):
         trans_kernel_size=patch_size if not upscale else patch_size*2
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.GELU(),
             nn.InstanceNorm2d(dim),
             nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
-            nn.LeakyReLU(),
+            nn.GELU(),
             nn.InstanceNorm2d(dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
-            nn.LeakyReLU(),
+            nn.GELU(),
             nn.InstanceNorm2d(out_dim),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
