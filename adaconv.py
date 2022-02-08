@@ -19,7 +19,8 @@ class AdaConv(nn.Module):
         self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
         self.pointwise_avg_pool = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1))
+            nn.MaxPool2d(2,stride=2),
+            nn.AvgPool2d(2,stride=2))
         self.pw_cn_kn = nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(s_d, self.c_out, kernel_size=1)
         self.relu=nn.LeakyReLU()
@@ -42,10 +43,7 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            mean = predicted.mean(dim=(2, 3), keepdim=True)
-            predicted = predicted - mean
-            std_div = torch.rsqrt(predicted.square().mean(dim=(2, 3), keepdim=True) + 1e-5)
-            predicted = predicted * std_div
+            predicted = F.normalize(predicted, p=2)
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(

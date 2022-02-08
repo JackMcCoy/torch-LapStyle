@@ -14,7 +14,7 @@ from torchvision.models.feature_extraction import create_feature_extractor
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import PositionalEncoding2D, get_embeddings
-from modules import BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
+from modules import ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -52,6 +52,7 @@ def max_singular_value(W, u=None, Ip=1):
         _u = _l2normalize(torch.matmul(_v, W), eps=1e-12)
     sigma = torch.sum(nn.functional.linear(_u, W.transpose(1, 0)) * _v)
     return sigma, _u
+
 
 class Encoder(nn.Module):
     def __init__(self, vggs):
@@ -234,6 +235,7 @@ class ConvMixer(nn.Module):
                 nn.LeakyReLU(),
                 #nn.InstanceNorm2d(dim, affine=True)
             )),
+            ScaleNorm(dim**.5),
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.LeakyReLU(),
             #nn.InstanceNorm2d(dim, affine=True)
@@ -570,7 +572,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.GELU = nn.GELU()
-
+        self.scalenorm = nn.ModuleList([
+            ScaleNorm(256**.5),
+            ScaleNorm(128**.5)
+        ])
 
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -601,7 +606,8 @@ class ThumbAdaConv(nn.Module):
             if idx == 0:
                 x = self.relu(ada_out)
             else:
-                x = self.GELU(x) + self.relu(ada_out)
+                x = self.relu(x) + self.relu(ada_out)
+                x = self.scalenorm[idx-1](x)
             x = learnable(x)
         return x, style_enc
 

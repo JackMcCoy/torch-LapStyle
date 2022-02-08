@@ -821,10 +821,13 @@ def adaconv_thumb_train():
     wandb.watch((dec_,rev_,disc2_),log='all', log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
-        adjust_learning_rate(dec_optimizer, n // args.accumulation_steps, args)
-        adjust_learning_rate(rev_optimizer, n // args.accumulation_steps, args)
-        adjust_learning_rate(opt_D, n // args.accumulation_steps, args, disc=True)
-        adjust_learning_rate(opt_D2, n // args.accumulation_steps, args, disc=True)
+        warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
+        warmup_lr_adjust(rev_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                         decay=args.lr_decay)
+        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                         decay=args.disc_lr)
+        warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
+                         decay=args.disc_lr)
 
         ci = content_normalize(next(content_iter))
         si = style_normalize(next(style_iter))
