@@ -603,7 +603,7 @@ class ThumbAdaConv(nn.Module):
                 x = self.relu(x) + self.relu(ada_out)
                 x = self.scalenorm[idx-1](x)
             x = learnable(x)
-        return x, style_enc
+        return x
 
 
 class DecoderVQGAN(nn.Module):
@@ -1000,8 +1000,7 @@ def calc_losses(stylized: torch.Tensor,
                 style_contrastive_loss = False,
                 content_contrastive_loss = False,
                 patch_stylized = None,
-                rev_depth:int = None,
-                style_embedding = None):
+                rev_depth:int = None):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
