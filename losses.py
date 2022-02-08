@@ -103,8 +103,6 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
 def pixel_loss(pred, target):
     B,C,h,w = pred.shape
     r = torch.randperm(h*w-1, device='cuda')
-    pred = F.interpolate(pred,size=64)
-    target = F.interpolate(target, size=64)
     pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     remd = remd_loss(pred,target)
