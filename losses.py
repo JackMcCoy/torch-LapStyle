@@ -52,9 +52,9 @@ def remd_loss(X,Y):
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    b,d = X.shape[:2]
-    X = X.flatten(2).transpose(1,2)
-    Y = Y.flatten(2).transpose(1,2)
+    X, Y = flatten_and_sample(X,Y)
+    #X = X.flatten(2).transpose(1,2)
+    #Y = Y.flatten(2).transpose(1,2)
 
     remd = remd_loss(X,Y)
     return remd
@@ -73,11 +73,22 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
+def flatten_and_sample(X, Y):
+    B,C,h,w = X.shape
+    choices = h*w
+    if choices > 1024:
+        r = torch.randperm(choices,device='cuda')
+        X = X.flatten(2)[:,:,r[:1024]].transpose(1,2)
+        Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2)
+    else:
+        X = X.flatten(2).transpose(1, 2)
+        Y = Y.flatten(2).transpose(1, 2)
+    return X, Y
+
 def CalcContentReltLoss(X,Y, eps=1e-5):
-    loss = 0.
-    d = X.shape[1]
-    X = X.flatten(2).transpose(1,2)
-    Y = Y.flatten(2).transpose(1,2)
+    #X = X.flatten(2).transpose(1,2)
+    #Y = Y.flatten(2).transpose(1,2)
+    X, Y = flatten_and_sample(X,Y)
     # Relaxed EMD
     Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(1, keepdim=True)
@@ -90,10 +101,12 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     return d
 
 def pixel_loss(pred, target):
+    B,C,h,w = pred.shape
+    r = torch.randperm(h*w, device='cuda')
     pred = F.interpolate(pred,size=64)
     target = F.interpolate(target, size=64)
-    pred = rgb_to_yuv(pred.flatten(2)).transpose(1,2)
-    target = rgb_to_yuv(target.flatten(2)).transpose(1,2)
+    pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
+    target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     remd = remd_loss(pred,target)
     return remd
 

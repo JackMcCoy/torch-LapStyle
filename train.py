@@ -762,18 +762,18 @@ def adaconv_thumb_train():
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
-        disc_state = new_path_func('discriminator_')
+        #disc_state = new_path_func('discriminator_')
         disc2_state = new_path_func('discriminator_2_')
     else:
-        disc_state = None
+        #disc_state = None
         disc2_state = None
         init_weights(dec_)
-    disc_ = build_disc(
-        disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
+    #disc_ = build_disc(
+    #    disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
     disc2_ = build_disc(disc2_state, args.disc2_depth)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    #opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     # #grid = (grid * grid.T).to(device)[:256,:256]
@@ -797,10 +797,10 @@ def adaconv_thumb_train():
                 rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
             except:
                 'rev_optimizer not loaded'
-            try:
-                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
+            #try:
+            #    opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+            #except:
+            #    'discriminator optimizer not loaded'
             try:
                 opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
             except:
@@ -815,8 +815,8 @@ def adaconv_thumb_train():
         warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
         warmup_lr_adjust(rev_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-                         decay=args.disc_lr)
+        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.disc_lr)
         warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
                          decay=args.disc_lr)
 
@@ -843,28 +843,28 @@ def adaconv_thumb_train():
         res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_stylized = rev_(res_in)
 
-        for param in disc_.parameters():
-            param.grad = None
+        #for param in disc_.parameters():
+        #    param.grad = None
         for param in disc2_.parameters():
             param.grad = None
 
-        set_requires_grad(disc_, True)
+        #set_requires_grad(disc_, True)
         set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(rev_, False)
         loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
-        loss_D = disc_.losses(si[0], stylized)
+        #loss_D = disc_.losses(si[0], stylized)
 
-        loss_D.backward()
+        #loss_D.backward()
         loss_D2.backward()
 
         if n>0:
             _clip_gradient(disc2_)
-            _clip_gradient(disc_)
+            #_clip_gradient(disc_)
             opt_D2.step()
-            opt_D.step()
+            #opt_D.step()
 
-        set_requires_grad(disc_, False)
+        #set_requires_grad(disc_, False)
         set_requires_grad(disc2_, False)
         set_requires_grad(dec_, True)
         set_requires_grad(rev_, True)
@@ -883,9 +883,9 @@ def adaconv_thumb_train():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
 
         patch_stylized = rev_(res_in)
-        disc_.eval()
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
-                             calc_identity=args.identity_loss == 1, disc_loss=True,
+        #disc_.eval()
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
+                             calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
                              remd_loss=remd_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
@@ -910,7 +910,8 @@ def adaconv_thumb_train():
             rev_optimizer.step()
             dec_optimizer.step()
         disc2_.train()
-        disc_.train()
+        #disc_.train()
+        loss_D = 0
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
