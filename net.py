@@ -1025,12 +1025,12 @@ def calc_losses(stylized: torch.Tensor,
                  content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
     '''
     loss_c = 0
-    loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
-    style_remd = style_remd_loss(stylized_feats['r1_1'], s['r1_1'].detach())
+    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+    style_remd = style_remd_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     content_relt = content_emd_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
     for hdx, key in enumerate(style_layers[1:]):
-        loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
-        style_remd = style_remd + style_remd_loss(stylized_feats[key], s[key].detach())
+        loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
+        style_remd = style_remd + style_remd_loss(stylized_feats[key], sF[key].detach())
         content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach())
     if mdog_losses:
         cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
