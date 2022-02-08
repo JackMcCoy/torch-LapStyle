@@ -574,7 +574,8 @@ class ThumbAdaConv(nn.Module):
         self.GELU = nn.GELU()
         self.scalenorm = nn.ModuleList([
             ScaleNorm(256**.5),
-            ScaleNorm(128**.5)
+            ScaleNorm(128**.5),
+            ScaleNorm(64 ** .5)
         ])
 
         self.relu = nn.LeakyReLU()
