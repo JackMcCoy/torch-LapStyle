@@ -53,8 +53,8 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     b,d = X.shape[:2]
-    X = X.flatten(2)
-    Y = Y.flatten(2)
+    X = X.flatten(2).transpose(1,2)
+    Y = Y.flatten(2).transpose(1,2)
 
     remd = remd_loss(X,Y)
     return remd
@@ -76,8 +76,8 @@ def calc_emd_loss(pred, target):
 def CalcContentReltLoss(X,Y, eps=1e-5):
     loss = 0.
     d = X.shape[1]
-    X = X.flatten(2)
-    Y = Y.flatten(2)
+    X = X.flatten(2).transpose(1,2)
+    Y = Y.flatten(2).transpose(1,2)
     # Relaxed EMD
     Mx = cosd_dist(X, X)
     Mx = Mx / Mx.sum(1, keepdim=True)
@@ -90,8 +90,10 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     return d
 
 def pixel_loss(pred, target):
-    pred = rgb_to_yuv(pred.flatten(2))
-    target = rgb_to_yuv(target.flatten(2))
+    pred = F.interpolate(pred,size=64)
+    target = F.interpolate(target, size=64)
+    pred = rgb_to_yuv(pred.flatten(2)).transpose(1,2)
+    target = rgb_to_yuv(target.flatten(2)).transpose(1,2)
     remd = remd_loss(pred,target)
     return remd
 
