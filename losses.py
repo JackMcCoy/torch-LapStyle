@@ -35,7 +35,10 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    rgb = torch.clamp(rgb,min=0,max=1)
+    low, _ = torch.min(rgb,dim=0)
+    high, _ = torch.max(rgb, dim=0)
+    range = torch.clamp(high-low, min=1e-5)
+    rgb = (rgb-low)/range
     r: torch.Tensor = rgb[..., 0, :]
     g: torch.Tensor = rgb[..., 1, :]
     b: torch.Tensor = rgb[..., 2, :]
