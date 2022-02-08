@@ -1019,7 +1019,8 @@ def calc_losses(stylized: torch.Tensor,
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key].detach(),norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(),norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(),norm=True) + \
+                 content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
     if split_style:
         sF = []
         b = si.shape[0]
