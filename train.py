@@ -752,9 +752,9 @@ def revlap_train():
 
 def adaconv_thumb_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
-    #dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
 
-    dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
+    #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
 
     rev_ = build_rev(args.revision_depth, None)
     random_crop = transforms.RandomCrop(256)
