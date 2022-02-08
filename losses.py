@@ -77,7 +77,7 @@ def flatten_and_sample(X, Y):
     B,C,h,w = X.shape
     choices = h*w
     if choices > 1024:
-        r = torch.randperm(choices,device='cuda')
+        r = torch.randperm(choices-1,device='cuda')
         X = X.flatten(2)[:,:,r[:1024]].transpose(1,2)
         Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2)
     else:
