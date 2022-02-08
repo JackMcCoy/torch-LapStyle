@@ -35,9 +35,17 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    C = torch.tensor([[0.577350,0.577350,0.577350],[-0.577350,0.788675,-0.211325],[-0.577350,-0.211325,0.788675]],device='cuda').view(1,3,3).expand(rgb.shape[0],3,3)
-    yuv = torch.bmm(C,rgb)
-    return yuv
+    rgb = torch.clamp(rgb,min=0,max=1)
+    r: torch.Tensor = rgb[..., 0, :]
+    g: torch.Tensor = rgb[..., 1, :]
+    b: torch.Tensor = rgb[..., 2, :]
+
+    y: torch.Tensor = 0.299 * r + 0.587 * g + 0.114 * b
+    u: torch.Tensor = -0.147 * r - 0.289 * g + 0.436 * b
+    v: torch.Tensor = 0.615 * r - 0.515 * g - 0.100 * b
+
+    out: torch.Tensor = torch.stack([y, u, v], -2)
+    return out
 
 def remd_loss(X,Y):
     b = X.shape[0]
