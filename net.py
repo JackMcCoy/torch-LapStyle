@@ -931,8 +931,7 @@ def identity_loss(i, F, encoder, decoder, repeat_style=True):
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
-style_layers = ['r1_1','r2_1','r3_1','r4_1','r5_1']
-style_weights = [1e3/n**2 for n in [64,128,256,512,512]]
+style_layers = ['r5_1','r4_1','r3_1','r2_1','r1_1']
 gan_first=True
 
 @torch.jit.script
@@ -986,23 +985,18 @@ def calc_losses(stylized: torch.Tensor,
                 cF: typing.Dict[str,torch.Tensor],
                 encoder:nn.Module,
                 decoder:nn.Module,
+                content_weight:int,
                 patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None,
                 disc_:nn.Module= None,
                 calc_identity: bool=True,
                 mdog_losses: bool = True,
                 disc_loss: bool=True,
-                patch_disc: bool=False,
-                content_all_layers: bool=False,
-                upscaled_patch = None,
-                remd_loss: bool=True,
                 top_level_patch=None,
                 patch_loss: bool=False,
                 sF: typing.Dict[str,torch.Tensor]=None,
-                split_style: bool=False,
                 style_contrastive_loss = False,
                 content_contrastive_loss = False,
-                patch_stylized = None,
-                rev_depth:int = None):
+                patch_stylized = None,):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
         l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
@@ -1026,12 +1020,12 @@ def calc_losses(stylized: torch.Tensor,
     '''
     loss_c = 0
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
-    style_remd = style_remd_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
-    content_relt = content_emd_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
+    style_remd = style_remd_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
+    content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach()) * content_weight
     for hdx, key in enumerate(style_layers[1:]):
         loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
         style_remd = style_remd + style_remd_loss(stylized_feats[key], sF[key].detach())
-        content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach())
+        content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach()) * (content_weight/2**(hdx+1))
     if mdog_losses:
         cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)

@@ -884,24 +884,23 @@ def adaconv_thumb_train():
 
         patch_stylized = rev_(res_in)
         #disc_.eval()
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None, args.content_weight,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
-                             mdog_losses=args.mdog_loss, content_all_layers=args.content_all_layers,
-                             remd_loss=remd_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
+                             mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
                              patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
-                             sF=sF, split_style=False)
+                             sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         disc2_.eval()
         fake_loss = disc2_(patch_stylized)
         loss_patch_disc = disc2_.ganloss(fake_loss, True)
-        loss = loss_patch_disc * args.gan_loss2 + loss_c * args.content_weight + \
-               args.style_weight * loss_s + content_relt * args.content_relt + \
+        loss = loss_patch_disc * args.gan_loss2 + loss_c + \
+               loss_s + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss
+               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + args.content_weight/pixel_loss
 
         loss.backward()
         if n > 0:
