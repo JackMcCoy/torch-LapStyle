@@ -201,7 +201,7 @@ class ScaleNorm(nn.Module):
     """ScaleNorm"""
     def __init__(self, scale, eps=1e-5):
         super(ScaleNorm, self).__init__()
-        self.scale = Parameter(torch.tensor(scale))
+        self.scale = nn.Parameter(torch.tensor(scale))
         self.eps = eps
 
     def forward(self, x):
