@@ -247,9 +247,10 @@ class ConvMixer(nn.Module):
             nn.Conv2d(dim*2, dim*2, kernel_size=1),
             nn.LeakyReLU(),
             # nn.InstanceNorm2d(out_dim, affine=True),
-            nn.ConvTranspose2d(dim*2, out_dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
+            nn.ConvTranspose2d(dim*2, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.LeakyReLU(),
-            #nn.InstanceNorm2d(out_dim, affine=True),
+            nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
+            nn.LeakyReLU(),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
@@ -1032,11 +1033,11 @@ def calc_losses(stylized: torch.Tensor,
         sF = [sF]
     for idx, s in enumerate(sF):
         if idx == 0:
-            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
+            loss_s = style_loss(stylized_feats['r1_1'], s['r1_1'].detach())* style_weights[0]
         else:
             loss_s = loss_s + style_loss(stylized_feats['r1_1'], s['r1_1'].detach())
         for hdx, key in enumerate(style_layers[1:]):
-            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())
+            loss_s = loss_s + style_loss(stylized_feats[key], s[key].detach())* style_weights[hdx]
         if remd_loss:
             if idx == 0:
                 style_remd = style_remd_loss(stylized_feats['r3_1'], s['r3_1'].detach()) + \
