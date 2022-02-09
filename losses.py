@@ -5,7 +5,7 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, reach=0.2, scaling=0.9, debias=False, potentials=True)
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, reach=0.2, scaling=0.9, debias=False)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
@@ -85,8 +85,6 @@ def CalcStyleEmdLoss(X, Y):
 
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y)
-    for i in remd:
-        print(i.shape)
 
     remd = remd.mean()
     return remd
