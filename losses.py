@@ -115,13 +115,12 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     d = d.mean()
     return d
 
-def pixel_loss(pred, target):
-    B,C,h,w = pred.shape
-    r = torch.randperm(h*w-1, device='cuda')
+def pixel_loss(X, Y):
+    B,C,h,w = X.shape
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    pred = rgb_to_yuv(pred)
-    target = rgb_to_yuv(target)
+    pred = rgb_to_yuv(X)
+    target = rgb_to_yuv(Y)
     #remd = remd_loss(pred,target)
     remd = 0
     for i in range(X.shape[0]):
