@@ -5,7 +5,7 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, reach=0.2, scaling=0.9, debias=False)
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, reach=0.5, scaling=0.9, debias=False)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
