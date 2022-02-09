@@ -188,7 +188,7 @@ class RiemannNoise(nn.Module):
         s_max = s.abs().amax(dim=(2, 3))
         s = s / (s_max + 1e-8)
         s = s * A + b
-        ones = torch.ones_like(N,1,1,h)
+        ones = torch.ones(N,1,1,h)
         sp_att_mask = (1 - alpha) @ ones + alpha * s
         sp_att_mask = torch.normalize(sp_att_mask, p=1)
 
