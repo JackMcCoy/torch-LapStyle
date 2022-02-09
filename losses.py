@@ -50,7 +50,7 @@ def rgb_to_yuv(rgb):
     u: torch.Tensor = -0.147 * r - 0.289 * g + 0.436 * b
     v: torch.Tensor = 0.615 * r - 0.515 * g - 0.100 * b
 
-    out: torch.Tensor = torch.stack([y, u, v], -3)
+    out: torch.Tensor = torch.stack([y, u, v], -2)
     return out
 
 def remd_loss(X,Y):
