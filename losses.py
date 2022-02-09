@@ -70,8 +70,8 @@ def CalcStyleEmdLoss(X, Y):
     if X.shape[2]>64:
         X = maxpool(X)
         Y = maxpool(Y)
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
+    X = X.flatten(2).transpose(1,2)
+    Y = Y.flatten(2).transpose(1,2)
 
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y).mean()
@@ -121,8 +121,8 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
 def pixel_loss(X, Y):
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    X = maxpool(X).relu()
-    Y = maxpool(Y).relu()
+    X = maxpool(X)
+    Y = maxpool(Y)
 
     X = rgb_to_yuv(X.flatten(2)).transpose(1,2)
     Y = rgb_to_yuv(Y.flatten(2)).transpose(1,2)
