@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from fastmatsqrt import MPA_Lya
+from geomloss import SamplesLoss
+
 device = torch.device('cuda')
 
 FastMatSqrt=MPA_Lya.apply
 
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01)
 
 
 @torch.jit.script
@@ -39,15 +41,15 @@ def rgb_to_yuv(rgb):
     high, _ = torch.max(rgb, dim=0)
     range = torch.clamp(high-low, min=1e-5)
     rgb = (rgb-low)/range
-    r: torch.Tensor = rgb[..., 0, :]
-    g: torch.Tensor = rgb[..., 1, :]
-    b: torch.Tensor = rgb[..., 2, :]
+    r: torch.Tensor = rgb[..., 0, :, :]
+    g: torch.Tensor = rgb[..., 1, :, :]
+    b: torch.Tensor = rgb[..., 2, :, :]
 
     y: torch.Tensor = 0.299 * r + 0.587 * g + 0.114 * b
     u: torch.Tensor = -0.147 * r - 0.289 * g + 0.436 * b
     v: torch.Tensor = 0.615 * r - 0.515 * g - 0.100 * b
 
-    out: torch.Tensor = torch.stack([y, u, v], -2)
+    out: torch.Tensor = torch.stack([y, u, v], -3)
     return out
 
 def remd_loss(X,Y):
@@ -63,11 +65,15 @@ def remd_loss(X,Y):
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    X, Y = flatten_and_sample(X,Y)
+    #X, Y = flatten_and_sample(X,Y)
     #X = X.flatten(2).transpose(1,2)
     #Y = Y.flatten(2).transpose(1,2)
 
-    remd = remd_loss(X,Y)
+    #remd = remd_loss(X,Y)
+    remd = 0
+    for i in range(X.shape[0]):
+        remd = remd + sinkhorn_loss(X[i],Y[i])
+    remd = remd / X.shape[0]
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
@@ -114,9 +120,15 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
 def pixel_loss(pred, target):
     B,C,h,w = pred.shape
     r = torch.randperm(h*w-1, device='cuda')
-    pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    remd = remd_loss(pred,target)
+    #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
+    #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
+    pred = rgb_to_yuv(pred)
+    target = rgb_to_yuv(target)
+    #remd = remd_loss(pred,target)
+    remd = 0
+    for i in range(X.shape[0]):
+        remd = remd + sinkhorn_loss(X[i], Y[i])
+    remd = remd / X.shape[0]
     return remd
 
 class CalcContentLoss():
