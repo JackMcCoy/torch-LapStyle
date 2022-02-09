@@ -573,9 +573,9 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.noise = nn.ModuleList([
-            RiemannNoise(32),
             RiemannNoise(64),
             RiemannNoise(128),
+            RiemannNoise(256),
             nn.Identity()
         ])
 
