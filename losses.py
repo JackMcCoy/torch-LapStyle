@@ -64,8 +64,8 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     #X, Y = flatten_and_sample(X,Y)
-    X = X.flatten(2).transpose(1,2)
-    Y = Y.flatten(2).transpose(1,2)
+    X = X.flatten(2).transpose(1,2).contiguous()
+    Y = Y.flatten(2).transpose(1,2).contiguous()
 
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y).mean()
@@ -116,8 +116,8 @@ def pixel_loss(X, Y):
     B,C,h,w = X.shape
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    X = rgb_to_yuv(X).flatten(2).transpose(1,2)
-    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2)
+    X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous()
+    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous()
     #remd = remd_loss(pred,target)
     remd = 0
     remd = remd + sinkhorn_loss(X, Y).mean()
