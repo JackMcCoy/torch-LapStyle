@@ -5,8 +5,6 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-FastMatSqrt=MPA_Lya.apply
-
 sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01)
 
 
