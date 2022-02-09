@@ -184,14 +184,13 @@ class RiemannNoise(nn.Module):
 
 
         s = torch.sum(x, dim=1, keepdim=True)
-        s = s - s.mean(dim=(2, 3), keepdim=True)
-        s_max = s.abs().amax(dim=(2, 3), keepdim=True)
+        s = s - s.mean(dim=(2, 3)).view(N,1,1,1)
+        s_max = s.abs().amax(dim=(2, 3))
         s = s / (s_max + 1e-8)
-        s = (s + 1) / 2
         s = s * A + b
-        s = torch.tile(s, (1, c, 1, 1))
-        sp_att_mask = (1 - alpha) + alpha * s
-        sp_att_mask = sp_att_mask / (torch.linalg.norm(sp_att_mask, dim=1, keepdims=True) + 1e-8)
+        ones = torch.ones_like(N,1,1,h)
+        sp_att_mask = (1 - alpha) @ ones + alpha * s
+        sp_att_mask = torch.normalize(sp_att_mask, p=1)
 
         x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,c,h,h).normal_())
         return x
