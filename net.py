@@ -1018,11 +1018,12 @@ def calc_losses(stylized: torch.Tensor,
                  content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
     '''
     loss_c = 0
-    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+    loss_s = 0
+    #loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     style_remd = style_remd_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
     content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     for hdx, key in enumerate(style_layers[1:]):
-        loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
+        #loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
         style_remd = style_remd + style_remd_loss(stylized_feats[key], sF[key].detach())
         content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach())
     if mdog_losses:
@@ -1135,7 +1136,7 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = patch_loss + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
-    p_loss = pixel_loss(stylized,si)
-    #p_loss =0
+    #p_loss = pixel_loss(stylized,si)
+    p_loss =0
     return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, s_contrastive_loss, c_contrastive_loss,p_loss
 
