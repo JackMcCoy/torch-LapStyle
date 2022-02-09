@@ -5,7 +5,7 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01)
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, scaling=.4)
 
 
 @torch.jit.script
