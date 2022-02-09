@@ -6,7 +6,7 @@ from geomloss import SamplesLoss
 device = torch.device('cuda')
 
 sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01)
-maxpool = nn.AdaptiveMaxPool(64)
+maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
 def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
