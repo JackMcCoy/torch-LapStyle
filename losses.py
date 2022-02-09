@@ -35,13 +35,16 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    low, _ = torch.min(rgb,dim=0)
-    high, _ = torch.max(rgb, dim=0)
-    range = torch.clamp(high-low, min=1e-5)
-    rgb = (rgb-low)/range
-    r: torch.Tensor = rgb[..., 0, :, :]
-    g: torch.Tensor = rgb[..., 1, :, :]
-    b: torch.Tensor = rgb[..., 2, :, :]
+    B, C = shape[0], shape[1]
+
+    rgb = (rgb.view(B, C, -1) * torch.tensor([0.157,0.164,0.159],device='cuda')) + torch.tensor([0.339, 0.385, 0.465],device='cuda')
+    x_min: torch.Tensor = x.min(-1)[0].view(B, C, 1)
+    x_max: torch.Tensor = x.max(-1)[0].view(B, C, 1)
+
+    rgb: torch.Tensor = (rgb - x_min) / (x_max - x_min + 1e-6)
+    r: torch.Tensor = rgb[..., 0, :]
+    g: torch.Tensor = rgb[..., 1, :]
+    b: torch.Tensor = rgb[..., 2, :]
 
     y: torch.Tensor = 0.299 * r + 0.587 * g + 0.114 * b
     u: torch.Tensor = -0.147 * r - 0.289 * g + 0.436 * b
@@ -125,8 +128,8 @@ def pixel_loss(X, Y):
     print(X.max())
     print(Y.min())
     print(Y.max())
-    X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous()
-    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous()
+    X = rgb_to_yuv(X).transpose(1,2).contiguous()
+    Y = rgb_to_yuv(Y).transpose(1,2).contiguous()
     #remd = remd_loss(pred,target)
     print(X.min())
     print(X.max())
