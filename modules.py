@@ -190,7 +190,7 @@ class RiemannNoise(nn.Module):
         s = s * A + b
         ones = torch.ones(N,1,1,h, device='cuda')
         sp_att_mask = (1 - alpha) @ ones + alpha * s
-        sp_att_mask = torch.normalize(sp_att_mask, p=1)
+        sp_att_mask = F.normalize(sp_att_mask, p=1)
 
         x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,c,h,h).normal_())
         return x
