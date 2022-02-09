@@ -5,7 +5,7 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01,scaling=.4)
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, reach=0.2, scaling=0.9, debias=False, potentials=True)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
@@ -63,6 +63,13 @@ def remd_loss(X,Y):
     remd = remd.mean()
     return remd
 
+def add_flips(X):
+    #    X = X[:,None,:,:]
+    X_flip = torch.flip(X, (1,))
+    X = torch.stack((X, X_flip), dim=1)
+    return X
+
+
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
@@ -79,6 +86,8 @@ def CalcStyleEmdLoss(X, Y):
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y)
     print(remd.shape)
+
+    CC_ij = ((X - Y) ** 2).sum(-1) / 2  # (N, M * 2, 1) LazyTensor
     remd = remd.mean()
     return remd
 
