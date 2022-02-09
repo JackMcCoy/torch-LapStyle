@@ -5,8 +5,8 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01, scaling=.4)
-
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.01)
+maxpool = nn.AdaptiveMaxPool(64)
 
 @torch.jit.script
 def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
@@ -64,6 +64,9 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     #X, Y = flatten_and_sample(X,Y)
+    if X.shape[2]>64:
+        X = maxpool(X)
+        Y = maxpool(Y)
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
 
@@ -116,6 +119,8 @@ def pixel_loss(X, Y):
     B,C,h,w = X.shape
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
+    X = maxpool(X)
+    Y = maxpool(Y)
     X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous()
     Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous()
     #remd = remd_loss(pred,target)
