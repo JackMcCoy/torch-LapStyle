@@ -124,6 +124,10 @@ def pixel_loss(X, Y):
     X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous()
     Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous()
     #remd = remd_loss(pred,target)
+    print(X.min())
+    print(X.max())
+    print(Y.min())
+    print(Y.max())
     remd = 0
     remd = remd + sinkhorn_loss(X, Y).mean()
     return remd
