@@ -35,7 +35,7 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    B, C = shape[0], shape[1]
+    B,C,h,w = rgb.shape
 
     rgb = (rgb.view(B, C, -1) * torch.tensor([0.157,0.164,0.159],device='cuda')) + torch.tensor([0.339, 0.385, 0.465],device='cuda')
     x_min: torch.Tensor = x.min(-1)[0].view(B, C, 1)
@@ -119,7 +119,6 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     return d
 
 def pixel_loss(X, Y):
-    B,C,h,w = X.shape
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     X = maxpool(X).relu()
