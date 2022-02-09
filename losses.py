@@ -70,10 +70,10 @@ def CalcStyleEmdLoss(X, Y):
     if X.shape[2]>64:
         X = maxpool(X)
         Y = maxpool(Y)
-    X = X.flatten(2)
-    Y = Y.flatten(2)
-    X = torch.bmm(X,X.transpose(1,2))
-    Y = torch.bmm(Y, Y.transpose(1, 2))
+    X = X.flatten(2).transpose(1,2)
+    Y = Y.flatten(2).transpose(1,2)
+    #X = torch.bmm(X,X.transpose(1,2))
+    #Y = torch.bmm(Y, Y.transpose(1, 2))
 
 
     #remd = remd_loss(X,Y)
