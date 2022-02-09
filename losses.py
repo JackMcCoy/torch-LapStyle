@@ -85,7 +85,8 @@ def CalcStyleEmdLoss(X, Y):
 
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y)
-    print(remd.shape)
+    for i in remd:
+        print(i.shape)
 
     remd = remd.mean()
     return remd
