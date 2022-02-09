@@ -70,7 +70,7 @@ def CalcStyleEmdLoss(X, Y):
     #remd = remd_loss(X,Y)
     remd = 0
     for i in range(X.shape[0]):
-        remd = remd + sinkhorn_loss(X[i],Y[i])
+        remd = remd + sinkhorn_loss(X[i],Y[i]).mean()
     remd = remd / X.shape[0]
     return remd
 
@@ -125,7 +125,7 @@ def pixel_loss(pred, target):
     #remd = remd_loss(pred,target)
     remd = 0
     for i in range(X.shape[0]):
-        remd = remd + sinkhorn_loss(X[i], Y[i])
+        remd = remd + sinkhorn_loss(X[i], Y[i]).mean()
     remd = remd / X.shape[0]
     return remd
 
