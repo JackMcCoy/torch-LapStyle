@@ -600,9 +600,9 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
             ada_out = ada(style_enc, cF[mixin])
             if idx == 0:
-                x = self.relu(ada_out)
+                x = ada_out
             else:
-                x = self.relu(x) + self.relu(ada_out)
+                x = self.relu(x) + ada_out
             x = learnable(x)
             x = noise(x)
         return x
