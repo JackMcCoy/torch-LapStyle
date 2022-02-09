@@ -87,7 +87,6 @@ def CalcStyleEmdLoss(X, Y):
     remd = sinkhorn_loss(X,Y)
     print(remd.shape)
 
-    CC_ij = ((X - Y) ** 2).sum(-1) / 2  # (N, M * 2, 1) LazyTensor
     remd = remd.mean()
     return remd
 
