@@ -77,7 +77,9 @@ def CalcStyleEmdLoss(X, Y):
 
 
     #remd = remd_loss(X,Y)
-    remd = sinkhorn_loss(X,Y).mean()
+    remd = sinkhorn_loss(X,Y)
+    print(remd.shape)
+    remd = remd.mean()
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
