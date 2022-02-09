@@ -884,7 +884,7 @@ def adaconv_thumb_train():
 
         patch_stylized = rev_(res_in)
         #disc_.eval()
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, args.content_weight, None, None,
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
