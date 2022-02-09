@@ -67,8 +67,8 @@ def CalcStyleEmdLoss(X, Y):
     if X.shape[2]>64:
         X = maxpool(X)
         Y = maxpool(Y)
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
+    X = X.flatten(2).transpose(1,2).contiguous().relu()
+    Y = Y.flatten(2).transpose(1,2).contiguous().relu()
 
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y).mean()
@@ -121,8 +121,8 @@ def pixel_loss(X, Y):
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     X = maxpool(X)
     Y = maxpool(Y)
-    X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous()
-    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous()
+    X = rgb_to_yuv(X).flatten(2).transpose(1,2).contiguous().relu()
+    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2).contiguous().relu()
     #remd = remd_loss(pred,target)
     remd = 0
     remd = remd + sinkhorn_loss(X, Y).mean()
