@@ -185,7 +185,7 @@ class RiemannNoise(nn.Module):
 
         s = torch.sum(x, dim=1, keepdim=True)
         s = s - s.mean(dim=(2, 3)).view(N,1,1,1)
-        s_max = s.abs().amax(dim=(2, 3))
+        s_max = s.abs().amax(dim=(2, 3)).view(N,1,1,1)
         s = s / (s_max + 1e-8)
         s = s * A + b
         ones = torch.ones(N,1,1,h, device='cuda')
