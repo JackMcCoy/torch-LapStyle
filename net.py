@@ -235,7 +235,6 @@ class ConvMixer(nn.Module):
                 nn.LeakyReLU(),
                 #nn.InstanceNorm2d(dim, affine=True)
             )),
-            ScaleNorm(dim**.5),
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.LeakyReLU(),
             #nn.InstanceNorm2d(dim, affine=True)
@@ -573,10 +572,11 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        self.scalenorm = nn.ModuleList([
-            ScaleNorm(256**.5),
-            ScaleNorm(128**.5),
-            ScaleNorm(64 ** .5)
+        self.noise = nn.ModuleList([
+            RiemannNoise(32),
+            RiemannNoise(64),
+            RiemannNoise(128),
+            nn.Identity()
         ])
 
         self.relu = nn.LeakyReLU()
@@ -597,14 +597,14 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
         b = style_enc.shape[0]
         style_enc = self.style_encoding(style_enc).view(b,self.s_d, 7,7)
-        for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+        for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
             ada_out = ada(style_enc, cF[mixin])
             if idx == 0:
                 x = self.relu(ada_out)
             else:
                 x = self.relu(x) + self.relu(ada_out)
-                x = self.scalenorm[idx-1](x)
             x = learnable(x)
+            x = noise(x)
         return x
 
 
