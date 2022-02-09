@@ -35,7 +35,7 @@ def euc_dist(x,y):
     return M
 
 def rgb_to_yuv(rgb):
-    B,C,h,w = rgb.shape
+    B,C,h = rgb.shape
 
     rgb = (rgb.view(B, C, -1) * torch.tensor([0.157,0.164,0.159],device='cuda')).view(1,3,1) + torch.tensor([0.339, 0.385, 0.465],device='cuda').view(1,3,1)
     x_min: torch.Tensor = x.min(-1)[0].view(B, C, 1)
