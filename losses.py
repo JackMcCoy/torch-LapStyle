@@ -64,14 +64,11 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     #X, Y = flatten_and_sample(X,Y)
-    #X = X.flatten(2).transpose(1,2)
-    #Y = Y.flatten(2).transpose(1,2)
+    X = X.flatten(2).transpose(1,2)
+    Y = Y.flatten(2).transpose(1,2)
 
     #remd = remd_loss(X,Y)
-    remd = 0
-    for i in range(X.shape[0]):
-        remd = remd + sinkhorn_loss(X[i],Y[i]).mean()
-    remd = remd / X.shape[0]
+    remd = sinkhorn_loss(X,Y).mean()
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
@@ -119,13 +116,11 @@ def pixel_loss(X, Y):
     B,C,h,w = X.shape
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    pred = rgb_to_yuv(X)
-    target = rgb_to_yuv(Y)
+    X = rgb_to_yuv(X).flatten(2).transpose(1,2)
+    Y = rgb_to_yuv(Y).flatten(2).transpose(1,2)
     #remd = remd_loss(pred,target)
     remd = 0
-    for i in range(X.shape[0]):
-        remd = remd + sinkhorn_loss(X[i], Y[i]).mean()
-    remd = remd / X.shape[0]
+    remd = remd + sinkhorn_loss(X, Y).mean()
     return remd
 
 class CalcContentLoss():
