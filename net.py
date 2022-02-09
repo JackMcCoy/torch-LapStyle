@@ -985,7 +985,6 @@ def calc_losses(stylized: torch.Tensor,
                 cF: typing.Dict[str,torch.Tensor],
                 encoder:nn.Module,
                 decoder:nn.Module,
-                content_weight:int,
                 patch_feats: typing.Optional[typing.Dict[str,torch.Tensor]]=None,
                 disc_:nn.Module= None,
                 calc_identity: bool=True,
@@ -1021,11 +1020,11 @@ def calc_losses(stylized: torch.Tensor,
     loss_c = 0
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     style_remd = style_remd_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach()) * content_weight
+    content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     for hdx, key in enumerate(style_layers[1:]):
         loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
         style_remd = style_remd + style_remd_loss(stylized_feats[key], sF[key].detach())
-        content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach()) * max(1,(content_weight/2**(hdx+1)))
+        content_relt = content_relt + content_emd_loss(stylized_feats[key], cF[key].detach())
     if mdog_losses:
         cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
