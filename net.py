@@ -531,7 +531,8 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.depth_linear = nn.Linear(512,self.s_d)
-        self.ch_linear = nn.Linear(16, self.s_d * 49)
+        self.chwise_linear = nn.Linear(16, 64)
+        self.chwise_linear_2 = nn.Linear(64,49)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable=nn.ModuleList([
@@ -597,13 +598,11 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
         b = style_enc.shape[0]
         style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
-        print(style_enc.shape)
         style_enc = self.depth_linear(style_enc).transpose(1,2)
-        print(style_enc.shape)
         style_enc = self.relu(style_enc)
-        style_enc = self.ch_linear(style_enc)
-        print(style_enc.shape)
-        style_enc = style_enc.view(b,self.s_d,7,7)
+        style_enc = self.chwise_linear(style_enc)
+        style_enc = self.relu(style_enc)
+        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7)
 
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
             ada_out = ada(style_enc, cF[mixin])
