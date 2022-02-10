@@ -882,7 +882,7 @@ def adaconv_thumb_train():
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
 
-        patch_stylized = rev_(res_in)
+        patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
         #disc_.eval()
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
