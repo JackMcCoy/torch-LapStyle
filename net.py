@@ -597,9 +597,14 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
         b = style_enc.shape[0]
         style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
+        print(style_enc.shape)
         style_enc = self.depth_linear(style_enc).transpose(1,2)
+        print(style_enc.shape)
         style_enc = self.relu(style_enc)
-        style_enc = self.ch_linear(style_enc).view(b,self.s_d,7,7)
+        style_enc = self.ch_linear(style_enc)
+        print(style_enc.shape)
+        style_enc = style_enc.view(b,self.s_d,7,7)
+
         for idx, (ada, learnable, mixin, noise) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer, self.noise)):
             ada_out = ada(style_enc, cF[mixin])
             if idx == 0:
