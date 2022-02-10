@@ -137,8 +137,8 @@ def pixel_loss(X, Y):
     Y = rgb_to_yuv(Y).transpose(1,2)
     choices = h * w
     r = torch.randperm(choices - 1)
-    X = X[:, :, r[:6912]].contiguous()
-    Y = Y[:, :, r[:6912]].contiguous()
+    X = X[:, :, r[:2304]].contiguous()
+    Y = Y[:, :, r[:2304]].contiguous()
     #remd = remd_loss(pred,target)
 
     remd = sinkhorn_loss(X, Y).mean()
