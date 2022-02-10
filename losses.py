@@ -82,7 +82,7 @@ def CalcStyleEmdLoss(X, Y):
     #remd = remd_loss(X,Y)
 
     try:
-        remd = remd + sinkhorn_loss(X,Y).mean()
+        remd = sinkhorn_loss(X,Y).mean()
     except:
         print('maximum exceeded')
         remd = 0
