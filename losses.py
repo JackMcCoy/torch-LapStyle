@@ -5,7 +5,7 @@ from geomloss import SamplesLoss
 
 device = torch.device('cuda')
 
-sinkhorn_loss = SamplesLoss("sinkhorn", p=1, blur=0.03, scaling=0.9, debias=False)
+sinkhorn_loss = SamplesLoss("sinkhorn", p=2, blur=0.03, scaling=0.9)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
@@ -83,8 +83,11 @@ def CalcStyleEmdLoss(X, Y):
     #Y = torch.bmm(Y, Y.transpose(1, 2))
     #remd = remd_loss(X,Y)
     remd = sinkhorn_loss(X,Y)
-
-    remd = remd.mean()
+    try:
+        remd = remd.mean()
+    except:
+        print('maximum exceeded')
+        remd = 0
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
@@ -140,8 +143,10 @@ def pixel_loss(X, Y):
     X = X[:, r[:2304], :].contiguous()
     Y = Y[:, r[:2304],:].contiguous()
     #remd = remd_loss(pred,target)
-
-    remd = sinkhorn_loss(X, Y).mean()
+    try:
+        remd = sinkhorn_loss(X, Y).mean()
+    except:
+        remd = 0
     return remd
 
 class CalcContentLoss():
