@@ -62,6 +62,7 @@ def positionalencoding2d(d_model, height, width):
 
     return pe
 
+
 @torch.no_grad()
 def _clip_gradient(model):
     for p in model.parameters():

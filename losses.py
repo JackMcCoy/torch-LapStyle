@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from geomloss import SamplesLoss
+from function import draw_samples
 
 device = torch.device('cuda')
 
@@ -38,10 +39,11 @@ def rgb_to_yuv(rgb):
     B,C,h = rgb.shape
 
     rgb = (rgb.view(B, C, -1) * torch.tensor([0.157,0.164,0.159],device='cuda').view(1,3,1)) + torch.tensor([0.339, 0.385, 0.465],device='cuda').view(1,3,1)
-    x_min: torch.Tensor = rgb.min(-1)[0].view(B, C, 1)
-    x_max: torch.Tensor = rgb.max(-1)[0].view(B, C, 1)
+    #x_min: torch.Tensor = rgb.min(-1)[0].view(B, C, 1)
+    #x_max: torch.Tensor = rgb.max(-1)[0].view(B, C, 1)
+    #rgb: torch.Tensor = (rgb - x_min) / (x_max - x_min + 1e-6)
+    rgb = rgb.flatten(2)
 
-    rgb: torch.Tensor = (rgb - x_min) / (x_max - x_min + 1e-6)
     r: torch.Tensor = rgb[..., 0, :]
     g: torch.Tensor = rgb[..., 1, :]
     b: torch.Tensor = rgb[..., 2, :]
@@ -133,14 +135,17 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
 def pixel_loss(X, Y):
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    X = maxpool(X)
-    Y = maxpool(Y)
-
-    X = rgb_to_yuv(X.flatten(2)).transpose(1,2)
-    Y = rgb_to_yuv(Y.flatten(2)).transpose(1,2)
+    N,C,h,w = X.shape
+    # flatten and convert with rgb_to_yuv
+    X = rgb_to_yuv(X).transpose(1,2)
+    Y = rgb_to_yuv(Y).transpose(1,2)
+    choices = h * w
+    r = torch.randperm(choices - 1)
+    X = X[:, :, r[:6912]].contiguous()
+    Y = Y[:, :, r[:6912]].contiguous()
     #remd = remd_loss(pred,target)
-    remd = 0
-    remd = remd + sinkhorn_loss(X, Y).mean()
+
+    remd = sinkhorn_loss(X, Y).mean()
     return remd
 
 class CalcContentLoss():
