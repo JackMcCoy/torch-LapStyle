@@ -74,20 +74,23 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     #X, Y = flatten_and_sample(X,Y)
-    if X.shape[2]>64:
-        X = maxpool(X)
-        Y = maxpool(Y)
+    N,C,h,w = X.shape
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
     #X = torch.bmm(X,X.transpose(1,2))
     #Y = torch.bmm(Y, Y.transpose(1, 2))
     #remd = remd_loss(X,Y)
-    remd = sinkhorn_loss(X,Y)
-    try:
-        remd = remd.mean()
-    except:
-        print('maximum exceeded')
-        remd = 0
+    remd = 0
+    counter = 0
+    for i in range(N):
+        try:
+            remd = remd + sinkhorn_loss(X[i],Y[i])
+            counter = counter+1
+        except:
+            print('maximum exceeded')
+            remd = 0
+    if counter>0:
+        remd /= counter
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
