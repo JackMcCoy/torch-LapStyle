@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from geomloss import SamplesLoss
-from function import draw_samples
 
 device = torch.device('cuda')
 
