@@ -226,18 +226,18 @@ class ConvMixer(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
-            nn.GroupNorm(dim, 32)
+            nn.GroupNorm(32, dim)
             )
 
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
                 nn.GELU(),
-                nn.GroupNorm(dim, 32)
+                nn.GroupNorm(32, dim)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
-            nn.GroupNorm(dim, 32)
+            nn.GroupNorm(32, dim)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
@@ -245,13 +245,13 @@ class ConvMixer(nn.Module):
         self.tail = nn.Sequential(
             nn.Conv2d(dim*2, dim, kernel_size=1),
             nn.GELU(),
-            nn.GroupNorm(dim, 32),
+            nn.GroupNorm(32, dim),
             nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.GELU(),
-            nn.GroupNorm(dim, 32),
+            nn.GroupNorm(32, dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.GroupNorm(out_dim, 32),
+            nn.GroupNorm(32, dim),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
