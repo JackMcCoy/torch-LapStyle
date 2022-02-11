@@ -75,8 +75,7 @@ def CalcStyleEmdLoss(X, Y):
     """
     #X, Y = flatten_and_sample(X,Y)
     N,C,h,w = X.shape
-    X = F.avg_pool2d(X,kernel_size=2,stride=2)
-    Y = F.avg_pool2d(Y, kernel_size=2, stride=2)
+
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
     #X = torch.bmm(X,X.transpose(1,2))
