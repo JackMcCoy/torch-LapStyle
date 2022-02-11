@@ -219,7 +219,7 @@ class ConvMixerCell(nn.Module):
 
 
 class ConvMixer(nn.Module):
-    def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False, final_bias=True):
+    def __init__(self, dim, depth, kernel_size=9, patch_size=7, in_dim=3, out_dim=3, upscale=False, final_bias=True, spe=False):
         super(ConvMixer,self).__init__()
         self.in_eq_out = in_dim==out_dim
         self.relu = nn.LeakyReLU()
@@ -241,7 +241,7 @@ class ConvMixer(nn.Module):
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
-
+        self.spe = spe
         self.tail = nn.Sequential(
             nn.Conv2d(dim*2, dim, kernel_size=1),
             nn.GELU(),
@@ -257,7 +257,9 @@ class ConvMixer(nn.Module):
 
     def forward(self, x):
         out = self.head(x)
-        N, C, *_ = out.shape
+        N, C, h, w = out.shape
+        if self.spe:
+            x = x + pos_enc(C, h, w)
         out = out.repeat(1,2,1,1)
         out = self.body(out)
         out = self.tail(out)
