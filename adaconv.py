@@ -42,7 +42,7 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            predicted = F.normalize(predicted, p=2)
+            predicted = F.instance_norm(predicted)
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
