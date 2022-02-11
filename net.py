@@ -1003,6 +1003,7 @@ def calc_losses(stylized: torch.Tensor,
                 calc_identity: bool=True,
                 mdog_losses: bool = True,
                 disc_loss: bool=True,
+                remd_loss: bool = False,
                 top_level_patch=None,
                 content_all_layers=True,
                 patch_loss: bool=False,
@@ -1034,8 +1035,12 @@ def calc_losses(stylized: torch.Tensor,
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     for hdx, key in enumerate(style_layers[1:]):
         loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
-    style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
-    content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach()) + content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
+    if remd_loss:
+        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+        content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach()) + content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
+    else:
+        style_remd = 0
+        content_relt = 0
 
     if mdog_losses:
         cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
@@ -1147,7 +1152,7 @@ def calc_losses(stylized: torch.Tensor,
             patch_loss = patch_loss + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
-    p_loss = pixel_loss(stylized,si)
-    #p_loss =0
+    #p_loss = pixel_loss(stylized,si)
+    p_loss =0
     return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, s_contrastive_loss, c_contrastive_loss,p_loss
 

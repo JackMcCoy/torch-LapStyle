@@ -888,7 +888,7 @@ def adaconv_thumb_train():
                              calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
-                             patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
+                             remd_loss=remd_loss, patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
