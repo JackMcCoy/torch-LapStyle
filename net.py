@@ -551,7 +551,7 @@ class ThumbAdaConv(nn.Module):
         self.res_norm = nn.ModuleList([
             nn.GroupNorm(32, 256),
             nn.GroupNorm(32, 128),
-            nn.GroupNorm(32, 64)
+            nn.GroupNorm(16, 64)
         ])
         '''
         self.learnable = nn.ModuleList([
