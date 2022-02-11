@@ -581,6 +581,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,4,4)
 
         x = cF['r4_1']
+
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.gelu(ada(style_enc, x))
             x = learnable(x)
