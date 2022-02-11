@@ -644,7 +644,7 @@ class ThumbAdaConv(nn.Module):
             x = self.relu(ada(style_enc, x))
             if idx > 0:
                 x = self.relu(x + res)
-                x = self.res_norm[idx](x)
+                x = self.res_norm[idx-1](x)
             if idx != len(self.learnable)-1:
                 res = self.res[idx](x)
             x = learnable(x)
