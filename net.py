@@ -259,7 +259,7 @@ class ConvMixer(nn.Module):
         out = self.head(x)
         N, C, h, w = out.shape
         if self.spe:
-            x = x + pos_enc(C, h, w)
+            x = out + pos_enc(C, h, w)
         out = out.repeat(1,2,1,1)
         out = self.body(out)
         out = self.tail(out)
