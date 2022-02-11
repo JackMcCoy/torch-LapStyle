@@ -595,7 +595,7 @@ class ThumbAdaConv(nn.Module):
         ])
         '''
         self.learnable = nn.ModuleList([
-            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True, spe=True),
             ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(512, 4, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
@@ -638,7 +638,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc)
         style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7)
 
-        x = cF['r4_1'] + pos_enc(512, 32, 32)
+        x = cF['r4_1']
 
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
