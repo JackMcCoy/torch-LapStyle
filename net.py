@@ -535,11 +535,43 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
-            ConvMixer(512, 4, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
-            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
-            ConvMixer(512, 4, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
-            ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
-
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 256, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 128, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 128, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 64, (3, 3)),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.ReLU(),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 3, (3, 3)),
+            )
         ])
 
         if style_contrastive_loss:
@@ -584,8 +616,6 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
-            if idx != len(self.learnable)-1:
-                x = self.gelu(x)
         return x
 
 
