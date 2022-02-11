@@ -81,11 +81,8 @@ def CalcStyleEmdLoss(X, Y):
     #X = torch.bmm(X,X.transpose(1,2))
     #Y = torch.bmm(Y, Y.transpose(1, 2))
     #remd = remd_loss(X,Y)
-    try:
-        remd = sinkhorn_loss(X,Y).mean()
-    except:
-        print('maximum exceeded')
-        remd = 0
+    remd = sinkhorn_loss(X,Y).mean()
+
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
