@@ -135,13 +135,9 @@ def pixel_loss(X, Y):
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     N,C,h,w = X.shape
     # flatten and convert with rgb_to_yuv
-    X = rgb_to_yuv(X).transpose(1,2)
-    Y = rgb_to_yuv(Y).transpose(1,2)
-    choices = h * w
-    r = torch.randperm(choices - 1)
-    X = X[:, r[:2304], :].contiguous()
-    Y = Y[:, r[:2304],:].contiguous()
-    #remd = remd_loss(pred,target)
+    X = F.avg_pool2d(X, kernel_size=4, stride=4).flatten(2).transpose(1,2).contiguous()
+    Y = F.avg_pool2d(Y, kernel_size=4, stride=4).flatten(2).transpose(1,2).contiguous()
+
     try:
         remd = sinkhorn_loss(X, Y).mean()
     except:
