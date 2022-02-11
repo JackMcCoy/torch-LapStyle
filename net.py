@@ -600,7 +600,7 @@ class ThumbAdaConv(nn.Module):
         self.relu = nn.LeakyReLU()
         self.gelu = nn.GELU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.pos_enc = pos_enc(512,64,64).to(device)
+        self.pos_enc = pos_enc(512,32,32).to(device)
         self.apply(self._init_weights)
 
     @staticmethod
@@ -616,7 +616,6 @@ class ThumbAdaConv(nn.Module):
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
         b = style_enc.shape[0]
-        print(style_enc.shape)
         style_enc = self.style_encoding(style_enc + self.pos_enc).flatten(2).transpose(1,2)
         style_enc = self.depth_linear(style_enc).transpose(1,2)
         style_enc = self.relu(style_enc)
