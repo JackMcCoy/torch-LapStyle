@@ -580,7 +580,7 @@ class ThumbAdaConv(nn.Module):
         ])
         '''
         self.learnable = nn.ModuleList([
-            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True, spe=True),
             ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
             ConvMixer(512, 4, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
             ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
@@ -602,7 +602,6 @@ class ThumbAdaConv(nn.Module):
         self.relu = nn.LeakyReLU()
         self.gelu = nn.GELU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.pos_enc = pos_enc(512,32,32).to(device)
         self.apply(self._init_weights)
 
     @staticmethod
@@ -618,14 +617,14 @@ class ThumbAdaConv(nn.Module):
 
     def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
         b = style_enc.shape[0]
-        style_enc = self.style_encoding(style_enc + self.pos_enc).flatten(2).transpose(1,2)
+        style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
         style_enc = self.depth_linear(style_enc).transpose(1,2)
         style_enc = self.relu(style_enc)
         style_enc = self.chwise_linear(style_enc)
         style_enc = self.relu(style_enc)
         style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7)
 
-        x = cF['r4_1'] + self.pos_enc
+        x = cF['r4_1']
 
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
