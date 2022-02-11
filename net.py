@@ -240,13 +240,12 @@ class ConvMixer(nn.Module):
             nn.GroupNorm(32, dim)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
-        trans_kernel_size=patch_size if not upscale else patch_size*2
         self.spe = spe
         self.tail = nn.Sequential(
             nn.Conv2d(dim*2, dim, kernel_size=1),
             nn.GELU(),
             nn.GroupNorm(32, dim),
-            nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
+            nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             nn.GroupNorm(32, dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
