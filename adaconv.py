@@ -14,9 +14,9 @@ class AdaConv(nn.Module):
         self.c_out = c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
-        self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
+        self.pad = nn.ReflectionPad2d((2, 2, 2, 2))
         self.norm = norm
-        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, stride=2,padding=1)
+        self.depthwise_kernel_conv = nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3)
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
@@ -35,7 +35,7 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, thumb_stats=None):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 3, 3)
+        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 5, 5)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)

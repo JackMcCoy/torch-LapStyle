@@ -531,7 +531,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.depth_linear = nn.Linear(512,self.s_d)
         self.chwise_linear = nn.Linear(16, 64)
-        self.chwise_linear_2 = nn.Linear(64,16)
+        self.chwise_linear_2 = nn.Linear(64,49)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
@@ -609,7 +609,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc)
         style_enc = self.chwise_linear(style_enc)
         style_enc = self.relu(style_enc)
-        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,4,4)
+        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7)
 
         x = cF['r4_1']
 
