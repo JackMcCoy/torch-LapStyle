@@ -228,7 +228,7 @@ class ConvMixer(nn.Module):
             nn.GELU(),
             nn.GroupNorm(32, dim)
             )
-
+        self.upscale = upscale
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
@@ -240,19 +240,21 @@ class ConvMixer(nn.Module):
             nn.GroupNorm(32, dim)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
-        trans_kernel_size=patch_size if not upscale else patch_size*2
         self.spe = spe
         self.tail = nn.Sequential(
-            nn.ConvTranspose2d(dim*2, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
+            nn.Conv2d(dim*2, dim, kernel_size=1),
             nn.GELU(),
             nn.GroupNorm(32, dim),
-            nn.Conv2d(dim, dim, kernel_size=1),
+            nn.ConvTranspose2d(dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
             nn.GroupNorm(32, dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
             nn.GroupNorm(32, out_dim) if out_dim != 3 else nn.Identity(),
-            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
+            nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias),
+            nn.GELU() if out_dim !=3 else nn.Identity,
+            nn.GroupNorm(32, out_dim) if out_dim != 3 else nn.Identity(),
+            nn.Upsample(scale_factor=2, mode='nearest') if upscale else nn.Identity()
         )
 
     def forward(self, x):
@@ -600,7 +602,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.relu = nn.LeakyReLU()
-        self.gelu = nn.GELU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -629,8 +630,6 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
-            if idx < len(self.learnable)-1:
-                x = self.gelu(x)
         return x
 
 
