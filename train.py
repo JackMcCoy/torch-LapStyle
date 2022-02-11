@@ -809,7 +809,7 @@ def adaconv_thumb_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    #wandb.watch((dec_,rev_,disc2_), log_freq=args.log_every_)
+    wandb.watch((dec_,rev_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
