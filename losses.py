@@ -82,11 +82,11 @@ def CalcStyleEmdLoss(X, Y):
     Y = Y[:, :, xcrop:xcrop + half, ycrop:ycrop + half]
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
-    #X = torch.bmm(X,X.transpose(1,2))
-    #Y = torch.bmm(Y, Y.transpose(1, 2))
-    #remd = remd_loss(X,Y)
-    remd = sinkhorn_loss(X,Y).mean()
-
+    try:
+        remd = sinkhorn_loss(X,Y).mean()
+    except:
+        print('maximum size exceeded')
+        remd=0
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
