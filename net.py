@@ -932,7 +932,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, F['r4_1'], repeat_style=repeat_style)
+    Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
