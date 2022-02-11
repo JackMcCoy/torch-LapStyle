@@ -225,18 +225,18 @@ class ConvMixer(nn.Module):
         self.relu = nn.LeakyReLU()
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
-            nn.LeakyReLU(),
+            nn.GELU(),
             #nn.InstanceNorm2d(dim, affine=True)
             )
 
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 #nn.InstanceNorm2d(dim, affine=True)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.GELU(),
             #nn.InstanceNorm2d(dim, affine=True)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
@@ -244,12 +244,12 @@ class ConvMixer(nn.Module):
 
         self.tail = nn.Sequential(
             nn.Conv2d(dim, dim, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.GELU(),
             # nn.InstanceNorm2d(out_dim, affine=True),
             nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
-            nn.LeakyReLU(),
+            nn.GELU(),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
-            nn.LeakyReLU(),
+            nn.GELU(),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
@@ -556,7 +556,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
 
-        self.relu = nn.LeakyReLU()
+        self.gelu = nn.GELU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
@@ -584,6 +584,8 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
+            if idx != len(self.learnable):
+                x = self.gelu(x)
         return x
 
 
