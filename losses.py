@@ -76,12 +76,11 @@ def CalcStyleEmdLoss(X, Y):
     #X, Y = flatten_and_sample(X,Y)
     N,C,h,w = X.shape
     half = h // 2
-    xcrop = torch.randint(half - 1, (1,))
-    ycrop = torch.randint(half - 1, (1,))
-    X = X[:, :, xcrop:xcrop + half, ycrop:ycrop + half]
-    Y = Y[:, :, xcrop:xcrop + half, ycrop:ycrop + half]
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
+    sample = torch.randint(h*w - 1, (1,))
+    X = X.flatten(2)
+    Y = Y.flatten(2)
+    X = X[:,:,sample[:1024]].transpose(1,2).contiguous()
+    Y = Y[:, :, sample[:1024]].transpose(1, 2).contiguous()
     try:
         remd = sinkhorn_loss(X,Y).mean()
     except:
