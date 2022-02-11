@@ -226,18 +226,18 @@ class ConvMixer(nn.Module):
         self.head = nn.Sequential(
             nn.Conv2d(in_dim, dim, kernel_size=patch_size, stride=patch_size),
             nn.GELU(),
-            #nn.InstanceNorm2d(dim, affine=True)
+            nn.GroupNorm2d(dim, 32)
             )
 
         cell = nn.Sequential(
             Residual(nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size, groups=dim, padding="same", padding_mode='reflect'),
                 nn.GELU(),
-                #nn.InstanceNorm2d(dim, affine=True)
+                nn.GroupNorm2d(dim, 32)
             )),
             nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
-            #nn.InstanceNorm2d(dim, affine=True)
+            nn.GroupNorm2d(dim, 32)
         )
         self.body = momentum_net(*[copy.deepcopy(cell) for i in range(depth)],target_device='cuda')
         trans_kernel_size=patch_size if not upscale else patch_size*2
@@ -245,11 +245,13 @@ class ConvMixer(nn.Module):
         self.tail = nn.Sequential(
             nn.Conv2d(dim*2, dim, kernel_size=1),
             nn.GELU(),
-            # nn.InstanceNorm2d(out_dim, affine=True),
+            nn.GroupNorm2d(dim, 32),
             nn.ConvTranspose2d(dim, dim, kernel_size=trans_kernel_size, stride=trans_kernel_size),
             nn.GELU(),
+            nn.GroupNorm2d(dim, 32),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
+            nn.GroupNorm2d(out_dim, 32),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias)
         )
 
@@ -534,6 +536,7 @@ class ThumbAdaConv(nn.Module):
         self.chwise_linear_2 = nn.Linear(64,49)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
+        '''
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -572,6 +575,14 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3)),
             )
+        ])
+        '''
+        self.learnable = nn.ModuleList([
+            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True),
+            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
+            ConvMixer(512, 4, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
+            ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
+
         ])
 
         if style_contrastive_loss:
@@ -616,6 +627,8 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
+            if idx < len(self.learnable)-1:
+                x = self.gelu(x)
         return x
 
 
