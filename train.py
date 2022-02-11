@@ -840,7 +840,7 @@ def adaconv_thumb_train():
         dec_.eval()
         rev_.eval()
         stylized = dec_(cF, sF['r4_1'])
-        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='bilinear')
+        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
 
         #for param in disc_.parameters():
@@ -880,7 +880,7 @@ def adaconv_thumb_train():
         stylized = dec_(cF,sF['r4_1'])
 
         with torch.no_grad():
-            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='bilinear')
+            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
 
         patch_stylized = rev_(res_in)
         #disc_.eval()
