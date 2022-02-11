@@ -614,7 +614,7 @@ class ThumbAdaConv(nn.Module):
 
         x = cF['r4_1']
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = ada(style_enc, x)
+            x = x + ada(style_enc, cF[mixin])
             x = learnable(x)
         return x
 
@@ -932,7 +932,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc = decoder(F, F['r4_1'])
+    IccZ = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
