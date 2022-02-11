@@ -540,20 +540,6 @@ class ThumbAdaConv(nn.Module):
         self.chwise_linear_2 = nn.Linear(64,49)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
-        self.res = nn.ModuleList([
-            nn.Sequential(nn.Conv2d(512, 256, kernel_size=1),
-                          nn.Upsample(scale_factor=2, mode='nearest')),
-            nn.Sequential(nn.Conv2d(256, 128, kernel_size=1),
-                          nn.Upsample(scale_factor=2, mode='nearest')),
-            nn.Sequential(nn.Conv2d(128, 64, kernel_size=1),
-                          nn.Upsample(scale_factor=2, mode='nearest')),
-        ])
-        self.res_norm = nn.ModuleList([
-            nn.GroupNorm(32, 256),
-            nn.GroupNorm(32, 128),
-            nn.GroupNorm(16, 64)
-        ])
-        '''
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -601,7 +587,7 @@ class ThumbAdaConv(nn.Module):
             ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
 
         ])
-
+        '''
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -642,11 +628,6 @@ class ThumbAdaConv(nn.Module):
 
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
-            if idx >0:
-                x = self.relu(x+res)
-                x = self.res_norm[idx-1](x)
-            if idx != len(self.learnable)-1:
-                res = self.relu(self.res[idx](x))
             x = learnable(x)
         return x
 
