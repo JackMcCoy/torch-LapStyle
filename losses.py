@@ -26,8 +26,8 @@ def pairwise_distances_sq_l2(x, y):
     return torch.clamp(dist, 1e-5, 1e5)/x.size(1)
 
 
-def cosd_dist(x):
-    M = pairwise_distances_cos(x)
+def cosd_dist(x, y):
+    M = pairwise_distances_cos(x, y)
     return M
 
 def euc_dist(x,y):
