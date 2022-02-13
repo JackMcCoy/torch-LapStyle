@@ -522,9 +522,9 @@ class DecoderAdaConv(nn.Module):
 class FusionMod(nn.Module):
     def __init__(self, ch):
         super(FusionMod, self).__init__()
-        self.conv1 = nn.Conv2d(ch, ch, kernel_size=3,padding=1,padding_mode='reflect')
-        self.conv2 = nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect')
-        self.out = nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect')
+        self.conv1 = nn.Conv2d(ch, 64, kernel_size=3,padding=1,padding_mode='reflect')
+        self.conv2 = nn.Conv2d(ch, 64, kernel_size=3, padding=1, padding_mode='reflect')
+        self.out = nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect')
         self.relu = nn.LeakyReLU()
 
     def forward(self, mod1, mod2):
