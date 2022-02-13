@@ -298,5 +298,5 @@ def calc_mean_std(feat, eps=1e-5):
     N, C = size[:2]
     feat_var,feat_mean = torch.var_mean(feat.view(N, C, -1),unbiased=False,dim=2)
     feat_mean = feat_mean.view(N,C,1,1)
-    feat_std = feat_var.sqrt().view(N, C, 1, 1)
+    feat_std = (feat_var+eps).sqrt().view(N, C, 1, 1)
     return feat_mean, feat_std
