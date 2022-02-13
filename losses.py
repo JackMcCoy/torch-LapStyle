@@ -121,7 +121,7 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     Mx = cosd_dist(X)
     Mx = Mx / Mx.sum(1, keepdim=True)
 
-    My = cosd_dist(Y, Y)
+    My = cosd_dist(Y)
     My = My / My.sum(1, keepdim=True)
 
     d = torch.abs(Mx - My).mean(1) * X.size(1)
