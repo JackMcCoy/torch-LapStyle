@@ -9,11 +9,10 @@ sinkhorn_loss = SamplesLoss("sinkhorn", p=1, blur=0.03, scaling=0.9)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
-def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
-    a_n, b_n = a.norm(dim=2,p=2)[:, :, None], b.norm(dim=2,p=2)[:, :, None]
-    a_norm = a / torch.clip(a_n, min=eps)
-    b_norm = b / torch.clip(b_n, min=eps)
-    sim_mt = torch.bmm(a_norm, b_norm.transpose(1, 2))
+def pairwise_distances_cos(a:torch.Tensor,eps:float = 1e-5):
+    a_n = a.norm(dim=2,p=2)[:, :, None]
+    a_n = a / torch.clip(a_n, min=eps)
+    sim_mt = torch.einsum('bij,bjk->bik',a_n,a_n.transpose(1,2))
     sim_mt = 1 - sim_mt
     return sim_mt
 
@@ -119,7 +118,7 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     #Y = Y.flatten(2).transpose(1,2)
     X, Y = flatten_and_sample(X,Y)
     # Relaxed EMD
-    Mx = cosd_dist(X, X)
+    Mx = cosd_dist(X)
     Mx = Mx / Mx.sum(1, keepdim=True)
 
     My = cosd_dist(Y, Y)
@@ -297,7 +296,7 @@ def calc_mean_std(feat, eps=1e-5):
     size = feat.shape
     assert (len(size) == 4)
     N, C = size[:2]
-    feat_var = feat.view(N, C, -1).var(dim=2) + eps
+    feat_mean,feat_var = torch.var_mean(feat.view(N, C, -1),unbiased=False,dim=2)
+    feat_mean = feat_mean.view(N,C,1,1)
     feat_std = feat_var.sqrt().view(N, C, 1, 1)
-    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
     return feat_mean, feat_std
