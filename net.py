@@ -589,7 +589,7 @@ class ResidualConvAttention(nn.Module):
         context = torch.einsum('bhdn,bhen->bhde', k, v)
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
-        out = self.to_out(out)
+        out = self.to_out(out) + x
         return out
 
 class ThumbAdaConv(nn.Module):
