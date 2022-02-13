@@ -835,16 +835,15 @@ def adaconv_thumb_train():
 
         ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
         si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
-        with torch.no_grad():
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
-            dec_.eval()
-            #rev_.eval()
-            stylized, style_emb, style_norms = dec_(cF['r4_1'], sF['r4_1'])
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
-            patch_cF = enc_(res_in)
-            patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False, style_norm= style_norms)
-            #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
+        cF = enc_(ci[0])
+        sF = enc_(si[0])
+        dec_.eval()
+        #rev_.eval()
+        stylized, style_emb, style_norms = dec_(cF['r4_1'], sF['r4_1'])
+        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
+        patch_cF = enc_(res_in)
+        patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False, style_norm= style_norms)
+        #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
 
         #for param in disc_.parameters():
         #    param.grad = None
