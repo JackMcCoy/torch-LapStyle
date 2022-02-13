@@ -614,26 +614,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 64, (3, 3)),
                 nn.ReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
-                nn.ReLU()
+                nn.Conv2d(64, 3, (3, 3)),
             )
         ])
-        self.outfeature_shift = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(256,64,kernel_size=1),
-                nn.Upsample(scale_factor=4,mode='nearest')
-            ),
-            nn.Sequential(
-                nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=2, mode='nearest')
-            ),
-            nn.Sequential(
-                nn.Conv2d(64, 64, kernel_size=1)
-            ),
-        ])
-        self.fusion_mods = nn.ModuleList([
-            FusionMod(64), FusionMod(64), FusionMod(64),
-        ])
+
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -646,12 +630,6 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(),
-            ResidualConvAttention(),
-            ResidualConvAttention()
-        ])
-        self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -681,13 +659,6 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
-            if idx<len(self.learnable)-1:
-                out_feats.append(self.outfeature_shift[idx](x))
-        for idx in range(len(out_feats)):
-            x = self.fusion_mods[idx](x,out_feats.pop())
-        for mod in self.attention_blocks:
-            x = mod(x)
-        x = self.out_conv(x)
         return x
 
 
