@@ -809,7 +809,7 @@ def adaconv_thumb_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    wandb.watch((dec_,rev_,disc2_), log_freq=args.log_every_)
+    wandb.watch((dec_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
@@ -891,7 +891,7 @@ def adaconv_thumb_train():
         #patch_stylized = rev_(res_in)
         #disc_.eval()
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
-                             calc_identity=args.identity_loss == 1, disc_loss=True,
+                             calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
                              remd_loss=remd_loss, patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
