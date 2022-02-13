@@ -119,10 +119,10 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     X, Y = flatten_and_sample(X,Y)
     # Relaxed EMD
     Mx = cosd_dist(X)
-    Mx = Mx / Mx.sum(1, keepdim=True)
+    Mx = (Mx / Mx.sum(1, keepdim=True)).clamp_min(eps)
 
     My = cosd_dist(Y)
-    My = My / My.sum(1, keepdim=True)
+    My = (My / My.sum(1, keepdim=True)).clamp_min(eps)
 
     d = torch.abs(Mx - My).mean(1) * X.size(1)
     d = d.mean()
