@@ -564,6 +564,7 @@ class ResidualConvAttention(nn.Module):
 
         out_conv_kwargs = {'padding': padding}
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, kernel_size, **out_conv_kwargs)
+        self.out_norm = nn.GroupNorm(16,64)
 
     def forward(self, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -589,7 +590,8 @@ class ResidualConvAttention(nn.Module):
         context = torch.einsum('bhdn,bhen->bhde', k, v)
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
-        out = self.to_out(out) + x
+        out = self.to_out(out)
+        out = self.out_norm(out+x)
         return out
 
 class ThumbAdaConv(nn.Module):
