@@ -682,7 +682,7 @@ class ThumbAdaConv(nn.Module):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
             if idx<len(self.learnable)-1:
-                out_feats.append(x)
+                out_feats.append(self.outfeature_shift[idx](x))
         for idx in range(len(out_feats)):
             x = self.fusion_mods[idx](x,out_feats.pop())
         for mod in self.attention_blocks:
