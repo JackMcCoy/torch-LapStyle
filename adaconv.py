@@ -32,7 +32,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad=True
 
-    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, thumb_stats=None):
+    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, style_norm = None):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 5, 5)
@@ -42,7 +42,9 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            predicted = F.instance_norm(predicted)
+            if style_norm is None:
+                style_norm = predicted.norm(2, 1, keepdim=True).clamp_min(1e-12).expand_as(predicted)
+            predicted = predicted / style_norm
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
@@ -56,4 +58,4 @@ class AdaConv(nn.Module):
                 bias=pointwise_bias,
                 groups=self.batch_groups)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
-        return content_out
+        return content_out, style_norm

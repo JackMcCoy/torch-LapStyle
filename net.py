@@ -667,19 +667,20 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: typing.Dict[str, torch.Tensor], style_enc):
+    def forward(self, x: torch.Tensor, style_enc, calc_style=True, style_norm = None):
         b = style_enc.shape[0]
-        style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
-        style_enc = self.depth_linear(style_enc).transpose(1,2)
-        style_enc = self.relu(style_enc)
-        style_enc = self.chwise_linear(style_enc)
-        style_enc = self.relu(style_enc)
-        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
-
-        x = cF['r4_1']
+        if calc_style:
+            style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
+            style_enc = self.depth_linear(style_enc).transpose(1,2)
+            style_enc = self.relu(style_enc)
+            style_enc = self.chwise_linear(style_enc)
+            style_enc = self.relu(style_enc)
+            style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
+        style_norms = [] if style_norm is None else None
         out_feats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = self.relu(ada(style_enc, x))
+            x, p_norm = self.relu(ada(style_enc, x, style_norm=style_norm[idx]))
+            if style_norm is None: style_norms.append(p_norm)
             x = learnable(x)
             if idx<len(self.learnable)-1:
                 out_feats.append(self.outfeature_shift[idx](x))
@@ -690,7 +691,7 @@ class ThumbAdaConv(nn.Module):
             fusion = mod(fusion)
         x = x + fusion
         x = self.out_conv(x)
-        return x
+        return x, style_enc, style_norms
 
 
 class DecoderVQGAN(nn.Module):
@@ -1006,7 +1007,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc = decoder(F, F['r4_1'])
+    Icc, *_ = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
