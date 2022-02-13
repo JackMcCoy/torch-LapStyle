@@ -536,6 +536,7 @@ class FusionMod(nn.Module):
 
 class ResidualConvAttention(nn.Module):
     def __init__(self):
+        super(ResidualConvAttention, self).__init__()
         self.group_convs = nn.Sequential(
             nn.Conv2d(64,64,kernel_size=3,padding=1,padding_mode='reflect', groups=4),
             nn.ReLU(),
