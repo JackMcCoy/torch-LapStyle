@@ -883,7 +883,7 @@ def adaconv_thumb_train():
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
         patch_cF = enc_(ci[-1])
-        patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False,
+        patch_stylized, *_ = dec_(patch_cF['r4_1'].detach(), style_emb, calc_style=False,
                                   style_norm=style_norms)
 
         #patch_stylized = rev_(res_in)
