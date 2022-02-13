@@ -812,107 +812,106 @@ def adaconv_thumb_train():
     wandb.watch((dec_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
-        with torch.autograd.detect_anomaly():
-            warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
-            #warmup_lr_adjust(rev_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-            #                 decay=args.lr_decay)
-            #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-            #                 decay=args.disc_lr)
-            warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
-                             decay=args.disc_lr)
+        warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
+        #warmup_lr_adjust(rev_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.lr_decay)
+        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.disc_lr)
+        warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
+                         decay=args.disc_lr)
 
-            ci = content_normalize(next(content_iter))
-            si = style_normalize(next(style_iter))
+        ci = content_normalize(next(content_iter))
+        si = style_normalize(next(style_iter))
 
-            if args.style_contrastive_loss == 1:
-                ci_ = ci[1:]
-                ci_ = torch.cat([ci_, ci[0:1]], 0)
-                ci = torch.cat([ci, ci_], 0)
-                rc_si = random_crop(si)
-                si = torch.cat([si, si], 0)
-                rc_si = torch.cat([rc_si, rc_si], 0)
-            else:
-                rc_si = random_crop(si)
+        if args.style_contrastive_loss == 1:
+            ci_ = ci[1:]
+            ci_ = torch.cat([ci_, ci[0:1]], 0)
+            ci = torch.cat([ci, ci_], 0)
+            rc_si = random_crop(si)
+            si = torch.cat([si, si], 0)
+            rc_si = torch.cat([rc_si, rc_si], 0)
+        else:
+            rc_si = random_crop(si)
 
-            ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
-            si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
-            cF = enc_(ci[0])
-            sF = enc_(si[0])
-            dec_.eval()
-            #rev_.eval()
-            stylized, style_emb, style_norms = dec_(cF['r4_1'], sF['r4_1'])
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
-            patch_cF = enc_(ci[-1])
-            patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False, style_norm= style_norms)
-            #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
+        ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
+        si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
+        cF = enc_(ci[0])
+        sF = enc_(si[0])
+        dec_.eval()
+        #rev_.eval()
+        stylized, style_emb, style_norms = dec_(cF['r4_1'], sF['r4_1'])
+        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
+        patch_cF = enc_(ci[-1])
+        patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False, style_norm= style_norms)
+        #patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
 
-            #for param in disc_.parameters():
-            #    param.grad = None
-            for param in disc2_.parameters():
-                param.grad = None
+        #for param in disc_.parameters():
+        #    param.grad = None
+        for param in disc2_.parameters():
+            param.grad = None
 
-            #set_requires_grad(disc_, True)
-            set_requires_grad(disc2_, True)
-            set_requires_grad(dec_, False)
-            #set_requires_grad(rev_, False)
-            loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
-            #loss_D = disc_.losses(si[0], stylized.clone().detach().requires_grad_(True))
+        #set_requires_grad(disc_, True)
+        set_requires_grad(disc2_, True)
+        set_requires_grad(dec_, False)
+        #set_requires_grad(rev_, False)
+        loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
+        #loss_D = disc_.losses(si[0], stylized.clone().detach().requires_grad_(True))
 
-            #loss_D.backward()
-            loss_D2.backward()
+        #loss_D.backward()
+        loss_D2.backward()
 
-            if n>0:
-                _clip_gradient(disc2_)
-                #_clip_gradient(disc_)
-                opt_D2.step()
-                #opt_D.step()
+        if n>0:
+            _clip_gradient(disc2_)
+            #_clip_gradient(disc_)
+            opt_D2.step()
+            #opt_D.step()
 
-            #set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
-            set_requires_grad(dec_, True)
-            #set_requires_grad(rev_, True)
+        #set_requires_grad(disc_, False)
+        set_requires_grad(disc2_, False)
+        set_requires_grad(dec_, True)
+        #set_requires_grad(rev_, True)
 
-            dec_.train()
-            #rev_.train()
+        dec_.train()
+        #rev_.train()
 
-            for param in dec_.parameters():
-                param.grad = None
-            #for param in rev_.parameters():
-            #    param.grad = None
+        for param in dec_.parameters():
+            param.grad = None
+        #for param in rev_.parameters():
+        #    param.grad = None
 
-            stylized, style_emb, style_norms = dec_(cF['r4_1'],sF['r4_1'])
-            with torch.no_grad():
-                res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
-            patch_cF = enc_(ci[-1])
-            patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False,
-                                      style_norm=style_norms)
+        stylized, style_emb, style_norms = dec_(cF['r4_1'],sF['r4_1'])
+        with torch.no_grad():
+            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
+        patch_cF = enc_(ci[-1])
+        patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False,
+                                  style_norm=style_norms)
 
-            #patch_stylized = rev_(res_in)
-            #disc_.eval()
-            losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
-                                 calc_identity=args.identity_loss == 1, disc_loss=False,
-                                 mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
-                                 content_contrastive_loss=args.content_contrastive_loss == 1,
-                                 remd_loss=remd_loss, patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
-                                 sF=sF)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-            mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
-            disc2_.eval()
-            fake_loss = disc2_(patch_stylized)
-            loss_patch_disc = disc2_.ganloss(fake_loss, True)
-            loss = loss_patch_disc * args.gan_loss2 + loss_c * args.content_weight + \
-                   loss_s* args.style_weight + content_relt * args.content_relt + \
-                   style_remd * args.style_remd + patch_loss * args.patch_loss + \
-                   loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
-                   + l_identity2 + l_identity3 * 50 + l_identity4 + \
-                   style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
+        #patch_stylized = rev_(res_in)
+        #disc_.eval()
+        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
+                             calc_identity=args.identity_loss == 1, disc_loss=False,
+                             mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
+                             content_contrastive_loss=args.content_contrastive_loss == 1,
+                             remd_loss=remd_loss, patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
+                             sF=sF)
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
+        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
+        disc2_.eval()
+        fake_loss = disc2_(patch_stylized)
+        loss_patch_disc = disc2_.ganloss(fake_loss, True)
+        loss = loss_patch_disc * args.gan_loss2 + loss_c * args.content_weight + \
+               loss_s* args.style_weight + content_relt * args.content_relt + \
+               style_remd * args.style_remd + patch_loss * args.patch_loss + \
+               loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
+               + l_identity2 + l_identity3 * 50 + l_identity4 + \
+               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
 
-            loss.backward()
-            if n > 0:
-                #_clip_gradient(rev_)
-                _clip_gradient(dec_)
-                #rev_optimizer.step()
-                dec_optimizer.step()
+        loss.backward()
+        if n > 0:
+            #_clip_gradient(rev_)
+            _clip_gradient(dec_)
+            #rev_optimizer.step()
+            dec_optimizer.step()
         disc2_.train()
         #disc_.train()
         loss_D = 0
