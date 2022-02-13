@@ -519,6 +519,43 @@ class DecoderAdaConv(nn.Module):
         return x, style
 
 
+class FusionMod(nn.Module):
+    def __init__(self, ch):
+        super(FusionMod, self).__init__()
+        self.conv1 = nn.Conv2d(ch, ch, kernel_size=3,padding=1,padding_mode='reflect')
+        self.conv2 = nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect')
+        self.out = nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect')
+        self.relu = nn.LeakyReLU()
+
+    def forward(self, mod1, mod2):
+        mod1 = self.relu(self.conv1(mod1))
+        mod2 = self.relu(self.conv2(mod2))
+        mod2 = self.relu(self.out(mod1*mod2))
+        return mod2
+
+
+class ResidualConvAttention(nn.Module):
+    def __init__(self):
+        self.group_convs = nn.Sequential(
+            nn.Conv2d(64,64,kernel_size=3,padding=1,padding_mode='reflect', groups=4),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect', groups=8),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect', groups=16),
+            nn.ReLU(),
+        )
+        self.attention = nn.Sequential(
+            nn.Conv2d(64,64,kernel_size=3,padding=1,padding_mode='reflect',groups=64),
+            nn.ReLU(),
+            nn.Conv2d(64,64,kernel_size=1),
+            nn.Sigmoid()
+        )
+    def forward(self, x):
+        out = self.group_convs(x)
+        out = self.attention(out) * out
+        return out+x
+
+
 class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64):
         super(ThumbAdaConv, self).__init__()
@@ -576,18 +613,26 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 64, (3, 3)),
                 nn.ReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.ReLU()
             )
         ])
-        '''
-        self.learnable = nn.ModuleList([
-            ConvMixer(512, 2, kernel_size=3, patch_size=1, in_dim=512, out_dim=256, upscale=True, spe=True),
-            ConvMixer(512, 8, kernel_size=5, patch_size=2, in_dim=256, out_dim=128, upscale=True),
-            ConvMixer(512, 4, kernel_size=5, patch_size=4, in_dim=128, out_dim=64, upscale=True),
-            ConvMixer(512, 4, kernel_size=7, patch_size=8, in_dim=64, out_dim=3, upscale=False),
-
+        self.outfeature_shift = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(256,64,kernel_size=1),
+                nn.Upsample(scale_factor=4,mode='nearest')
+            ),
+            nn.Sequential(
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=2, mode='nearest')
+            ),
+            nn.Sequential(
+                nn.Conv2d(64, 64, kernel_size=1)
+            ),
         ])
-        '''
+        self.fusion_mods = nn.ModuleList([
+            FusionMod(64), FusionMod(64), FusionMod(64),
+        ])
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -600,6 +645,12 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        self.attention_blocks = nn.ModuleList([
+            ResidualConvAttention(),
+            ResidualConvAttention(),
+            ResidualConvAttention()
+        ])
+        self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -625,10 +676,17 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7)
 
         x = cF['r4_1']
-
+        out_feats = []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x = self.relu(ada(style_enc, x))
             x = learnable(x)
+            if idx<len(self.learnable)-1:
+                out_feats.append(x)
+        for idx in rand(len(out_feats)):
+            x = self.fusions_mods[idx](x,out_feats.pop())
+        for mod in self.attention_blocks:
+            x = mod(x)
+        x = self.out_conv(x)
         return x
 
 
