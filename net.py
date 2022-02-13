@@ -614,7 +614,8 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 64, (3, 3)),
                 nn.ReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3))
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.ReLU()
             )
         ])
         self.outfeature_shift = nn.ModuleList([
@@ -684,6 +685,13 @@ class ThumbAdaConv(nn.Module):
             x = learnable(x)
             if idx<len(self.learnable)-1:
                 out_feats.append(self.outfeature_shift[idx](x))
+        fusion = x.clone()
+        for idx in range(len(out_feats)):
+            fusion = self.fusion_mods[idx](fusion,out_feats[-(idx+1)])
+        for mod in self.attention_blocks:
+            fusion = mod(fusion)
+        x = x + fusion
+        x = self.out_conv(x)
         return x, style_enc, style_norms
 
 
