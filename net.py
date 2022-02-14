@@ -723,9 +723,9 @@ class ThumbAdaConv(nn.Module):
             if idx<len(self.learnable)-1:
                 out_feats.append(self.outfeature_shift[idx](x))
         fusion = x.clone()
+        fusion = fusion + pos_enc(64, 256, 256)
         for idx in range(len(out_feats)):
             fusion = self.fusion_mods[idx](fusion,out_feats[-(idx+1)])
-        fusion = fusion + pos_enc(64,256,256)
         for mod in self.attention_blocks:
             fusion = mod(fusion)
         x = x + fusion
