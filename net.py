@@ -731,7 +731,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(64, kernel_size=3,padding=1)
+            ResidualConvAttention(64)
         ])
         self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
         self.relu = nn.LeakyReLU()
