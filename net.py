@@ -557,7 +557,7 @@ class ResidualConvAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        conv_kwargs = {'padding': padding, 'stride': stride}
+        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect'}
         self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
         self.to_k = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
         self.to_v = nn.Conv2d(chan, value_dim * heads, kernel_size, **conv_kwargs)
@@ -655,22 +655,6 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU()
             )
         ])
-        self.outfeature_shift = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(256,64,kernel_size=1),
-                nn.Upsample(scale_factor=4,mode='nearest')
-            ),
-            nn.Sequential(
-                nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=2, mode='nearest')
-            ),
-            nn.Sequential(
-                nn.Conv2d(64, 64, kernel_size=1)
-            ),
-        ])
-        self.fusion_mods = nn.ModuleList([
-            FusionMod(64), FusionMod(64), FusionMod(64),
-        ])
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -684,11 +668,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(64),
-            ResidualConvAttention(64),
             ResidualConvAttention(64)
         ])
         self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
+        self.style_resize = nn.Conv2d(s_d,64,kernel_size=1) if s_d != 64 else nn.Identity()
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -704,33 +687,23 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, x: torch.Tensor, style_enc, calc_style=True, style_norm = None):
+    def forward(self, x: torch.Tensor, style_enc):
         b = style_enc.shape[0]
-        if calc_style:
-            style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
-            style_enc = self.depth_linear(style_enc).transpose(1,2)
-            style_enc = self.relu(style_enc)
-            style_enc = self.chwise_linear(style_enc)
-            style_enc = self.relu(style_enc)
-            style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
-        style_norms = [] if calc_style else style_norm
-        out_feats = []
+        style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
+        style_enc = self.depth_linear(style_enc).transpose(1,2)
+        style_enc = self.relu(style_enc)
+        style_enc = self.chwise_linear(style_enc)
+        style_enc = self.relu(style_enc)
+        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x, style_norm=style_norms[idx] if not calc_style else None)
-            if calc_style: style_norms.append(p_norm)
+            x, p_norm = ada(style_enc, x)
             x = self.relu(x)
             x = learnable(x)
-            if idx<len(self.learnable)-1:
-                out_feats.append(self.outfeature_shift[idx](x))
-        fusion = x.clone()
-        fusion = fusion + pos_enc(64, steps= 1 if calc_style else .5)
-        for idx in range(len(out_feats)):
-            fusion = self.fusion_mods[idx](fusion,out_feats[-(idx+1)])
+        resized_style = self.style_resize(style_enc)
         for mod in self.attention_blocks:
-            fusion = mod(fusion)
-        x = x + fusion
+            x = mod(x, context=resized_style)
         x = self.out_conv(x)
-        return x, style_enc, style_norms
+        return x
 
 
 class DecoderVQGAN(nn.Module):
@@ -1046,7 +1019,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, *_ = decoder(F['r4_1'], F['r4_1'])
+    Icc = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
