@@ -668,10 +668,9 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(64)
+            ResidualConvAttention(64, kernel_size=3,padding=1)
         ])
         self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
-        self.style_resize = nn.Conv2d(s_d,64,kernel_size=1) if s_d != 64 else nn.Identity()
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -699,9 +698,8 @@ class ThumbAdaConv(nn.Module):
             x, p_norm = ada(style_enc, x)
             x = self.relu(x)
             x = learnable(x)
-        resized_style = self.style_resize(style_enc)
         for mod in self.attention_blocks:
-            x = mod(x, context=resized_style)
+            x = mod(x)
         x = self.out_conv(x)
         return x
 
