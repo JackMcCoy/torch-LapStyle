@@ -3,3 +3,4 @@ Questions:
 2. Switch to calculating patch with thumb decoder?
 3. Style REMD all layers?
 4. Better sampling strategy?
+5. Can the AdaConv kernels be used for attention?

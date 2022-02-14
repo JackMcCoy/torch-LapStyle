@@ -558,6 +558,7 @@ class ResidualConvAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect'}
+
         self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
         self.to_k = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
         self.to_v = nn.Conv2d(chan, value_dim * heads, kernel_size, **conv_kwargs)
@@ -593,6 +594,59 @@ class ResidualConvAttention(nn.Module):
         out = self.to_out(out)
         out = self.out_norm(out+x)
         return out
+
+
+class PredictedKernelAttention:
+    def __init__(self, chan, s_d = 64, groups_per=1, chan_out=None, batch_size=4,kernel_size=1, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
+                 norm_queries=True):
+        super().__init__()
+        self.chan = chan
+        chan_out = chan if chan_out is None else chan_out
+
+        self.key_dim = key_dim
+        self.value_dim = value_dim
+        self.heads = heads
+
+        self.norm_queries = norm_queries
+
+        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect'}
+
+        self.to_q = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=key_dim * heads)
+        self.to_k = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=key_dim * heads)
+        self.to_v = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=value_dim * heads)
+
+        out_conv_kwargs = {'padding': padding}
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, kernel_size, **out_conv_kwargs)
+        self.out_norm = nn.GroupNorm(16, 64)
+
+    def forward(self, x, context=None):
+        b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
+
+        q, k, v = (self.to_q(x), self.to_k(x), self.to_v(x))
+
+        q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
+
+        q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
+
+        if context is not None:
+            context = context.reshape(b, c, 1, -1)
+            ck, cv = self.to_k(context), self.to_v(context)
+            ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
+            k = torch.cat((k, ck), dim=3)
+            v = torch.cat((v, cv), dim=3)
+
+        k = k.softmax(dim=-1)
+
+        if self.norm_queries:
+            q = q.softmax(dim=-2)
+
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
+        out = out.reshape(b, -1, h, w)
+        out = self.to_out(out)
+        out = self.out_norm(out + x)
+        return out
+
 
 class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64):
@@ -1123,15 +1177,14 @@ def calc_losses(stylized: torch.Tensor,
         for key in content_layers[1:]:
             loss_c += content_loss(stylized_feats[key], cF[key].detach(),norm=True)
     else:
-        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(),norm=True) + \
-                 content_loss(stylized_feats['r5_1'], cF['r5_1'].detach(), norm=True)
+        loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach(),norm=True)
 
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     for hdx, key in enumerate(style_layers[1:]):
         loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
     if remd_loss:
         style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
-        content_relt = content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach()) + content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
+        content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     else:
         style_remd = 0
         content_relt = 0
