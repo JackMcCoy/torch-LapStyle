@@ -839,7 +839,7 @@ def adaconv_thumb_train():
         sF = enc_(si[0])
         dec_.eval()
         #rev_.eval()
-        stylized = dec_(cF['r4_1'], sF['r4_1'])
+        stylized, style_emb, style_norms = dec_(cF['r4_1'], sF['r4_1'])
         res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
         patch_cF = enc_(ci[-1])
         patch_stylized, *_ = dec_(patch_cF['r4_1'], style_emb, calc_style=False, style_norm= style_norms)
@@ -879,7 +879,7 @@ def adaconv_thumb_train():
         #for param in rev_.parameters():
         #    param.grad = None
 
-        stylized = dec_(cF['r4_1'],sF['r4_1'])
+        stylized,style_emb, style_norms = dec_(cF['r4_1'],sF['r4_1'])
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
         #patch_cF = enc_(ci[-1])

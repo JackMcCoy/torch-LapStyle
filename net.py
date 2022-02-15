@@ -758,10 +758,10 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.chwise_linear(style_enc)
             style_enc = self.relu(style_enc)
             style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
-        style_norms = style_norm if not style_norm is None else []
+        style_norms = [] if style_norm is None else style_norm
         print(len(style_norms))
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x, style_norms[idx] if not calc_style else None)
+            x, p_norm = ada(style_enc, x, None if calc_style else style_norm[idx])
             if calc_style:
                style_norms.append(p_norm)
             x = self.relu(x)
@@ -1087,7 +1087,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc = decoder(F['r4_1'], F['r4_1'])
+    Icc, *_ = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
