@@ -49,7 +49,7 @@ class AdaConv(nn.Module):
                 mean = style_norm[0]
                 var = style_norm[1]
             # normally instance_norm
-            predicted = (x-mean)/var
+            predicted = (predicted-mean)/var
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
