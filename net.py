@@ -761,7 +761,7 @@ class ThumbAdaConv(nn.Module):
         style_norms = [] if style_norm is None else style_norm
         print(len(style_norms))
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x, None if calc_style else style_norm[idx])
+            x, p_norm = ada(style_enc, x, None if calc_style is None else style_norm[idx])
             if calc_style:
                style_norms.append(p_norm)
             x = self.relu(x)
