@@ -42,7 +42,14 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         if self.norm:
-            predicted = F.instance_norm(predicted)
+            if style_norm is None:
+                mean = predicted.mean(dim=(2,3),keepdim=True)
+                var = torch.sqrt(torch.var(predicted,dim=(2, 3), keepdim=True, unbiased=False)+1e-05)
+            else:
+                mean = style_norm[0]
+                var = style_norm[1]
+            # normally instance_norm
+            predicted = (x-mean)/var
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
@@ -56,4 +63,4 @@ class AdaConv(nn.Module):
                 bias=pointwise_bias,
                 groups=self.batch_groups)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
-        return content_out, style_norm
+        return content_out, (mean, var)

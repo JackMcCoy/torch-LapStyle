@@ -749,16 +749,20 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, x: torch.Tensor, style_enc):
+    def forward(self, x: torch.Tensor, style_enc, calc_style=False, style_norm= None):
         b = style_enc.shape[0]
-        style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
-        style_enc = self.depth_linear(style_enc).transpose(1,2)
-        style_enc = self.relu(style_enc)
-        style_enc = self.chwise_linear(style_enc)
-        style_enc = self.relu(style_enc)
-        style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
+        if calc_style:
+            style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
+            style_enc = self.depth_linear(style_enc).transpose(1,2)
+            style_enc = self.relu(style_enc)
+            style_enc = self.chwise_linear(style_enc)
+            style_enc = self.relu(style_enc)
+            style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
+        style_norms = style_norm if not style_norm is None else []
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x)
+            x, p_norm = ada(style_enc, x, style_norms[idx] if not calc_style else None)
+            if calc_style:
+               style_norms.append(p_norm)
             x = self.relu(x)
             x = learnable(x)
             if idx == 0:
@@ -766,7 +770,7 @@ class ThumbAdaConv(nn.Module):
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
-        return x
+        return x, style_enc, style_norms
 
 
 class DecoderVQGAN(nn.Module):
