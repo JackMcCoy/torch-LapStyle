@@ -749,7 +749,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, x: torch.Tensor, style_enc, calc_style=False, style_norm= None):
+    def forward(self, x: torch.Tensor, style_enc, calc_style=True, style_norm= None):
         b = style_enc.shape[0]
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(2).transpose(1,2)
@@ -761,7 +761,7 @@ class ThumbAdaConv(nn.Module):
         style_norms = [] if style_norm is None else style_norm
         print(len(style_norms))
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x, None if calc_style is None else style_norm[idx])
+            x, p_norm = ada(style_enc, x, None if calc_style else style_norm[idx])
             if calc_style:
                style_norms.append(p_norm)
             x = self.relu(x)
