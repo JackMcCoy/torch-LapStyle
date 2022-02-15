@@ -673,47 +673,49 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3)),
-                #nn.GroupNorm(32, 256),
+                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                #nn.GroupNorm(32, 256),
+                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                #nn.GroupNorm(32, 256),
+                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                #nn.GroupNorm(32, 256),
+                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3)),
-                #nn.GroupNorm(32, 128),
+                nn.GroupNorm(32, 128),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3)),
-                #nn.GroupNorm(32, 128),
+                nn.GroupNorm(32, 128),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
-                #nn.GroupNorm(32, 64),
+                nn.GroupNorm(32, 64),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3)),
-                #nn.GroupNorm(32, 64),
+                nn.GroupNorm(32, 64),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.GroupNorm(32, 64),
+                nn.LeakyReLU(),
             )
         ])
         if style_contrastive_loss:
@@ -728,10 +730,10 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        #self.attention_blocks = nn.ModuleList([
-        #    ResidualConvAttention(64)
-        #])
-        #self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
+        self.attention_blocks = nn.ModuleList([
+            ResidualConvAttention(64)
+        ])
+        self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -759,9 +761,9 @@ class ThumbAdaConv(nn.Module):
             x, p_norm = ada(style_enc, x)
             x = self.relu(x)
             x = learnable(x)
-        #for mod in self.attention_blocks:
-        #    x = mod(x)
-        #x = self.out_conv(x)
+        for mod in self.attention_blocks:
+            x = mod(x)
+        x = self.out_conv(x)
         return x
 
 
@@ -1029,7 +1031,7 @@ class SpectralDiscriminator(nn.Module):
         ch = num_channels
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=False),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=False) for i in range(depth-2)],
-                                          SpectralResBlock(ch*2**(depth-2), 3, 3, 1, downsample=False)])
+                                          SpectralResBlock(ch*2**(depth-2), 1, 3, 1, downsample=False)])
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
