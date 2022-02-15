@@ -759,9 +759,9 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             x, p_norm = ada(style_enc, x)
+            x = self.relu(x)
             if idx == 0:
                 x = x + pos_enc(512,32,32)
-            x = self.relu(x)
             x = learnable(x)
         for mod in self.attention_blocks:
             x = mod(x)
