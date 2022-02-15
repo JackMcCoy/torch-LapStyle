@@ -1099,12 +1099,10 @@ gan_first=True
 def calc_GAN_loss_from_pred(prediction: torch.Tensor,
               target_is_real: bool):
     batch_size = prediction.shape[0]
-    c = 3
-    h = 256
     if target_is_real:
-        target_tensor = torch.ones(batch_size, c, h, h, device=torch.device('cuda:0'))
+        target_tensor = torch.ones_like(prediction, device=torch.device('cuda:0'))
     else:
-        target_tensor = torch.zeros(batch_size, c, h, h,device=torch.device('cuda:0'))
+        target_tensor = torch.zeros_like(prediction,device=torch.device('cuda:0'))
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
