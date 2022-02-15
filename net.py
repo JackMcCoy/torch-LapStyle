@@ -1108,7 +1108,7 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     loss = F.mse_loss(prediction, target_tensor.detach())
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, crop_marks, disc_:torch.nn.Module):
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
     pred_fake = disc_(fake)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
     pred_real = disc_(real)
@@ -1206,7 +1206,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if disc_loss:
         fake_loss = disc_(stylized)
-        loss_Gp_GAN = disc_.ganloss(fake_loss, True)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
 

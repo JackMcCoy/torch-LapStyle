@@ -854,8 +854,8 @@ def adaconv_thumb_train():
         set_requires_grad(disc2_, True)
         set_requires_grad(dec_, False)
         set_requires_grad(rev_, False)
-        loss_D2 = disc2_.losses(si[-1], patch_stylized.clone().detach().requires_grad_(True))
-        loss_D = disc_.losses(si[0], stylized.clone().detach().requires_grad_(True))
+        loss_D2 = calc_GAN_loss(si[-1], patch_stylized.clone().detach().requires_grad_(True), disc2_)
+        loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
 
         loss_D.backward()
         loss_D2.backward()
@@ -898,7 +898,7 @@ def adaconv_thumb_train():
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         disc2_.eval()
         fake_loss = disc2_(patch_stylized)
-        loss_patch_disc = disc2_.ganloss(fake_loss, True)
+        loss_patch_disc = calc_GAN_loss_from_pred(fake_loss, True)
         loss = loss_patch_disc * args.gan_loss2 + loss_c * args.content_weight + \
                loss_s* args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
