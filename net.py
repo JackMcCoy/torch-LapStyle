@@ -765,8 +765,8 @@ class ThumbAdaConv(nn.Module):
                style_norms.append(p_norm)
             x = self.relu(x)
             x = learnable(x)
-            if idx == 0:
-                x = x + pos_enc(256,64,64, step = 1 if calc_style else .5)
+            #if idx == 0:
+            #    x = x + pos_enc(256,64,64, step = 1 if calc_style else .5)
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
@@ -1187,7 +1187,10 @@ def calc_losses(stylized: torch.Tensor,
     for hdx, key in enumerate(style_layers[1:]):
         loss_s = loss_s + style_loss(stylized_feats[key], sF[key].detach())
     if remd_loss:
-        style_remd = style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) + style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+        style_remd = style_remd_loss(stylized_feats['r1_1'], sF['r1_1'].detach()) +\
+                     style_remd_loss(stylized_feats['r2_1'], sF['r2_1'].detach()) +\
+                     style_remd_loss(stylized_feats['r3_1'], sF['r3_1'].detach()) +\
+                     style_remd_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
         content_relt = content_emd_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     else:
         style_remd = 0
