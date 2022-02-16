@@ -231,7 +231,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.RevisionNet(batch_size=batch_size, s_d=args.s_d).to(device)
+    rev = net.RevisionNet(batch_size=args.batch_size, s_d=args.s_d).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
