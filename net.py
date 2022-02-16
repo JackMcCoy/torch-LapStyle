@@ -1034,6 +1034,7 @@ class SpectralDiscriminator(nn.Module):
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=True),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 1, 3, 1, downsample=True)])
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
 
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
@@ -1042,6 +1043,7 @@ class SpectralDiscriminator(nn.Module):
     def forward(self, x: torch.Tensor):
         for layer in self.spectral_gan:
             x = layer(x)
+        x = self.avg_pool(x)
         return x
 
 class ResDiscriminator(nn.Module):
