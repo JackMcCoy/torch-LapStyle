@@ -766,7 +766,7 @@ class ThumbAdaConv(nn.Module):
             x = self.relu(x)
             x = learnable(x)
             if idx == 0:
-                x = x + pos_enc(256,64,64, step = 1 if calc_style else .5)
+                x = x + pos_enc(256,64,64, step = 1)
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
