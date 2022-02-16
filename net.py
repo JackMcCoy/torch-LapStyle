@@ -148,7 +148,7 @@ class RevisionNet(nn.Module):
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(s_d*16,s_d*16))
+            nn.Linear(s_d*49,s_d*49))
 
         self.UpBlock = nn.ModuleList([ConvBlock(64, 64, scale_change='up', padding_mode='reflect'),
                                       ConvBlock(64, 128, scale_change='', padding_mode='reflect'),
@@ -166,7 +166,7 @@ class RevisionNet(nn.Module):
         """
         N = style.shape[0]
         out = self.Downblock(input)
-        style = self.style_project(style).view(N,self.s_d,4,4)
+        style = self.style_project(style).view(N,self.s_d,7,7)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out)[0])
             out = learnable(out)
