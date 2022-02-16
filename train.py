@@ -252,11 +252,11 @@ def build_revlap(depth, state):
 def build_disc(disc_state, depth):
     with autocast(enabled=ac_enabled):
         disc = net.SpectralDiscriminator(depth=depth,num_channels=args.disc_channels).to(device)
-        disc.init_spectral_norm()
         if not disc_state is None:
             disc.load_state_dict(torch.load(disc_state), strict=False)
         else:
             init_weights(disc)
+        disc.init_spectral_norm()
         disc.train()
         disc.to(torch.device('cuda'))
     return disc
