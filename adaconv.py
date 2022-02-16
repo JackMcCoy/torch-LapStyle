@@ -56,4 +56,4 @@ class AdaConv(nn.Module):
                 bias=pointwise_bias,
                 groups=self.batch_groups)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
-        return content_out, (mean, var)
+        return content_out

@@ -760,9 +760,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
         style_norms = [] if style_norm is None else style_norm
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x, p_norm = ada(style_enc, x, None if calc_style else style_norm[idx])
-            if calc_style:
-               style_norms.append(p_norm)
+            x = ada(style_enc, x, None if calc_style else style_norm[idx])
             x = self.relu(x)
             x = learnable(x)
             if idx == 0:
@@ -770,7 +768,7 @@ class ThumbAdaConv(nn.Module):
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
-        return x, style_enc, style_norms
+        return x
 
 
 class DecoderVQGAN(nn.Module):
@@ -1086,7 +1084,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, *_ = decoder(F['r4_1'], F['r4_1'])
+    Icc = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
