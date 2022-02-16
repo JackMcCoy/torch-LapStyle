@@ -54,7 +54,7 @@ def positionalencoding2d(d_model, height, width, step = 1):
     # Each dimension use half of d_model
     d_model = int(d_model / 2)
     div_term = torch.exp(torch.arange(0., d_model, 2) *
-                         -(math.log(10000.0) / d_model))
+                         -(math.log(10000.0*step) / d_model))
     pos_w = torch.arange(0., s_width, step).unsqueeze(1)
     pos_h = torch.arange(0., s_height, step).unsqueeze(1)
     pe[0:d_model:2, :, :] = torch.sin(pos_w * div_term).transpose(0, 1).unsqueeze(1).repeat(1, height, 1)
