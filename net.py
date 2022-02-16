@@ -557,20 +557,18 @@ class ResidualConvAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect'}
+        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
         self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
-        self.to_k = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
-        self.to_v = nn.Conv2d(chan, value_dim * heads, kernel_size, **conv_kwargs)
+        self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
 
-        out_conv_kwargs = {'padding': padding}
-        self.to_out = nn.Conv2d(value_dim * heads, chan_out, kernel_size, **out_conv_kwargs)
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,64)
 
     def forward(self, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        q, k, v = (self.to_q(x), self.to_k(x), self.to_v(x))
+        q, k, v = (self.to_q(x), *self.to_kv(x).chunk(2, dim=1))
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -578,7 +576,7 @@ class ResidualConvAttention(nn.Module):
 
         if context is not None:
             context = context.reshape(b, c, 1, -1)
-            ck, cv = self.to_k(context), self.to_v(context)
+            ck, cv = self.to_kv(context).chunk(2, dim=1)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
