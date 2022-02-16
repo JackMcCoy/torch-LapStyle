@@ -250,7 +250,7 @@ class ConvMixer(nn.Module):
             nn.GroupNorm(32, dim),
             nn.Conv2d(dim, out_dim, kernel_size=kernel_size, padding='same', padding_mode='reflect'),
             nn.GELU(),
-            nn.GroupNorm(32, out_dim)
+            nn.GroupNorm(32, out_dim),
             nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1, padding_mode='reflect', bias=final_bias),
             nn.GELU() if out_dim !=3 else nn.Identity(),
             nn.GroupNorm(32, out_dim) if out_dim != 3 else nn.Identity(),
