@@ -231,7 +231,7 @@ mdog_loss = True if args.mdog_loss==1 else 0
 
 
 def build_rev(depth, state):
-    rev = net.ConvMixer(128, 16, kernel_size=7, patch_size=8, spe=False).to(device)
+    rev = net.RevisionNet(batch_size=batch_size, s_d=args.s_d).to(device)
     #if not state is None:
     #    state = torch.load(state)
     #    rev.load_state_dict(state, strict=False)
@@ -841,12 +841,12 @@ def adaconv_thumb_train():
         if n % args.disc_update_steps == 0:
             dec_.eval()
             rev_.eval()
-            stylized = dec_(cF['r4_1'], sF['r4_1'])
+            stylized, style_emb = dec_(cF['r4_1'], sF['r4_1'])
             res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
             #patch_cF = enc_(ci[-1])
             #patch_sF = enc_(si[-1])
             #patch_stylized, *_ = dec_(patch_cF['r4_1'], patch_sF['r4_1'])
-            patch_stylized = rev_(res_in)
+            patch_stylized = rev_(res_in, style_emb)
 
             for param in disc_.parameters():
                 param.grad = None
@@ -882,14 +882,14 @@ def adaconv_thumb_train():
         for param in rev_.parameters():
             param.grad = None
 
-        stylized = dec_(cF['r4_1'],sF['r4_1'])
+        stylized, style_emb = dec_(cF['r4_1'],sF['r4_1'])
         with torch.no_grad():
             res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
         #patch_cF = enc_(ci[-1])
         #patch_stylized, *_ = dec_(patch_cF['r4_1'].detach(), style_emb, calc_style=False,
         #                          style_norm=style_norms)
 
-        patch_stylized = rev_(res_in)
+        patch_stylized = rev_(res_in, style_emb)
         disc_.eval()
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
@@ -916,10 +916,10 @@ def adaconv_thumb_train():
                              remd_loss=remd_loss, patch_loss=False,
                              sF=patch_sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = p_losses
+        mdog, loss_Gp_GANp, patch_lossp, style_contrastive_loss, content_contrastive_loss, pixel_loss = p_losses
         loss = loss  + loss_c * args.content_weight + \
                loss_s * args.style_weight + content_relt * args.content_relt + \
-               style_remd * args.style_remd + patch_loss * args.patch_loss + \
+               style_remd * args.style_remd + patch_loss * args.patch_lossp + \
                loss_Gp_GANp * args.gan_loss2 + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt

@@ -142,9 +142,9 @@ class RevisionNet(nn.Module):
                         )
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 1, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 1, s_d=s_d, batch_size=batch_size)])
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=s_d, batch_size=batch_size)])
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
@@ -766,7 +766,7 @@ class ThumbAdaConv(nn.Module):
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
-        return x
+        return x, style_enc
 
 
 class DecoderVQGAN(nn.Module):
@@ -1084,7 +1084,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc = decoder(F['r4_1'], F['r4_1'])
+    Icc, _ = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
