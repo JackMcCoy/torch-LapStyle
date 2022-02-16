@@ -838,7 +838,7 @@ def adaconv_thumb_train():
         si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
         cF = enc_(ci[0])
         sF = enc_(si[0])
-        if n % args.disc_update_steps == 0:
+        if n>2 and n % args.disc_update_steps == 0:
             dec_.eval()
             rev_.eval()
             stylized, style_emb = dec_(cF['r4_1'], sF['r4_1'])
