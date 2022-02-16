@@ -171,6 +171,7 @@ parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--gan_loss2', type=float, default=2.5)
 parser.add_argument('--momentumnet_beta', type=float, default=.9)
+parser.add_argument('--disc_update_steps', type=int, default = 1)
 parser.add_argument('--fp16', type=int, default=0)
 parser.add_argument('--style_contrastive_loss', type=int, default=0)
 parser.add_argument('--content_contrastive_loss', type=int, default=0)
@@ -837,40 +838,41 @@ def adaconv_thumb_train():
         si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
         cF = enc_(ci[0])
         sF = enc_(si[0])
-        dec_.eval()
-        rev_.eval()
-        stylized = dec_(cF['r4_1'], sF['r4_1'])
-        res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
-        #patch_cF = enc_(ci[-1])
-        #patch_sF = enc_(si[-1])
-        #patch_stylized, *_ = dec_(patch_cF['r4_1'], patch_sF['r4_1'])
-        patch_stylized = rev_(res_in)
+        if n % args.disc_update_steps == 0:
+            dec_.eval()
+            rev_.eval()
+            stylized = dec_(cF['r4_1'], sF['r4_1'])
+            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
+            #patch_cF = enc_(ci[-1])
+            #patch_sF = enc_(si[-1])
+            #patch_stylized, *_ = dec_(patch_cF['r4_1'], patch_sF['r4_1'])
+            patch_stylized = rev_(res_in)
 
-        for param in disc_.parameters():
-            param.grad = None
-        for param in disc2_.parameters():
-            param.grad = None
+            for param in disc_.parameters():
+                param.grad = None
+            for param in disc2_.parameters():
+                param.grad = None
 
-        set_requires_grad(disc_, True)
-        set_requires_grad(disc2_, True)
-        set_requires_grad(dec_, False)
-        set_requires_grad(rev_, False)
-        loss_D2 = calc_GAN_loss(si[-1], patch_stylized.clone().detach().requires_grad_(True), disc2_)
-        loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
+            set_requires_grad(disc_, True)
+            set_requires_grad(disc2_, True)
+            set_requires_grad(dec_, False)
+            set_requires_grad(rev_, False)
+            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.clone().detach().requires_grad_(True), disc2_)
+            loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
 
-        loss_D.backward()
-        loss_D2.backward()
+            loss_D.backward()
+            loss_D2.backward()
 
-        if n>0:
-            _clip_gradient(disc2_)
-            _clip_gradient(disc_)
-            opt_D2.step()
-            opt_D.step()
+            if n>0:
+                _clip_gradient(disc2_)
+                _clip_gradient(disc_)
+                opt_D2.step()
+                opt_D.step()
 
-        set_requires_grad(disc_, False)
-        set_requires_grad(disc2_, False)
-        set_requires_grad(dec_, True)
-        set_requires_grad(rev_, True)
+            set_requires_grad(disc_, False)
+            set_requires_grad(disc2_, False)
+            set_requires_grad(dec_, True)
+            set_requires_grad(rev_, True)
 
         dec_.train()
         rev_.train()
@@ -914,11 +916,11 @@ def adaconv_thumb_train():
                              remd_loss=remd_loss, patch_loss=False,
                              sF=patch_sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = p_losses
+        mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = p_losses
         loss = loss  + loss_c * args.content_weight + \
                loss_s * args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
-               loss_Gp_GAN * args.gan_loss2 + mdog * args.mdog_weight + l_identity1 * 50 \
+               loss_Gp_GANp * args.gan_loss2 + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
         loss.backward()
@@ -936,12 +938,12 @@ def adaconv_thumb_train():
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2,pixel_loss],
+                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2, loss_Gp_GANp, pixel_loss],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
                      "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Discriminator Loss (detail','Pixel Loss']):
+                     'Discriminator Loss (detail','Revision Disc. Loss','Pixel Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:
