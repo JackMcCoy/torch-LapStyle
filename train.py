@@ -919,7 +919,7 @@ def adaconv_thumb_train():
         mdog, loss_Gp_GANp, patch_lossp, style_contrastive_loss, content_contrastive_loss, pixel_loss = p_losses
         loss = loss  + loss_c * args.content_weight + \
                loss_s * args.style_weight + content_relt * args.content_relt + \
-               style_remd * args.style_remd + patch_loss * args.patch_lossp + \
+               style_remd * args.style_remd + patch_lossp * args.patch_loss + \
                loss_Gp_GANp * args.gan_loss2 + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
