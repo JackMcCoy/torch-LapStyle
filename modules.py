@@ -268,7 +268,7 @@ def ConvMixer(h, depth, kernel_size=9, patch_size=7):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,scale_change='', padding_mode='reflect'):
+    def __init__(self, dim1, dim2,scale_change='', padding_mode='reflect', noise=False):
         super(ConvBlock, self).__init__()
         self.resize=nn.Identity()
         self.skip = nn.Identity()
@@ -282,19 +282,23 @@ class ConvBlock(nn.Module):
         elif scale_change == 'last':
             self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
         if dim2 != dim1:
-            self.skip = nn.Conv2d(dim1, dim2, kernel_size=1)
+            self.skip = nn.Conv2d(dim1, dim2, kernel_size=1, bias=not noise)
         self.conv_block = nn.Sequential(
             nn.Conv2d(dim1, dim2, kernel_size=3,padding=1, padding_mode=padding_mode),
             nn.GroupNorm(32,dim2),
             nn.LeakyReLU(),
             #nn.BatchNorm2d(dim2),
-            nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode),
+            nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode, bias= not noise),
             self.blurpool
             )
-        self.noise = GaussianNoise()
-        self.groupnorm = nn.GroupNorm(32,dim2)
+        self.use_noise=noise
+        if noise:
+            self.noise = GaussianNoise()
+            self.relu = FusedLeakyReLU(dim2)
+        else:
+            self.groupnorm = nn.GroupNorm(32,dim2)
+            self.relu = nn.LeakyReLU()
         self.skip = nn.Sequential(self.skip,self.blurpool)
-        self.relu = nn.LeakyReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -311,9 +315,14 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         out = self.conv_block(x)
         skip = self.skip(x)
-        out = self.groupnorm(out+skip)
-        out = self.relu(out)
-        out = self.resize(out)
+        if self.use_noise:
+            out = self.resize(out+skip)
+            out = self.noise(out)
+            out = self.relu(out)
+        else:
+            out = self.groupnorm(out+skip)
+            out = self.relu(out)
+            out = self.resize(out)
         return out
 
 
