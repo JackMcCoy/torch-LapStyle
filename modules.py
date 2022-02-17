@@ -273,12 +273,13 @@ class ConvBlock(nn.Module):
             self.skip = nn.Conv2d(dim1, dim2, kernel_size=1)
         self.conv_block = nn.Sequential(
             nn.Conv2d(dim1, dim2, kernel_size=3,padding=1, padding_mode=padding_mode),
-            #nn.BatchNorm2d(dim2),
+            nn.GroupNorm(32,dim2),
             nn.LeakyReLU(),
             #nn.BatchNorm2d(dim2),
             nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode),
             self.blurpool
             )
+        self.groupnorm = nn.GroupNorm(32,dim2)
         self.skip = nn.Sequential(self.skip,self.blurpool)
         self.relu = nn.LeakyReLU()
         self.apply(self._init_weights)
@@ -297,7 +298,8 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         out = self.conv_block(x)
         skip = self.skip(x)
-        out = self.relu(out + skip)
+        out = self.groupnorm(out+skip)
+        out = self.relu(out)
         out = self.resize(out)
         return out
 
