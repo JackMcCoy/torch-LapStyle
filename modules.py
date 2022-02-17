@@ -163,10 +163,8 @@ class FusedConvNoiseBias(nn.Module):
 
 class GaussianNoise(nn.Module):
 
-    def __init__(self, size:int):
+    def __init__(self):
         super(GaussianNoise, self).__init__()
-        self.size = size
-        self.batch_size = batch_size
         self.noise_strength = nn.Parameter(nn.init.constant_(torch.zeros(1,), 0))
 
     def forward(self, x):
