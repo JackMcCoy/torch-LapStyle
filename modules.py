@@ -7,6 +7,7 @@ from function import normalized_feat
 from adaconv import AdaConv
 import numpy as np
 from torch.nn import functional as F
+from fused_act import FusedLeakyReLU
 
 
 class BlurPool(nn.Module):
@@ -160,6 +161,20 @@ class FusedConvNoiseBias(nn.Module):
         return out
 
 
+class GaussianNoise(nn.Module):
+
+    def __init__(self, size:int):
+        super(GaussianNoise, self).__init__()
+        self.size = size
+        self.batch_size = batch_size
+        self.noise_strength = nn.Parameter(nn.init.constant_(torch.zeros(1,), 0))
+
+    def forward(self, x):
+        #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
+        noise = torch.empty_like(x,devie='cuda').normal_()
+        return x + self.noise_strength * noise
+
+
 class RiemannNoise(nn.Module):
 
     def __init__(self, size:int):
@@ -188,11 +203,10 @@ class RiemannNoise(nn.Module):
         s = s - s.mean(dim=(2, 3)).view(N,1,1,1)
         s_max = s.abs().amax(dim=(2, 3)).view(N,1,1,1)
         s = s / (s_max + 1e-8)
-        s = s * A + b
-        ones = torch.ones(N,1,1,h, device='cuda')
-        sp_att_mask = (1 - alpha) @ ones + alpha * s
-        sp_att_mask = F.normalize(sp_att_mask, p=1)
-
+        s = (s + 1)/2
+        s = A * s + b
+        sp_att_mask = alpha + (1 - alpha) * s
+        sp_att_mask = sp_att_mask * torch.rsqrt(torch.mean(torch.square(sp_att_mask), axis=[2, 3], keepdims=True) + 1e-8)
         x = r*sp_att_mask * x + r * sp_att_mask * (self.noise.repeat(N,c,h,h).normal_())
         return x
 
@@ -279,6 +293,7 @@ class ConvBlock(nn.Module):
             nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode),
             self.blurpool
             )
+        self.noise = GaussianNoise()
         self.groupnorm = nn.GroupNorm(32,dim2)
         self.skip = nn.Sequential(self.skip,self.blurpool)
         self.relu = nn.LeakyReLU()

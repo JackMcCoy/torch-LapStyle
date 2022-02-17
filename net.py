@@ -14,7 +14,8 @@ from torchvision.models.feature_extraction import create_feature_extractor
 from gaussian_diff import xdog, make_gaussians
 from function import adaptive_instance_normalization as adain
 from function import get_embeddings
-from modules import ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
+from modules import GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
+from fused_act import FusedLeakyReLU
 from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -670,16 +671,16 @@ class ThumbAdaConv(nn.Module):
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
-                nn.GroupNorm(32, 256),
-                nn.LeakyReLU(),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                nn.GroupNorm(32, 256),
-                nn.LeakyReLU(),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 nn.GroupNorm(32, 256),
@@ -697,8 +698,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3)),
-                nn.GroupNorm(32, 128),
-                nn.LeakyReLU(),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
                 nn.GroupNorm(32, 64),
@@ -708,8 +709,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3)),
-                nn.GroupNorm(32, 64),
-                nn.LeakyReLU(),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3)),
                 nn.GroupNorm(32, 64),
