@@ -168,8 +168,8 @@ class RevisionNet(nn.Module):
         N = style.shape[0]
         lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
-        input = torch.cat([input, lap_pyr], dim=1)
-        out = self.Downblock(input)
+        out = torch.cat([input, lap_pyr], dim=1)
+        out = self.Downblock(out)
         style = self.style_project(style).view(N,self.s_d,7,7)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = out + self.relu(ada(style, out))
