@@ -169,7 +169,7 @@ class GaussianNoise(nn.Module):
 
     def forward(self, x):
         #self.cuda_states = torch.utils.checkpoint.get_device_states(x)
-        noise = torch.empty_like(x,devie='cuda').normal_()
+        noise = torch.empty_like(x,device='cuda').normal_()
         return x + self.noise_strength * noise
 
 
