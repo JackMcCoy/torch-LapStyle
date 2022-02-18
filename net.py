@@ -152,8 +152,8 @@ class RevisionNet(nn.Module):
             nn.Linear(s_d*49,s_d*49))
 
         self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
-                                      ConvBlock(128, 128, scale_change='', padding_mode='reflect'),
-                                      nn.Sequential(ConvBlock(256, 64, scale_change='', padding_mode='reflect'),
+                                      ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
+                                      nn.Sequential(ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                                                     nn.Conv2d(128, 3, kernel_size=1, padding_mode='reflect')
                                                     )])
 
