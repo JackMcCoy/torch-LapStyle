@@ -762,7 +762,10 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
         style_norms = [] if style_norm is None else style_norm
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            x = ada(style_enc, x, None if calc_style else style_norm[idx])
+            if idx > 0:
+                x = x + ada(style_enc, x)
+            else:
+                x = ada(style_enc, x)
             x = self.relu(x)
             x = learnable(x)
             #if idx == 0:

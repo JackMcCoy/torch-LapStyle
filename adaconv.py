@@ -32,7 +32,7 @@ class AdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
             m.requires_grad=True
 
-    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor, style_norm = None):
+    def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 5, 5)
