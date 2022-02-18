@@ -268,7 +268,7 @@ def ConvMixer(h, depth, kernel_size=9, patch_size=7):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,kenel_size=3,padding=1,scale_change='', padding_mode='reflect', noise=False):
+    def __init__(self, dim1, dim2,kernel_size=3,padding=1,scale_change='', padding_mode='reflect', noise=False):
         super(ConvBlock, self).__init__()
         self.resize=nn.Identity()
         self.skip = nn.Identity()
