@@ -74,12 +74,12 @@ def CalcStyleEmdLoss(X, Y):
     """
     #X, Y = flatten_and_sample(X,Y)
     N,C,h,w = X.shape
-    X = X.flatten(2)
-    Y = Y.flatten(2)
-    if h*w > 1024:
-        sample = torch.randint(h * w - 1, (1,))
-        X = X[:,:,sample[:1024]].transpose(1,2).contiguous()
-        Y = Y[:, :, sample[:1024]].transpose(1, 2).contiguous()
+    if h * w > 4096:
+        div = h//32
+        X = X[:,:,::div,::div]
+        Y = Y[:, :, ::div, ::div]
+    X = X.flatten(2).transpose(1,2).contiguous()
+    Y = Y.flatten(2).transpose(1,2).contiguous()
     try:
         remd = sinkhorn_loss(X,Y).mean()
     except:
