@@ -678,10 +678,11 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
+                ResidualConvAttention(256, kernel_size=5, padding=2)
             ),
             nn.Sequential(
-                nn.ReflectionPad2d((3, 3, 3, 3)),
-                nn.Conv2d(256, 256, (7, 7)),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3)),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
