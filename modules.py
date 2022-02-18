@@ -294,7 +294,7 @@ class ConvBlock(nn.Module):
         self.use_noise=noise
         if noise:
             self.noise = GaussianNoise()
-            self.relu = FusedLeakyReLU(dim2)
+            self.relu = FusedLeakyReLU(dim2*2)
         else:
             self.groupnorm = nn.GroupNorm(32,dim2*2)
             self.relu = nn.LeakyReLU()
