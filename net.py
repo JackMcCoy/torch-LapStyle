@@ -567,7 +567,7 @@ class ResidualConvAttention(nn.Module):
         self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(16,chan_out)
+        self.out_norm = nn.GroupNorm(16,chan_out*2)
 
     def forward(self, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -594,7 +594,7 @@ class ResidualConvAttention(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = self.out_norm(out+x)
+        out = self.out_norm(torch.cat([out,x],1))
         return out
 
 
@@ -681,7 +681,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
+                nn.Conv2d(512, 256, (3, 3)),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -700,7 +700,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3)),
+                nn.Conv2d(256, 128, (3, 3)),
                 GaussianNoise(),
                 FusedLeakyReLU(128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -711,7 +711,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
+                nn.Conv2d(128, 64, (3, 3)),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -735,7 +735,7 @@ class ThumbAdaConv(nn.Module):
         self.attention_blocks = nn.ModuleList([
             ResidualConvAttention(64, kernel_size=5, padding=2)
         ])
-        self.out_conv = nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect')
+        self.out_conv = nn.Conv2d(128,3,kernel_size=3,padding=1,padding_mode='reflect')
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -763,7 +763,7 @@ class ThumbAdaConv(nn.Module):
         style_norms = [] if style_norm is None else style_norm
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
-                x = x + ada(style_enc, x)
+                x = torch.cat([x,ada(style_enc, x)],1)
             else:
                 x = ada(style_enc, x)
             x = self.relu(x)
