@@ -138,14 +138,14 @@ class RevisionNet(nn.Module):
 
         self.Downblock = nn.Sequential(
                         ConvBlock(6, 128, scale_change='', padding_mode='reflect'),
-                        ConvBlock(256, 64, scale_change='', padding_mode='reflect', noise=True),
-                        ConvBlock(128, 64, scale_change='down', padding_mode='reflect'),
+                        ConvBlock(128, 64, scale_change='', padding_mode='reflect', noise=True),
+                        ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=s_d, batch_size=batch_size)])
+            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 2, s_d=s_d, batch_size=batch_size)])
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
@@ -172,7 +172,7 @@ class RevisionNet(nn.Module):
         out = self.Downblock(out)
         style = self.style_project(style).view(N,self.s_d,7,7)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
-            out = out + self.relu(ada(style, out))
+            out = torch.cat([out,self.relu(ada(style, out))],1)
             out = learnable(out)
         out = out+input
         return out

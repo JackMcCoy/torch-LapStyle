@@ -294,9 +294,9 @@ class ConvBlock(nn.Module):
         self.use_noise=noise
         if noise:
             self.noise = GaussianNoise()
-            self.relu = FusedLeakyReLU(dim2*2)
+            self.relu = FusedLeakyReLU(dim2)
         else:
-            self.groupnorm = nn.GroupNorm(32,dim2*2)
+            self.groupnorm = nn.GroupNorm(32,dim2)
             self.relu = nn.LeakyReLU()
         self.skip = nn.Sequential(self.skip,self.blurpool)
         self.apply(self._init_weights)
@@ -316,11 +316,11 @@ class ConvBlock(nn.Module):
         out = self.conv_block(x)
         skip = self.skip(x)
         if self.use_noise:
-            out = self.resize(torch.cat([out,skip],1))
+            out = self.resize(out+skip)
             out = self.noise(out)
             out = self.relu(out)
         else:
-            out = self.groupnorm(torch.cat([out,skip],1))
+            out = self.groupnorm(out+skip)
             out = self.relu(out)
             out = self.resize(out)
         return out
