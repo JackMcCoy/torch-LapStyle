@@ -138,22 +138,22 @@ class RevisionNet(nn.Module):
 
         self.Downblock = nn.Sequential(
                         ConvBlock(6, 128, scale_change='', padding_mode='reflect'),
-                        ConvBlock(128, 64, scale_change='', padding_mode='reflect', noise=True),
-                        ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
+                        ConvBlock(256, 64, scale_change='', padding_mode='reflect', noise=True),
+                        ConvBlock(128, 64, scale_change='down', padding_mode='reflect'),
                         )
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=s_d, batch_size=batch_size)])
+            AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
+            AdaConv(256, 2, s_d=s_d, batch_size=batch_size)])
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
             nn.Linear(s_d*49,s_d*49))
 
-        self.UpBlock = nn.ModuleList([ConvBlock(64, 64, scale_change='up', padding_mode='reflect', noise=True),
-                                      ConvBlock(64, 128, scale_change='', padding_mode='reflect'),
-                                      nn.Sequential(ConvBlock(128, 128, scale_change='', padding_mode='reflect'),
+        self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
+                                      ConvBlock(128, 128, scale_change='', padding_mode='reflect'),
+                                      nn.Sequential(ConvBlock(256, 128, scale_change='', padding_mode='reflect'),
                                                     nn.Conv2d(128, 3, kernel_size=1, padding_mode='reflect')
                                                     )])
 
