@@ -703,7 +703,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(128, 128, (3, 3)),
                 GaussianNoise(),
                 FusedLeakyReLU(128),
-                ResidualConvAttention(128, kernel_size=5, padding=2, heads=4),
+                ResidualConvAttention(128, kernel_size=1, padding=None, heads=8),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
                 nn.GroupNorm(32, 64),
