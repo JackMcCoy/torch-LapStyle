@@ -76,7 +76,7 @@ def CalcStyleEmdLoss(X, Y):
     #X, Y = flatten_and_sample(X,Y)
     x_samples = []
     y_samples = []
-    for layer in X.keys():
+    for layer in ['r4_1','r3_1','r2_1','r1_1']:
         N,C,h,w = X[layer].shape
         if h * w > 1024:
             div = (h*w)//1024
