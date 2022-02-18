@@ -268,7 +268,7 @@ def ConvMixer(h, depth, kernel_size=9, patch_size=7):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,scale_change='', padding_mode='reflect', noise=False):
+    def __init__(self, dim1, dim2,kenel_size=3,padding=1,scale_change='', padding_mode='reflect', noise=False):
         super(ConvBlock, self).__init__()
         self.resize=nn.Identity()
         self.skip = nn.Identity()
@@ -284,11 +284,11 @@ class ConvBlock(nn.Module):
         if dim2 != dim1:
             self.skip = nn.Conv2d(dim1, dim2, kernel_size=1, bias=not noise)
         self.conv_block = nn.Sequential(
-            nn.Conv2d(dim1, dim2, kernel_size=3,padding=1, padding_mode=padding_mode),
+            nn.Conv2d(dim1, dim2, kernel_size=kernel_size,padding=padding, padding_mode=padding_mode),
             nn.GroupNorm(32,dim2),
             nn.LeakyReLU(),
             #nn.BatchNorm2d(dim2),
-            nn.Conv2d(dim2, dim2, kernel_size = 3,padding=1, padding_mode=padding_mode, bias= not noise),
+            nn.Conv2d(dim2, dim2, kernel_size = kernel_size, padding=padding, padding_mode=padding_mode, bias= not noise),
             self.blurpool
             )
         self.use_noise=noise

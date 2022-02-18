@@ -567,7 +567,7 @@ class ResidualConvAttention(nn.Module):
         self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(16,64)
+        self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
