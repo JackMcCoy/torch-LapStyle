@@ -145,7 +145,7 @@ class RevisionNet(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=s_d, batch_size=batch_size)])
+            AdaConv(128, 4, s_d=s_d, batch_size=batch_size)])
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
