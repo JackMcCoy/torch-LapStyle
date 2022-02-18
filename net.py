@@ -680,8 +680,8 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
+                nn.ReflectionPad2d((3, 3, 3, 3)),
+                nn.Conv2d(256, 256, (7, 7)),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
