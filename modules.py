@@ -320,7 +320,7 @@ class ConvBlock(nn.Module):
             out = self.noise(out)
             out = self.relu(out)
         else:
-            out = self.groupnorm(torch.cat[out,skip],1)
+            out = self.groupnorm(torch.cat([out,skip],1))
             out = self.relu(out)
             out = self.resize(out)
         return out
