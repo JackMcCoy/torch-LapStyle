@@ -73,11 +73,17 @@ def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
     #X, Y = flatten_and_sample(X,Y)
-    N,C,h,w = X.shape
-    if h * w > 4096:
-        div = h//32
-        X = X[:,:,::div,::div]
-        Y = Y[:, :, ::div, ::div]
+    x_samples = []
+    y_samples = []
+    for layer in X.keys():
+        N,C,h,w = X[layer].shape
+        if h * w > 1024:
+            div = (h*w)//1024
+            div = int(math.sqrt(div))
+            x_samples.append(X[layer][:,:,::div,::div])
+            y_samples.append(Y[layer][:, :, ::div, ::div])
+    X = torch.cat(x_samples,1)
+    Y = torch.cat(y_samples,1)
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
     try:
