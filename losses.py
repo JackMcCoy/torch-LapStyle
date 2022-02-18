@@ -81,7 +81,10 @@ def CalcStyleEmdLoss(X, Y):
             div = (h*w)//1024
             div = int(math.sqrt(div))
             x_samples.append(X[layer][:,:,::div,::div])
-            y_samples.append(Y[layer][:, :, ::div, ::div])
+            y_samples.append(Y[layer].detach()[:, :, ::div, ::div])
+        else:
+            x_samples.append(X[layer])
+            y_samples.append(Y[layer].detach())
     X = torch.cat(x_samples,1)
     Y = torch.cat(y_samples,1)
     X = X.flatten(2).transpose(1,2).contiguous()
