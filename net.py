@@ -666,7 +666,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.LazyLinear(self.s_d*25)
+        self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
