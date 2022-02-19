@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(s_d*25,s_d*25))
+            nn.Linear(s_d*16,s_d*16))
         self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
@@ -171,7 +171,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(device)
         out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(out)
-        style = self.style_project(style).view(N,self.s_d,5,5)
+        style = self.style_project(style).view(N,self.s_d,4,4)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = torch.cat([out,self.relu(ada(style, out))],1)
             out = learnable(out)
@@ -564,12 +564,8 @@ class ResidualConvAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = nn.Sequential(
-            nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs),
-            BlurPool(key_dim*heads,filt_size=3,stride=1))
-        self.to_kv = nn.Sequential(
-            nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs),
-            BlurPool(key_dim * heads*2, filt_size=3, stride=1))
+        self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
+        self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs),
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out*2)
@@ -671,7 +667,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.Linear(8192, self.s_d*25)
+        self.projection = nn.Linear(8192, self.s_d*16)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
@@ -762,7 +758,7 @@ class ThumbAdaConv(nn.Module):
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc)
-            style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
