@@ -313,6 +313,7 @@ class ConvBlock(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, x):
+        print('convblock - x shape: '+str(x.shape))
         out = self.conv_block(x)
         skip = self.skip(x)
         if self.use_noise:
