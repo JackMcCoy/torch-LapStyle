@@ -733,7 +733,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(64, kernel_size=5, padding=2)
+            ResidualConvAttention(64, kernel_size=3, padding=1)
         ])
         self.out_conv = nn.Sequential(
             nn.Conv2d(128, 64, kernel_size=3, padding=1, padding_mode='reflect'),
