@@ -564,8 +564,12 @@ class ResidualConvAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
-        self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
+        self.to_q = nn.Sequential(
+            nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs),
+            BlurPool(key_dim*heads,filt_size=3,stride=1))
+        self.to_kv = nn.Sequntial(
+            nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs),
+            BlurPool(key_dim * heads*2, filt_size=3, stride=1))
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out*2)
