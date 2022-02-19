@@ -149,7 +149,7 @@ class RevisionNet(nn.Module):
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
-            nn.Linear(s_d*49,s_d*49))
+            nn.Linear(s_d*25,s_d*25))
 
         self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
                                       ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
@@ -170,7 +170,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(device)
         out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(out)
-        style = self.style_project(style).view(N,self.s_d,7,7)
+        style = self.style_project(style).view(N,self.s_d,5,5)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
             out = torch.cat([out,self.relu(ada(style, out))],1)
             out = learnable(out)
