@@ -143,9 +143,9 @@ class RevisionNet(nn.Module):
                         )
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 2, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 2, s_d=s_d, batch_size=batch_size)])
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
+            AdaConv(64, 8, s_d=s_d, batch_size=batch_size)])
 
         self.style_project = nn.Sequential(
             nn.Flatten(1),
@@ -735,7 +735,10 @@ class ThumbAdaConv(nn.Module):
         self.attention_blocks = nn.ModuleList([
             ResidualConvAttention(64, kernel_size=5, padding=2)
         ])
-        self.out_conv = nn.Conv2d(128,3,kernel_size=3,padding=1,padding_mode='reflect')
+        self.out_conv = nn.Sequential(
+            nn.Conv2d(128, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.LeakyReLU(),
+            nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect'))
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -763,10 +766,9 @@ class ThumbAdaConv(nn.Module):
         style_norms = [] if style_norm is None else style_norm
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
-                x = torch.cat([x,ada(style_enc, x)],1)
+                x = torch.cat([x,self.relu(ada(style_enc, x))],1)
             else:
-                x = ada(style_enc, x)
-            x = self.relu(x)
+                x = self.relu(ada(style_enc, x))
             x = learnable(x)
             #if idx == 0:
             #    x = x + pos_enc(256,64,64, step = 1 if calc_style else .5)
