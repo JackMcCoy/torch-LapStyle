@@ -762,9 +762,11 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
+                x = learnable(x)
             else:
                 x = self.relu(ada(style_enc, x))
-            x = learnable(x)
+                x = learnable(x)
+                x = x + pos_enc(256,64,64)
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
