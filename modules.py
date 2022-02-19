@@ -471,7 +471,7 @@ class StyleEncoderBlock(nn.Module):
         super(StyleEncoderBlock, self).__init__()
         self.net = nn.Sequential(
         nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect'),
-        BlurPool(dim2, pad_type='reflect', filt_size=3, stride=2, pad_off=0),
+        BlurPool(ch, pad_type='reflect', filt_size=3, stride=2, pad_off=0),
         nn.LeakyReLU())
     def forward(self, x):
         x = self.net(x)
