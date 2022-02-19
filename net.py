@@ -143,7 +143,7 @@ class RevisionNet(nn.Module):
                         )
         self.relu = nn.LeakyReLU()
 
-        self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
+        self.UpBlock = nn.Sequential([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
                                       ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                                       nn.Sequential(ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                                                     nn.Conv2d(64, 3, kernel_size=1, padding_mode='reflect')
@@ -161,8 +161,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(device)
         out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(out)
-        for idx, learnable in self.UpBlock:
-            out = learnable(out)
+        out = self.UpBlock(out)
         out = out+input
         return out
 
