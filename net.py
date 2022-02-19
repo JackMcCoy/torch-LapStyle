@@ -666,7 +666,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.Linear(1024, self.s_d*25)
+        self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
@@ -755,7 +755,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, x: torch.Tensor, style_enc, calc_style=True, style_norm= None):
         b = style_enc.shape[0]
         if calc_style:
-            style_enc = self.style_encoding(style_enc).flatten(2)
+            style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
