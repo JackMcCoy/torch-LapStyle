@@ -191,10 +191,11 @@ def augment_list():  # 16 oeprations and their ranges
         (Contrast, 0.1, 1.9),
         (Brightness, 0.1, 1.9),
         (Sharpness, 0.1, 1.9),
-        (Identity, 0., 1.0),
-        (Identity, 0., 1.0),
+        (ShearX, 0., 0.3),
+        (ShearY, 0., 0.3),
         (CutoutAbs, 0, 40),
-
+        (TranslateXabs, 0., 100),
+        (TranslateYabs, 0., 100),
     ]
 
     return l
@@ -247,15 +248,16 @@ class CutoutDefault(object):
 
 
 class RandAugment:
-    def __init__(self, n, m):
+    def __init__(self, n, m, prob=.5):
         self.n = n
         self.m = m      # [0, 30]
         self.augment_list = augment_list()
+        self.prob = prob
 
     def __call__(self, img):
-        ops = random.choices(self.augment_list, k=self.n)
-        for op, minval, maxval in ops:
-            val = (float(self.m) / 30) * float(maxval - minval) + minval
-            img = op(img, val)
-
+        if random.random() <= self.prob:
+            ops = random.choices(self.augment_list, k=self.n)
+            for op, minval, maxval in ops:
+                val = (float(self.m) / 30) * float(maxval - minval) + minval
+                img = op(img, val)
         return img
