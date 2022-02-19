@@ -141,15 +141,6 @@ class RevisionNet(nn.Module):
                         ConvBlock(128, 64, scale_change='', padding_mode='reflect', noise=True),
                         ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
-
-        self.adaconvs = nn.ModuleList([
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=s_d, batch_size=batch_size)])
-
-        self.style_project = nn.Sequential(
-            nn.Flatten(1),
-            nn.Linear(s_d*16,s_d*16))
         self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
@@ -158,7 +149,7 @@ class RevisionNet(nn.Module):
                                                     nn.Conv2d(64, 3, kernel_size=1, padding_mode='reflect')
                                                     )])
 
-    def forward(self, input, style, scaled_ci):
+    def forward(self, input, scaled_ci):
         """
         Args:
             input (Tensor): (b, 6, 256, 256) is concat of last input and this lap.
@@ -171,9 +162,7 @@ class RevisionNet(nn.Module):
                            groups=3).to(device)
         out = torch.cat([input, lap_pyr], dim=1)
         out = self.Downblock(out)
-        style = self.style_project(style).view(N,self.s_d,4,4)
-        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.UpBlock)):
-            out = torch.cat([out,self.relu(ada(style, out))],1)
+        for idx, learnable in self.UpBlock:
             out = learnable(out)
         out = out+input
         return out
@@ -667,7 +656,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.Linear(8192, self.s_d*16)
+        self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
@@ -758,7 +747,7 @@ class ThumbAdaConv(nn.Module):
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc)
-            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+            style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
