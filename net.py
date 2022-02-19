@@ -150,6 +150,7 @@ class RevisionNet(nn.Module):
         self.style_project = nn.Sequential(
             nn.Flatten(1),
             nn.Linear(s_d*25,s_d*25))
+        self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.ModuleList([ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
                                       ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
