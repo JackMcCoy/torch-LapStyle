@@ -274,14 +274,14 @@ class ConvBlock(nn.Module):
         self.skip = nn.Identity()
         self.blurpool = nn.Identity()
         if scale_change == 'up':
-            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
-            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
-            self.resize = nn.Upsample(scale_factor=.5, mode='nearest')
-        elif scale_change == 'last':
-            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
-        if dim2 != dim1:
+            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=3, stride=2, pad_off=0)
+            self.skip = nn.Sequential(
+                nn.Conv2d(dim1, dim2, kernel_size=1, bias=not noise),
+                nn.Upsample(scale_factor=.5, mode='nearest')
+            )
+        if scale_change != 'down' and dim2 != dim1:
             self.skip = nn.Conv2d(dim1, dim2, kernel_size=1, bias=not noise)
         self.conv_block = nn.Sequential(
             nn.Conv2d(dim1, dim2, kernel_size=kernel_size,padding=padding, padding_mode=padding_mode),
@@ -471,7 +471,7 @@ class StyleEncoderBlock(nn.Module):
         super(StyleEncoderBlock, self).__init__()
         self.net = nn.Sequential(
         nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect'),
-        nn.AvgPool2d(2, stride=2),
+        BlurPool(dim2, pad_type='reflect', filt_size=3, stride=2, pad_off=0),
         nn.LeakyReLU())
     def forward(self, x):
         x = self.net(x)

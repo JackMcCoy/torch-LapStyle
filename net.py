@@ -681,7 +681,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -700,7 +700,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3)),
+                nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -711,7 +711,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3)),
+                nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -763,15 +763,12 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.chwise_linear(style_enc)
             style_enc = self.relu(style_enc)
             style_enc = self.chwise_linear_2(style_enc).view(b,self.s_d,7,7).relu()
-        style_norms = [] if style_norm is None else style_norm
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
             else:
                 x = self.relu(ada(style_enc, x))
             x = learnable(x)
-            #if idx == 0:
-            #    x = x + pos_enc(256,64,64, step = 1 if calc_style else .5)
         for mod in self.attention_blocks:
             x = mod(x)
         x = self.out_conv(x)
