@@ -701,9 +701,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
-                nn.GroupNorm(16, 64),
-                nn.LeakyReLU(),
+                nn.Conv2d(64, 3, (3, 3)),
             )
         ])
         if style_contrastive_loss:
@@ -718,13 +716,6 @@ class ThumbAdaConv(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        self.attention_blocks = nn.ModuleList([
-            ResidualConvAttention(64, kernel_size=5, padding=2)
-        ])
-        self.out_conv = nn.Sequential(
-            nn.Conv2d(128, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(),
-            nn.Conv2d(64,3,kernel_size=3,padding=1,padding_mode='reflect'))
         self.relu = nn.LeakyReLU()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
@@ -753,9 +744,6 @@ class ThumbAdaConv(nn.Module):
             else:
                 x = self.relu(ada(style_enc, x))
                 x = learnable(x)
-        for mod in self.attention_blocks:
-            x = mod(x)
-        x = self.out_conv(x)
         return x, style_enc
 
 
