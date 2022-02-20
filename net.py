@@ -143,8 +143,8 @@ class RevisionNet(nn.Module):
                         )
         self.relu = nn.LeakyReLU()
 
-        self.UpBlock = nn.Sequential(ConvBlock(128, 64, scale_change='up', padding_mode='reflect', noise=True),
-                                      ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
+        self.UpBlock = nn.Sequential(ConvBlock(64, 64, scale_change='up', padding_mode='reflect', noise=True),
+                                      ConvBlock(64, 128, scale_change='', padding_mode='reflect'),
                                       nn.Sequential(ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                                                     nn.Conv2d(64, 3, kernel_size=1, padding_mode='reflect')
                                                     ))
