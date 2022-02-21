@@ -277,7 +277,7 @@ class ConvBlock(nn.Module):
             self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
             self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
-            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=3, stride=2, pad_off=0)
+            self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=2, pad_off=0)
             self.skip = nn.Sequential(
                 nn.Conv2d(dim1, dim2, kernel_size=1, bias=not noise),
                 #nn.Upsample(scale_factor=.5, mode='nearest')
