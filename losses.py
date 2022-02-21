@@ -76,9 +76,11 @@ def CalcStyleEmdLoss(X, Y):
     #X, Y = flatten_and_sample(X,Y)
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
-
-    remd = sinkhorn_loss(X,Y).mean()
-
+    try:
+        remd = sinkhorn_loss(X,Y).mean()
+    except Exception as e:
+        print(e)
+        remd=0
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
