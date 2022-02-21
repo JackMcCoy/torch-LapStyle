@@ -666,10 +666,8 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                nn.Conv2d(512, 384, kernel_size=1),
-                nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(384, 256, (3, 3), bias=False),
+                nn.Conv2d(256, 256, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -687,10 +685,8 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                nn.Conv2d(256, 192, kernel_size=1),
-                nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(192, 128, (3, 3), bias=False),
+                nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -700,10 +696,8 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
-                nn.Conv2d(128, 96, kernel_size=1),
-                nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(96, 64, (3, 3), bias=False),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -747,7 +741,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
-                x = torch.cat([x,self.relu(ada(style_enc, x))],1)
+                x = x + self.relu(ada(style_enc, x))
                 x = learnable(x)
             else:
                 x = self.relu(ada(style_enc, x))
