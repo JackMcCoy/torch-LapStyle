@@ -753,6 +753,7 @@ class ThumbAdaConv(nn.Module):
                 x = torch.cat([x,self.relu(ada(style_enc, x))],0)
             else:
                 x = self.relu(ada(style_enc, x))
+            print(idx)
             x = learnable(x)
         return x, style_enc
 
