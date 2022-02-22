@@ -137,7 +137,7 @@ class RevisionNet(nn.Module):
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
 
         self.Downblock = nn.Sequential(
-                        ConvBlock(6, 128, scale_change='', padding_mode='reflect'),
+                        ConvBlock(3, 128, scale_change='', padding_mode='reflect'),
                         ConvBlock(128, 64, scale_change='', padding_mode='reflect', noise=True),
                         ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
