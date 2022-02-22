@@ -744,7 +744,11 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        x = whiten(x)
+        whitening = []
+        for i in range(x.shape[0]):
+            whitening.append(whiten(x[i]).unsqueeze(0))
+        x = whitening.cat(whitening,0)
+        print(x.shape)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
