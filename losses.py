@@ -102,11 +102,11 @@ def flatten_and_sample(X, Y):
     choices = h*w
     if choices > 1024:
         r = torch.randperm(choices-1,device='cuda')
-        X = X.flatten(2)[:,:,r[:1024]].transpose(1,2)
-        Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2)
+        X = X.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
+        Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
     else:
-        X = X.flatten(2).transpose(1, 2)
-        Y = Y.flatten(2).transpose(1, 2)
+        X = X.flatten(2).transpose(1, 2).contiguous()
+        Y = Y.flatten(2).transpose(1, 2).contiguous()
     return X, Y
 
 def CalcContentReltLoss(X,Y, eps=1e-5):
