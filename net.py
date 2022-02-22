@@ -710,7 +710,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3)),
             )
         ])
-        self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
+        #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -743,7 +743,6 @@ class ThumbAdaConv(nn.Module):
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
-            style_enc, _,cb_loss = self.vector_quantize(style_enc)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
@@ -752,7 +751,7 @@ class ThumbAdaConv(nn.Module):
             else:
                 x = self.relu(ada(style_enc, x))
                 x = learnable(x)
-        return x, style_enc, cb_loss
+        return x, style_enc
 
 
 class DecoderVQGAN(nn.Module):
@@ -1070,7 +1069,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _, _ = decoder(F['r4_1'], F['r4_1'])
+    Icc, _ = decoder(F['r4_1'], F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
