@@ -38,7 +38,6 @@ class CartesianGrid(nn.Module):
         return grid.to(x)
 
 def whiten(cf):
-    cf = cf.double()
     c_channels, c_width, c_height = cf.size(0), cf.size(1), cf.size(2)
     cfv = cf.view(c_channels, -1)  # c x (h x w)
 
