@@ -12,7 +12,7 @@ from torchvision.models import vgg19
 from torchvision.models.feature_extraction import create_feature_extractor
 
 from gaussian_diff import xdog, make_gaussians
-from function import adaptive_instance_normalization as adain
+from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings
 from modules import GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from fused_act import FusedLeakyReLU
@@ -644,7 +644,7 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
@@ -744,6 +744,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+        x = whiten(x)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
                 x = torch.cat([x,self.relu(ada(style_enc, x))],1)
