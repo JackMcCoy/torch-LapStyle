@@ -747,7 +747,7 @@ class ThumbAdaConv(nn.Module):
         whitening = []
         for i in range(x.shape[0]):
             whitening.append(whiten(x[i]).unsqueeze(0))
-        x = whitening.cat(whitening,0)
+        x = torch.cat(whitening,0)
         print(x.shape)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
