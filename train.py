@@ -903,8 +903,8 @@ def adaconv_thumb_train():
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         disc2_.eval()
         fake_loss = disc2_(patch_stylized)
-        loss_patch_disc = calc_GAN_loss_from_pred(fake_loss, True)
-        loss = loss_patch_disc * args.gan_loss2 + \
+        loss_Gp_GANp = calc_GAN_loss_from_pred(fake_loss, True)
+        loss = loss_Gp_GANp * args.gan_loss2 + \
                loss_s* args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
