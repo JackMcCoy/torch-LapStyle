@@ -73,7 +73,7 @@ def add_flips(X):
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    X, Y = flatten_and_sample(X,Y)
+    X, Y = flatten_and_sample(X,Y, shuffle=False)
     #X = X.flatten(2).transpose(1,2).contiguous()
     #Y = Y.flatten(2).transpose(1,2).contiguous()
     try:
@@ -97,13 +97,18 @@ def calc_emd_loss(pred, target):
     dist = 1. - similarity
     return dist
 
-def flatten_and_sample(X, Y):
+def flatten_and_sample(X, Y, shuffle=True):
     B,C,h,w = X.shape
     choices = h*w
     if choices > 1024:
-        r = torch.randperm(choices-1,device='cuda')
-        X = X.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
-        Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
+        if shuffle:
+            r = torch.randperm(choices-1,device='cuda')
+            X = X.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
+            Y = Y.flatten(2)[:,:,r[:1024]].transpose(1,2).contiguous()
+        else:
+            r = torch.randint(0,choices-1025,(2,))
+            X = X.flatten(2)[:, :, r[0]:r[0]+1024].transpose(1, 2).contiguous()
+            Y = Y.flatten(2)[:, :, r[1]:r[1]+1024].transpose(1, 2).contiguous()
     else:
         X = X.flatten(2).transpose(1, 2).contiguous()
         Y = Y.flatten(2).transpose(1, 2).contiguous()

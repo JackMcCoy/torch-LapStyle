@@ -6,7 +6,7 @@ from losses import calc_mean_std
 
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None):
+    def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, kernel_size=5):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//p)
         self.batch_groups = batch_size * (c_in // p)
@@ -19,7 +19,7 @@ class AdaConv(nn.Module):
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d,s_d,kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3, padding=1 if kernel_size==5 else 0, padding_mode='reflect'),
             nn.LeakyReLU())
 
         self.pointwise_avg_pool = nn.Sequential(

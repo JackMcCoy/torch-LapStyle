@@ -139,11 +139,13 @@ class RevisionNet(nn.Module):
         self.Downblock = nn.Sequential(
                         ConvBlock(3, 128, scale_change='', padding_mode='reflect'),
                         ConvBlock(128, 64, scale_change='', padding_mode='reflect', noise=True),
+                        ConvBlock(64, 64, scale_change='', padding_mode='reflect'),
                         ConvBlock(64, 64, scale_change='down', padding_mode='reflect'),
                         )
         self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.Sequential(ConvBlock(64, 64, scale_change='up', padding_mode='reflect', noise=True),
+                                     ConvBlock(64, 64, scale_change='', padding_mode='reflect'),
                                       ConvBlock(64, 128, scale_change='', padding_mode='reflect'),
                                       nn.Sequential(ConvBlock(128, 64, scale_change='', padding_mode='reflect'),
                                                     nn.Conv2d(64, 3, kernel_size=1, padding_mode='reflect')
@@ -646,8 +648,10 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
@@ -677,6 +681,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 #nn.GroupNorm(32, 256),
+            ),nn.Sequential(
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3)),
@@ -688,7 +693,8 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(128),
+                FusedLeakyReLU(128)),
+            nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
                 #nn.GroupNorm(32, 64),
