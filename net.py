@@ -750,11 +750,10 @@ class ThumbAdaConv(nn.Module):
         x = torch.cat(whitening,0).view(x.shape[0],512,32,32)
         for idx, (ada, learnable, mixin) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx > 0:
-                x = torch.cat([x,self.relu(ada(style_enc, x))],1)
-                x = learnable(x)
+                x = x + self.relu(ada(style_enc, x))
             else:
                 x = self.relu(ada(style_enc, x))
-                x = learnable(x)
+            x = learnable(x)
         return x, style_enc
 
 
@@ -1152,10 +1151,8 @@ def calc_losses(stylized: torch.Tensor,
                 patch_stylized = None,):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
-        l_identity1 = 0
-        l_identity2 = 0
     else:
         l_identity1 = 0
         l_identity2 = 0
