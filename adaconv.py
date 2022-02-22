@@ -15,7 +15,8 @@ class AdaConv(nn.Module):
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
-        self.pad = nn.ReflectionPad2d((2, 2, 2, 2))
+        pad = 2 if kernel_size==5 else 1
+        self.pad = nn.ReflectionPad2d((pad, pad, pad, pad))
         self.norm = norm
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d,s_d,kernel_size=1),

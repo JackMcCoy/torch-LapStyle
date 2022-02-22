@@ -681,8 +681,8 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 #nn.GroupNorm(32, 256),
-            ),nn.Sequential(
                 nn.LeakyReLU(),
+            ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3)),
                 #nn.GroupNorm(32, 128),
