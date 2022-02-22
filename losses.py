@@ -73,9 +73,9 @@ def add_flips(X):
 def CalcStyleEmdLoss(X, Y):
     """Calc Style Emd Loss.
     """
-    #X, Y = flatten_and_sample(X,Y)
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
+    X, Y = flatten_and_sample(X,Y)
+    #X = X.flatten(2).transpose(1,2).contiguous()
+    #Y = Y.flatten(2).transpose(1,2).contiguous()
     try:
         remd = sinkhorn_loss(X,Y).mean()
     except Exception as e:
