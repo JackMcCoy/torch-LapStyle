@@ -750,10 +750,9 @@ class ThumbAdaConv(nn.Module):
         x = torch.cat(whitening,0).view(x.shape[0],512,32,32)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.learnable)):
             if idx > 0:
-                x = torch.cat([x,self.relu(ada(style_enc, x))],0)
+                x = torch.cat([x,self.relu(ada(style_enc, x))],1)
             else:
                 x = self.relu(ada(style_enc, x))
-            print(idx)
             x = learnable(x)
         return x, style_enc
 
