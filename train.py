@@ -848,7 +848,7 @@ def adaconv_thumb_train():
             #patch_cF = enc_(ci[-1])
             #patch_sF = enc_(si[-1])
             #patch_stylized, *_ = dec_(patch_cF['r4_1'], patch_sF['r4_1'])
-            patch_stylized = rev_(res_in.clone().detach().requires_grad_(True))
+            patch_stylized = rev_(res_in)
 
             for param in disc_.parameters():
                 param.grad = None
