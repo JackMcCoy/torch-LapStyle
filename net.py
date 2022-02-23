@@ -747,8 +747,8 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.chwise_linear(style_enc)
             style_enc = self.relu(style_enc)
             style_enc = self.chwise_linear_2(style_enc).view(b, -1, 25)
-            style_enc = self.relu(style_enc).transpose(1,2)
-            style_enc = self.depth_linear(style_enc).transpose(1, 2).view(b,self.s_d,5,5)
+            style_enc = self.relu(style_enc)
+            style_enc = self.depth_linear(style_enc).view(b,self.s_d,5,5)
             style_enc = self.relu(style_enc)
         whitening = []
         for i in range(x.shape[0]):
