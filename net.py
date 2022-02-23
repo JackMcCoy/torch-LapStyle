@@ -659,7 +659,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.depth_linear = nn.Linear(512, self.s_d)
-        self.chwise_linear = nn.Linear(32, 64)
+        self.chwise_linear = nn.Linear(16, 64)
         self.chwise_linear_2 = nn.Linear(64, 25)
         self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
 
