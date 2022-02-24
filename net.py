@@ -659,7 +659,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1','r3_1','r2_1','r1_1']
+        self.content_injection_layer = ['r4_1','r3_1',None,'r2_1',None,'r1_1']
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -671,7 +671,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3), bias=False),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -684,26 +684,26 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
             ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3)),
+                nn.Conv2d(512, 128, (3, 3)),
                 #nn.GroupNorm(32, 128),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3), bias=False),
+                nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(128)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3)),
+                nn.Conv2d(256, 64, (3, 3)),
                 #nn.GroupNorm(32, 64),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3), bias=False),
+                nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -738,21 +738,25 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, x: torch.Tensor, style_enc, calc_style=True, style_norm= None):
+    def forward(self, cF: torch.Tensor, style_enc, calc_style=True, style_norm= None):
         b = style_enc.shape[0]
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        whitening = []
-        for i in range(x.shape[0]):
-            whitening.append(whiten(x[i]).unsqueeze(0))
-        x = torch.cat(whitening,0).view(x.shape[0],512,32,32)
-        for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.learnable)):
-            if idx > 0:
-                x = x+self.relu(ada(style_enc, x))
+
+        for idx, (ada, learnable, injection) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
+            if not injection is None:
+                whitening = []
+                for i in range(cF[injection].shape[0]):
+                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+                whitening = torch.cat(whitening, 0).view(x.shape[0], 512, 32, 32)
             else:
-                x = self.relu(ada(style_enc, x))
+                whitening = x
+            if idx > 0:
+                x = torch.cat([x,self.relu(ada(style_enc, whitening))],1)
+            else:
+                x = self.relu(ada(style_enc, whitening))
             x = learnable(x)
         return x, style_enc
 
@@ -1072,7 +1076,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F['r4_1'], F['r4_1'])
+    Icc, _ = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
@@ -1176,9 +1180,7 @@ def calc_losses(stylized: torch.Tensor,
         style_remd = style_remd_loss(stylized_feats['r4_1'], sF['r4_1']) + \
                      style_remd_loss(stylized_feats['r3_1'], sF['r3_1'])
         content_relt = content_emd_loss(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
-                       content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach()) + \
-                       content_emd_loss(stylized_feats['r2_1'], cF['r2_1'].detach()) + \
-                       content_emd_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
+                       content_emd_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
     else:
         style_remd = 0
         content_relt = 0
