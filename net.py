@@ -646,12 +646,12 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
@@ -666,46 +666,46 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256,negative_slope=.1),
+                FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256,negative_slope=.1),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 #nn.GroupNorm(32, 256),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
                 #nn.GroupNorm(32, 256),
-                nn.ReLU(),
+                nn.LeakyReLU(),
             ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3)),
                 #nn.GroupNorm(32, 128),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(128,negative_slope=.1)),
+                FusedLeakyReLU(128)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3)),
                 #nn.GroupNorm(32, 64),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64,negative_slope=.1),
+                FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3)),
             )
@@ -750,9 +750,9 @@ class ThumbAdaConv(nn.Module):
         x = torch.cat(whitening,0).view(x.shape[0],512,32,32)
         for idx, (ada, learnable) in enumerate(zip(self.adaconvs, self.learnable)):
             if idx > 0:
-                x = x+ada(style_enc, x).relu()
+                x = x+self.relu(ada(style_enc, x))
             else:
-                x = ada(style_enc, x).relu()
+                x = self.relu(ada(style_enc, x))
             x = learnable(x)
         return x, style_enc
 
