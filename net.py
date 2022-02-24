@@ -748,9 +748,10 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, injection) in enumerate(zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if not injection is None:
                 whitening = []
-                for i in range(cF[injection].shape[0]):
+                N,C,h,w = cF[injection].shape
+                for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(x.shape[0], 512, 32, 32)
+                whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
                 whitening = x
             if idx > 0:
