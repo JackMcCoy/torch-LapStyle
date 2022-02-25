@@ -777,6 +777,15 @@ def adaconv_thumb_train():
     rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    if args.load_disc ==1 and args.load_model != 'none':
+        try:
+            opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
+        except:
+            'discriminator optimizer not loaded'
+        try:
+            opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
+        except:
+            'discriminator optimizer not loaded'
     #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
     # #grid = (grid * grid.T).to(device)[:256,:256]
     #grid.requires_grad = False
@@ -799,14 +808,6 @@ def adaconv_thumb_train():
                 rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
             except:
                 'rev_optimizer not loaded'
-            try:
-                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
-            try:
-                opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
-            except:
-                'discriminator optimizer not loaded'
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
