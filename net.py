@@ -647,7 +647,7 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
@@ -659,7 +659,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1','r3_1',None,None,None,None]
+        self.content_injection_layer = ['r4_1',None,None,None,None,None]
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
