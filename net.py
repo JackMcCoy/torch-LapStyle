@@ -671,7 +671,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3), bias=False),
+                nn.Conv2d(256, 256, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -684,26 +684,26 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
             ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 128, (3, 3)),
+                nn.Conv2d(256, 128, (3, 3)),
                 #nn.GroupNorm(32, 128),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3), bias=False),
+                nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(128)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 64, (3, 3)),
+                nn.Conv2d(128, 64, (3, 3)),
                 #nn.GroupNorm(32, 64),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3), bias=False),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -755,7 +755,7 @@ class ThumbAdaConv(nn.Module):
             else:
                 whitening = x
             if idx > 0:
-                x = torch.cat([x,self.relu(ada(style_enc, whitening))],1)
+                x = x + self.relu(ada(style_enc, whitening))
             else:
                 x = self.relu(ada(style_enc, whitening))
             x = learnable(x)
