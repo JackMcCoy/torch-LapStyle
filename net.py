@@ -688,7 +688,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(256, 128, (3, 3)),
                 #nn.GroupNorm(32, 128),
                 nn.LeakyReLU(),
-                BlurPool(128, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
+                BlurPool(128, pad_type='reflect', filt_size=3, stride=1, pad_off=0),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
@@ -701,7 +701,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(128, 64, (3, 3)),
                 #nn.GroupNorm(32, 64),
                 nn.LeakyReLU(),
-                BlurPool(64, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
+                BlurPool(64, pad_type='reflect', filt_size=3, stride=1, pad_off=0),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
