@@ -132,8 +132,8 @@ class RevisionNet(nn.Module):
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
 
-        #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
-        #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
+        self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
+        self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
 
         self.Downblock = nn.Sequential(
