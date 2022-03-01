@@ -851,7 +851,7 @@ def adaconv_thumb_train():
         sF = enc_(si[0])
         if n>2 and n % args.disc_update_steps == 0:
             dec_.eval()
-            rev_.eval()
+            for rev in rev_: rev.eval()
             stylized, style_emb = dec_(cF, sF['r4_1'])
             stylized_patches = []
             for i in range(num_rev):
