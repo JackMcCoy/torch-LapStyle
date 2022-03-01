@@ -11,6 +11,8 @@ def crop_mark_extract(num_rev,crop_marks,img,level):
     scaled_crops = crop_marks*scale
     width = scale[level][0]*128
     tx, ty = scaled_crops[:level+1].sum(0)
+    print(tx)
+    print(ty)
     return img[:,:,tx:tx+width,ty:ty+width]
 
 
