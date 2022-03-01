@@ -918,7 +918,7 @@ def adaconv_thumb_train():
                              remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches, top_level_patch=thumbs,
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
+        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss, cX, sX, stylized_dog = losses
         for disc in disc2_: disc.eval()
         loss_Gp_GANp = 0
         for idx, patch_stylized in enumerate(stylized_patches):
@@ -939,7 +939,16 @@ def adaconv_thumb_train():
             dec_optimizer.step()
         for disc in disc2_: disc.train()
         disc_.train()
-
+        if (n + 1) % 10 == 0:
+            cx_grid = make_grid(cX, nrow=4, scale_each=True)
+            sx_grid = make_grid(sX, nrow=4, scale_each=True)
+            dog_grid = make_grid(cX, nrow=4, scale_each=True)
+            save_image(cx_grid,
+                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
+            save_image(sx_grid,
+                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
+            save_image(dog_grid,
+                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}

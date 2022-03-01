@@ -1204,7 +1204,9 @@ def calc_losses(stylized: torch.Tensor,
         mxdog_losses = mxdog_content * .1 + mxdog_content_contraint *100 + mxdog_style * 1000
     else:
         mxdog_losses = 0
-
+        cX = 0
+        sX = 0
+        stylized_dog = 0
     if disc_loss:
         fake_loss = disc_(stylized)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
@@ -1298,5 +1300,5 @@ def calc_losses(stylized: torch.Tensor,
         patch_loss = 0
     #p_loss = pixel_loss(stylized,si)
     p_loss =0
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, s_contrastive_loss, c_contrastive_loss,p_loss
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mxdog_losses, loss_Gp_GAN, patch_loss, s_contrastive_loss, c_contrastive_loss,p_loss, cX, sX, stylized_dog
 
