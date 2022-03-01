@@ -939,16 +939,6 @@ def adaconv_thumb_train():
             dec_optimizer.step()
         for disc in disc2_: disc.train()
         disc_.train()
-        if (n + 1) % 10 == 0:
-            cx_grid = make_grid(cX, nrow=4, scale_each=True)
-            sx_grid = make_grid(sX, nrow=4, scale_each=True)
-            dog_grid = make_grid(stylized_dog, nrow=4, scale_each=True)
-            save_image(cx_grid,
-                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
-            save_image(sx_grid,
-                       args.save_dir + '/sx_iter' + str(n + 1) + '.jpg')
-            save_image(dog_grid,
-                       args.save_dir + '/dog_iter' + str(n + 1) + '.jpg')
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
@@ -989,6 +979,16 @@ def adaconv_thumb_train():
                 save_image(invStyleTrans(style_source_grid),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
+                if type(cX) != int:
+                    cx_grid = make_grid(cX, nrow=4, scale_each=True)
+                    sx_grid = make_grid(sX, nrow=4, scale_each=True)
+                    dog_grid = make_grid(stylized_dog, nrow=4, scale_each=True)
+                    save_image(cx_grid,
+                               args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
+                    save_image(sx_grid,
+                               args.save_dir + '/sx_iter' + str(n + 1) + '.jpg')
+                    save_image(dog_grid,
+                               args.save_dir + '/dog_iter' + str(n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
 
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
