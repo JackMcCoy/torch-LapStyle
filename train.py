@@ -942,7 +942,7 @@ def adaconv_thumb_train():
         if (n + 1) % 10 == 0:
             cx_grid = make_grid(cX, nrow=4, scale_each=True)
             sx_grid = make_grid(sX, nrow=4, scale_each=True)
-            dog_grid = make_grid(cX, nrow=4, scale_each=True)
+            dog_grid = make_grid(stylized_dog, nrow=4, scale_each=True)
             save_image(cx_grid,
                        args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
             save_image(sx_grid,
