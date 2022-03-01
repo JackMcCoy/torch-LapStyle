@@ -993,16 +993,16 @@ def adaconv_thumb_train():
                     num = '' if idx == 0 else '_'+str(idx+2)
                     state_dict = rev_[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
-                               'revisor{num}_iter_{:d}.pth.tar'.format(n + 1))
+                               'revisor{:s}_iter_{:d}.pth.tar'.format(num,n + 1))
                     state_dict = rev_optimizer[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
-                               'rev_optimizer{num}.pth.tar')
+                               'rev_optimizer{:s}.pth.tar').format(num)
                     state_dict = disc2_[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
                                'discriminator_{str(idx+2)}_iter_{:d}.pth.tar'.format(n + 1))
                     state_dict = opt_D2[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
-                               'disc{str(idx+2)}_optimizer.pth.tar')
+                               'disc{:d}_optimizer.pth.tar').format(idx+2)
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
