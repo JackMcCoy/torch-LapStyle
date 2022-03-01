@@ -999,7 +999,7 @@ def adaconv_thumb_train():
                                'rev_optimizer{:s}.pth.tar'.format(num))
                     state_dict = disc2_[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
-                               'discriminator_{str(idx+2)}_iter_{:d}.pth.tar'.format(n + 1))
+                               'discriminator_{:d}_iter_{:d}.pth.tar'.format(idx+2,n + 1))
                     state_dict = opt_D2[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
                                'disc{:d}_optimizer.pth.tar'.format(idx+2))
