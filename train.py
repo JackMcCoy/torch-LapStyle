@@ -946,9 +946,9 @@ def adaconv_thumb_train():
             save_image(cx_grid,
                        args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
             save_image(sx_grid,
-                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
+                       args.save_dir + '/sx_iter' + str(n + 1) + '.jpg')
             save_image(dog_grid,
-                       args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
+                       args.save_dir + '/dog_iter' + str(n + 1) + '.jpg')
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
