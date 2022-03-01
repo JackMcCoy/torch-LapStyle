@@ -6,6 +6,14 @@ import math
 from losses import calc_mean_std
 
 
+def crop_mark_extract(num_rev,crop_marks,img,level):
+    scale = torch.tensor([[2 ** num_rev / 2 ** i] for i in range(num_rev)])
+    scaled_crops = crop_marks*scale
+    width = scale[level][0]*128
+    tx, ty = scaled_crops[:level+1].sum(0)
+    return img[:,:,tx:tx+width,ty:ty+width]
+
+
 class CartesianGrid(nn.Module):
     """Catersian Grid for 2d tensor.
     The Catersian Grid is a common-used positional encoding in deep learning.

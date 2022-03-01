@@ -1289,14 +1289,10 @@ def calc_losses(stylized: torch.Tensor,
             c_contrastive_loss = c_contrastive_loss+compute_contrastive_loss(reference_content, content_comparisons, 0.2, 0)
 
     if patch_loss:
-        if patch_stylized is None:
-            upscaled_patch_feats = stylized_feats['r4_1']
-            patch_loss = content_loss(upscaled_patch_feats, patch_feats['r4_1'], norm=False)
-        else:
-            patch_disc_loss = 0
-            patch_loss = 0
-            patch_feats = encoder(patch_stylized)
-            upscaled_patch_feats = encoder(top_level_patch)
+        patch_loss = 0
+        for thumb, patch in zip(top_level_patch,patch_stylized):
+            patch_feats = encoder(patch)
+            upscaled_patch_feats = encoder(thumb)
             patch_loss = patch_loss + content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0

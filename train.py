@@ -21,7 +21,7 @@ import math
 import vgg
 import net
 import random
-from function import _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
+from function import crop_mark_extract, _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
 from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
@@ -759,7 +759,6 @@ def adaconv_thumb_train():
     #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
 
     rev_ = build_rev(args.revision_depth, None)
-    random_crop = transforms.RandomCrop(256)
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
@@ -812,6 +811,8 @@ def adaconv_thumb_train():
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
+    num_rev = {256*2**i:i for i in range(4)}[args.crop_size]
+    random_crop = [nn.Identity()] + [transforms.RandomCrop(args.crop_size/2**e) for e in range(1,num_rev+1)]
     wandb.watch((dec_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
@@ -830,26 +831,23 @@ def adaconv_thumb_train():
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
             ci = torch.cat([ci, ci_], 0)
-            rc_si = random_crop(si)
             si = torch.cat([si, si], 0)
-            rc_si = torch.cat([rc_si, rc_si], 0)
-        else:
-            rc_si = random_crop(si)
 
-        ci = [F.interpolate(ci, size=256, mode='bicubic').to(device), ci[:,:,:256,:256].to(device)]
-        si = [F.interpolate(si, size=256, mode='bicubic').to(device), rc_si.to(device)]
+        crop_marks = torch.randint(0, 127, (num_rev, 2))
+        ci = [F.interpolate(ci, size=256, mode='bicubic').to(device)] + [F.interpolate(crop_mark_extract(num_rev,crop_marks,ci,e), size=256, mode='bicubic').to(device) for e in range(num_rev)]
+        si = [F.interpolate(e(si), size=256, mode='bicubic').to(device) for e in random_crop]
         cF = enc_(ci[0])
         sF = enc_(si[0])
         if n>2 and n % args.disc_update_steps == 0:
             dec_.eval()
             rev_.eval()
             stylized, style_emb = dec_(cF, sF['r4_1'])
-            res_in = F.interpolate(stylized[:, :, :128, :128], 256, mode='nearest')
-
-            #patch_cF = enc_(ci[-1])
-            #patch_sF = enc_(si[-1])
-            #patch_stylized, *_ = dec_(patch_cF['r4_1'], patch_sF['r4_1'])
-            patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), ci[-1])
+            stylized_patches = []
+            for i in range(num_rev):
+                orig = stylized if i==0 else patch_stylized
+                res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256, mode='nearest')
+                patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), ci[1+i])
+                stylized_patches.append(patch_stylized)
 
             for param in disc_.parameters():
                 param.grad = None
@@ -860,8 +858,10 @@ def adaconv_thumb_train():
             set_requires_grad(disc2_, True)
             set_requires_grad(dec_, False)
             set_requires_grad(rev_, False)
-            loss_D2 = calc_GAN_loss(si[-1], patch_stylized.clone().detach().requires_grad_(True), disc2_)
             loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
+            loss_D2 = 0
+            for i, patch_stylized in enumerate(stylized_patches):
+                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_)
 
             loss_D.backward()
             loss_D2.backward()
@@ -886,25 +886,31 @@ def adaconv_thumb_train():
             param.grad = None
 
         stylized, style_emb = dec_(cF,sF['r4_1'])
-        with torch.no_grad():
-            res_in = F.interpolate(stylized[:,:,:128,:128], 256,mode='nearest')
-        #patch_cF = enc_(ci[-1])
-        #patch_stylized, *_ = dec_(patch_cF['r4_1'].detach(), style_emb, calc_style=False,
-        #                          style_norm=style_norms)
+        thumbs = []
+        stylized_patches = []
+        for i in range(num_rev):
+            orig = stylized if i == 0 else patch_stylized
+            res_in = F.interpolate(
+                orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256,
+                mode='nearest')
+            thumbs.append(res_in)
+            patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), ci[1 + i])
+            stylized_patches.append(patch_stylized)
 
-        patch_stylized = rev_(res_in.clone().detach().requires_grad_(True),ci[-1])
         disc_.eval()
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
-                             remd_loss=remd_loss, patch_loss=True, patch_stylized=patch_stylized, top_level_patch=res_in,
+                             remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches, top_level_patch=thumbs,
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         disc2_.eval()
-        fake_loss = disc2_(patch_stylized)
-        loss_Gp_GANp = calc_GAN_loss_from_pred(fake_loss, True)
+        loss_Gp_GANp = 0
+        for patch_stylized in stylized_patches:
+            fake_loss = disc2_(patch_stylized)
+            loss_Gp_GANp += calc_GAN_loss_from_pred(fake_loss, True)
         loss = loss_Gp_GANp * args.gan_loss2 + \
                loss_s* args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
@@ -949,7 +955,7 @@ def adaconv_thumb_train():
                 draft_img_grid = make_grid(invStyleTrans(stylized), nrow=4, scale_each=True)
                 styled_img_grid = make_grid(invStyleTrans(patch_stylized), nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci[-1], nrow=4, scale_each=True)
                 save_image(styled_img_grid, args.save_dir + '/drafting_revision_iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
