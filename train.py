@@ -231,7 +231,7 @@ remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
 
 
-def build_rev(depth, state):
+def build_rev():
     rev = net.RevisionNet(batch_size=args.batch_size, s_d=args.s_d).to(device)
     #if not state is None:
     #    state = torch.load(state)
@@ -753,41 +753,40 @@ def revlap_train():
                            'dec_optimizer.pth.tar')
 
 def adaconv_thumb_train():
+    num_rev = {256 * 2 ** i: i for i in range(4)}[args.crop_size]
+
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
 
     #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
 
-    rev_ = build_rev(args.revision_depth, None)
+    rev_ = [build_rev() for i in range(num_rev)]
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
         disc_state = new_path_func('discriminator_')
-        disc2_state = new_path_func('discriminator_2_')
+        disc2_state = [new_path_func('discriminator_'+str(i+2)+'_') for i in range(num_rev)]
     else:
         disc_state = None
-        disc2_state = None
+        disc2_state = [None for i in range(num_rev)]
         init_weights(dec_)
     disc_ = build_disc(
         disc_state, args.disc_depth) #, torch.rand(args.batch_size, 3, 256, 256).to(torch.device('cuda')), check_trace=False, strict=False)
-    disc2_ = build_disc(disc2_state, args.disc2_depth)
+    disc2_ = [build_disc(state, args.disc2_depth) for state in disc2_state]
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
-    rev_optimizer = torch.optim.AdamW(rev_.parameters(recurse=True), lr=args.lr)
+    rev_optimizer = [torch.optim.AdamW(rev.parameters(recurse=True), lr=args.lr) for rev in rev_]
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
-    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D2 = [torch.optim.AdamW(disc.parameters(recurse=True), lr=args.disc_lr) for disc in disc2_]
     if args.load_disc ==1 and args.load_model != 'none':
         try:
             opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
         except:
             'discriminator optimizer not loaded'
         try:
-            opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc2_optimizer.pth.tar'))
+            [opt_D2[i].load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc'+str(i+2)+'_optimizer.pth.tar')) for i in range(num_rev)]
         except:
             'discriminator optimizer not loaded'
-    #grid = 2 * torch.arange(512).view(1,512).float() / max(float(512) - 1., 1.) - 1.
-    # #grid = (grid * grid.T).to(device)[:256,:256]
-    #grid.requires_grad = False
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -797,32 +796,40 @@ def adaconv_thumb_train():
 
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
         if args.load_rev==1:
-            rev_.load_state_dict(torch.load(new_path_func('revisor_')),strict=False)
+            for idx, rev in enumerate(rev_):
+                num = '' if idx==0 else str(idx+2)+'_'
+                try:
+                    rev.load_state_dict(torch.load(new_path_func('revisor_'+num)),strict=False)
+                except:
+                    print(f'revision {num} not loaded')
         if args.load_optimizer==1:
             try:
                 dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_opt.pth.tar'))
             except:
-                'optimizer not loaded '
-            try:
-                rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_opt.pth.tar'))
-            except:
-                'rev_optimizer not loaded'
+                print('optimizer not loaded ')
+            for idx, rev_opt in enumerate(rev_optimizer):
+                num = '' if idx==0 else '_'+str(idx+2)
+                try:
+                    rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_optimizer'+num+'.pth.tar'))
+                except:
+                    print(f'rev_optimizer{num} not loaded')
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
-    num_rev = {256*2**i:i for i in range(4)}[args.crop_size]
     random_crop = [nn.Identity()] + [transforms.RandomCrop(args.crop_size/2**e) for e in range(1,num_rev+1)]
-    wandb.watch((dec_,disc2_), log_freq=args.log_every_)
+    #wandb.watch((dec_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
-        warmup_lr_adjust(rev_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-                         decay=args.lr_decay)
+        for rev_opt in rev_optimizer:
+            warmup_lr_adjust(rev_opt, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                             decay=args.lr_decay)
         warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.disc_lr)
-        warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
-                         decay=args.disc_lr)
+        for d_opt in opt_D2:
+            warmup_lr_adjust(d_opt, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.disc_lr,
+                             decay=args.disc_lr)
 
         ci = content_normalize(next(content_iter))
         si = style_normalize(next(style_iter))
@@ -846,22 +853,23 @@ def adaconv_thumb_train():
             for i in range(num_rev):
                 orig = stylized if i==0 else patch_stylized
                 res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256, mode='nearest')
-                patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), ci[1+i])
+                patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
                 stylized_patches.append(patch_stylized)
 
             for param in disc_.parameters():
                 param.grad = None
-            for param in disc2_.parameters():
-                param.grad = None
+            for disc in disc2_:
+                for param in disc.parameters():
+                    param.grad = None
 
             set_requires_grad(disc_, True)
-            set_requires_grad(disc2_, True)
+            for disc in disc2_: set_requires_grad(disc, True)
             set_requires_grad(dec_, False)
-            set_requires_grad(rev_, False)
+            for rev in rev_: set_requires_grad(rev, False)
             loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
             loss_D2 = 0
             for i, patch_stylized in enumerate(stylized_patches):
-                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_)
+                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_[i])
 
             loss_D.backward()
             loss_D2.backward()
@@ -869,21 +877,22 @@ def adaconv_thumb_train():
             if n>0:
                 #_clip_gradient(disc2_)
                 #_clip_gradient(disc_)
-                opt_D2.step()
+                for d_opt in opt_D2: d_opt.step()
                 opt_D.step()
 
             set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
+            for disc in disc2_: set_requires_grad(disc, False)
             set_requires_grad(dec_, True)
-            set_requires_grad(rev_, True)
+            for rev in rev_: set_requires_grad(rev, True)
 
         dec_.train()
-        rev_.train()
+        for rev in rev_: rev.train()
 
         for param in dec_.parameters():
             param.grad = None
-        for param in rev_.parameters():
-            param.grad = None
+        for rev in rev_:
+            for param in rev.parameters():
+                param.grad = None
 
         stylized, style_emb = dec_(cF,sF['r4_1'])
         thumbs = []
@@ -894,7 +903,7 @@ def adaconv_thumb_train():
                 orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256,
                 mode='nearest')
             thumbs.append(res_in)
-            patch_stylized = rev_(res_in.clone().detach().requires_grad_(True), ci[1 + i])
+            patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
             stylized_patches.append(patch_stylized)
 
         disc_.eval()
@@ -906,10 +915,10 @@ def adaconv_thumb_train():
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
-        disc2_.eval()
+        for disc in disc2_: disc.eval()
         loss_Gp_GANp = 0
-        for patch_stylized in stylized_patches:
-            fake_loss = disc2_(patch_stylized)
+        for idx, patch_stylized in enumerate(stylized_patches):
+            fake_loss = disc2_[idx](patch_stylized)
             loss_Gp_GANp += calc_GAN_loss_from_pred(fake_loss, True)
         loss = loss_Gp_GANp * args.gan_loss2 + \
                loss_s* args.style_weight + content_relt * args.content_relt + \
@@ -922,9 +931,9 @@ def adaconv_thumb_train():
         if n > 0:
             #_clip_gradient(rev_)
             #_clip_gradient(dec_)
-            rev_optimizer.step()
+            for rev_opt in rev_optimizer: rev_opt.step()
             dec_optimizer.step()
-        disc2_.train()
+        for disc in disc2_: disc.train()
         disc_.train()
 
         if (n + 1) % args.log_every_ == 0:
@@ -976,24 +985,26 @@ def adaconv_thumb_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
-                state_dict = rev_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'revisor_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = rev_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'rev_optimizer.pth.tar')
+                for idx in range(num_rev):
+                    num = '' if idx == 0 else '_'+str(idx+2)
+                    state_dict = rev_[idx].state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'revisor'+num+'_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = rev_optimizer[idx].state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'rev_optimizer'+num+'.pth.tar')
+                    state_dict = disc2_[idx].state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'discriminator_'+str(idx+2)+'_iter_{:d}.pth.tar'.format(n + 1))
+                    state_dict = opt_D2[idx].state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'disc'+str(idx+2)+'_optimizer.pth.tar')
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = opt_D.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'disc_optimizer.pth.tar')
-                state_dict = disc2_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'discriminator_2_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D2.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'disc2_optimizer.pth.tar')
         #del(ci,si,stylized,patch_stylized,rc_si,loss,loss_D,loss_D2, losses,loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, mdog, loss_Gp_GANp, patch_loss, style_contrastive_loss, content_contrastive_loss,loss_cp, loss_sp, content_reltp, style_remdp, l_identity1p, l_identity2p, l_identity3p, l_identity4p, mdogp, loss_Gp_GAN, patch_lossp, style_contrastive_lossp, content_contrastive_lossp, cF, sF, patch_cF, patch_sF)
 
 def adaconv_urst():
