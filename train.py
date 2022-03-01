@@ -801,7 +801,7 @@ def adaconv_thumb_train():
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
         if args.load_rev==1:
             for idx, rev in enumerate(rev_):
-                num = '' if idx==0 else str(idx+2)+'_'
+                num = '' if idx==0 else str(idx+1)+'_'
                 try:
                     rev.load_state_dict(torch.load(new_path_func('revisor_'+num)),strict=False)
                 except:
@@ -812,7 +812,7 @@ def adaconv_thumb_train():
             except:
                 print('optimizer not loaded ')
             for idx, rev_opt in enumerate(rev_optimizer):
-                num = '' if idx==0 else '_'+str(idx+2)
+                num = '' if idx==0 else '_'+str(idx+1)
                 try:
                     rev_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_optimizer'+num+'.pth.tar'))
                 except:
@@ -990,7 +990,7 @@ def adaconv_thumb_train():
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
                 for idx in range(num_rev):
-                    num = '' if idx == 0 else '_'+str(idx+2)
+                    num = '' if idx == 0 else '_'+str(idx+1)
                     state_dict = rev_[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
                                'revisor{:s}_iter_{:d}.pth.tar'.format(num,n + 1))
