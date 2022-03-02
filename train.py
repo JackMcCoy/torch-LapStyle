@@ -257,7 +257,8 @@ def build_disc(disc_state, depth):
         if not disc_state is None:
             try:
                 disc.load_state_dict(torch.load(disc_state), strict=False)
-            except:
+            except Exception as e:
+                print(e)
                 print(disc_state+' not loaded')
                 init_weights(disc)
         else:
@@ -918,7 +919,7 @@ def adaconv_thumb_train():
                              remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches, top_level_patch=thumbs,
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss, cX, sX, stylized_dog = losses
+        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
         for disc in disc2_: disc.eval()
         loss_Gp_GANp = 0
         for idx, patch_stylized in enumerate(stylized_patches):
@@ -979,16 +980,6 @@ def adaconv_thumb_train():
                 save_image(invStyleTrans(style_source_grid),
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
-                if type(cX) != int:
-                    cx_grid = make_grid(cX, nrow=4, scale_each=True)
-                    sx_grid = make_grid(sX, nrow=4, scale_each=True)
-                    dog_grid = make_grid(stylized_dog, nrow=4, scale_each=True)
-                    save_image(cx_grid,
-                               args.save_dir + '/cx_iter' + str(n + 1) + '.jpg')
-                    save_image(sx_grid,
-                               args.save_dir + '/sx_iter' + str(n + 1) + '.jpg')
-                    save_image(dog_grid,
-                               args.save_dir + '/dog_iter' + str(n + 1) + '.jpg')
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
 
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
