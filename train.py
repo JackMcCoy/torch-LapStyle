@@ -855,7 +855,7 @@ def adaconv_thumb_train():
             for i in range(num_rev):
                 orig = stylized if i==0 else patch_stylized
                 res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256, mode='bicubic', align_corners=False)
-                patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
+                patch_stylized = rev_[i](res_in.clone().detach(), ci[1+i])
                 stylized_patches.append(patch_stylized)
 
             for param in disc_.parameters():
@@ -905,7 +905,7 @@ def adaconv_thumb_train():
                 orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256,
                 mode='bicubic', align_corners=False)
             thumbs.append(res_in)
-            patch_stylized = rev_[i](res_in, ci[1 + i])
+            patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
             stylized_patches.append(patch_stylized)
 
         disc_.eval()
