@@ -236,7 +236,8 @@ class SpectralResBlock(nn.Module):
         self.conv_2 = spectral_norm(self.conv_2)
 
     def forward(self, in_feat):
-        x = self.conv_1(in_feat)
+        x = self.relu(in_feat)
+        x = self.conv_1(x)
         x = self.relu(x)
         x = self.conv_2(x)
         if self.downsample:
