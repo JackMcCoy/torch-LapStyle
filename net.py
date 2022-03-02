@@ -1031,7 +1031,7 @@ class SpectralDiscriminator(nn.Module):
         self.spectral_gan = nn.ModuleList([OptimizedBlock(3, num_channels, 3, 1, downsample=False),
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 1, 3, 1, downsample=False)])
-        self.out = nn.LazyLinear(1)
+        self.out = nn.Linear(int((256/2**(depth-2))**2),1)
         self.sigmoid = nn.Sigmoid()
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
