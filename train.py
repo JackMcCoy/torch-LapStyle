@@ -868,10 +868,10 @@ def adaconv_thumb_train():
             for disc in disc2_: set_requires_grad(disc, True)
             set_requires_grad(dec_, False)
             for rev in rev_: set_requires_grad(rev, False)
-            loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
+            loss_D = calc_GAN_loss(si[0], stylized.detach(), disc_)
             loss_D2 = 0
             for i, patch_stylized in enumerate(stylized_patches):
-                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_[i])
+                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.detach(), disc2_[i])
 
             loss_D.backward()
             loss_D2.backward()
