@@ -854,7 +854,7 @@ def adaconv_thumb_train():
             stylized_patches = []
             for i in range(num_rev):
                 orig = stylized if i==0 else patch_stylized
-                res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256, mode='bicubic', align_corners=False)
+                res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256)
                 patch_stylized = rev_[i](res_in.clone().detach(), ci[1+i])
                 stylized_patches.append(patch_stylized)
 
@@ -902,8 +902,7 @@ def adaconv_thumb_train():
         for i in range(num_rev):
             orig = stylized if i == 0 else patch_stylized
             res_in = F.interpolate(
-                orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256,
-                mode='bicubic', align_corners=False)
+                orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256)
             thumbs.append(res_in)
             patch_stylized = rev_[i](res_in, ci[1 + i])
             stylized_patches.append(patch_stylized)
