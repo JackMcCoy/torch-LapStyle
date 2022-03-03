@@ -1032,7 +1032,6 @@ class SpectralDiscriminator(nn.Module):
                                           *[SpectralResBlock(ch*2**i, ch*2**(i+1), 3, 1, downsample=True) for i in range(depth-2)],
                                           SpectralResBlock(ch*2**(depth-2), 1, 3, 1, downsample=False)])
         self.out = nn.Linear(int((256/2**(depth-2))**2),1)
-        self.sigmoid = nn.Sigmoid()
     def init_spectral_norm(self):
         for layer in self.spectral_gan:
             layer.init_spectral_norm()
@@ -1043,7 +1042,6 @@ class SpectralDiscriminator(nn.Module):
             x = layer(x)
         x = x.flatten(2)
         x = self.out(x)
-        x = self.sigmoid(x)
         return x
 
 class ResDiscriminator(nn.Module):
@@ -1107,7 +1105,7 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
         target_tensor = torch.ones_like(prediction, device=torch.device('cuda:0'))
     else:
         target_tensor = torch.zeros_like(prediction,device=torch.device('cuda:0'))
-    loss = F.mse_loss(prediction, target_tensor.detach())
+    loss = F.binary_cross_entropy_with_logits(prediction, target_tensor)
     return loss
 
 def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
