@@ -856,7 +856,7 @@ def adaconv_thumb_train():
             for i in range(num_rev):
                 orig = stylized if i==0 else patch_stylized
                 res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256)
-                patch_stylized = rev_[i](res_in.clone().detach(), ci[1+i])
+                patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
                 stylized_patches.append(patch_stylized)
 
             for param in disc_.parameters():
@@ -869,10 +869,10 @@ def adaconv_thumb_train():
             for disc in disc2_: set_requires_grad(disc, True)
             set_requires_grad(dec_, False)
             for rev in rev_: set_requires_grad(rev, False)
-            loss_D = calc_GAN_loss(si[0], stylized.detach(), disc_)
+            loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
             loss_D2 = 0
             for i, patch_stylized in enumerate(stylized_patches):
-                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.detach(), disc2_[i])
+                loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_[i])
 
             loss_D.backward()
             loss_D2.backward()
@@ -905,7 +905,7 @@ def adaconv_thumb_train():
             res_in = F.interpolate(
                 orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256)
             thumbs.append(res_in)
-            patch_stylized = rev_[i](res_in, ci[1 + i])
+            patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
             stylized_patches.append(patch_stylized)
 
         disc_.eval()
@@ -921,7 +921,7 @@ def adaconv_thumb_train():
         loss_Gp_GANp = 0
         for idx, patch_stylized in enumerate(stylized_patches):
             fake_loss = disc2_[idx](patch_stylized)
-            loss_Gp_GANp += calc_GAN_loss_from_pred(fake_loss, True)
+            loss_Gp_GANp = loss_Gp_GANp + calc_GAN_loss_from_pred(fake_loss, True)
         loss = loss_Gp_GANp * args.gan_loss2 + \
                loss_s* args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
