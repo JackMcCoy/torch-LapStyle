@@ -961,12 +961,12 @@ def adaconv_thumb_train():
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
-                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2, loss_Gp_GANp, pixel_loss],
+                     l_identity1,l_identity2,l_identity3,l_identity4, loss_D2, pixel_loss],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss','Discriminator Loss',
                      'Style Contrastive Loss','Content Contrastive Loss',
                      "Identity 1 Loss","Identity 2 Loss","Identity 3 Loss","Identity 4 Loss",
-                     'Discriminator Loss (detail','Revision Disc. Loss','Pixel Loss']):
+                     'Discriminator Loss (detail','Pixel Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l)==int:
