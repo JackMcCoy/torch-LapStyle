@@ -929,7 +929,7 @@ def adaconv_thumb_train():
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
 
-        for idx in num_rev:
+        for idx in range(num_rev):
             patch_cF = enc_(ci[idx+1])
             patch_sF = enc_(si[idx+1])
             patch_losses = calc_losses(stylized_patches[idx], ci[idx+1], si[idx+1], patch_cF, enc_, dec_, None, disc2_[idx],
