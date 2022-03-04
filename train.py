@@ -808,7 +808,7 @@ def adaconv_thumb_train():
                     print(f'revision {num} not loaded')
         if args.load_optimizer==1:
             try:
-                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_opt.pth.tar'))
+                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
             except:
                 print('optimizer not loaded ')
             for idx, rev_opt in enumerate(rev_optimizer):
