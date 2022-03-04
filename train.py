@@ -912,25 +912,40 @@ def adaconv_thumb_train():
             stylized_patches.append(patch_stylized)
 
         disc_.eval()
+        for disc in disc2_: disc.eval()
+
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
-                             remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches, top_level_patch=thumbs,
+                             remd_loss=remd_loss, patch_loss=False, patch_stylized=None, top_level_patch=None,
                              sF=sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
         mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
-        for disc in disc2_: disc.eval()
-        loss_Gp_GANp = 0
-        for idx, patch_stylized in enumerate(stylized_patches):
-            fake_loss = disc2_[idx](patch_stylized)
-            loss_Gp_GANp = loss_Gp_GANp + calc_GAN_loss_from_pred(fake_loss, True)
-        loss = loss_Gp_GANp * args.gan_loss2 + \
-               loss_s* args.style_weight + content_relt * args.content_relt + \
+
+        loss = loss_s* args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
+
+        for idx in num_rev:
+            patch_cF = enc_(ci[idx+1])
+            patch_sF = enc_(si[idx+1])
+            patch_losses = calc_losses(stylized_patches[idx], ci[idx+1], si[idx+1], patch_cF, enc_, dec_, None, disc2_[idx],
+                                 calc_identity=False, disc_loss=True,
+                                 mdog_losses=False, style_contrastive_loss=False,
+                                 content_contrastive_loss=False,
+                                 remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches[idx], top_level_patch=thumbs[idx],
+                                 sF=patch_sF)
+            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
+            mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = patch_losses
+
+            loss = loss + loss_s * args.style_weight + content_relt * args.content_relt + \
+                   style_remd * args.style_remd + patch_loss * args.patch_loss + \
+                   loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
+                   + l_identity2 + l_identity3 * 50 + l_identity4 + \
+                   style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
 
         loss.backward()
         if n > 0:
