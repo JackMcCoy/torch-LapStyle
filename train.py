@@ -786,7 +786,7 @@ def adaconv_thumb_train():
             opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc_optimizer.pth.tar'))
         except:
             print('discriminator optimizer not loaded')
-        for i in num_rev:
+        for i in range(num_rev):
             try:
                 [opt_D2[i].load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/disc'+str(i+2)+'_optimizer.pth.tar')) for i in range(num_rev)]
             except:
