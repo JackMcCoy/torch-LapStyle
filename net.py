@@ -770,7 +770,7 @@ class ThumbAdaConv(nn.Module):
                 for i in range(N):
                     whitening.append(whiten(x[i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
-            else:
+            elif idx>1:
                 whitening = x
             if idx > 0:
                 x = x + self.relu(ada(style_enc, whitening))
