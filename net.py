@@ -767,9 +767,9 @@ class ThumbAdaConv(nn.Module):
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if idx == 0:
                 whitening = []
-                N, C, h, w = x.shape
+                N, C, h, w = cF[injection].shape
                 for i in range(N):
-                    whitening.append(whiten(x[i]).unsqueeze(0))
+                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
                 whitening = x
