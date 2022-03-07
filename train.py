@@ -150,7 +150,8 @@ parser.add_argument('--save_model_interval', type=int, default=10000)
 parser.add_argument('--load_model', type=str, default='none')
 
 # Revision model options
-parser.add_argument('--augment', type=int, default=0)
+parser.add_argument('--style_augment', type=int, default=0)
+parser.add_argument('--content_augment', type=int, default=0)
 parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc2_depth', type=int, default=5)
@@ -211,8 +212,8 @@ with autocast(enabled=ac_enabled):
     vgg.load_state_dict(torch.load(args.vgg), strict=False)
     vgg = nn.Sequential(*list(vgg.children()))
 
-    content_tf = train_transform(args.load_size, args.crop_size)
-    style_tf = style_transform(args.style_load_size, args.crop_size) if args.augment == 1 else train_transform(args.style_load_size, args.crop_size)
+    content_tf = style_transform(args.load_size, args.crop_size) if args.content_augment == 1 else train_transform(args.load_size, args.crop_size)
+    style_tf = style_transform(args.style_load_size, args.crop_size) if args.style_augment == 1 else train_transform(args.style_load_size, args.crop_size)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
