@@ -776,7 +776,7 @@ class ThumbAdaConv(nn.Module):
             if idx > 0:
                 x = x + self.relu(ada(style_enc, whitening))
             else:
-                x = self.relu(ada(style_enc, cF[injection]))
+                x = self.relu(ada(style_enc, whitening))
             x = learnable(x)
         return x, style_enc
 
