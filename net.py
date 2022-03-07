@@ -660,12 +660,12 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5, norm=False),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
