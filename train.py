@@ -776,9 +776,9 @@ def adaconv_thumb_train():
         disc2_state = [None for i in range(num_rev)]
         init_weights(dec_)
     disc_ = torch.jit.script(build_disc(
-        disc_state, args.disc_depth),strict=False)
+        disc_state, args.disc_depth))
     disc2_ = [
-        torch.jit.script(build_disc(state, args.disc2_depth),strict=False) for state in disc2_state]
+        torch.jit.script(build_disc(state, args.disc2_depth)) for state in disc2_state]
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = [torch.optim.AdamW(rev.parameters(recurse=True), lr=args.lr) for rev in rev_]
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
