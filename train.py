@@ -30,7 +30,7 @@ from torch.cuda.amp import autocast, GradScaler
 from function import CartesianGrid as Grid
 from randaugment import RandAugment
 
-setup_torch(0)
+#setup_torch(0)
 #warnings.simplefilter("ignore")
 Image.MAX_IMAGE_PIXELS = None  # Disable DecompressionBombError
 # Disable OSError: image file is truncated
