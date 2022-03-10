@@ -117,6 +117,14 @@ def setup_torch(seed: int):
     torch._C._set_cudnn_deterministic(False)  # skipcq: PYL-W0212
     torch._C._set_cudnn_allow_tf32(True)  # skipcq: PYL-W0212
     torch._C._set_cublas_allow_tf32(True)  # skipcq: PYL-W0212
+    torch._C._jit_set_inline_everything_mode(True)  # skipcq: PYL-W0212
+
+    torch._C._jit_set_profiling_executor(True)  # skipcq: PYL-W0212
+    torch._C._jit_set_profiling_mode(True)  # skipcq: PYL-W0212
+    torch._C._jit_override_can_fuse_on_cpu(False)  # skipcq: PYL-W0212
+    torch._C._jit_override_can_fuse_on_gpu(True)  # skipcq: PYL-W0212
+    torch._C._jit_set_texpr_fuser_enabled(True)  # skipcq: PYL-W0212
+    torch._C._jit_set_nvfuser_enabled(False)  # skipcq: PYL-W0212
 
     random.seed(seed)
     np.random.seed(seed)

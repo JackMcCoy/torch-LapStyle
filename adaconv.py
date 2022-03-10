@@ -21,7 +21,7 @@ class AdaConv(nn.Module):
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d,s_d,kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=3, padding=1 if kernel_size==5 else 0, padding_mode='reflect'),
+            nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding=1 if kernel_size==5 else 0, padding_mode='reflect'),
             nn.LeakyReLU())
 
         self.pointwise_avg_pool = nn.Sequential(
@@ -29,7 +29,7 @@ class AdaConv(nn.Module):
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(s_d, s_d, kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1),
+            nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=2),
             nn.LeakyReLU())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(s_d, s_d, kernel_size=1),

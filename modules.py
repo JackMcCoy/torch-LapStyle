@@ -4,6 +4,7 @@ import torch
 import typing
 import math
 from function import normalized_feat
+from gaussian_diff import gaussian
 from adaconv import AdaConv
 import numpy as np
 from torch.nn import functional as F
@@ -523,23 +524,57 @@ class WaveUnpool(nn.Module):
         return self.LL(ll) + self.LH(lh) + self.HL(hl) + self.HH(hh)
 
 
-class Sobel(nn.Module):
-    def __init__(self):
-        super().__init__()
+class EFT(nn.Module):
+    def __init__(self, radius=1):
+        super(EFT, self).__init__()
         self.filter = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=0, bias=False)
-
-        Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
-        Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
+        # Actually uses Scharr function for kernels, per cv2
+        Gx = torch.tensor([[3.0, 0.0, -3.0], [10.0, 0.0, -10.0], [3.0, 0.0, -3.0]])
+        Gy = torch.tensor([[3.0, 10.0, 3.0], [0.0, 0.0, 0.0], [-3.0, -10.0, -3.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
         G = G.unsqueeze(1)
         self.filter.weight = nn.Parameter(G, requires_grad=False)
+        self.rgb_coef = torch.tensor([.229, .587, .114]).view(1, 3, 1, 1)
+        self.gaussian_filter = gaussian(11, 1).expand(1, 1, 11, 11)
+        self.radius = radius
+        theta = .5 * math.pi
+        self.cos_theta = math.cos(theta)
+        self.sin_theta = math.sin(theta)
+        self.falloff = 1
+
+    def rotate_flow(self, x):
+        B = x.shape[0]
+        cos = x * self.cos_theta
+        sin = (x * self.sin_theta).flip(1) * torch.tensor([-1,1],device=x.device).view(B,2,1,1)
+        return cos + sin
+
+    def symmetric_box_filter(self, x, y):
+        # y = chunks
+        x = torch.linalg.vector_norm(x - y, ord=1, dim=1)
+        x = (x < self.radius).float()
+        x = x.reshape(1, 1, 256, 256)
+        return x
+
+    def weight_magnitude(self, grad_x, grad_y):
+        x = (1 + torch.tanh(self.falloff))
 
     def forward(self, img):
-        x = self.filter(img)
-        x = torch.mul(x, x)
-        x = torch.sum(x, dim=1, keepdim=True)
-        x = torch.sqrt(x)
+        # img size = B, 1, h, w
+        grad = F.instance_norm(img)
+        grad = F.conv2d(F.pad(grad, (1, 1, 1, 1), mode='reflect'), weight=self.gaussian_filter)
+        grad = self.filter(grad)
+        grad = torch.square(grad)
+        gradient_magnitude = F.instance_norm(torch.sqrt(torch.sum(x, dim=1, keepdim=True)))
+        flow = F.instance_norm(self.rotate_flow(grad))
+        flow_chunks = F.unfold(F.pad(flow, (1, 1, 1, 1), mode='reflect'), kernel_size=3
+                               )
+        gradient_magnitude_chunks = F.unfold(F.pad(gradient_magnitude, (1, 1, 1, 1), mode='reflect'), kernel_size=3
+                               )
+        x = flow_chunks[:,5,:]
+
+
         return x
+
 
 def positionalencoding2d(d_model, height, width):
     """

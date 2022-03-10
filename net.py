@@ -664,16 +664,16 @@ class ThumbAdaConv(nn.Module):
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1',None,None,None,None,None]
+        self.projection = nn.Linear(8192, self.s_d*16)
+        self.content_injection_layer = ['r4_1',None,'r3_1',None,None,None]
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -761,16 +761,19 @@ class ThumbAdaConv(nn.Module):
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
-            style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
 
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            if idx == 0:
-                whitening = []
-                N, C, h, w = cF[injection].shape
-                for i in range(N):
-                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(N, C, h, w)
+            if not injection is None:
+                if idx == 0:
+                    whitening = []
+                    N, C, h, w = cF[injection].shape
+                    for i in range(N):
+                        whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+                    whitening = torch.cat(whitening, 0).view(N, C, h, w)
+                else:
+                    whitening = cF[injection]
             else:
                 whitening = x
             if idx > 0:
