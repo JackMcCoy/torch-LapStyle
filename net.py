@@ -673,7 +673,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*16)
-        self.content_injection_layer = ['r4_1',None,'r3_1',None,None,None]
+        self.content_injection_layer = ['r4_1',None,'r3_1',None,'r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -765,14 +765,11 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if not injection is None:
-                if idx == 0:
-                    whitening = []
-                    N, C, h, w = cF[injection].shape
-                    for i in range(N):
-                        whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                    whitening = torch.cat(whitening, 0).view(N, C, h, w)
-                else:
-                    whitening = cF[injection]
+                whitening = []
+                N, C, h, w = cF[injection].shape
+                for i in range(N):
+                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+                whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
                 whitening = x
             if idx > 0:
