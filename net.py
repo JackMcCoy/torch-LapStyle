@@ -673,7 +673,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1',None,'r3_1',None,'r2_1','r1_1']
+        self.content_injection_layer = ['r4_1',None,None,None,None,None]
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -682,7 +682,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(256, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
+                #BlurPool(256, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -704,7 +704,7 @@ class ThumbAdaConv(nn.Module):
                 # nn.GroupNorm(32, 128),
                 FusedLeakyReLU(128),
                 nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(128, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
+                #BlurPool(128, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
