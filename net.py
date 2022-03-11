@@ -762,7 +762,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(style_enc).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,16)
             style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-
+        print(style_enc.shape)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if not injection is None:
