@@ -939,13 +939,13 @@ def adaconv_thumb_train():
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=False, style_contrastive_loss=False,
                                  content_contrastive_loss=False,
-                                 remd_loss=remd_loss, patch_loss=True, patch_stylized=stylized_patches[idx], top_level_patch=thumbs[idx],
+                                 remd_loss=False, patch_loss=True, patch_stylized=stylized_patches[idx], top_level_patch=thumbs[idx],
                                  sF=patch_sF)
-            loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
+            loss_c, loss_s, content_reltp, style_remdp, l_identity1, l_identity2, l_identity3, l_identity4, \
             mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = patch_losses
 
-            loss = loss + loss_s * args.style_weight + content_relt * args.content_relt + \
-                   style_remd * args.style_remd + patch_loss * args.patch_loss + \
+            loss = loss + loss_s * args.style_weight + content_reltp * args.content_relt + \
+                   style_remdp * args.style_remd + patch_loss * args.patch_loss + \
                    loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                    + l_identity2 + l_identity3 * 50 + l_identity4 + \
                    style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
