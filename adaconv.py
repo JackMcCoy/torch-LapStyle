@@ -19,21 +19,15 @@ class AdaConv(nn.Module):
         self.pad = nn.ReflectionPad2d((pad, pad, pad, pad))
         self.norm = norm
         self.depthwise_kernel_conv = nn.Sequential(
-            nn.Conv2d(s_d,s_d,kernel_size=1),
-            nn.LeakyReLU(),
             nn.Conv2d(s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding=1 if kernel_size==5 else 0, padding_mode='reflect'),
             nn.LeakyReLU())
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(s_d, s_d, kernel_size=1),
-            nn.LeakyReLU(),
             nn.Conv2d(s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=2),
             nn.LeakyReLU())
         self.pw_cn_bias = nn.Sequential(
-            nn.Conv2d(s_d, s_d, kernel_size=1),
-            nn.LeakyReLU(),
             nn.Conv2d(s_d, self.c_out, kernel_size=1),
             nn.LeakyReLU())
         self.relu=nn.LeakyReLU()
