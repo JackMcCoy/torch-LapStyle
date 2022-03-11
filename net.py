@@ -660,19 +660,19 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
-        self.projection = nn.Linear(8192, self.s_d*16)
+        self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1',None,'r3_1',None,'r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
@@ -760,8 +760,8 @@ class ThumbAdaConv(nn.Module):
         b = style_enc.shape[0]
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,16)
-            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+            style_enc = self.projection(style_enc).view(b,self.s_d,25)
+            style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             if not injection is None:
