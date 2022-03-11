@@ -760,7 +760,7 @@ class ThumbAdaConv(nn.Module):
         b = style_enc.shape[0]
         if calc_style:
             style_enc = self.style_encoding(style_enc).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,25)
+            style_enc = self.projection(style_enc).view(b,self.s_d,16)
             style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
 
         for idx, (ada, learnable, injection) in enumerate(
