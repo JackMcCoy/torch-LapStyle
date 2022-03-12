@@ -68,6 +68,23 @@ def whiten(cf):
     whitened = torch.mm(w_step2, cfv)
     return whitened
 
+def color(sF, whiten_cF):
+    sFSize = sF.size()
+    s_mean = torch.mean(sF, 1)
+    sF = sF - s_mean.unsqueeze(1).expand_as(sF)
+    styleConv = torch.mm(sF, sF.t()).div(sFSize[1] - 1)
+    s_u, s_e, s_v = torch.svd(styleConv, some=False)
+
+    k_s = sFSize[0]
+    for i in range(sFSize[0]):
+        if s_e[i] < 0.00001:
+            k_s = i
+            break
+    s_d = (s_e[0:k_s]).pow(0.5)
+    targetFeature = torch.mm(torch.mm(torch.mm(s_v[:, 0:k_s], torch.diag(s_d)), (s_v[:, 0:k_s].t())), whiten_cF)
+    targetFeature = targetFeature + s_mean.unsqueeze(1).expand_as(targetFeature)
+    return targetFeature
+
 def positionalencoding2d(d_model, height, width, step = 1):
     """
     :param d_model: dimension of the model

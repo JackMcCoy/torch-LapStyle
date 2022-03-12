@@ -729,6 +729,8 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
+        self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
+
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -756,26 +758,27 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def forward(self, cF: torch.Tensor, style_enc, calc_style=True, style_norm= None):
+    def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = style_enc.shape[0]
         if calc_style:
-            style_enc = self.style_encoding(style_enc).flatten(1)
+            style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            if not injection is None:
+            '''if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
-                whitening = x
+                whitening = x'''
             if idx > 0:
-                x = x + self.relu(ada(style_enc, whitening))
+                x = x + self.relu(ada(style_enc, x))
             else:
-                x = self.relu(ada(style_enc, whitening))
+                x = attention_block(cF['r4_1'], context=sF)
+                x = self.relu(ada(style_enc, x))
             x = learnable(x)
         return x, style_enc
 
