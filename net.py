@@ -777,7 +777,7 @@ class ThumbAdaConv(nn.Module):
             if idx > 0:
                 x = x + self.relu(ada(style_enc, x))
             else:
-                x = attention_block(cF['r4_1'], context=sF)
+                x = self.attention_block(cF['r4_1'], context=sF)
                 x = self.relu(ada(style_enc, x))
             x = learnable(x)
         return x, style_enc
