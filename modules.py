@@ -531,7 +531,7 @@ class Sobel(nn.Module):
         Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
         Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
-        self.G = G.unsqueeze(1).repeat(3,3,3,3).to(torch.device('cuda'))
+        self.G = G.unsqueeze(1).repeat(3,3,1,1).to(torch.device('cuda'))
 
     def forward(self, img):
         B,C,h,w = img.shape
@@ -592,11 +592,10 @@ class ETF(nn.Module):
 
     def forward(self, img):
         B,C,h,w = img.shape
-        print(img.shape)
+
         img_normal = img/img.amax(dim=(2,3),keepdim=True)
 
         x_der,y_der = self.sobel(img_normal)
-        print(x_der.shape)
         x_der = torch.clamp(x_der, min = 1e-12)
         y_der = torch.clamp(y_der, min = 1e-12)
 
@@ -604,7 +603,6 @@ class ETF(nn.Module):
         gradient_norm = gradient_magnitude / gradient_magnitude.amax(dim=(2,3),keepdim=True)
 
         x_norm = x_der / (gradient_magnitude)
-        print(x_norm.shape)
         y_norm = y_der / (gradient_magnitude)
 
         # rotate 90 degrees counter-clockwise
@@ -633,13 +631,11 @@ class ETF(nn.Module):
 
             magnitude = torch.sqrt(x_result ** 2.0 + y_result ** 2.0)
             x_norm = x_result / magnitude
-            print(x_norm.shape)
             y_norm = y_result / magnitude
 
         tan = -y_norm / x_norm
         angle = torch.atan(tan)
         angle = F.instance_norm((180 * angle / torch.pi))
-        print(angle.shape)
         return angle
 
     def save(self, x, y):
