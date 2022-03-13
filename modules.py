@@ -536,7 +536,7 @@ class Sobel(nn.Module):
     def forward(self, img):
         B,C,h,w = img.shape
         x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,groups=3)
-        x = F.conv2d(F.pad(x,(1,1,1,1)),weight=self.G)
+        x = F.conv2d(F.pad(x,(1,1,1,1),mode='reflect'),weight=self.G)
         return x[:,1::2,:,:], x[:,::2,:,:]
 
 
@@ -592,10 +592,11 @@ class ETF(nn.Module):
 
     def forward(self, img):
         B,C,h,w = img.shape
+        print(img.shape)
         img_normal = img/img.amax(dim=(2,3),keepdim=True)
 
         x_der,y_der = self.sobel(img_normal)
-
+        print(x_der.shape)
         x_der = torch.clamp(x_der, min = 1e-12)
         y_der = torch.clamp(y_der, min = 1e-12)
 
