@@ -50,7 +50,7 @@ class BlurPool(nn.Module):
             else:
                 return self.pad(inp)[:,:,::self.stride,::self.stride]
         else:
-            return F.conv2d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
+            return F.conv2d(self.pad(inp), weight=self.filt, stride=self.stride, groups=inp.shape[1])
 
 def get_pad_layer(pad_type):
     if(pad_type in ['refl','reflect']):
