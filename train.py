@@ -987,12 +987,15 @@ def adaconv_thumb_train():
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
                 etf_grid = make_grid(etf, nrow=4, scale_each=True)
+                ci_closeup_grid = make_grid(ci[-1], nrow=4, scale_each=True)
                 for idx, patch_stylized in enumerate(stylized_patches):
                     styled_img_grid = make_grid(invStyleTrans(patch_stylized), nrow=4, scale_each=True)
                     version = '' if idx ==0 else str(idx)+'_'
                     save_image(styled_img_grid, args.save_dir + '/drafting_revision_'+version+'iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
+                save_image(ci_closeup_grid,
+                           args.save_dir + '/ci_patch_iter' + str(n + 1) + '.jpg')
                 save_image(etf_grid,
                            args.save_dir + '/etf_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
