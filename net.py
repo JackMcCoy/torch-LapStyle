@@ -660,7 +660,7 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(1024, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5, norm=False),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
@@ -678,7 +678,7 @@ class ThumbAdaConv(nn.Module):
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(1024, 256, (3, 3), bias=False),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
