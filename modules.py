@@ -531,12 +531,12 @@ class Sobel(nn.Module):
         Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
         Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
-        self.G = G.unsqueeze(1).to(torch.device('cuda'))
+        self.G = G.unsqueeze(1).repeat(3,3,3,3).to(torch.device('cuda'))
 
     def forward(self, img):
         B,C,h,w = img.shape
         x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,groups=3)
-        x = F.conv2d(x,weight=self.G.repeat(C,C,C,C))
+        x = F.conv2d(x,weight=self.G)
         return x[:,1::2,:,:], x[:,::2,:,:]
 
 
