@@ -131,7 +131,7 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
-
+        self.gaussian_kernel = gaussian(11,1).expand(3,1,11,11).to(device)
         self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
@@ -174,7 +174,9 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
+        gaussian = F.conv2d(F.pad(scaled_ci.detach(), (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,
+                    groups=3)
+        lap_pyr = F.conv2d(F.pad(gaussian, (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
         #etf = self.etf(scaled_ci)
         out = torch.cat([input, lap_pyr], dim=1)
