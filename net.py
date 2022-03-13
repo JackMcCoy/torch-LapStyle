@@ -687,6 +687,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
                 nn.LeakyReLU()),
+            nn.Identity()
         ])
 
         self.learnable = nn.ModuleList([
