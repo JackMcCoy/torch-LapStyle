@@ -636,7 +636,7 @@ class ETF(nn.Module):
 
         tan = -y_norm / x_norm
         angle = torch.atan(tan)
-        angle = F.instance_norm(180 * angle / torch.pi)
+        angle = F.instance_norm((180 * angle / torch.pi).view(1,1,h,w))[0,0]
         return angle
 
     def save(self, x, y):
