@@ -730,7 +730,9 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
-
+        self.layer_norm = nn.LayerNorm(512)
+        self.style_layer_norm = nn.LayerNorm(512)
+        self.gelu = nn.GELU()
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -777,7 +779,8 @@ class ThumbAdaConv(nn.Module):
             if idx > 0:
                 x = x + self.relu(ada(style_enc, x))
             else:
-                x = self.attention_block(cF['r4_1'], context=sF)
+                x = self.attention_block(self.layer_norm(cF['r4_1']), context=self.style_layer_norm(sF))
+                x = self.gelu(x)
                 x = self.relu(ada(style_enc, x))
             x = learnable(x)
         return x, style_enc
