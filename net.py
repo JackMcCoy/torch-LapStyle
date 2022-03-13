@@ -9,6 +9,7 @@ import numpy as np
 import vgg
 from revlib.utils import momentum_net
 from torchvision.models import vgg19
+from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
 
 from gaussian_diff import xdog, make_gaussians
