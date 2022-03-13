@@ -1216,23 +1216,9 @@ def calc_losses(stylized: torch.Tensor,
 
     if mdog_losses:
         N,C,h,w = ci.shape
-        cX=[]
-        sX=[]
-        stylized_dog=[]
-        for i in range(N):
-            _cX=[]
-            _sX=[]
-            _stylized_dog=[]
-            for c in range(C):
-                _cX.append(etf(ci[i,c,:,:]))
-                _sX.append(etf(si[i,c,:,:]))
-                _stylized_dog.append(etf(stylized[i, c, :, :]))
-            cX.append(torch.cat([e.unsqueeze(0) for e in _cX],0))
-            sX.append(torch.cat([e.unsqueeze(0) for e in _sX],0))
-            stylized_dog.append(torch.cat([e.unsqueeze(0) for e in _stylized_dog],0))
-        cX=torch.cat([i.unsqueeze(0) for i in cX],0)
-        sX = torch.cat([i.unsqueeze(0) for i in sX], 0)
-        stylized_dog = torch.cat([i.unsqueeze(0) for i in stylized_dog], 0)
+        cX=etf(ci)
+        sX=etf(si)
+        stylized_dog=etf(stylized)
         #cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         #sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cXF = encoder(F.leaky_relu(cX))
