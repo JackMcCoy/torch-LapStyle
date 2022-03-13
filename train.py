@@ -860,7 +860,7 @@ def adaconv_thumb_train():
             for i in range(num_rev):
                 orig = stylized if i==0 else patch_stylized
                 res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128], 256, mode='bilinear')
-                patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
+                patch_stylized, etf = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
                 patch_stylized = patch_stylized + res_in
                 stylized_patches.append(patch_stylized)
 
@@ -910,7 +910,7 @@ def adaconv_thumb_train():
             res_in = F.interpolate(
                 orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128], 256, mode='bilinear')
             thumbs.append(res_in)
-            patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
+            patch_stylized, etf = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
             patch_stylized = patch_stylized + res_in
             stylized_patches.append(patch_stylized)
 
@@ -986,12 +986,15 @@ def adaconv_thumb_train():
                 draft_img_grid = make_grid(invStyleTrans(stylized), nrow=4, scale_each=True)
                 style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
                 content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
+                etf_grid = make_grid(etf, nrow=4, scale_each=True)
                 for idx, patch_stylized in enumerate(stylized_patches):
                     styled_img_grid = make_grid(invStyleTrans(patch_stylized), nrow=4, scale_each=True)
                     version = '' if idx ==0 else str(idx)+'_'
                     save_image(styled_img_grid, args.save_dir + '/drafting_revision_'+version+'iter' + str(n + 1) + '.jpg')
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
+                save_image(etf_grid,
+                           args.save_dir + '/etf_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
                                n + 1) + '.jpg')

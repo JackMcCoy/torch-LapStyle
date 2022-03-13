@@ -176,10 +176,11 @@ class RevisionNet(nn.Module):
         """
         #lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
         #                   groups=3).to(device)
-        out = torch.cat([input, self.etf(scaled_ci)], dim=1)
+        etf = self.etf(scaled_ci)
+        out = torch.cat([input, etf], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
-        return out
+        return out, etf
 
 class Residual(nn.Module):
     def __init__(self, fn):
