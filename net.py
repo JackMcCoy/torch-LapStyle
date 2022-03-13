@@ -176,7 +176,7 @@ class RevisionNet(nn.Module):
         """
         #lap_pyr = F.conv2d(F.pad(scaled_ci.detach(), (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
         #                   groups=3).to(device)
-        out = torch.cat([input, self.etf(F.pad(scaled_ci))], dim=1)
+        out = torch.cat([input, self.etf(F.pad(scaled_ci,(1,1,1,1),mode='reflect'))], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
         return out
