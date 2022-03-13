@@ -768,18 +768,18 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            if not injection is None:
+            '''if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
-                whitening = x
+                whitening = x'''
             if idx > 0:
                 x = x + self.relu(ada(style_enc, x))
             else:
-                x = self.relu(ada(style_enc, whitening))
+                x = self.relu(ada(style_enc, cF[injection]))
             x = learnable(x)
         return x, style_enc
 
@@ -1157,7 +1157,7 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
     loss = F.cross_entropy(out, torch.tensor([index], device=feat_q.device))
     return loss
 
-etf = torch.jit.trace(ETF(1,1,90).to(torch.device('cuda')),torch.rand(256,256,device='cuda'))
+etf = ETF(1,1,90).to(torch.device('cuda'))
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,

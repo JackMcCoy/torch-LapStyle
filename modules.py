@@ -536,6 +536,8 @@ class Sobel(nn.Module):
         self.filter.weight = nn.Parameter(G, requires_grad=False)
 
     def forward(self, img):
+        h,w = img.shape
+        img = img.view(1,1,h,w)
         x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian)
         x = self.filter(x)
         return x[0,0,:,:], x[0,1,:,:]
@@ -564,44 +566,56 @@ class ETF(nn.Module):
         kernels = torch.ones((*x.shape, self.kernel_size, self.kernel_size), device=x.device)
 
         eta = 1  # Specified in paper
-        (h, w) = x.shape
-        gradient_norm = self.pad(gradient_norm.view(1, 1, h, w))[0, 0]
-        x = gradient_norm[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+        (N,C,h, w) = x.shape
+        gradient_norm = self.pad(gradient_norm)
+        x = gradient_norm[:,:,self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
         for i in range(self.kernel_size):
             for j in range(self.kernel_size):
-                y = gradient_norm[i:i + h, j:j + w]
-                kernels[:, :, i, j] = (1 / 2) * (1 + torch.tanh(eta * (y - x)))
+                y = gradient_norm[:,:,i:i + h, j:j + w]
+                kernels[:,:,:, :, i, j] = (1 / 2) * (1 + torch.tanh(eta * (y - x)))
         return kernels
 
     def Wd(self, x, y):
         kernels = torch.ones((*x.shape, self.kernel_size, self.kernel_size), device=x.device)
 
-        (h, w) = x.shape
-        x = self.pad(x.view(1, 1, h, w))[0, 0]
-        y = self.pad(y.view(1, 1, h, w))[0, 0]
+        (N,C,h, w) = x.shape
+        x = self.pad(x)
+        y = self.pad(y)
 
-        X_x = x[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
-        X_y = y[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+        X_x = x[:,:,self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+        X_y = y[:,:,self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
 
         for i in range(self.kernel_size):
             for j in range(self.kernel_size):
-                Y_x = x[i:i + h, j:j + w]
-                Y_y = y[i:i + h, j:j + w]
-                kernels[:, :, i, j] = X_x * Y_x + X_y * Y_y
+                Y_x = x[:,:,i:i + h, j:j + w]
+                Y_y = y[:,:,i:i + h, j:j + w]
+                kernels[:,:, :,:, i, j] = X_x * Y_x + X_y * Y_y
 
         return torch.abs(kernels), torch.sign(kernels)
 
     def forward(self, img):
-        h,w = img.shape
-        img_normal = self.pad(img.view(1,1,h,w))/img.max()
+        B,C,h,w = img.shape
+        img_normal = self.pad(img)/img.amax(dim=(2,3),keepdim=True)
 
-        x_der, y_der = self.sobel(img_normal)
+        x_der=[]
+        y_der=[]
+        for b in range(B):
+            x_der_ =[]
+            y_der_ =[]
+            for c in range(C):
+                der = self.sobel(img_normal[b,c,:,:])
+                x_der_.append(der[0].unsqueeze(0))
+                y_der_.append(der[1].unsqueeze(0))
+            x_der.append(torch.cat(x_der_,0).unsqueeze(0))
+            y_der.append(torch.cat(y_der_,0).unsqueeze(0))
+        x_der = torch.cat(x_der,0)
+        y_der = torch.cat(y_der,0)
 
         x_der = torch.clamp(x_der, min = 1e-12)
         y_der = torch.clamp(y_der, min = 1e-12)
 
         gradient_magnitude = torch.sqrt(x_der ** 2.0 + y_der ** 2.0)
-        gradient_norm = gradient_magnitude / gradient_magnitude.max()
+        gradient_norm = gradient_magnitude / gradient_magnitude.amax(dim=(2,3),keepdim=True)
 
         x_norm = x_der / (gradient_magnitude)
         y_norm = y_der / (gradient_magnitude)
@@ -614,9 +628,9 @@ class ETF(nn.Module):
             Wd, phi = self.Wd(x_norm, y_norm)
             kernels = phi * Ws * Wm * Wd
 
-            x_magnitude = self.pad((gradient_norm * x_norm).unsqueeze(0).unsqueeze(0))
+            x_magnitude = self.pad((gradient_norm * x_norm))
             # print(x_magnitude.min())
-            y_magnitude = self.pad((gradient_norm * y_norm).unsqueeze(0).unsqueeze(0))
+            y_magnitude = self.pad((gradient_norm * y_norm))
 
             x_patch = torch.nn.functional.unfold(x_magnitude, (self.kernel_size, self.kernel_size))
             y_patch = torch.nn.functional.unfold(y_magnitude, (self.kernel_size, self.kernel_size))
@@ -624,8 +638,8 @@ class ETF(nn.Module):
             x_patch = x_patch.view(self.kernel_size, self.kernel_size, *x_norm.shape)
             y_patch = y_patch.view(self.kernel_size, self.kernel_size, *x_norm.shape)
 
-            x_patch = x_patch.permute(2, 3, 0, 1)
-            y_patch = y_patch.permute(2, 3, 0, 1)
+            x_patch = x_patch.permute(2, 3, 4, 5, 0, 1)
+            y_patch = y_patch.permute(2, 3, 4, 5, 0, 1)
 
             x_result = (x_patch * kernels).sum(-1).sum(-1)
             y_result = (y_patch * kernels).sum(-1).sum(-1)
@@ -636,7 +650,7 @@ class ETF(nn.Module):
 
         tan = -y_norm / x_norm
         angle = torch.atan(tan)
-        angle = F.instance_norm((180 * angle / torch.pi).view(1,1,h,w))[0,0]
+        angle = F.instance_norm((180 * angle / torch.pi))
         return angle
 
     def save(self, x, y):
