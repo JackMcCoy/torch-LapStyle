@@ -730,8 +730,8 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
-        self.layer_norm = nn.LayerNorm(512)
-        self.style_layer_norm = nn.LayerNorm(512)
+        self.layer_norm = nn.LayerNorm((512,32,32))
+        self.style_layer_norm = nn.LayerNorm((512,32,32))
         self.gelu = nn.GELU()
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
