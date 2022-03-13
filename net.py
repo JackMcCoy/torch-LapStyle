@@ -729,10 +729,10 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
-        self.layer_norm = nn.LayerNorm((512,32,32))
-        self.style_layer_norm = nn.LayerNorm((512,32,32))
-        self.gelu = nn.GELU()
+        #self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
+        #self.layer_norm = nn.LayerNorm((512,32,32))
+        #self.style_layer_norm = nn.LayerNorm((512,32,32))
+        #self.gelu = nn.GELU()
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -768,20 +768,18 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            '''if not injection is None:
+            if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
-                whitening = x'''
+                whitening = x
             if idx > 0:
                 x = x + self.relu(ada(style_enc, x))
             else:
-                x = self.attention_block(self.layer_norm(cF['r4_1']), context=self.style_layer_norm(sF))
-                x = self.gelu(x)
-                x = self.relu(ada(style_enc, x))
+                x = self.relu(ada(style_enc, whitening))
             x = learnable(x)
         return x, style_enc
 
@@ -1159,6 +1157,7 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
     loss = F.cross_entropy(out, torch.tensor([index], device=feat_q.device))
     return loss
 
+etf = ETF(1,1,90)
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
@@ -1216,11 +1215,29 @@ def calc_losses(stylized: torch.Tensor,
         content_relt = 0
 
     if mdog_losses:
-        cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
-        sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        N,C,h,w = ci.shape
+        cX=[]
+        sX=[]
+        stylized_dog=[]
+        for i in range(N):
+            _cX=[]
+            _sX=[]
+            _stylized_dog=[]
+            for c in range(C):
+                _cX.append(etf(ci[i,c,:,:]))
+                _sX.append(etf(si[i,c,:,:]))
+                _stylized_dog.append(etf(stylized[i, c, :, :]))
+            cX.append(torch.cat([e.unsqueeze(0) for e in _cX]),0)
+            sX.append(torch.cat([e.unsqueeze(0) for e in _sX]), 0)
+            stylized_dog.append(torch.cat([e.unsqueeze(0) for e in _stylized_dog]), 0)
+        cX=torch.cat([i.unsqueeze(0) for i in cX],0)
+        sX = torch.cat([i.unsqueeze(0) for i in sX], 0)
+        stylized_dog = torch.cat([i.unsqueeze(0) for i in stylized_dog], 0)
+        #cX,_ = xdog(torch.clip(ci,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        #sX,_ = xdog(torch.clip(si,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cXF = encoder(F.leaky_relu(cX))
         sXF = encoder(F.leaky_relu(sX))
-        stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
+        #stylized_dog,_ = xdog(torch.clip(stylized,min=0,max=1),gaus_1,gaus_2,morph,gamma=.9,morph_cutoff=8.85,morphs=1)
         cdogF = encoder(F.leaky_relu(stylized_dog))
 
         mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])

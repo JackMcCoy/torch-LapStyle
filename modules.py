@@ -524,56 +524,146 @@ class WaveUnpool(nn.Module):
         return self.LL(ll) + self.LH(lh) + self.HL(hl) + self.HH(hh)
 
 
-class EFT(nn.Module):
-    def __init__(self, radius=1):
-        super(EFT, self).__init__()
+class Sobel(nn.Module):
+    def __init__(self):
+        super().__init__()
         self.filter = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=0, bias=False)
-        # Actually uses Scharr function for kernels, per cv2
-        Gx = torch.tensor([[3.0, 0.0, -3.0], [10.0, 0.0, -10.0], [3.0, 0.0, -3.0]])
-        Gy = torch.tensor([[3.0, 10.0, 3.0], [0.0, 0.0, 0.0], [-3.0, -10.0, -3.0]])
+        self.gaussian = gaussian(11,1).expand(1,1,11,11).to(torch.device('cuda'))
+        Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
+        Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
         G = G.unsqueeze(1)
         self.filter.weight = nn.Parameter(G, requires_grad=False)
-        self.rgb_coef = torch.tensor([.229, .587, .114]).view(1, 3, 1, 1)
-        self.gaussian_filter = gaussian(11, 1).expand(1, 1, 11, 11)
-        self.radius = radius
-        theta = .5 * math.pi
-        self.cos_theta = math.cos(theta)
-        self.sin_theta = math.sin(theta)
-        self.falloff = 1
-
-    def rotate_flow(self, x):
-        B = x.shape[0]
-        cos = x * self.cos_theta
-        sin = (x * self.sin_theta).flip(1) * torch.tensor([-1,1],device=x.device).view(B,2,1,1)
-        return cos + sin
-
-    def symmetric_box_filter(self, x, y):
-        # y = chunks
-        x = torch.linalg.vector_norm(x - y, ord=1, dim=1)
-        x = (x < self.radius).float()
-        x = x.reshape(1, 1, 256, 256)
-        return x
-
-    def weight_magnitude(self, grad_x, grad_y):
-        x = (1 + torch.tanh(self.falloff))
 
     def forward(self, img):
-        # img size = B, 1, h, w
-        grad = F.instance_norm(img)
-        grad = F.conv2d(F.pad(grad, (1, 1, 1, 1), mode='reflect'), weight=self.gaussian_filter)
-        grad = self.filter(grad)
-        grad = torch.square(grad)
-        gradient_magnitude = F.instance_norm(torch.sqrt(torch.sum(x, dim=1, keepdim=True)))
-        flow = F.instance_norm(self.rotate_flow(grad))
-        flow_chunks = F.unfold(F.pad(flow, (1, 1, 1, 1), mode='reflect'), kernel_size=3
-                               )
-        gradient_magnitude_chunks = F.unfold(F.pad(gradient_magnitude, (1, 1, 1, 1), mode='reflect'), kernel_size=3
-                               )
-        x = flow_chunks[:,5,:]
+        x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian)
+        x = self.filter(x)
+        return x[0,0,:,:], x[0,1,:,:]
 
 
-        return x
+class ETF(nn.Module):
+    def __init__(self, kernel_radius, iter_time, dir_num):
+        super(ETF, self).__init__()
+        self.kernel_size = kernel_radius * 2 + 1
+        self.kernel_radius = kernel_radius
+        self.iter_time = iter_time
+        self.pad = nn.ReflectionPad2d((self.kernel_radius,self.kernel_radius,self.kernel_radius,self.kernel_radius))
+        self.dir_num = dir_num
+        self.sobel = Sobel()
+
+    def Ws(self, x):
+        kernels = torch.ones((*x.shape, self.kernel_size, self.kernel_size), device=x.device)
+        # radius = central = (self.kernel_size-1)/2
+        # for i in range(self.kernel_size):
+        #     for j in range(self.kernel_size):
+        #         if (i-central)**2+(i-central)**2 <= radius**2:
+        #              self.flow_field[x][y]
+        return kernels
+
+    def Wm(self, x, gradient_norm):
+        kernels = torch.ones((*x.shape, self.kernel_size, self.kernel_size), device=x.device)
+
+        eta = 1  # Specified in paper
+        (h, w) = x.shape
+        gradient_norm = self.pad(gradient_norm.view(1, 1, h, w))[0, 0]
+        x = gradient_norm[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+        for i in range(self.kernel_size):
+            for j in range(self.kernel_size):
+                y = gradient_norm[i:i + h, j:j + w]
+                kernels[:, :, i, j] = (1 / 2) * (1 + torch.tanh(eta * (y - x)))
+        return kernels
+
+    def Wd(self, x, y):
+        kernels = torch.ones((*x.shape, self.kernel_size, self.kernel_size), device=x.device)
+
+        (h, w) = x.shape
+        x = self.pad(x.view(1, 1, h, w))[0, 0]
+        y = self.pad(y.view(1, 1, h, w))[0, 0]
+
+        X_x = x[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+        X_y = y[self.kernel_radius:-self.kernel_radius, self.kernel_radius:-self.kernel_radius]
+
+        for i in range(self.kernel_size):
+            for j in range(self.kernel_size):
+                Y_x = x[i:i + h, j:j + w]
+                Y_y = y[i:i + h, j:j + w]
+                kernels[:, :, i, j] = X_x * Y_x + X_y * Y_y
+
+        return torch.abs(kernels), torch.sign(kernels)
+
+    def forward(self, img):
+        h,w = img.shape
+        img_normal = self.pad(img.view(1,1,h,w))/img.max()
+
+        x_der, y_der = self.sobel(img_normal)
+
+        x_der = torch.clamp(x_der, min = 1e-12)
+        y_der = torch.clamp(y_der, min = 1e-12)
+
+        gradient_magnitude = torch.sqrt(x_der ** 2.0 + y_der ** 2.0)
+        gradient_norm = gradient_magnitude / gradient_magnitude.max()
+
+        x_norm = x_der / (gradient_magnitude)
+        y_norm = y_der / (gradient_magnitude)
+
+        # rotate 90 degrees counter-clockwise
+        x_norm, y_norm = -y_norm, x_norm
+        Ws = self.Ws(x_norm)
+        Wm = self.Wm(x_norm, gradient_norm)
+        for iter_time in range(self.iter_time):
+            Wd, phi = self.Wd(x_norm, y_norm)
+            kernels = phi * Ws * Wm * Wd
+
+            x_magnitude = self.pad((gradient_norm * x_norm).unsqueeze(0).unsqueeze(0))
+            # print(x_magnitude.min())
+            y_magnitude = self.pad((gradient_norm * y_norm).unsqueeze(0).unsqueeze(0))
+
+            x_patch = torch.nn.functional.unfold(x_magnitude, (self.kernel_size, self.kernel_size))
+            y_patch = torch.nn.functional.unfold(y_magnitude, (self.kernel_size, self.kernel_size))
+
+            x_patch = x_patch.view(self.kernel_size, self.kernel_size, *x_norm.shape)
+            y_patch = y_patch.view(self.kernel_size, self.kernel_size, *x_norm.shape)
+
+            x_patch = x_patch.permute(2, 3, 0, 1)
+            y_patch = y_patch.permute(2, 3, 0, 1)
+
+            x_result = (x_patch * kernels).sum(-1).sum(-1)
+            y_result = (y_patch * kernels).sum(-1).sum(-1)
+
+            magnitude = torch.sqrt(x_result ** 2.0 + y_result ** 2.0)
+            x_norm = x_result / magnitude
+            y_norm = y_result / magnitude
+
+        tan = -y_norm / x_norm
+        angle = torch.atan(tan)
+        angle = F.instance_norm(180 * angle / torch.pi)
+        return angle
+
+    def save(self, x, y):
+        x = x.squeeze()
+        y = y.squeeze()
+        x[x == 0] += 1e-12
+
+        tan = -y / x
+        angle = torch.atan(tan)
+        angle = 180 * angle / math.pi
+
+        length = 180 / self.dir_num
+        for i in range(self.dir_num):
+            if i == 0:
+                minimum = -90
+                maximum = -90 + length / 2
+                mask1 = 255 * (((angle > minimum) + (angle == minimum)) * (angle < maximum))
+                maximum = 90
+                minimum = 90 - length / 2
+                mask2 = 255 * ((angle > minimum) + (angle == minimum))
+                mask = mask1 + mask2
+                return mask
+            else:
+                minimum = -90 + (i - 1 / 2) * length
+                maximum = minimum + length
+                mask = 255 * (((angle > minimum) + (angle == minimum)) * (angle < maximum))
+                return mask
 
 
 def positionalencoding2d(d_model, height, width):
