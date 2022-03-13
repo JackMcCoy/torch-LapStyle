@@ -1157,7 +1157,7 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
     loss = F.cross_entropy(out, torch.tensor([index], device=feat_q.device))
     return loss
 
-etf = ETF(1,1,90)
+etf = ETF(1,1,90).to(torch.device('cuda'))
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
