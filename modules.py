@@ -603,6 +603,7 @@ class ETF(nn.Module):
         gradient_norm = gradient_magnitude / gradient_magnitude.amax(dim=(2,3),keepdim=True)
 
         x_norm = x_der / (gradient_magnitude)
+        print(x_norm.shape)
         y_norm = y_der / (gradient_magnitude)
 
         # rotate 90 degrees counter-clockwise
@@ -631,11 +632,13 @@ class ETF(nn.Module):
 
             magnitude = torch.sqrt(x_result ** 2.0 + y_result ** 2.0)
             x_norm = x_result / magnitude
+            print(x_norm.shape)
             y_norm = y_result / magnitude
 
         tan = -y_norm / x_norm
         angle = torch.atan(tan)
         angle = F.instance_norm((180 * angle / torch.pi))
+        print(angle.shape)
         return angle
 
     def save(self, x, y):
