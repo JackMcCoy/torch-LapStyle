@@ -171,8 +171,8 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        ci = (scaled_ci-scaled_ci.min(dim=0,keepdim=True)[0])/(scaled_ci.max(dim=0,keepdim=True)[0]-scaled_ci.min(dim=0,keepdim=True)[0])
-        gaussian = F.conv2d(F.pad(ci.detach(), (5, 5, 5, 5), mode='reflect'), weight=self.gaussian_kernel,
+        ci = scaled_ci+torch.abs(torch.amin(scaled_ci,dim=0))/torch.amax(scaled_ci,dim=0)
+        gaussian = F.conv2d(F.pad(ci, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian_kernel,
                     groups=3)
         lap_pyr = F.conv2d(F.pad(gaussian, (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
