@@ -673,7 +673,21 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1',None,None,None,None,None]
+        self.content_injection_layer = ['r4_1',None,'r3_1',None,'r2_1',None]
+
+        self.residual = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(512,256,kernel_size=1),
+                nn.LeakyReLU()),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.LeakyReLU()),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.LeakyReLU()),
+        ])
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -766,21 +780,28 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        for idx, (ada, learnable, injection) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            if not injection is None:
+        for idx, (ada, learnable, injection, residual) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
+            '''if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
-                whitening = x
+                whitening = x'''
             if idx > 0:
-                x = x + self.relu(ada(style_enc, x))
+                if injection is None:
+                    x = x + self.relu(ada(style_enc, x))
+                else:
+                    x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.relu(ada(style_enc, whitening))
-            x = learnable(x)
+                x = self.relu(ada(style_enc, cF[injection]))
+            if idx<len(self.learnable)-1:
+                res = residual(x)
+                x = self.relu(learnable(x) + res)
+            else:
+                x = learnable(x)
         return x, style_enc
 
 
