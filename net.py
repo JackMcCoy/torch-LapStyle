@@ -138,32 +138,28 @@ class RevisionNet(nn.Module):
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         #self.etf = ETF(1,1,90).to(device)
         self.Downblock = nn.Sequential(
-                        nn.Conv2d(6,128, kernel_size=3, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, padding_mode='reflect'),
-                        nn.LeakyReLU(),
+                        ConvBlock(6, 128),
+                        Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                        nn.LeakyReLU())),
+                        Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                        nn.LeakyReLU())),
+                        ConvBlock(128, 64,kernel_size=3,padding=1,scale_change='down', padding_mode='reflect', noise=True),
+                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
+                        nn.LeakyReLU())),
+                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
+                        nn.LeakyReLU())),
                         )
         self.relu = nn.LeakyReLU()
 
-        self.UpBlock = nn.Sequential(nn.Upsample(scale_factor=2, mode='nearest'),
-                                     nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU(),
-                                     nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU(),
-                                     nn.Conv2d(64, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU(),
-                                     nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU(),
-                                     nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU(),
+        self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     nn.LeakyReLU())),
+                                     Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     nn.LeakyReLU())),
+                                     ConvBlock(64,128,scale_change='up'),
+                                     Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     nn.LeakyReLU())),
+                                     Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     nn.LeakyReLU())),
                                      nn.Conv2d(128, 3, kernel_size=3, padding=1, padding_mode='reflect'),
                                      )
 
@@ -175,7 +171,8 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        gaussian = F.conv2d(F.pad(scaled_ci.detach(), (5, 5, 5, 5), mode='reflect'), weight=self.gaussian_kernel,
+        ci = (scaled_ci-scaled_ci.min(dim=0,keepdim=True))/(scaled_ci.max(dim=0,keepdim=True)-scaled_ci.min(dim=0,keepdim=True))
+        gaussian = F.conv2d(F.pad(ci.detach(), (5, 5, 5, 5), mode='reflect'), weight=self.gaussian_kernel,
                     groups=3)
         lap_pyr = F.conv2d(F.pad(gaussian, (1, 1, 1, 1), mode='reflect'), weight=self.lap_weight,
                            groups=3).to(device)
