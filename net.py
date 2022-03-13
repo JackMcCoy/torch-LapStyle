@@ -678,15 +678,19 @@ class ThumbAdaConv(nn.Module):
         self.residual = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512,256,kernel_size=1),
-                nn.LeakyReLU()),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest')),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU()),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest')
+        ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU()),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=2, mode='nearest')),
             nn.Identity()
         ])
 
