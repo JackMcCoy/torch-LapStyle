@@ -527,20 +527,17 @@ class WaveUnpool(nn.Module):
 class Sobel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.filter = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=0, bias=False)
-        self.gaussian = gaussian(11,1).expand(1,1,11,11).to(torch.device('cuda'))
+        self.gaussian = gaussian(11,1).expand(3,1,11,11).to(torch.device('cuda'))
         Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
         Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
-        G = G.unsqueeze(1)
-        self.filter.weight = nn.Parameter(G, requires_grad=False)
+        self.G = G.unsqueeze(1).to(torch.device('cuda'))
 
     def forward(self, img):
-        h,w = img.shape
-        img = img.view(1,1,h,w)
-        x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian)
-        x = self.filter(x)
-        return x[0,0,:,:], x[0,1,:,:]
+        B,C,h,w = img.shape
+        x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,groups=3)
+        x = F.conv2d(x,weight=self.G.repeat(C,C,C,C))
+        return x[:,1::2,:,:], x[:,::2,:,:]
 
 
 class ETF(nn.Module):
@@ -597,19 +594,7 @@ class ETF(nn.Module):
         B,C,h,w = img.shape
         img_normal = self.pad(img)/img.amax(dim=(2,3),keepdim=True)
 
-        x_der=[]
-        y_der=[]
-        for b in range(B):
-            x_der_ =[]
-            y_der_ =[]
-            for c in range(C):
-                der = self.sobel(img_normal[b,c,:,:])
-                x_der_.append(der[0].unsqueeze(0))
-                y_der_.append(der[1].unsqueeze(0))
-            x_der.append(torch.cat(x_der_,0).unsqueeze(0))
-            y_der.append(torch.cat(y_der_,0).unsqueeze(0))
-        x_der = torch.cat(x_der,0)
-        y_der = torch.cat(y_der,0)
+        x_der,y_der = self.sobel(img_normal)
 
         x_der = torch.clamp(x_der, min = 1e-12)
         y_der = torch.clamp(y_der, min = 1e-12)
