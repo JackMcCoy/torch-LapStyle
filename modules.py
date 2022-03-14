@@ -588,7 +588,7 @@ class ETF(nn.Module):
             for j in range(self.kernel_size):
                 Y_x = x[:,:,i:i + h, j:j + w]
                 Y_y = y[:,:,i:i + h, j:j + w]
-                kernels[:,:, :,:, i, j] = X_x * Y_x + X_y * Y_y
+                kernels[:,:,:,:, i, j] = X_x * Y_x + X_y * Y_y
 
         return torch.abs(kernels), torch.sign(kernels)
 
