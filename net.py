@@ -568,7 +568,7 @@ class ResidualConvAttention(nn.Module):
         self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(16,chan_out*2)
+        self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -594,8 +594,8 @@ class ResidualConvAttention(nn.Module):
         context = torch.einsum('bhdn,bhen->bhde', k, v)
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
-        out = self.to_out(out)
-        out = self.out_norm(torch.cat([out,x],1))
+        out = self.out_norm(out)
+        out = out + x
         return out
 
 
@@ -698,18 +698,14 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 512, (3, 3), bias=False),
                 GaussianNoise(),
-                nn.GroupNorm(32, 512),
                 FusedLeakyReLU(512),
-                # BlurPool(256, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                nn.GroupNorm(32, 256),
                 FusedLeakyReLU(256),
                 nn.Upsample(scale_factor=2, mode='nearest'),
-                #BlurPool(256, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -718,51 +714,42 @@ class ThumbAdaConv(nn.Module):
                 FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
-                nn.GroupNorm(32, 256),
                 nn.LeakyReLU(),
             ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                nn.GroupNorm(32, 128),
                 FusedLeakyReLU(128),
                 nn.Upsample(scale_factor=2, mode='nearest'),
-                #BlurPool(128, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                nn.GroupNorm(32, 128),
                 FusedLeakyReLU(128)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                nn.GroupNorm(32, 64),
                 FusedLeakyReLU(64),
                 nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
-                nn.GroupNorm(32, 64),
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3)),
-                nn.LayerNorm(256,256),
-                nn.ReLU()
+                nn.Conv2d(64, 3, (3, 3))
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        #self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
-        #self.layer_norm = nn.LayerNorm((512,32,32))
-        #self.style_layer_norm = nn.LayerNorm((512,32,32))
-        #self.gelu = nn.GELU()
+        self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
+        self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
+                                            nn.LeakyReLU())
+        self.style_layer_norm = nn.LayerNorm((512,32,32))
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -812,7 +799,9 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.relu(ada(style_enc, cF[injection]))
+                x = self.attention_block(cF[injection],context=sF)
+                x = self.attention_conv(x) + cF[injection]
+                x = self.relu(ada(style_enc, x))
             if idx<len(self.learnable)-1:
                 res = residual(x)
                 x = learnable(x)
