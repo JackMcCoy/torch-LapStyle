@@ -747,6 +747,10 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
+        self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1, bias=False),
+                                        nn.LeakyReLU())
+        self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1, bias=False),
+                                        nn.LeakyReLU())
         self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
         self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
                                             nn.LeakyReLU())
@@ -800,7 +804,7 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.attention_block(cF[injection],context=sF)
+                x = self.attention_block(self.pw_content(cF[injection]),context=self.pw_style(sF))
                 x = self.attention_conv(x) + cF[injection]
                 x = self.relu(ada(style_enc, x))
             if idx<len(self.learnable)-1:
