@@ -747,14 +747,15 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1, bias=False),
+        self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1),
+                                        nn.LayerNorm((32,32)),
                                         nn.LeakyReLU())
-        self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1, bias=False),
-                                        nn.LeakyReLU())
+        self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
+                                      nn.LayerNorm((32, 32)),
+                                      nn.LeakyReLU())
         self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
         self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
                                             nn.LeakyReLU())
-        self.style_layer_norm = nn.LayerNorm((512,32,32))
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
