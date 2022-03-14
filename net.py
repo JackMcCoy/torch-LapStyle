@@ -140,22 +140,18 @@ class RevisionNet(nn.Module):
         self.Downblock = nn.Sequential(
                         ConvBlock(6, 64),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                        nn.GroupNorm(32, 64),
                         nn.LeakyReLU())),
                         ConvBlock(64, 128, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
                         Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                               nn.GroupNorm(32, 128),
                                                nn.LeakyReLU())),
                         ConvBlock(128, 256, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
                         )
         self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
-                                                            nn.GroupNorm(32, 256),
                                                             nn.LeakyReLU())),
                                      ConvBlock(256,128,scale_change='up', noise=True),
                                      Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                                            nn.GroupNorm(32, 128),
                                                             nn.LeakyReLU())),
                                      ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='up',
                                                padding_mode='reflect', noise=True),
@@ -163,9 +159,7 @@ class RevisionNet(nn.Module):
                                      Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                                      nn.LeakyReLU())),
                                      nn.Sequential(
-                                         nn.Conv2d(64, 3, kernel_size=3, padding=1, padding_mode='reflect'),
-                                         nn.LayerNorm(256,256),
-                                         nn.ReLU())
+                                         nn.Conv2d(64, 3, kernel_size=3, padding=1, padding_mode='reflect'))
                                      )
 
     def forward(self, input, scaled_ci):
