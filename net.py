@@ -659,6 +659,7 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
@@ -674,6 +675,7 @@ class ThumbAdaConv(nn.Module):
         self.content_injection_layer = ['r4_1',None,None,None,None,None]
 
         self.residual = nn.ModuleList([
+            nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512,256,kernel_size=1),
                 nn.LeakyReLU(),
@@ -693,6 +695,13 @@ class ThumbAdaConv(nn.Module):
         ])
 
         self.learnable = nn.ModuleList([
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 512, (3, 3), bias=False),
+                GaussianNoise(),
+                FusedLeakyReLU(512),
+                # BlurPool(256, pad_type='reflect', filt_size=4, stride=1, pad_off=0),
+            ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
