@@ -162,7 +162,10 @@ class RevisionNet(nn.Module):
 
                                      Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                                      nn.LeakyReLU())),
-                                     nn.Conv2d(64, 3, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     nn.Sequential(
+                                         nn.Conv2d(64, 3, kernel_size=3, padding=1, padding_mode='reflect'),
+                                         nn.LayerNorm(256,256),
+                                         nn.ReLU())
                                      )
 
     def forward(self, input, scaled_ci):
@@ -757,6 +760,8 @@ class ThumbAdaConv(nn.Module):
                 FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3)),
+                nn.LayerNorm(256,256),
+                nn.ReLU()
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
