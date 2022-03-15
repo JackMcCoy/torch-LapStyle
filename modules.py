@@ -483,6 +483,7 @@ class StyleNERFUpsample(nn.Module):
             nn.Conv2d(dim // 4, dim, kernel_size=1),
         )
         self.blurpool = BlurPool(dim,stride=1)
+        self.relu = nn.LeakyReLU()
     def forward(self, x):
         resolution = x.size()[-1]*2
         x_pad = x.new_zeros(*x.size()[:2], x.size(-2) + 2, x.size(-1) + 2)
@@ -494,6 +495,7 @@ class StyleNERFUpsample(nn.Module):
         xa = F.interpolate(x, size=(resolution, resolution), mode='nearest')
         x = xa + self.adapter(torch.cat([xa, xb], 1))
         x = self.blurpool(x)
+        x = self.relu(x)
         return x
 
 
