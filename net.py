@@ -806,7 +806,7 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.relu(ada(style_enc, x))
+                x = self.relu(ada(style_enc, cF[injection]))
             if idx<len(self.learnable)-1:
                 res = residual(x)
                 x = learnable(x)
