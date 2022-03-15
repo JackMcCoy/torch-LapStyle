@@ -495,7 +495,7 @@ class StyleNERFUpsample(nn.Module):
         x1, x2, x3, x4 = xl + xu, xu + xr, xl + xd, xr + xd
         xb = torch.stack([x1, x2, x3, x4], 2) / 2
         xa = self.adapter(x)
-        x = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1)+xa), 2)
+        x = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1))+xa, 2)
         x = self.blurpool(x)
         x = self.conv(x)
         return x
