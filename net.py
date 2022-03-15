@@ -674,27 +674,6 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1',None,None,None,None,None,None]
 
-        self.residual = nn.ModuleList([
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(512,256,kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
-            ),
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
-        ),
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
-            ),
-            nn.Identity()
-        ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -789,8 +768,8 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        for idx, (ada, learnable, injection, residual) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
+        for idx, (ada, learnable, injection) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer)):
             '''if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
@@ -806,12 +785,7 @@ class ThumbAdaConv(nn.Module):
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
                 x = self.relu(ada(style_enc, cF[injection]))
-            if idx<len(self.learnable)-1:
-                res = residual(x)
-                x = learnable(x)
-                x = self.relu(x + res)
-            else:
-                x = learnable(x)
+            x = learnable(x)
         return x, style_enc
 
 
