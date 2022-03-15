@@ -150,11 +150,11 @@ class RevisionNet(nn.Module):
 
         self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
                                                             nn.LeakyReLU())),
-                                     ConvBlock(256,128,scale_change='up', noise=True),
+                                     ConvBlock(256,128,scale_change='up', noise=True, nn_blur=True),
                                      Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                                                             nn.LeakyReLU())),
                                      ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='up',
-                                               padding_mode='reflect', noise=True),
+                                               padding_mode='reflect', noise=True, nn_blur=True),
 
                                      Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                                      nn.LeakyReLU())),
@@ -678,22 +678,27 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512,256,kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')),
+                nn.LeakyReLU()),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
+                nn.LeakyReLU()
         ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')),
+                nn.LeakyReLU()),
             nn.Identity()
         ])
-
+        self.upsample = nn.ModuleList([
+            nn.Identity(),
+            StyleNERFUpsample(256),
+            nn.Identity(),
+            StyleNERFUpsample(128),
+            nn.Identity(),
+            StyleNERFUpsample(64),
+            nn.Identity()
+        ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -705,8 +710,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),
-                nn.Upsample(scale_factor=2, mode='nearest'),
+                FusedLeakyReLU(256)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -724,7 +728,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(128),
-                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -736,7 +739,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),
-                nn.Upsample(scale_factor=2, mode='nearest'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -747,15 +749,15 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1),
-                                        nn.LayerNorm((32,32)),
-                                        nn.LeakyReLU())
-        self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
-                                      nn.LayerNorm((32, 32)),
-                                      nn.LeakyReLU())
-        self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
-        self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
-                                            nn.LeakyReLU())
+        #self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1),
+        #                                nn.LayerNorm((32,32)),
+        #                                nn.LeakyReLU())
+        #self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
+        #                              nn.LayerNorm((32, 32)),
+        #                              nn.LeakyReLU())
+        #self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
+        #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
+        #                                    nn.LeakyReLU())
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -769,7 +771,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.relu = nn.LeakyReLU()
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.apply(self._init_weights)
 
     @staticmethod
@@ -789,8 +790,8 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        for idx, (ada, learnable, injection, residual) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
+        for idx, (ada, learnable, injection, residual, upsample) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual, self.upsample)):
             '''if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
@@ -805,8 +806,6 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.attention_block(self.pw_content(cF[injection]),context=self.pw_style(sF))
-                x = self.attention_conv(x) + cF[injection]
                 x = self.relu(ada(style_enc, x))
             if idx<len(self.learnable)-1:
                 res = residual(x)
@@ -814,6 +813,7 @@ class ThumbAdaConv(nn.Module):
                 x = self.relu(x + res)
             else:
                 x = learnable(x)
+            x = upsample(x)
         return x, style_enc
 
 

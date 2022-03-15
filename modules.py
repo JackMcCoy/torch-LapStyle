@@ -272,14 +272,17 @@ def ConvMixer(h, depth, kernel_size=9, patch_size=7):
 
 class ConvBlock(nn.Module):
 
-    def __init__(self, dim1, dim2,kernel_size=3,padding=1,scale_change='', padding_mode='reflect', noise=False):
+    def __init__(self, dim1, dim2,kernel_size=3,padding=1,scale_change='', padding_mode='reflect', noise=False, nn_blur=False):
         super(ConvBlock, self).__init__()
         self.resize=nn.Identity()
         self.skip = nn.Identity()
         self.blurpool = nn.Identity()
         if scale_change == 'up':
             self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=1, pad_off=0)
-            self.resize = nn.Upsample(scale_factor=2, mode='nearest')
+            if nn_blur:
+                self.resize=StyleNERFUpsample(dim2)
+            else:
+                self.resize = nn.Upsample(scale_factor=2, mode='nearest')
         elif scale_change == 'down':
             self.blurpool = BlurPool(dim2, pad_type='reflect', filt_size=4, stride=2, pad_off=0)
             self.skip = nn.Sequential(
@@ -469,6 +472,30 @@ def adaconvs(batch_size,s_d):
             AdaConv(64, 1, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d),
             AdaConv(128, 2, batch_size, s_d=s_d)])
+
+
+class StyleNERFUpsample(nn.Module):
+    def __init__(self, dim):
+        super(StyleNERFUpsample, self).__init__()
+        self.adapter = nn.Sequential(
+            nn.Conv2d(dim * 2, dim // 4, kernel_size=1),
+            nn.ReLU(),
+            nn.Conv2d(dim // 4, dim, kernel_size=1),
+        )
+        self.blurpool = BlurPool(dim,stride=1)
+    def forward(self, x):
+        resolution = x.size()[-1]*2
+        x_pad = x.new_zeros(*x.size()[:2], x.size(-2) + 2, x.size(-1) + 2)
+        x_pad[..., 1:-1, 1:-1] = x
+        xl, xu, xd, xr = x_pad[..., 1:-1, :-2], x_pad[..., :-2, 1:-1], x_pad[..., 2:, 1:-1], x_pad[..., 1:-1, 2:]
+        x1, x2, x3, x4 = xl + xu, xu + xr, xl + xd, xr + xd
+        xb = torch.stack([x1, x2, x3, x4], 2) / 2
+        xb = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1)), 2)
+        xa = F.interpolate(x, size=(resolution, resolution), mode='nearest')
+        x = xa + self.adapter(torch.cat([xa, xb], 1))
+        x = self.blurpool(x)
+        return x
+
 
 
 class StyleEncoderBlock(nn.Module):
