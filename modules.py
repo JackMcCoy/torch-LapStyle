@@ -478,13 +478,13 @@ class StyleNERFUpsample(nn.Module):
     def __init__(self, dim):
         super(StyleNERFUpsample, self).__init__()
         self.adapter = nn.Sequential(
-            nn.Conv2d(dim * 2, dim // 4, kernel_size=1),
+            nn.Conv2d(dim, dim * 4, kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(dim // 4, dim, kernel_size=1),
+            nn.Conv2d(dim*4, dim*4, kernel_size=1),
         )
         self.blurpool = BlurPool(dim,stride=1)
         self.conv = nn.Sequential(
-            nn.Conv2d(dim,dim,kernel_size=3,padding=1,padding_mode='reflect'),
+            nn.Conv2d(dim*4,dim,kernel_size=3,padding=1,padding_mode='reflect'),
             nn.LeakyReLU()
         )
     def forward(self, x):
@@ -495,8 +495,7 @@ class StyleNERFUpsample(nn.Module):
         x1, x2, x3, x4 = xl + xu, xu + xr, xl + xd, xr + xd
         xb = torch.stack([x1, x2, x3, x4], 2) / 2
         xa = self.adapter(x)
-        xb = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1)+xa), 2)
-        x = xa + self.adapter(torch.cat([xa, xb], 1))
+        x = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1)+xa), 2)
         x = self.blurpool(x)
         x = self.conv(x)
         return x
