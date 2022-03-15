@@ -484,7 +484,7 @@ class StyleNERFUpsample(nn.Module):
         )
         self.blurpool = BlurPool(dim,stride=1)
         self.conv = nn.Sequential(
-            nn.Conv2d(dim*4,dim,kernel_size=3,padding=1,padding_mode='reflect'),
+            nn.Conv2d(dim,dim,kernel_size=3,padding=1,padding_mode='reflect'),
             nn.LeakyReLU()
         )
     def forward(self, x):
