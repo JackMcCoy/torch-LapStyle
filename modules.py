@@ -479,7 +479,7 @@ class StyleNERFUpsample(nn.Module):
         super(StyleNERFUpsample, self).__init__()
         self.adapter = nn.Sequential(
             nn.Conv2d(dim * 2, dim // 4, kernel_size=1),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Conv2d(dim // 4, dim, kernel_size=1),
         )
         self.blurpool = BlurPool(dim,stride=1)
