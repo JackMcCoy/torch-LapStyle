@@ -172,7 +172,7 @@ class RevisionNet(nn.Module):
         """
         #lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
         #                        size=256,mode='bilinear',align_corners=False)
-        etf = self.etf(scaled_ci)
+        etf = self.etf(scaled_ci).detach()
         out = torch.cat([input, etf], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
