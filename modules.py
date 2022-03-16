@@ -564,7 +564,7 @@ class Sobel(nn.Module):
         Gx = torch.tensor([[-5,-4,0,4,5],[-8,-10,0,10,8],[-10,-20,0,20,10],[-8,-10,0,10,8],[-5,-4,0,4,5]])
         Gy = torch.rot90(Gx)
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
-        self.G = G.unsqueeze(1).repeat(6,1,1,1).to(torch.device('cuda'))
+        self.G = G.unsqueeze(1).repeat(3,1,1,1).float().to(torch.device('cuda'))
 
     def forward(self, img):
         B,C,h,w = img.shape
