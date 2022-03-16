@@ -540,7 +540,7 @@ def revision_train():
                     res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128,
                                            crop_marks[i][1]:crop_marks[i][1] + 128], 256,
                                            mode='nearest')
-                    patch_stylized, etf = rev_[i](res_in,
+                    patch_stylized, etf = rev_[i](res_in.clone().detach().requires_grad_(True),
                                                   ci[1 + i])
                     patch_stylized = patch_stylized + res_in
                     stylized_patches.append(patch_stylized)
@@ -594,7 +594,7 @@ def revision_train():
                     orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128,
                     crop_marks[i][1]:crop_marks[i][1] + 128], 256, mode='nearest')
                 thumbs.append(res_in)
-                patch_stylized, etf = rev_[i](res_in, ci[1 + i])
+                patch_stylized, etf = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
                 patch_stylized = patch_stylized + res_in
                 stylized_patches.append(patch_stylized)
 
