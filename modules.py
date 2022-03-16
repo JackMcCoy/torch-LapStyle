@@ -597,14 +597,14 @@ def sobel(window_size):
     matx = np.array(matx) * mult
     maty = np.array(maty) * mult
 
-    return torch.Tensor(matx), torch.Tensor(maty)
+    return torch.tensor(matx), torch.tensor(maty)
 
 
 def create_window(window_size, channel):
     windowx, windowy = sobel(window_size)
     windowx, windowy = windowx.unsqueeze(0).unsqueeze(0), windowy.unsqueeze(0).unsqueeze(0)
-    windowx = torch.Tensor(windowx.expand(channel, 1, window_size, window_size),device='cuda')
-    windowy = torch.Tensor(windowy.expand(channel, 1, window_size, window_size),device='cuda')
+    windowx = torch.tensor(windowx.expand(channel, 1, window_size, window_size),device='cuda')
+    windowy = torch.tensor(windowy.expand(channel, 1, window_size, window_size),device='cuda')
     # print windowx
     # print windowy
 
