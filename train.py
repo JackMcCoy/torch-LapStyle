@@ -535,7 +535,7 @@ def revision_train():
                 for rev in rev_: rev.eval()
                 stylized, style_emb = dec_(cF, sF['r4_1'])
                 stylized_patches = []
-                for i in range(num_rev):
+                for i in range(current_revision+1):
                     orig = stylized if i == 0 else patch_stylized
                     res_in = F.interpolate(orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128,
                                            crop_marks[i][1]:crop_marks[i][1] + 128], 256,
