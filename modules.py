@@ -603,8 +603,8 @@ def sobel(window_size):
 def create_window(window_size, channel):
     windowx, windowy = sobel(window_size)
     windowx, windowy = windowx.unsqueeze(0).unsqueeze(0), windowy.unsqueeze(0).unsqueeze(0)
-    windowx = torch.Tensor(windowx.expand(channel, 1, window_size, window_size))
-    windowy = torch.Tensor(windowy.expand(channel, 1, window_size, window_size))
+    windowx = torch.Tensor(windowx.expand(channel, 1, window_size, window_size),device='cuda')
+    windowy = torch.Tensor(windowy.expand(channel, 1, window_size, window_size),device='cuda')
     # print windowx
     # print windowy
 
@@ -613,8 +613,8 @@ def create_window(window_size, channel):
 
 def gradient(img, windowx, windowy, window_size, padding, channel):
     if channel > 1:  # do convolutions on each channel separately and then concatenate
-        gradx = torch.ones(img.shape)
-        grady = torch.ones(img.shape)
+        gradx = torch.ones(img.shape, device='cuda')
+        grady = torch.ones(img.shape, device='cuda')
         for i in range(channel):
             gradx[:, i, :, :] = F.conv2d(img[:, i, :, :].unsqueeze(0), windowx, padding=padding, groups=1).squeeze(
                 0)  # fix the padding according to the kernel size
@@ -637,11 +637,6 @@ class SobelGrad(torch.nn.Module):
 
     def forward(self, pred):
         (batch_size, channel, _, _) = pred.size()
-        if pred.is_cuda:
-            self.windowx = self.windowx.cuda(pred.get_device())
-            self.windowx = self.windowx.type_as(pred)
-            self.windowy = self.windowy.cuda(pred.get_device())
-            self.windowy = self.windowy.type_as(pred)
 
         pred_gradx, pred_grady = gradient(pred, self.windowx, self.windowy, self.window_size, self.padding, channel)
 
