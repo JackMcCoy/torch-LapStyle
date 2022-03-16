@@ -588,7 +588,7 @@ def revision_train():
             stylized, style_emb = dec_(cF, sF['r4_1'])
             thumbs = []
             stylized_patches = []
-            for i in range(num_rev):
+            for i in range(current_revision+1):
                 orig = stylized if i == 0 else patch_stylized
                 res_in = F.interpolate(
                     orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128,
@@ -618,7 +618,7 @@ def revision_train():
                    + l_identity2 + l_identity3 * 50 + l_identity4 + \
                    style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
 
-            for idx in range(num_rev):
+            for idx in range(current_revision+1):
                 patch_cF = enc_(ci[idx + 1])
                 patch_sF = enc_(si[idx + 1])
                 patch_losses = calc_losses(stylized_patches[idx], ci[idx + 1], si[idx + 1], patch_cF,
@@ -702,7 +702,7 @@ def revision_train():
                     state_dict = dec_optimizer.state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
                                'dec_optimizer.pth.tar')
-                    for idx in range(num_rev):
+                    for idx in range(current_revision+1):
                         num = '' if idx == 0 else '_' + str(idx + 1)
                         state_dict = rev_[idx].state_dict()
                         torch.save(copy.deepcopy(state_dict), save_dir /
