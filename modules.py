@@ -644,7 +644,6 @@ class SobelGrad(torch.nn.Module):
             self.windowy = self.windowy.type_as(pred)
 
         pred_gradx, pred_grady = gradient(pred, self.windowx, self.windowy, self.window_size, self.padding, channel)
-        label_gradx, label_grady = gradient(label, self.windowx, self.windowy, self.window_size, self.padding, channel)
 
         return pred_gradx, pred_grady
 
