@@ -727,7 +727,7 @@ def revision_train():
                                'disc_optimizer.pth.tar')
         current_revision += 1
         if current_revision < num_rev-1:
-            steps_per_revision/=1.5
+            steps_per_revision= int(steps_per_revision)/1.5
 
 
 
