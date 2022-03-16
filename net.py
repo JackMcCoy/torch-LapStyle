@@ -170,13 +170,13 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
-                                size=256,mode='bilinear',align_corners=False)
+        #lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
+        #                        size=256,mode='bilinear',align_corners=False)
         #etf = self.etf(scaled_ci)
-        out = torch.cat([input, lap_pyr], dim=1)
+        out = torch.cat([input, scaled_ci], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
-        return out, lap_pyr
+        return out, scaled_ci
 
 class Residual(nn.Module):
     def __init__(self, fn):
