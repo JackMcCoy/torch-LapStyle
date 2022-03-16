@@ -561,15 +561,15 @@ class Sobel(nn.Module):
     def __init__(self):
         super().__init__()
         self.gaussian = gaussian(11,.8).expand(3,1,11,11).to(torch.device('cuda'))
-        Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
-        Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
+        Gx = torch.tensor([[-5,-4,0,4,5],[-8,-10,0,10,8],[-10,-20,0,20,10],[-8,-10,0,10,8],[-5,-4,0,4,5]])
+        Gy = torch.rot90(Gx)
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
-        self.G = G.unsqueeze(1).repeat(3,1,1,1).to(torch.device('cuda'))
+        self.G = G.unsqueeze(1).repeat(6,1,1,1).to(torch.device('cuda'))
 
     def forward(self, img):
         B,C,h,w = img.shape
         x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,groups=3)
-        x = F.conv2d(F.pad(x,(1,1,1,1),mode='reflect'),weight=self.G,groups=3)
+        x = F.conv2d(F.pad(x,(2,2,2,2),mode='reflect'),weight=self.G,groups=3)
         return x[:,1::2,:,:], x[:,::2,:,:]
 
 
