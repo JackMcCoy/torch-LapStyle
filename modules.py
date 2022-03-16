@@ -569,7 +569,7 @@ class Sobel(nn.Module):
     def forward(self, img):
         B,C,h,w = img.shape
         x = F.conv2d(F.pad(img, (5, 5, 5, 5), mode='reflect'), weight=self.gaussian,groups=3)
-        x = F.conv2d(F.pad(x,(1,1,1,1),mode='reflect'),weight=self.G)
+        x = F.conv2d(F.pad(x,(1,1,1,1),mode='reflect'),weight=self.G,groups=3)
         return x[:,1::2,:,:], x[:,::2,:,:]
 
 
