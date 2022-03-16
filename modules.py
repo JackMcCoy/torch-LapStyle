@@ -560,7 +560,7 @@ class WaveUnpool(nn.Module):
 class Sobel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.gaussian = gaussian(11,1).expand(3,1,11,11).to(torch.device('cuda'))
+        self.gaussian = gaussian(11,1.2).expand(3,1,11,11).to(torch.device('cuda'))
         Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
         Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
         G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
