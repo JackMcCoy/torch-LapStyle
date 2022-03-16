@@ -581,6 +581,7 @@ class ETF(nn.Module):
         self.iter_time = iter_time
         self.pad = nn.ReflectionPad2d((self.kernel_radius,self.kernel_radius,self.kernel_radius,self.kernel_radius))
         self.dir_num = dir_num
+        self.theta = torch.tensor([math.pi*.5],device='cuda')
         self.sobel = Sobel()
 
     def Ws(self, x):
@@ -639,7 +640,8 @@ class ETF(nn.Module):
         y_norm = y_der / (gradient_magnitude)
 
         # rotate 90 degrees counter-clockwise
-        x_norm, y_norm = -y_norm, x_norm
+        x_norm, y_norm = x_norm * torch.cos(self.theta) - y_norm * torch.sin(self.theta),\
+                         y_norm * torch.cos(self.theta) + x_norm * torch.sin(self.theta)
         Ws = self.Ws(x_norm)
         Wm = self.Wm(x_norm, gradient_norm)
         for iter_time in range(self.iter_time):
