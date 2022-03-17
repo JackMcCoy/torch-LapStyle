@@ -780,7 +780,7 @@ class ThumbAdaConv(nn.Module):
                 whitening = x
             if idx > 0:
                 r = torch.rand(1,device='cuda')
-                if r[0]>.05:
+                if r[0]>.03334:
                     x = x + self.relu(ada(style_enc, x))
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
