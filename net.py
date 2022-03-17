@@ -690,7 +690,10 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=2, mode='nearest')
             ),
-            nn.Identity()
+            nn.Sequential(
+                nn.Conv2d(64, 3, kernel_size=1),
+                nn.LeakyReLU()
+            ),
         ])
         self.projection = nn.Linear(8192, self.s_d*25)
         self.content_injection_layer = ['r4_1','r4_1',None,None,None,None,None]
@@ -808,10 +811,8 @@ class ThumbAdaConv(nn.Module):
             else:
                 res = cF[injection]
                 x = self.relu(ada(style_enc, cF[injection]))
-            if idx == len(self.learnable) -1:
-                x = learnable(x)
-            else:
-                x = res + learnable(x)
+
+            x = res + learnable(x)
         return x, style_enc
 
 
