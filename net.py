@@ -770,22 +770,22 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer)):
-            '''if not injection is None:
+            if not injection is None:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
             else:
-                whitening = x'''
+                whitening = x
             if idx > 0:
                 r = torch.rand(1,device='cuda')
-                if r[0]>.01:
+                if r[0]>.05:
                     x = x + self.relu(ada(style_enc, x))
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                x = self.relu(ada(style_enc, cF[injection]))
+                x = self.relu(ada(style_enc, whitening))
             x = learnable(x)
         return x, style_enc
 
