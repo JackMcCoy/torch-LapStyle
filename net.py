@@ -672,7 +672,7 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512)
         )
         self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1',None,None,None,None,None,None]
+        self.content_injection_layer = ['r4_1','r4_1','r3_1','r3_1','r2_1','r2_1','r1_1']
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
@@ -779,7 +779,8 @@ class ThumbAdaConv(nn.Module):
             else:
                 whitening = x'''
             if idx > 0:
-                if injection is None:
+                r = torch.rand(1,device='cuda')
+                if r[0]>.01:
                     x = x + self.relu(ada(style_enc, x))
                 else:
                     x = x + self.relu(ada(style_enc, cF[injection]))
