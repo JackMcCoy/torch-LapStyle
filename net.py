@@ -658,7 +658,7 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
