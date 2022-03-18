@@ -268,7 +268,7 @@ def build_disc(disc_state, depth):
     return disc
 
 def drafting_train():
-    num_rev = {256 * 2 ** i: i for i in range(4)}[args.crop_size]
+    num_rev = 0
 
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
