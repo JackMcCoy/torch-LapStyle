@@ -59,6 +59,8 @@ class AdaConv(nn.Module):
             predicted = F.instance_norm(predicted)
 
         predicted = predicted.view(1,a*b,c,d)
+        print(style_encoding.shape)
+        print(depthwise.shape)
         content_out = nn.functional.conv2d(
                 nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,

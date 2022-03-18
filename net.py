@@ -671,6 +671,9 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
+        self.projection = nn.Linear(8192, self.s_d * 25)
+        self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
+
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -695,8 +698,6 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             ),
         ])
-        self.projection = nn.Linear(8192, self.s_d*25)
-        self.content_injection_layer = ['r4_1','r4_1',None,None,None,None,None]
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
