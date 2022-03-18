@@ -805,8 +805,7 @@ class ThumbAdaConv(nn.Module):
                 whitening = x'''
             if idx > 0:
                 res = residual(x)
-                print(type(ada))
-                if type(ada) != nn.Identity():
+                if type(ada) != nn.Identity:
                     if injection is None:
                         x = x + self.relu(ada(style_enc, x))
                     else:
