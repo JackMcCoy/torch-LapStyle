@@ -661,9 +661,9 @@ class ThumbAdaConv(nn.Module):
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
         self.style_encoding = nn.Sequential(
@@ -790,9 +790,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = sF.shape[0]
         if calc_style:
-            print(sF.shape)
             style_enc = self.style_encoding(sF).flatten(1)
-            print(style_enc.shape)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         for idx, (ada, learnable, injection,residual) in enumerate(
