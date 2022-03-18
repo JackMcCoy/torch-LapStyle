@@ -668,6 +668,7 @@ class ThumbAdaConv(nn.Module):
         ])
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512),
+            StyleEncoderBlock(512),
             StyleEncoderBlock(512)
         )
         self.residual = nn.ModuleList([
