@@ -803,7 +803,7 @@ class ThumbAdaConv(nn.Module):
                     else:
                         x = x + self.relu(ada(style_enc, cF[injection]))
             else:
-                res = cF[injection]
+                res = 0
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
