@@ -679,19 +679,19 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
+                StyleNERFUpsample(256)
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
+                StyleNERFUpsample(128)
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='nearest')
+                StyleNERFUpsample(64)
             ),
             nn.Sequential(
                 nn.Conv2d(64, 3, kernel_size=1),
