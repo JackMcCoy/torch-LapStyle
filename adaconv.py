@@ -37,6 +37,10 @@ class AdaConv(nn.Module):
             nn.Conv2d(self.c_in, self.c_out, kernel_size=1),
             nn.ReLU())
         self.relu=nn.ReLU()
+        self.project_in = nn.Sequential(
+            nn.Conv2d(self.c_in, self.c_in, kernel_size=1),
+            nn.LeakyReLU()
+        )
         self.apply(self._init_weights)
 
     @staticmethod
@@ -55,6 +59,7 @@ class AdaConv(nn.Module):
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
+        predicted = self.project_in(predicted)
         if self.norm:
             predicted = F.instance_norm(predicted)
 
