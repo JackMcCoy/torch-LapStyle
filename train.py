@@ -274,8 +274,7 @@ def drafting_train():
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
                             s_d=args.s_d).to(device)
-
-    # dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
 
     if args.load_model == 'none':
         init_weights(dec_)
