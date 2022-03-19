@@ -993,7 +993,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(),
             nn.BatchNorm2d(num_channels)
         )
-        self.body = nn.Sequential(*[copy.deepcopy(cell) for i in range(depth - 2)], target_device='cuda')
+        self.body = nn.Sequential(*[copy.deepcopy(cell) for i in range(depth - 2)])
         self.tail = nn.Sequential(
             nn.Conv2d(num_channels, num_channels, kernel_size=1),
             nn.LeakyReLU(),
