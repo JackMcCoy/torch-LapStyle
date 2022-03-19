@@ -809,7 +809,7 @@ class ThumbAdaConv(nn.Module):
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)'''
-                x = self.relu(ada(style_enc, whitening))
+                x = self.relu(ada(style_enc, cF[injection]))
 
             x = res + learnable(x)
         return x, style_enc
