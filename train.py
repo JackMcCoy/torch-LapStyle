@@ -318,7 +318,6 @@ def drafting_train():
             param.grad = None
 
         stylized, style_emb = dec_(cF, sF['r4_1'])
-        disc_.eval()
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
