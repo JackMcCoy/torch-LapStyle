@@ -1016,9 +1016,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.head(x)
         N, C, *_ = x.shape
-        x = x.repeat(1, 2, 1, 1)
         x = self.body(x)
-        x = x[:, :C, :, :]
         x = self.tail(x)
         return x
 
