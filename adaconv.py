@@ -61,7 +61,8 @@ class AdaConv(nn.Module):
         a, b, c, d = predicted.size()
         predicted = self.project_in(predicted)
         if self.norm:
-            predicted = F.instance_norm(predicted)
+            #predicted = F.instance_norm(predicted)
+            predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(
