@@ -487,7 +487,7 @@ class StyleNERFUpsample(nn.Module):
             nn.Conv2d(dim,dim,kernel_size=3,padding=1,padding_mode='reflect'),
             nn.LeakyReLU()
         )
-        self.pad = nn.ReflectionPad2d((2,2,2,2))
+        self.pad = nn.ReflectionPad2d((1,1,1,1))
     def forward(self, x):
         x_pad = self.pad(x)
         xl, xu, xd, xr = x_pad[..., 1:-1, :-2], x_pad[..., :-2, 1:-1], x_pad[..., 2:, 1:-1], x_pad[..., 1:-1, 2:]
