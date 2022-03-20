@@ -701,8 +701,8 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
-                nn.ReflectionPad2d((5, 5, 5, 5)),
-                nn.Conv2d(512, 512, (11, 11), bias=False),
+                nn.ReflectionPad2d((3, 3, 3, 3)),
+                nn.Conv2d(512, 512, (7, 7), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(512),
             ),
@@ -804,12 +804,12 @@ class ThumbAdaConv(nn.Module):
                         x = x + self.relu(ada(style_enc, cF[injection]))
             else:
                 res = 0
-                '''whitening = []
+                whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(N, C, h, w)'''
-                x = self.relu(ada(style_enc, cF[injection]))
+                whitening = torch.cat(whitening, 0).view(N, C, h, w)
+                x = self.relu(ada(style_enc, whitening))
 
             x = res + learnable(x)
         return x, style_enc
