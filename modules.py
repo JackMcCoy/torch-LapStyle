@@ -489,12 +489,9 @@ class StyleNERFUpsample(nn.Module):
         )
         self.pad = nn.ReflectionPad2d((1,1,1,1))
     def forward(self, x):
-        x_pad = self.pad(x)
-        xl, xu, xd, xr = x_pad[..., 1:-1, :-2], x_pad[..., :-2, 1:-1], x_pad[..., 2:, 1:-1], x_pad[..., 1:-1, 2:]
-        x1, x2, x3, x4 = xl + xu, xu + xr, xl + xd, xr + xd
-        xb = torch.stack([x1, x2, x3, x4], 2) / 2
+        x_pad = self.pad(x.repeat(1,4,1,1))
         xa = self.adapter(x)
-        x = torch.pixel_shuffle(xb.view(xb.size(0), -1, xb.size(-2), xb.size(-1))+xa, 2)
+        x = torch.pixel_shuffle(x_pad+xa, 2)
         x = self.blurpool(x)
         x = self.conv(x)
         return x
