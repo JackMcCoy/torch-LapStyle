@@ -673,25 +673,31 @@ class ThumbAdaConv(nn.Module):
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
-
+        self.upsampling = [False,True,False,True,False,True,False]
+        self.nerf_upsample = nn.ModuleList([
+            nn.Identity(),
+            StyleNERFUpsample(256),
+            nn.Identity(),
+            StyleNERFUpsample(128),
+            nn.Identity(),
+            StyleNERFUpsample(64),
+            nn.Identity()
+        ])
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(256)
+                nn.LeakyReLU()
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(128)
+                nn.LeakyReLU()
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(64)
+                nn.LeakyReLU()
             ),
             nn.Sequential(
                 nn.Conv2d(64, 3, kernel_size=1),
@@ -710,8 +716,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),
-                StyleNERFUpsample(256)
+                FusedLeakyReLU(256)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -728,8 +733,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(128),
-                StyleNERFUpsample(128)
+                FusedLeakyReLU(128)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -740,8 +744,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64),
-                StyleNERFUpsample(64)
+                FusedLeakyReLU(64)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -793,25 +796,40 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+
         whitening = []
         N, C, h, w = cF['r4_1'].shape
         for i in range(N):
             whitening.append(whiten(cF['r4_1'][i]).unsqueeze(0))
         whitening = torch.cat(whitening, 0).view(N, C, h, w)
-        for idx, (ada, learnable, injection,residual) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
+
+        res = 0
+        alternating_1 = 0
+        alternating_2 = 0
+
+        for idx, (ada, learnable, injection,residual,upsample) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.nerf_upsample)):
             if idx > 0:
                 res = residual(x)
-                if type(ada) != nn.Identity:
-                    if injection is None:
-                        x = x + self.relu(ada(style_enc, x))
-                    else:
-                        x = x + self.relu(ada(style_enc, whitening))
+                if injection is None:
+                    x = x + self.relu(ada(style_enc, x))
+                else:
+                    x = x + self.relu(ada(style_enc, whitening))
             else:
-                res = 0
                 x = self.relu(ada(style_enc, whitening))
-
-            x = res + learnable(x)
+            if idx % 2 == 0:
+                newres = res + alternating_1
+                if idx < len(self.adaconvs) - 2:
+                    alternating_1 = self.residual[idx + 1](upsample[idx + 1](res))
+                res = newres
+            elif idx % 2 != 0:
+                newres = res + alternating_2
+                if idx < len(self.adaconvs) - 2:
+                    alternating_2 = self.residual[idx+2](upsample(res))
+                res = newres
+            x = upsample(res) + upsample(learnable(x))
+            if idx < len(self.adaconvs)-1:
+                x = self.relu(x)
         return x, style_enc
 
 
