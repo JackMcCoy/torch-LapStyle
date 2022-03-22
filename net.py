@@ -794,9 +794,9 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         whitening = []
-        N, C, h, w = cF[injection].shape
+        N, C, h, w = cF['r4_1'].shape
         for i in range(N):
-            whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+            whitening.append(whiten(cF['r4_1'][i]).unsqueeze(0))
         whitening = torch.cat(whitening, 0).view(N, C, h, w)
         for idx, (ada, learnable, injection,residual) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
