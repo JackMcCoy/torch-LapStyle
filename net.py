@@ -818,6 +818,7 @@ class ThumbAdaConv(nn.Module):
             else:
                 x = self.relu(ada(style_enc, whitening))
                 res = x
+            print(idx)
             if idx % 2 == 0:
                 newres = res + alternating_1
                 if idx < len(self.adaconvs) - 2:
