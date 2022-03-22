@@ -817,10 +817,11 @@ class ThumbAdaConv(nn.Module):
                     x = x + self.relu(ada(style_enc, whitening))
             else:
                 x = self.relu(ada(style_enc, whitening))
+                res = x
             if idx % 2 == 0:
                 newres = res + alternating_1
                 if idx < len(self.adaconvs) - 2:
-                    alternating_1 = self.nerf_upsample[idx + 1](self.residual[idx + 1](res))
+                    alternating_1 = self.residual[idx + 1](self.nerf_upsample[idx + 1](res))
                 res = newres
             elif idx % 2 != 0:
                 newres = res + alternating_2
