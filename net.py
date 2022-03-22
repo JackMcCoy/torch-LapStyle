@@ -659,7 +659,7 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
@@ -793,6 +793,11 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+        whitening = []
+        N, C, h, w = cF[injection].shape
+        for i in range(N):
+            whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+        whitening = torch.cat(whitening, 0).view(N, C, h, w)
         for idx, (ada, learnable, injection,residual) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
             if idx > 0:
@@ -801,14 +806,9 @@ class ThumbAdaConv(nn.Module):
                     if injection is None:
                         x = x + self.relu(ada(style_enc, x))
                     else:
-                        x = x + self.relu(ada(style_enc, cF[injection]))
+                        x = x + self.relu(ada(style_enc, whitening))
             else:
                 res = 0
-                whitening = []
-                N, C, h, w = cF[injection].shape
-                for i in range(N):
-                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(N, C, h, w)
                 x = self.relu(ada(style_enc, whitening))
 
             x = res + learnable(x)
