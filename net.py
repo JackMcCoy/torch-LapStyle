@@ -674,30 +674,24 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
         self.upsampling = [False,True,False,True,False,True,False]
-        self.nerf_upsample = nn.ModuleList([
-            nn.Identity(),
-            StyleNERFUpsample(256),
-            nn.Identity(),
-            StyleNERFUpsample(128),
-            nn.Identity(),
-            StyleNERFUpsample(64),
-            nn.Identity()
-        ])
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.LeakyReLU()
+                nn.LeakyReLU(),
+                StyleNERFUpsample(256),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU()
+                nn.LeakyReLU(),
+                StyleNERFUpsample(128),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU()
+                nn.LeakyReLU(),
+                StyleNERFUpsample(64),
             ),
             nn.Sequential(
                 nn.Conv2d(64, 3, kernel_size=1),
@@ -716,7 +710,8 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256)
+                FusedLeakyReLU(256),
+                StyleNERFUpsample(256)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -733,7 +728,8 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(128)
+                FusedLeakyReLU(128),
+                StyleNERFUpsample(128)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -744,7 +740,8 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64)
+                FusedLeakyReLU(64),
+                StyleNERFUpsample(64)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -807,8 +804,8 @@ class ThumbAdaConv(nn.Module):
         alternating_1 = 0
         alternating_2 = 0
 
-        for idx, (ada, learnable, injection,residual,upsample) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.nerf_upsample)):
+        for idx, (ada, learnable, injection,residual) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
             if idx > 0:
                 res = residual(x)
                 if injection is None:
@@ -821,14 +818,14 @@ class ThumbAdaConv(nn.Module):
             if idx % 2 == 0:
                 newres = res + alternating_1
                 if idx < len(self.adaconvs) - 2:
-                    alternating_1 = self.residual[idx + 2](self.nerf_upsample[idx + 1](self.residual[idx + 1](res)))
+                    alternating_1 = self.residual[idx + 2](self.residual[idx + 1](res))
                 res = newres
             elif idx % 2 != 0:
                 newres = res + alternating_2
                 if idx < len(self.adaconvs) - 2:
-                    alternating_2 = self.residual[idx+2](upsample(res))
+                    alternating_2 = self.residual[idx+2](res)
                 res = newres
-            x = upsample(res) + upsample(learnable(x))
+            x = res + learnable(x)
             if idx < len(self.adaconvs)-1:
                 x = self.relu(x)
         return x, style_enc
