@@ -172,11 +172,11 @@ class RevisionNet(nn.Module):
         """
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
-        #etf = self.etf(scaled_ci).detach()
-        out = torch.cat([input, lap_pyr.detach()], dim=1)
+        etf = self.etf(scaled_ci).detach()
+        out = torch.cat([input, etf,lap_pyr.detach()], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
-        return out, lap_pyr
+        return out, etf
 
 class Residual(nn.Module):
     def __init__(self, fn):

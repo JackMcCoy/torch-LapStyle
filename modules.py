@@ -729,11 +729,11 @@ class ETF(nn.Module):
             x_patch = torch.nn.functional.unfold(x_magnitude, (self.kernel_size, self.kernel_size))
             y_patch = torch.nn.functional.unfold(y_magnitude, (self.kernel_size, self.kernel_size))
 
-            x_patch = x_patch.view(B,C,self.kernel_size, self.kernel_size, h,w)
-            y_patch = y_patch.view(B,C,self.kernel_size, self.kernel_size, h,w)
+            x_patch = x_patch.view(B,C,self.kernel_size, self.kernel_size, -1)
+            y_patch = y_patch.view(B,C,self.kernel_size, self.kernel_size, -1)
 
-            x_patch = x_patch.permute(0, 1, 4, 5, 2, 3)
-            y_patch = y_patch.permute(0, 1, 4, 5, 2, 3)
+            x_patch = x_patch.permute(0, 1, 4, 2, 3)
+            y_patch = y_patch.permute(0, 1, 4, 2, 3)
 
             x_result = (x_patch * kernels).sum(-1).sum(-1)
             y_result = (y_patch * kernels).sum(-1).sum(-1)
