@@ -1194,7 +1194,7 @@ def adaconv_thumb_train():
                 orig = stylized if i==0 else patch_stylized
                 res_in = orig[:, :, crop_marks[i][0]:crop_marks[i][0]+128, crop_marks[i][1]:crop_marks[i][1]+128]
                 patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1+i])
-                patch_stylized = patch_stylized + res_in
+                patch_stylized = patch_stylized + F.interpolate(res_in,size=256)
                 stylized_patches.append(patch_stylized)
 
             for param in disc_.parameters():
@@ -1243,7 +1243,7 @@ def adaconv_thumb_train():
             res_in = orig[:, :, crop_marks[i][0]:crop_marks[i][0] + 128, crop_marks[i][1]:crop_marks[i][1] + 128]
             thumbs.append(res_in)
             patch_stylized = rev_[i](res_in.clone().detach().requires_grad_(True), ci[1 + i])
-            patch_stylized = patch_stylized + res_in
+            patch_stylized = patch_stylized + F.interpolate(res_in,size=256)
             stylized_patches.append(patch_stylized)
 
         disc_.eval()
