@@ -170,6 +170,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
+        scaled_ci = F.interpolate(scaled_ci,size=256)
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
         etf = self.etf(scaled_ci).detach()
@@ -1349,7 +1350,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if patch_loss:
         patch_feats = encoder(patch_stylized)
-        upscaled_patch_feats = encoder(top_level_patch.detach())
+        upscaled_patch_feats = encoder(F.interpolate(top_level_patch.detach(),size=256))
         patch_loss = content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
