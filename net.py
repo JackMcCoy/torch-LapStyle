@@ -170,7 +170,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        scaled_ci = F.interpolate(scaled_ci,size=256)
+        input = F.interpolate(input,size=256)
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
         etf = self.etf(scaled_ci).detach()

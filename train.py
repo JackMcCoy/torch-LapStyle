@@ -1097,7 +1097,7 @@ def adaconv_thumb_train():
 
     #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
 
-    rev_ = [torch.jit.trace(build_rev(),(torch.rand(args.batch_size,3,256,256,device='cuda'),)*2) for i in range(num_rev)]
+    rev_ = [torch.jit.trace(build_rev(),(torch.rand(args.batch_size,3,128,128,device='cuda'),)*2) for i in range(num_rev)]
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
