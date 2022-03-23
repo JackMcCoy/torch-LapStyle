@@ -176,7 +176,7 @@ class RevisionNet(nn.Module):
         out = torch.cat([input, etf,lap_pyr.detach()], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
-        return out, etf
+        return out
 
 class Residual(nn.Module):
     def __init__(self, fn):
@@ -812,7 +812,7 @@ class ThumbAdaConv(nn.Module):
                 x = self.relu(ada(style_enc, whitening))
 
             x = res + learnable(x)
-        return x, style_enc
+        return x
 
 
 class DecoderVQGAN(nn.Module):
@@ -1129,7 +1129,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, F['r4_1'])
+    Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
