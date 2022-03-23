@@ -734,7 +734,7 @@ class ETF(nn.Module):
 
             x_patch = x_patch.permute(0, 1, 4, 2, 3)
             y_patch = y_patch.permute(0, 1, 4, 2, 3)
-            print(kernels.shape)
+            kernels = kernels.view(B,C,-1,h,w)
             x_result = (x_patch * kernels).sum(-1).sum(-1)
             y_result = (y_patch * kernels).sum(-1).sum(-1)
 
