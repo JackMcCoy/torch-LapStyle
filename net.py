@@ -981,12 +981,12 @@ class Discriminator(nn.Module):
         kernel_size=3
         patch_size=16
         self.head = nn.Sequential(
-            nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
+            nn.Conv2d(3, num_channels, kernel_size=kernel_size, stride=1, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(),
             nn.BatchNorm2d(num_channels))
         cell = nn.Sequential(
             Residual(nn.Sequential(
-                nn.Conv2d(num_channels, num_channels, kernel_size, groups=num_channels, padding="same",
+                nn.Conv2d(num_channels, num_channels, kernel_size, padding=1,
                           padding_mode='reflect'),
                 nn.LeakyReLU(),
                 nn.BatchNorm2d(num_channels)
