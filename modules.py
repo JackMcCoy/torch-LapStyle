@@ -743,9 +743,8 @@ class ETF(nn.Module):
             magnitude = torch.sqrt(x_result ** 2.0 + y_result ** 2.0)
             x_norm = x_result / magnitude
             y_norm = y_result / magnitude
-            print(x_norm.shape)
-            x_norm = x_norm.permute(0,1,3,4,2).view(B,C*3*3,-1)
-            y_norm = y_norm.permute(0, 1, 3, 4, 2).view(B, C * 3 * 3, -1)
+            x_norm = x_norm.view(B,C,h,w)
+            y_norm = y_norm.view(B, C, h, w)
 
         tan = -y_norm / x_norm
         angle = torch.atan(tan)

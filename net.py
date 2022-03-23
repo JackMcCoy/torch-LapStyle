@@ -138,7 +138,7 @@ class RevisionNet(nn.Module):
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         self.etf = ETF(1,2,90).to(device)
         self.Downblock = nn.Sequential(
-                        ConvBlock(6, 64),
+                        ConvBlock(9, 64),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(64, 128, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
