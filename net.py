@@ -136,9 +136,9 @@ class RevisionNet(nn.Module):
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
-        self.etf = ETF(1,2,90).to(device)
+        #self.etf = ETF(1,2,90).to(device)
         self.Downblock = nn.Sequential(
-                        ConvBlock(9, 64),
+                        ConvBlock(6, 64),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(64, 128, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
@@ -172,8 +172,8 @@ class RevisionNet(nn.Module):
         """
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
-        etf = self.etf(scaled_ci).detach()
-        out = torch.cat([input, etf,lap_pyr.detach()], dim=1)
+        #etf = self.etf(scaled_ci).detach()
+        out = torch.cat([input, lap_pyr.detach()], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
         return out, etf
