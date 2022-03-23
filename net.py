@@ -777,7 +777,7 @@ class ThumbAdaConv(nn.Module):
         self.style_4_grow = nn.Sequential(
             nn.Conv2d(64,128,kernel_size=1),
             nn.LeakyReLU(),
-            nn.MaxPool2d(3,stride=2)
+            nn.MaxPool2d(3,stride=2,padding=1)
         )
         self.lower_style_merge = nn.Sequential(
             nn.Conv2d(256,128,kernel_size=1),
@@ -786,7 +786,7 @@ class ThumbAdaConv(nn.Module):
         self.style_3_grow = nn.Sequential(
             nn.Conv2d(256,512,kernel_size=1),
             nn.LeakyReLU(),
-            nn.MaxPool2d(3,stride=2)
+            nn.MaxPool2d(3,stride=2,padding=1)
         )
         self.upper_style_merge = nn.Sequential(
             nn.Conv2d(1024,512,kernel_size=1),
@@ -795,7 +795,7 @@ class ThumbAdaConv(nn.Module):
         self.lower_style_grow = nn.Sequential(
             nn.Conv2d(256, 512, kernel_size=1),
             nn.LeakyReLU(),
-            nn.MaxPool2d(3, stride=2)
+            nn.MaxPool2d(3, stride=2,padding=1)
         )
         self.style_merge = nn.Sequential(
             nn.Conv2d(1024, 512, kernel_size=1),
