@@ -774,34 +774,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.relu = nn.LeakyReLU()
-        self.style_4_grow = nn.Sequential(
-            nn.Conv2d(64,128,kernel_size=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(3,stride=2,padding=1)
-        )
-        self.lower_style_merge = nn.Sequential(
-            nn.Conv2d(256,256,kernel_size=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(3, stride=2, padding=1)
-        )
-        self.style_3_grow = nn.Sequential(
-            nn.Conv2d(256,512,kernel_size=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(3,stride=2,padding=1)
-        )
-        self.upper_style_merge = nn.Sequential(
-            nn.Conv2d(1024,512,kernel_size=1),
-            nn.LeakyReLU()
-        )
-        self.lower_style_grow = nn.Sequential(
-            nn.Conv2d(256, 512, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(3, stride=2,padding=1)
-        )
-        self.style_merge = nn.Sequential(
-            nn.Conv2d(1024, 512, kernel_size=1),
-            nn.LeakyReLU()
-        )
         self.apply(self._init_weights)
 
     @staticmethod
@@ -815,20 +787,10 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def merge_style(self,sF):
-        lower = self.style_4_grow(sF['r1_1'])
-        lower = self.lower_style_merge(torch.cat([sF['r2_1'],lower],1))
-        lower = self.lower_style_grow(lower)
-        upper = self.style_3_grow(sF['r3_1'])
-        upper = self.upper_style_merge(torch.cat([sF['r4_1'], upper], 1))
-        upper = self.style_merge(torch.cat([upper,lower],1))
-        return upper
-
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
-        b = sF['r4_1'].shape[0]
+        b = sF.shape[0]
         if calc_style:
-            style_enc = self.merge_style(sF)
-            style_enc = self.style_encoding(style_enc).flatten(1)
+            style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         whitening = []
@@ -1167,7 +1129,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc, _ = decoder(F, F)
+    Icc, _ = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
