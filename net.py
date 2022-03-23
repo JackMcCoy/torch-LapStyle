@@ -978,7 +978,7 @@ class Style_Guided_Discriminator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, depth=5, num_channels=64, relgan=True, quantize = False, batch_size=5):
         super(Discriminator, self).__init__()
-        kernel_size=7
+        kernel_size=3
         patch_size=16
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=patch_size, stride=patch_size),
