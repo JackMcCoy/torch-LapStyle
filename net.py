@@ -176,7 +176,7 @@ class RevisionNet(nn.Module):
         out = torch.cat([input, lap_pyr.detach()], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
-        return out, etf
+        return out, lap_pyr
 
 class Residual(nn.Module):
     def __init__(self, fn):
