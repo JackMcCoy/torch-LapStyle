@@ -780,7 +780,7 @@ class ThumbAdaConv(nn.Module):
             nn.MaxPool2d(3,stride=2,padding=1)
         )
         self.lower_style_merge = nn.Sequential(
-            nn.Conv2d(256,128,kernel_size=1),
+            nn.Conv2d(256,256,kernel_size=1),
             nn.LeakyReLU()
         )
         self.style_3_grow = nn.Sequential(
