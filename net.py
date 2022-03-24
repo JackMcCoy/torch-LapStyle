@@ -602,8 +602,8 @@ class ResidualConvAttention(nn.Module):
         return out
 
 
-class PredictedKernelAttention:
-    def __init__(self, chan, s_d = 64, groups_per=1, chan_out=None, batch_size=4,kernel_size=1, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
+class StyleAttention(nn.Module):
+    def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, kernel_size=1, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
                  norm_queries=True):
         super().__init__()
         self.chan = chan
@@ -615,20 +615,18 @@ class PredictedKernelAttention:
 
         self.norm_queries = norm_queries
 
-        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect'}
+        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=key_dim * heads)
-        self.to_k = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=key_dim * heads)
-        self.to_v = AdaConv(chan, groups_per, s_d=self.s_d, batch_size=batch_size, c_out=value_dim * heads)
+        self.to_q = AdaConv(chan, 1, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads)
+        self.to_kv = AdaConv(chan, 1, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2)
 
-        out_conv_kwargs = {'padding': padding}
-        self.to_out = nn.Conv2d(value_dim * heads, chan_out, kernel_size, **out_conv_kwargs)
-        self.out_norm = nn.GroupNorm(16, 64)
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, x, context=None):
+    def forward(self, x, style_enc, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        q, k, v = (self.to_q(x), self.to_k(x), self.to_v(x))
+        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x).chunk(2, dim=1))
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -636,7 +634,7 @@ class PredictedKernelAttention:
 
         if context is not None:
             context = context.reshape(b, c, 1, -1)
-            ck, cv = self.to_k(context), self.to_v(context)
+            ck, cv = self.to_kv(context).chunk(2, dim=1)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
@@ -650,7 +648,8 @@ class PredictedKernelAttention:
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = self.out_norm(out + x)
+        out = self.out_norm(out)
+        out = out + x
         return out
 
 
@@ -660,7 +659,7 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=5, norm=False),
+            nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
@@ -754,13 +753,7 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        #self.pw_content = nn.Sequential(nn.Conv2d(512,512,kernel_size=1),
-        #                                nn.LayerNorm((32,32)),
-        #                                nn.LeakyReLU())
-        #self.pw_style = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
-        #                              nn.LayerNorm((32, 32)),
-        #                              nn.LeakyReLU())
-        #self.attention_block = ResidualConvAttention(512, kernel_size=1, heads=6, padding=0)
+        self.attention_block = StyleAttention(512, kernel_size=1, s_d= self.s_d, batch_size=batch_size, heads=6, padding=0)
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -811,7 +804,7 @@ class ThumbAdaConv(nn.Module):
                         x = x + self.relu(ada(style_enc, whitening))
             else:
                 res = 0
-                x = self.relu(ada(style_enc, whitening))
+                x = self.attention_block(whitening, style_enc)
 
             x = res + learnable(x)
         return x

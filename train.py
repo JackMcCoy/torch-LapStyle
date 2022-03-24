@@ -316,7 +316,7 @@ def drafting_train():
         for param in dec_.parameters():
             param.grad = None
 
-        stylized, style_emb = dec_(cF, sF['r4_1'])
+        stylized = dec_(cF, sF['r4_1'])
 
         losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
