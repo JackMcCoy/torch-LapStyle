@@ -445,10 +445,11 @@ class VQGANTrain(nn.Module):
         t, l = self.vqgan(ci, si)
         return t, l
 
-def style_encoder_block(ch):
+def style_encoder_block(ch, kernel_size=3):
+    padding = kernel_size//2
     return [
-        nn.ReflectionPad2d((3, 3, 3, 3)),
-        nn.Conv2d(ch, ch, kernel_size=7),
+        nn.ReflectionPad2d((padding,)*4),
+        nn.Conv2d(ch, ch, kernel_size=kernel_size),
         nn.ReLU(),
         nn.AvgPool2d(2, stride=2),
         nn.Conv2d(ch, ch, kernel_size=1),
@@ -668,9 +669,9 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
         self.style_encoding = nn.Sequential(
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512),
-            StyleEncoderBlock(512)
+            StyleEncoderBlock(512, kernel_size=7),
+            StyleEncoderBlock(512, kernel_size=3),
+            StyleEncoderBlock(512, kernel_size=3)
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
@@ -679,7 +680,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 StyleNERFUpsample(256)
             ),
             nn.Identity(),
@@ -703,9 +704,8 @@ class ThumbAdaConv(nn.Module):
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((3, 3, 3, 3)),
-                nn.Conv2d(512, 512, (7, 7), bias=False),
-                GaussianNoise(),
-                FusedLeakyReLU(512),
+                nn.Conv2d(512, 512, (7, 7)),
+                nn.GELU()
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -769,6 +769,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Linear(in_features=256, out_features=128)
             )
         self.relu = nn.LeakyReLU()
+        self.gelu = nn.GELU()
         self.apply(self._init_weights)
 
     @staticmethod
