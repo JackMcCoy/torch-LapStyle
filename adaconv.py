@@ -12,7 +12,7 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.n_groups = (self.c_in // p)
         self.kernel_size = kernel_size
-        self.batch_groups = batch_size * (self.c_out // p)
+        self.batch_groups = batch_size * (self.c_in // p)
         self.pointwise_groups = s_d // p
         self.style_groups = (s_d//p)
         pad = 2 if kernel_size==5 else 1
@@ -76,7 +76,7 @@ class AdaConv(nn.Module):
                 nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
-                                     groups=self.batch_groups
+                                     groups=self.c_in // self.n_groups
                                      ),
                 stride=1,
                 weight=pointwise_kn,
