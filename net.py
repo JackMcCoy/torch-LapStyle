@@ -447,8 +447,8 @@ class VQGANTrain(nn.Module):
 
 def style_encoder_block(ch):
     return [
-        nn.ReflectionPad2d((3, 3, 3, 3)),
-        nn.Conv2d(ch, ch, kernel_size=7),
+        nn.ReflectionPad2d((1, 1, 1, 1)),
+        nn.Conv2d(ch, ch, kernel_size=3),
         nn.ReLU(),
         nn.AvgPool2d(2, stride=2),
         nn.Conv2d(ch, ch, kernel_size=1),
