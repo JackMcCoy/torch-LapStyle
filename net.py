@@ -626,7 +626,7 @@ class StyleAttention(nn.Module):
     def forward(self, x, style_enc, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x).chunk(2, dim=1))
+        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x.repeat(1,2,1,1)).chunk(2, dim=1))
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
