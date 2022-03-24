@@ -805,7 +805,7 @@ class ThumbAdaConv(nn.Module):
                         x = x + self.relu(ada(style_enc, whitening))
             else:
                 res = 0
-                x = self.gelu(self.attention_block(whitening, style_enc))
+                x = self.attention_block(whitening, style_enc)
 
             x = res + learnable(x)
         return x
