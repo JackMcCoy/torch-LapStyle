@@ -10,7 +10,7 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
-        self.n_groups = (c_out // p)
+        self.n_groups = (self.c_out // p)
         self.kernel_size = kernel_size
         self.batch_groups = batch_size * (c_in // p)
         self.pointwise_groups = s_d // p
