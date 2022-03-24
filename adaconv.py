@@ -25,11 +25,12 @@ class AdaConv(nn.Module):
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
-        print(s_d)
-        print(self.c_in)
-        print(self.c_out)
-        print(self.n_groups)
-        print('____________')
+        if self.c_out != self.c_in:
+            print(s_d)
+            print(self.c_in)
+            print(self.c_out)
+            print(self.n_groups)
+            print('____________')
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(s_d, self.c_in, kernel_size=1),
             nn.LeakyReLU(),
