@@ -498,10 +498,11 @@ class StyleNERFUpsample(nn.Module):
 
 
 class StyleEncoderBlock(nn.Module):
-    def __init__(self, ch):
+    def __init__(self, ch, kernel_size=3):
         super(StyleEncoderBlock, self).__init__()
+        padding = kernel_size//2
         self.net = nn.Sequential(
-        nn.Conv2d(ch, ch, kernel_size=3, padding=1, padding_mode='reflect'),
+        nn.Conv2d(ch, ch, kernel_size=kernel_size, padding=padding, padding_mode='reflect'),
         nn.AvgPool2d(2, stride=2),
         nn.LeakyReLU())
     def forward(self, x):
