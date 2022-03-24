@@ -34,7 +34,7 @@ class AdaConv(nn.Module):
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(s_d, self.c_in, kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(self.c_in, self.c_out*(self.c_out//self.n_groups), kernel_size=1))
+            nn.Conv2d(self.c_in, self.c_out*(self.c_in//self.n_groups), kernel_size=1))
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(s_d, self.c_in, kernel_size=1),
             nn.LeakyReLU(),
