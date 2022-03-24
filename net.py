@@ -680,7 +680,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 StyleNERFUpsample(256)
             ),
             nn.Identity(),
