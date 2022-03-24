@@ -8,12 +8,12 @@ from losses import calc_mean_std
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, kernel_size=5):
         super(AdaConv, self).__init__()
+        self.n_groups = (c_in//p)
+        self.kernel_size = kernel_size
+        self.batch_groups = batch_size * (c_in // p)
+        self.pointwise_groups = s_d//p
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
-        self.n_groups = (self.c_in // p)
-        self.kernel_size = kernel_size
-        self.batch_groups = batch_size * (self.c_in // p)
-        self.pointwise_groups = s_d // p
         self.style_groups = (s_d//p)
         pad = 2 if kernel_size==5 else 1
         self.pad = nn.ReflectionPad2d((pad, pad, pad, pad))
@@ -25,16 +25,10 @@ class AdaConv(nn.Module):
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
-        if self.c_out != self.c_in:
-            print(s_d)
-            print(self.c_in)
-            print(self.c_out)
-            print(self.n_groups)
-            print('____________')
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(s_d, self.c_in, kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(self.c_in, self.c_out*(self.c_in//self.n_groups), kernel_size=1))
+            nn.Conv2d(self.c_in, self.c_out*(self.c_out//self.n_groups), kernel_size=1))
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(s_d, self.c_in, kernel_size=1),
             nn.LeakyReLU(),
@@ -55,13 +49,9 @@ class AdaConv(nn.Module):
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
-        print(style_encoding.shape)
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        print(depthwise.shape)
         depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
-        print(depthwise.shape)
         s_d = self.pointwise_avg_pool(style_encoding)
-        print(s_d.shape)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
