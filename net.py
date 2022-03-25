@@ -670,7 +670,7 @@ class ThumbAdaConv(nn.Module):
         ])
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
-            StyleEncoderBlock(512, kernel_size=7),
+            StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
@@ -703,8 +703,8 @@ class ThumbAdaConv(nn.Module):
 
         self.learnable = nn.ModuleList([
             nn.Sequential(
-                nn.ReflectionPad2d((3, 3, 3, 3)),
-                nn.Conv2d(512, 512, (7, 7)),
+                nn.ReflectionPad2d((2, 2, 2, 2)),
+                nn.Conv2d(512, 512, (5, 5)),
                 nn.GELU()
             ),
             nn.Sequential(
