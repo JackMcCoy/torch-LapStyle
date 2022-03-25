@@ -799,13 +799,13 @@ class ThumbAdaConv(nn.Module):
         whitening = torch.cat(whitening, 0).view(N, C, h, w)
         for idx, (ada, learnable, injection,residual) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
-            if idx > 0:
+            if idx > 1:
                 res = residual(x)
                 if type(ada) != nn.Identity:
                     if injection is None:
                         x = x + self.relu(ada(style_enc, x))
-                    else:
-                        x = x + self.attention_block_2(x, style_enc)
+            elif idx == 1:
+                x = x + self.attention_block_2(whitening, style_enc)
             else:
                 res = 0
                 x = self.attention_block_1(whitening, style_enc)
