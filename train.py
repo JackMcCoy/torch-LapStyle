@@ -310,15 +310,15 @@ def drafting_train():
 
         ci = ci.to(device)
         si = si.to(device)
-        cF = enc_(ci[0])
-        sF = enc_(si[0])
+        cF = enc_(ci)
+        sF = enc_(si)
 
         for param in dec_.parameters():
             param.grad = None
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
+        losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
