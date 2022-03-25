@@ -308,8 +308,8 @@ def drafting_train():
             ci = torch.cat([ci, ci_], 0)
             si = torch.cat([si, si], 0)
 
-        ci = [F.interpolate(ci, size=args.crop_size, mode='bicubic').to(device)]
-        si = [F.interpolate(si, size=args.crop_size, mode='bicubic').to(device)]
+        ci = ci.to(device)
+        si = si.to(device)
         cF = enc_(ci[0])
         sF = enc_(si[0])
 
