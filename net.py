@@ -132,13 +132,14 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
+        self.style_upsample = StyleNERFUpsample(3)
         #self.gaussian_kernel = gaussian(11,1).expand(3,1,11,11).to(device)
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
-        self.etf = ETF(1,1,90).to(device)
+        #self.etf = ETF(1,1,90).to(device)
         self.Downblock = nn.Sequential(
-                        ConvBlock(9, 64),
+                        ConvBlock(6, 64),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(64, 128, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
@@ -170,11 +171,12 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = F.interpolate(input,size=256).detach().requires_grad_(True)
+        input = self.style_upsample(input.detach().requires_grad_(True))
+        #input = F.interpolate(input,size=256).detach().requires_grad_(True)
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
-        etf = self.etf(scaled_ci).detach()
-        out = torch.cat([input, etf,lap_pyr.detach()], dim=1)
+        #etf = self.etf(scaled_ci).detach()
+        out = torch.cat([input,lap_pyr.detach()], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
         out = out + input
@@ -661,7 +663,7 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             nn.Identity(),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
@@ -709,9 +711,8 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3), bias=False),
-                GaussianNoise(),
-                FusedLeakyReLU(256),
+                nn.Conv2d(512, 256, (3, 3)),
+                nn.GELU(),
                 StyleNERFUpsample(256)
             ),
             nn.Sequential(
@@ -753,7 +754,9 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.attention_block = StyleAttention(512, kernel_size=1, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0)
+        self.attention_block_1 = StyleAttention(512, kernel_size=1, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0)
+        self.attention_block_2 = StyleAttention(512, kernel_size=1, s_d=self.s_d, batch_size=batch_size, heads=8,
+                                                padding=0)
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -802,10 +805,10 @@ class ThumbAdaConv(nn.Module):
                     if injection is None:
                         x = x + self.relu(ada(style_enc, x))
                     else:
-                        x = x + self.relu(ada(style_enc, whitening))
+                        x = x + self.attention_block_2(whitening, style_enc)
             else:
                 res = 0
-                x = self.attention_block(whitening, style_enc)
+                x = self.attention_block_1(whitening, style_enc)
 
             x = res + learnable(x)
         return x
