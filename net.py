@@ -805,7 +805,7 @@ class ThumbAdaConv(nn.Module):
                     if injection is None:
                         x = x + self.relu(ada(style_enc, x))
                     else:
-                        x = x + self.attention_block_2(whitening, style_enc)
+                        x = x + self.attention_block_2(x, style_enc)
             else:
                 res = 0
                 x = self.attention_block_1(whitening, style_enc)
