@@ -688,7 +688,7 @@ def adaconv_128_train():
     num_rev = {256 * 2 ** i: i for i in range(4)}[args.crop_size]
 
     enc_ = build_enc(vgg)
-    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d).to(device)
+    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss==1,content_contrastive_loss=args.content_contrastive_loss==1,batch_size=args.batch_size,s_d=args.s_d, size=args.crop_size).to(device)
 
     #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
     rev_1 = torch.jit.trace(build_rev(),(torch.rand(args.batch_size,3,128,128,device='cuda'),torch.rand(args.batch_size,3,256,256,device='cuda')))

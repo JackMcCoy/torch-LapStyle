@@ -618,8 +618,8 @@ class StyleAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads)
-        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2)
+        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, kernel_size=kernel_size)
+        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2, kernel_size=kernel_size)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
@@ -663,9 +663,9 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
         depth = 2 if size==256 else 1
@@ -700,11 +700,12 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             ),
         ])
-
+        ks = 7 if size==256 else 5
+        p = 3 if size==256 else 2
         self.learnable = nn.ModuleList([
             nn.Sequential(
-                nn.ReflectionPad2d((3, 3, 3, 3)),
-                nn.Conv2d(512, 512, (7, 7)),
+                nn.ReflectionPad2d((p, p, p, p)),
+                nn.Conv2d(512, 512, (ks, ks)),
                 nn.GELU()
             ),
             nn.Sequential(
@@ -753,7 +754,8 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.attention_block = StyleAttention(512, kernel_size=1, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0)
+        ks = 5 if size == 256 else 3
+        self.attention_block = StyleAttention(512, kernel_size=ks, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0)
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
