@@ -273,7 +273,7 @@ def drafting_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, 256, 256))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
-                            s_d=args.s_d).to(device)
+                            s_d=args.s_d,size=128).to(device)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
 
     if args.load_model == 'none':
@@ -308,8 +308,8 @@ def drafting_train():
             ci = torch.cat([ci, ci_], 0)
             si = torch.cat([si, si], 0)
 
-        ci = [F.interpolate(ci, size=256, mode='bicubic').to(device)]
-        si = [F.interpolate(si, size=256, mode='bicubic').to(device)]
+        ci = [F.interpolate(ci, size=args.crop_size, mode='bicubic').to(device)]
+        si = [F.interpolate(si, size=args.crop_size, mode='bicubic').to(device)]
         cF = enc_(ci[0])
         sF = enc_(si[0])
 

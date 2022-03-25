@@ -655,7 +655,7 @@ class StyleAttention(nn.Module):
 
 
 class ThumbAdaConv(nn.Module):
-    def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64):
+    def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
 
@@ -668,10 +668,10 @@ class ThumbAdaConv(nn.Module):
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
         ])
+        depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=7),
-            StyleEncoderBlock(512, kernel_size=3),
-            StyleEncoderBlock(512, kernel_size=3)
+            *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
