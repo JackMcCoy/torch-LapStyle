@@ -363,8 +363,8 @@ def drafting_train():
         with torch.no_grad():
             if (n + 1) % 50 == 0:
                 draft_img_grid = make_grid(invStyleTrans(stylized), nrow=4, scale_each=True)
-                style_source_grid = make_grid(si[0], nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci[0], nrow=4, scale_each=True)
+                style_source_grid = make_grid(si, nrow=4, scale_each=True)
+                content_img_grid = make_grid(ci, nrow=4, scale_each=True)
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
