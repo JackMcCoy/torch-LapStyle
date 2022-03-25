@@ -132,7 +132,6 @@ class RevisionNet(nn.Module):
 
         self.relu = nn.LeakyReLU()
         self.s_d = s_d
-        self.style_upsample = StyleNERFUpsample(3)
         #self.gaussian_kernel = gaussian(11,1).expand(3,1,11,11).to(device)
         #self.lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 3, axis=0)
         #self.lap_weight = torch.Tensor(self.lap_weight).to(device)
@@ -171,8 +170,7 @@ class RevisionNet(nn.Module):
         Returns:
             Tensor: (b, 3, 256, 256).
         """
-        input = self.style_upsample(input.detach().requires_grad_(True))
-        #input = F.interpolate(input,size=256).detach().requires_grad_(True)
+        input = F.interpolate(input,size=256,mode='bilinear',align_corners=False).detach().requires_grad_(True)
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
         #etf = self.etf(scaled_ci).detach()
@@ -1347,7 +1345,7 @@ def calc_losses(stylized: torch.Tensor,
 
     if patch_loss:
         patch_feats = encoder(patch_stylized)
-        upscaled_patch_feats = encoder(F.interpolate(top_level_patch.detach(),size=256))
+        upscaled_patch_feats = encoder(F.interpolate(top_level_patch.detach(),size=256,mode='bilinear',align_corners=False))
         patch_loss = content_loss(patch_feats['r4_1'], upscaled_patch_feats['r4_1'], norm=False)
     else:
         patch_loss = 0
