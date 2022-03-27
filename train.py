@@ -963,6 +963,12 @@ def adaconv_128_train():
                     state_dict = opt_D2[idx].state_dict()
                     torch.save(copy.deepcopy(state_dict), save_dir /
                                'disc{:d}_optimizer.pth.tar'.format(idx+2))
+                state_dict = rev_1.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'revisor0_iter_{:d}.pth.tar'.format(n + 1))
+                state_dict = rev1_optimizer.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'rev_optimizer0.pth.tar.pth.tar')
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
