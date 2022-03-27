@@ -693,6 +693,7 @@ def adaconv_128_train():
     #dec_ = torch.jit.script(net.ThumbAdaConv(batch_size=args.batch_size,s_d=args.s_d).to(device))
     rev_1 = torch.jit.trace(build_rev(),(torch.rand(args.batch_size,3,128,128,device='cuda'),torch.rand(args.batch_size,3,256,256,device='cuda')))
     rev_ = [torch.jit.trace(build_rev(),(torch.rand(args.batch_size,3,128,128,device='cuda'),torch.rand(args.batch_size,3,256,256,device='cuda'))) for i in range(num_rev)]
+    print(num_rev)
     if args.load_disc == 1:
         path = args.load_model.split('/')
         path_tokens = args.load_model.split('_')
@@ -869,9 +870,10 @@ def adaconv_128_train():
                style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
 
         for idx in range(num_rev+1):
+            print(idx)
             patch_cF = enc_(ci[idx+1])
             patch_sF = enc_(si[idx+1])
-            disc = disc2_[idx] if idx>0 else disc_
+            disc = disc2_[idx-1] if idx>0 else disc_
             patch_loss = idx>0
             patch_losses = calc_losses(stylized_patches[idx], ci[idx+1], si[idx+1], patch_cF, enc_, dec_, None, disc,
                                  calc_identity=False, disc_loss=True,
