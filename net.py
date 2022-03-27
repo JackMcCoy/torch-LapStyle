@@ -674,8 +674,8 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
-        self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
-
+        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', None, None, None]
+        self.whitening = [True,False,True,False,False,False]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -755,7 +755,11 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         ks = 5 if size == 256 else 3
-        self.attention_block = StyleAttention(512, kernel_size=ks, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0)
+        self.attention_block = nn.ModuleList(
+            StyleAttention(512, kernel_size=ks, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0),
+            nn.Identity(),
+            StyleAttention(256, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0)
+        )
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -791,24 +795,23 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
-        whitening = []
-        N, C, h, w = cF['r4_1'].shape
-        for i in range(N):
-            whitening.append(whiten(cF['r4_1'][i]).unsqueeze(0))
-        whitening = torch.cat(whitening, 0).view(N, C, h, w)
-        for idx, (ada, learnable, injection,residual) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual)):
+        res = 0
+        x = 0
+        for idx, (ada, learnable, injection,residual,whiten) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
                 res = residual(x)
-                if type(ada) != nn.Identity:
-                    if injection is None:
-                        x = x + self.relu(ada(style_enc, x))
-                    else:
-                        x = x + self.relu(ada(style_enc, whitening))
+            if whiten:
+                whitening = []
+                N, C, h, w = cF[injection].shape
+                for i in range(N):
+                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+                whitening = torch.cat(whitening, 0).view(N, C, h, w)
+                x = x + self.attention_block[idx](whitening, style_enc)
+            elif not injection is None:
+                x = x + self.relu(ada(style_enc, whitening))
             else:
-                res = 0
-                x = self.attention_block(whitening, style_enc)
-
+                x = x + self.relu(ada(style_enc, x))
             x = res + learnable(x)
         return x
 
