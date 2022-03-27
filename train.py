@@ -810,7 +810,7 @@ def adaconv_128_train():
             for rev in rev_: set_requires_grad(rev, False)
             loss_D = calc_GAN_loss(si[1], stylized_patches[0].clone().detach().requires_grad_(True), disc_)
             loss_D2 = 0
-            for i, patch_stylized in enumerate(stylized_patches):
+            for i in range(len(stylized_patches)-1):
                 loss_D2 += calc_GAN_loss(si[1+i], patch_stylized.clone().detach().requires_grad_(True), disc2_[i])
 
             loss_D.backward()
@@ -948,6 +948,7 @@ def adaconv_128_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
+
                 for idx in range(num_rev):
                     num = '' if idx == 0 else '_'+str(idx+1)
                     state_dict = rev_[idx].state_dict()
