@@ -662,8 +662,8 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
@@ -675,7 +675,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', None, None, None]
-        self.whitening = [True,False,True,False,False,False]
+        self.whitening = [True,False,True,False,False,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -799,11 +799,8 @@ class ThumbAdaConv(nn.Module):
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
-            print(idx)
             if idx > 0:
                 res = residual(x)
-            if type(res) != int:
-                print(res.shape)
             if whiten_layer:
                 whitening = []
                 N, C, h, w = cF[injection].shape
@@ -815,7 +812,6 @@ class ThumbAdaConv(nn.Module):
                 x = x + self.relu(ada(style_enc, whitening))
             else:
                 x = x + self.relu(ada(style_enc, x))
-            print(x.shape)
             x = res + learnable(x)
         return x
 
