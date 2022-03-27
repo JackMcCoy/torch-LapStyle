@@ -802,6 +802,7 @@ class ThumbAdaConv(nn.Module):
             print(idx)
             if idx > 0:
                 res = residual(x)
+            print(res.shape)
             if whiten_layer:
                 whitening = []
                 N, C, h, w = cF[injection].shape
@@ -813,6 +814,7 @@ class ThumbAdaConv(nn.Module):
                 x = x + self.relu(ada(style_enc, whitening))
             else:
                 x = x + self.relu(ada(style_enc, x))
+            print(x.shape)
             x = res + learnable(x)
         return x
 
