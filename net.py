@@ -797,11 +797,11 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
         res = 0
         x = 0
-        for idx, (ada, learnable, injection,residual,whiten) in enumerate(
+        for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
                 res = residual(x)
-            if whiten:
+            if whiten_layer:
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
