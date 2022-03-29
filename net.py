@@ -700,8 +700,8 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             ),
         ])
-        ks = 7 if size==256 else 3
-        p = 3 if size==256 else 1
+        ks = 7 if size==256 else 5
+        p = 3 if size==256 else 2
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
@@ -754,7 +754,7 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        ks = 5 if size == 256 else 3
+        ks = 5 if size == 256 else 5
         self.attention_block = nn.ModuleList([
             StyleAttention(512, kernel_size=ks, s_d= self.s_d, batch_size=batch_size, heads=8, padding=0),
             nn.Identity(),
