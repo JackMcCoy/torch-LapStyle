@@ -709,7 +709,6 @@ def adaconv_128_train():
     disc2_ = [
         torch.jit.trace(build_disc(state, args.disc2_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'),
                         check_trace=False) for state in disc2_state]
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
     rev_optimizer = [torch.optim.AdamW(rev.parameters(recurse=True), lr=args.lr) for rev in rev_]
     rev1_optimizer = torch.optim.AdamW(rev_1.parameters(recurse=True), lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
@@ -740,10 +739,6 @@ def adaconv_128_train():
                 except:
                     print(f'revision {num} not loaded')
         if args.load_optimizer==1:
-            try:
-                dec_optimizer.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/dec_optimizer.pth.tar'))
-            except:
-                print('optimizer not loaded ')
             for idx, rev_opt in enumerate(rev_optimizer):
                 num = '' if idx==0 else '_'+str(idx+1)
                 try:
@@ -751,14 +746,13 @@ def adaconv_128_train():
                 except:
                     print(f'rev_optimizer{num} not loaded')
         dec_optimizer.lr = args.lr
-    dec_.train()
+    dec_.eval()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
     random_crop = [nn.Identity()] + [transforms.RandomCrop(args.crop_size/2**e) for e in range(1,num_rev+1)]
     #wandb.watch((dec_,disc2_), log_freq=args.log_every_)
 
     for n in tqdm(range(args.max_iter), position=0):
-        warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr, decay=args.lr_decay)
         warmup_lr_adjust(rev1_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
 
@@ -827,12 +821,9 @@ def adaconv_128_train():
             set_requires_grad(dec_, True)
             for rev in rev_: set_requires_grad(rev, True)
 
-        dec_.train()
         for rev in rev_: rev.train()
         rev_1.train()
 
-        for param in dec_.parameters():
-            param.grad = None
         for param in rev_1.parameters():
             param.grad = None
         for rev in rev_:
@@ -854,30 +845,16 @@ def adaconv_128_train():
         disc_.eval()
         for disc in disc2_: disc.eval()
 
-        losses = calc_losses(stylized, ci[0], si[0], cF, enc_, dec_, None, None,
-                             calc_identity=args.identity_loss == 1, disc_loss=None,
-                             mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
-                             content_contrastive_loss=args.content_contrastive_loss == 1,
-                             remd_loss=remd_loss, patch_loss=False, patch_stylized=None, top_level_patch=None,
-                             sF=sF)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
-
-        loss = loss_s* args.style_weight + content_relt * args.content_relt + \
-               style_remd * args.style_remd + patch_loss * args.patch_loss + \
-               loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
-               + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss/args.content_relt
+        loss = 0
 
         for idx in range(num_rev+1):
-            print(idx)
             patch_cF = enc_(ci[idx+1])
             patch_sF = enc_(si[idx+1])
             disc = disc2_[idx-1] if idx>0 else disc_
             patch_loss = idx>0
             patch_losses = calc_losses(stylized_patches[idx], ci[idx+1], si[idx+1], patch_cF, enc_, dec_, None, disc,
                                  calc_identity=False, disc_loss=True,
-                                 mdog_losses=False, style_contrastive_loss=False,
+                                 mdog_losses=args.mdog_loss, style_contrastive_loss=False,
                                  content_contrastive_loss=False,
                                  remd_loss=False, patch_loss=patch_loss, patch_stylized=stylized_patches[idx], top_level_patch=thumbs[idx],
                                  sF=patch_sF)
@@ -896,14 +873,13 @@ def adaconv_128_train():
             #_clip_gradient(dec_)
             for rev_opt in rev_optimizer: rev_opt.step()
             rev1_optimizer.step()
-            dec_optimizer.step()
         for disc in disc2_: disc.train()
         disc_.train()
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
             for l, s in zip(
-                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
+                    [rev1_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
                      l_identity1,l_identity2,l_identity3,l_identity4, loss_D2, pixel_loss],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
@@ -942,13 +918,6 @@ def adaconv_128_train():
                 del(draft_img_grid, styled_img_grid, style_source_grid, content_img_grid)
 
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
-                state_dict = dec_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = dec_optimizer.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'dec_optimizer.pth.tar')
-
                 for idx in range(num_rev):
                     num = '' if idx == 0 else '_'+str(idx+1)
                     state_dict = rev_[idx].state_dict()
