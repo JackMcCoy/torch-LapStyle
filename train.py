@@ -745,7 +745,6 @@ def adaconv_128_train():
                     rev_optimizer[idx].load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1])+'/rev_optimizer'+num+'.pth.tar'))
                 except:
                     print(f'rev_optimizer{num} not loaded')
-        dec_optimizer.lr = args.lr
     dec_.eval()
     enc_.to(device)
     remd_loss = True if args.remd_loss == 1 else False
