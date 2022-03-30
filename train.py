@@ -878,7 +878,7 @@ def adaconv_128_train():
 
             loss_dict = {}
             for l, s in zip(
-                    [rev1_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
+                    [rev1_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remdp, content_reltp, patch_loss,
                      mdog, loss_Gp_GAN, loss_D,style_contrastive_loss, content_contrastive_loss,
                      l_identity1,l_identity2,l_identity3,l_identity4, loss_D2, pixel_loss],
                     ['LR','Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
