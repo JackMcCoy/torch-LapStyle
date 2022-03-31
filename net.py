@@ -139,7 +139,7 @@ class RevisionNet(nn.Module):
         #self.etf = ETF(1,1,90).to(device)
         self.Downblock = nn.Sequential(
                         ConvBlock(6, 128),
-                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                        Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
