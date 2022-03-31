@@ -142,11 +142,9 @@ class RevisionNet(nn.Module):
                         Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
-                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                                               nn.LeakyReLU())),
-            Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                                   nn.LeakyReLU())),
-                        )
+                    Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                           nn.LeakyReLU())),
+                                )
         self.relu = nn.LeakyReLU()
 
         self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
@@ -154,9 +152,7 @@ class RevisionNet(nn.Module):
                                      ConvBlock(64,128,scale_change='up', noise=True, nn_blur=True),
                                      Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                                                             nn.LeakyReLU())),
-                                     Residual(nn.Sequential(
-                                         nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                         nn.LeakyReLU())),
+
                                      nn.Sequential(
                                          nn.Conv2d(128, 3, kernel_size=3, padding=1, padding_mode='reflect'))
                                      )
