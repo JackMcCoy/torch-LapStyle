@@ -138,28 +138,30 @@ class RevisionNet(nn.Module):
         #self.embedding_scale = nn.Parameter(nn.init.normal_(torch.ones(s_d*16, device='cuda:0')))
         #self.etf = ETF(1,1,90).to(device)
         self.Downblock = nn.Sequential(
-                        ConvBlock(6, 64),
+                        ConvBlock(6, 128),
                         Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
-                        ConvBlock(64, 128, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
-                        Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                        ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
+                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                                                nn.LeakyReLU())),
-                        ConvBlock(128, 256, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
+            Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                   nn.LeakyReLU())),
                         )
         self.relu = nn.LeakyReLU()
 
-        self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+        self.UpBlock = nn.Sequential(Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
                                                             nn.LeakyReLU())),
-                                     ConvBlock(256,128,scale_change='up', noise=True, nn_blur=True),
+                                     ConvBlock(64,128,scale_change='up', noise=True, nn_blur=True),
                                      Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                                                             nn.LeakyReLU())),
-                                     ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='up',
-                                               padding_mode='reflect', noise=True, nn_blur=True),
+                                     Residual(nn.Sequential(
+                                         nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                                         nn.LeakyReLU())),
 
-                                     Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                     Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                                      nn.LeakyReLU())),
                                      nn.Sequential(
-                                         nn.Conv2d(64, 3, kernel_size=3, padding=1, padding_mode='reflect'))
+                                         nn.Conv2d(128, 3, kernel_size=3, padding=1, padding_mode='reflect'))
                                      )
 
     def forward(self, input, scaled_ci):
@@ -174,7 +176,7 @@ class RevisionNet(nn.Module):
         lap_pyr = scaled_ci - F.interpolate(F.interpolate(scaled_ci,size=128,mode='bilinear',align_corners=False),
                                 size=256,mode='bilinear',align_corners=False)
         #etf = self.etf(scaled_ci).detach()
-        out = torch.cat([input,lap_pyr.detach()], dim=1)
+        out = torch.cat([input,lap_pyr], dim=1)
         out = self.Downblock(out)
         out = self.UpBlock(out)
         out = out + input
