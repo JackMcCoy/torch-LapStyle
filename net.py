@@ -142,8 +142,8 @@ class RevisionNet(nn.Module):
                         Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                         nn.LeakyReLU())),
                         ConvBlock(128, 64, kernel_size=3, padding=1, scale_change='down', padding_mode='reflect', noise=True),
-                    Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
-                                           nn.LeakyReLU())),
+                        Residual(nn.Sequential(nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+                                               nn.LeakyReLU())),
                                 )
         self.relu = nn.LeakyReLU()
 
@@ -656,9 +656,9 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             nn.Identity(),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
@@ -797,14 +797,16 @@ class ThumbAdaConv(nn.Module):
             if idx > 0:
                 res = residual(x)
             if whiten_layer:
+                '''
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
-                x = x + self.attention_block[idx](whitening, style_enc)
+                '''
+                x = x + self.attention_block[idx](cF[injection], style_enc)
             elif not injection is None:
-                x = x + self.relu(ada(style_enc, whitening))
+                x = x + self.relu(ada(style_enc, cF[injection]))
             else:
                 x = x + self.relu(ada(style_enc, x))
             x = res + learnable(x)
