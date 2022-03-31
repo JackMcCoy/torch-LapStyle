@@ -670,7 +670,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, None]
-        self.whitening = [True,False,True,False,False,False, False]
+        self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
