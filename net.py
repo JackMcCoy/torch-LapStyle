@@ -755,7 +755,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention(256, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
             nn.Identity(),
-            StyleAttention(128, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
+            StyleAttention(128, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
