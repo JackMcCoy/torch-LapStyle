@@ -157,9 +157,6 @@ class RevisionNet(nn.Module):
                                      Residual(nn.Sequential(
                                          nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
                                          nn.LeakyReLU())),
-
-                                     Residual(nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                                     nn.LeakyReLU())),
                                      nn.Sequential(
                                          nn.Conv2d(128, 3, kernel_size=3, padding=1, padding_mode='reflect'))
                                      )
