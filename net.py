@@ -796,7 +796,7 @@ class ThumbAdaConv(nn.Module):
             style_enc_2 = self.projection_2(style_enc_3).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
             style_enc_3 = self.projection_3(style_enc_3).view(b, self.s_d, 25)
-            style_enc_3 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
+            style_enc_3 = self.relu(style_enc_3).view(b, self.s_d, 5, 5)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
