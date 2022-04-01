@@ -799,7 +799,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
 
-            style_enc_2 = self.style_encoding(sF[r'1_1']).flatten(1)
+            style_enc_2 = self.style_encoding(sF['r1_1']).flatten(1)
             style_enc_2 = self.projection(style_enc_2).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
