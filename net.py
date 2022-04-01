@@ -811,7 +811,7 @@ class ThumbAdaConv(nn.Module):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
                 '''
-                if idx==0:
+                if idx==1:
                     x = x + self.attention_block[idx](cF[injection], style_enc, style_enc_2)
                 else:
                     x = self.attention_block[idx](x, style_enc, style_enc_2, context=cF[injection])
