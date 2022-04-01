@@ -48,7 +48,7 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
+        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
