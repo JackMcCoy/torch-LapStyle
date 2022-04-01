@@ -671,8 +671,8 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 25)
         depth = 3
         self.style_encoding_2 = nn.Sequential(
-            StyleEncoderBlock(512, kernel_size=5),
-            *(StyleEncoderBlock(512, kernel_size=3),) * depth
+            StyleEncoderBlock(64, kernel_size=5),
+            *(StyleEncoderBlock(64, kernel_size=3),) * depth
         )
         self.projection_2 = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, None]
@@ -799,8 +799,8 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
 
-            style_enc_2 = self.style_encoding(sF['r1_1']).flatten(1)
-            style_enc_2 = self.projection(style_enc_2).view(b, self.s_d, 25)
+            style_enc_2 = self.style_encoding_2(sF['r1_1']).flatten(1)
+            style_enc_2 = self.projection_2(style_enc_2).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
         x = 0
