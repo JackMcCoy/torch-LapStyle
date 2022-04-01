@@ -705,13 +705,13 @@ class ThumbAdaConv(nn.Module):
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
-                nn.Conv2d(512, 512, (ks, ks)),
+                nn.Conv2d(512, 512, (ks, ks),bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(256),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3), bias=False),
+                nn.Conv2d(512, 256, (3, 3)),
                 nn.GELU(),
                 StyleNERFUpsample(256)
             ),
