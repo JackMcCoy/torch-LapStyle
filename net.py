@@ -630,7 +630,7 @@ class StyleAttention(nn.Module):
 
         if context is not None:
             context = context.reshape(b, c, 1, -1)
-            ck, cv = self.to_kv(context).chunk(2, dim=1)
+            ck, cv = self.to_kv(style_enc, context.repeat(1,2,1,1)).chunk(2, dim=1)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
