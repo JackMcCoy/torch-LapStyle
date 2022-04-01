@@ -819,6 +819,8 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = self.attention_block[idx](x, style_enc, style_enc_2, context=cF[injection])
             elif not injection is None:
+                print(style_enc.shape)
+                print(cF[injection].shape)
                 x = x + self.relu(ada(style_enc, cF[injection]))
             elif type(ada) != nn.Identity:
                 x = x + self.relu(ada(style_enc_2, x))
