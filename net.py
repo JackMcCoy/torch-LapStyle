@@ -750,7 +750,7 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        ks = 5 if size == 256 else 5
+        ks = 5 if size == 256 else 3
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             StyleAttention(512, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=8, padding=0),
