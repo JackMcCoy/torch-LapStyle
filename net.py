@@ -675,7 +675,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.projection_2 = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
-        self.whitening = [True,False,True,False,True,False, False]
+        self.whitening = [False,True,True,False,True,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -706,13 +706,13 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks)),
-                nn.GELU()
+                GaussianNoise(),
+                FusedLeakyReLU(256),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=False),
-                GaussianNoise(),
-                FusedLeakyReLU(256),
+                nn.GELU(),
                 StyleNERFUpsample(256)
             ),
             nn.Sequential(
