@@ -669,6 +669,7 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
+        depth = 3
         self.style_encoding_2 = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),) * depth
@@ -794,11 +795,11 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = sF.shape[0]
         if calc_style:
-            style_enc = self.style_encoding(sF).flatten(1)
+            style_enc = self.style_encoding(sF['r4_1']).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
 
-            style_enc_2 = self.style_encoding(sF).flatten(1)
+            style_enc_2 = self.style_encoding(sF[r'1_1']).flatten(1)
             style_enc_2 = self.projection(style_enc_2).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
@@ -1138,7 +1139,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, repeat_style=True):
-    Icc = decoder(F, F['r4_1'])
+    Icc = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
