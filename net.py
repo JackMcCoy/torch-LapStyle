@@ -619,18 +619,18 @@ class StyleAttention(nn.Module):
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, x, style_enc, context=None):
+    def forward(self, x, style_enc, style_enc_2, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
 
-        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x.repeat(1,2,1,1)).chunk(2, dim=1))
+        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc_2, x.repeat(1,2,1,1)).chunk(2, dim=1))
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         if context is not None:
-            ck, cv = self.to_kv(style_enc, context.repeat(1,2,1,1)).chunk(2, dim=1)
+            ck, cv = self.to_kv(style_enc_2, context.repeat(1,2,1,1)).chunk(2, dim=1)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
@@ -671,10 +671,10 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 25)
         depth = 3
         self.style_encoding_2 = nn.Sequential(
-            StyleEncoderBlock(64, kernel_size=5),
-            *(StyleEncoderBlock(64, kernel_size=3),) * depth
+            StyleEncoderBlock(512, kernel_size=5),
+            *(StyleEncoderBlock(512, kernel_size=3),) * depth
         )
-        self.projection_2 = nn.Linear(4096, self.s_d * 25)
+        self.projection_2 = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, None]
         self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
@@ -799,7 +799,7 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
 
-            style_enc_2 = self.style_encoding_2(sF['r1_1']).flatten(1)
+            style_enc_2 = self.style_encoding_2(sF['r4_1']).flatten(1)
             style_enc_2 = self.projection_2(style_enc_2).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
@@ -817,9 +817,9 @@ class ThumbAdaConv(nn.Module):
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
                 '''
                 if idx==0:
-                    x = x + self.attention_block[idx](cF[injection], style_enc)
+                    x = x + self.attention_block[idx](cF[injection], style_enc, style_enc_2)
                 else:
-                    x = self.attention_block[idx](x, style_enc, context=cF[injection])
+                    x = self.attention_block[idx](x, style_enc, style_enc_2, context=cF[injection])
             elif not injection is None:
                 x = x + self.relu(ada(style_enc, cF[injection]))
             elif type(ada) != nn.Identity:
