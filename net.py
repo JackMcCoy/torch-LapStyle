@@ -692,7 +692,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 StyleNERFUpsample(64)
             ),
             nn.Sequential(
@@ -735,9 +735,8 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3), bias=False),
-                GaussianNoise(),
-                FusedLeakyReLU(128)),
+                nn.Conv2d(128, 128, (3, 3)),
+                nn.GELU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=False),
