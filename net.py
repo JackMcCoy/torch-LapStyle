@@ -603,8 +603,8 @@ class ResidualConvAttention(nn.Module):
 
 
 class StyleAttention(nn.Module):
-    def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, kernel_size=1, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 norm_queries=True):
+    def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
+                 norm_queries=False, dropout=.1):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -617,10 +617,13 @@ class StyleAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, kernel_size=kernel_size)
-        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2, kernel_size=kernel_size)
+        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads)
+        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2)
+        self.dropout = nn.Dropout2d(p=dropout) if dropout != 0 else nn.Identity()
 
-        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        self.to_out = nn.Sequential(
+            nn.Conv2d(value_dim * heads, chan_out, 1),
+            self.dropout)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, x, style_enc, context=None):
@@ -640,6 +643,7 @@ class StyleAttention(nn.Module):
             v = torch.cat((v, cv), dim=3)
 
         k = k.softmax(dim=-1)
+        k = self.dropout(k)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
@@ -660,19 +664,19 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             nn.Identity(),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
-        self.projection = nn.Linear(8192, self.s_d * 25)
+        self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', 'r2_1', None, None]
         self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
@@ -752,13 +756,13 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        ks = 5 if size == 256 else 3
+
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=8, padding=0),
+            StyleAttention(512, s_d=self.s_d, batch_size=batch_size, heads=8, padding=0),
             nn.Identity(),
-            StyleAttention(256, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
+            StyleAttention(256, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
             nn.Identity(),
-            StyleAttention(128, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
+            StyleAttention(128, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -792,9 +796,9 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = sF['r4_1'].shape[0]
         if calc_style:
-            style_enc_3 = self.style_encoding(sF['r4_1']).flatten(1)
-            style_enc = self.projection(style_enc_3).view(b,self.s_d,25)
-            style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+            style_enc = self.style_encoding(sF['r4_1']).flatten(1)
+            style_enc = self.projection(style_enc).view(b,self.s_d,16)
+            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(

@@ -6,22 +6,20 @@ from losses import calc_mean_std
 
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, kernel_size=5):
+    def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//p)
-        self.kernel_size = kernel_size
         self.batch_groups = batch_size * (c_in // p)
         self.pointwise_groups = s_d//p
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
-        pad = 2 if kernel_size==5 else 1
-        self.pad = nn.ReflectionPad2d((pad, pad, pad, pad))
+        self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = norm
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d,self.c_in,kernel_size=1),
             nn.LeakyReLU(),
-            nn.Conv2d(self.c_in, self.c_out * (self.c_in//self.n_groups), kernel_size=3, padding=1 if kernel_size==5 else 0, padding_mode='reflect'))
+            nn.Conv2d(self.c_in, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect'))
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
