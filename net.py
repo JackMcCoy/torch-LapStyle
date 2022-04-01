@@ -669,6 +669,11 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
+        self.style_encoding_2 = nn.Sequential(
+            StyleEncoderBlock(512, kernel_size=5),
+            *(StyleEncoderBlock(512, kernel_size=3),) * depth
+        )
+        self.projection_2 = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, None]
         self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
@@ -792,6 +797,10 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
+
+            style_enc_2 = self.style_encoding(sF).flatten(1)
+            style_enc_2 = self.projection(style_enc_2).view(b, self.s_d, 25)
+            style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
@@ -810,7 +819,7 @@ class ThumbAdaConv(nn.Module):
             elif not injection is None:
                 x = x + self.relu(ada(style_enc, cF[injection]))
             elif type(ada) != nn.Identity:
-                x = x + self.relu(ada(style_enc, x))
+                x = x + self.relu(ada(style_enc_2, x))
             x = res + learnable(x)
         return x
 
