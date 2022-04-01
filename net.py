@@ -804,6 +804,7 @@ class ThumbAdaConv(nn.Module):
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
+            print(idx)
             if idx > 0:
                 res = residual(x)
             if whiten_layer:
