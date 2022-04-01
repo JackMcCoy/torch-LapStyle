@@ -549,7 +549,7 @@ class FusionMod(nn.Module):
 
 class ResidualConvAttention(nn.Module):
     def __init__(self, chan, chan_out=None, kernel_size=1, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 norm_queries=True):
+                 norm_queries=False, dropout=.1):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -559,13 +559,16 @@ class ResidualConvAttention(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
+        self.dropout = nn.Dropout2d(p=dropout) if dropout != 0 else nn.Identity()
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
         self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
         self.to_kv = nn.Conv2d(chan, key_dim * heads * 2, kernel_size, **conv_kwargs)
 
-        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        self.to_out = nn.Sequential(
+            nn.Conv2d(value_dim * heads, chan_out, 1),
+            self.dropout)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, x, context=None):
@@ -585,6 +588,7 @@ class ResidualConvAttention(nn.Module):
             v = torch.cat((v, cv), dim=3)
 
         k = k.softmax(dim=-1)
+        k = self.dropout(k)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
@@ -655,10 +659,10 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
+            nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
             nn.Identity(),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
@@ -669,8 +673,8 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
-        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
-        self.whitening = [False,True,True,False,True,False, False]
+        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', 'r2_1', None, None]
+        self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -701,12 +705,13 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks)),
-                nn.LeakyReLU()
+                nn.GELU()
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
-                nn.GELU(),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 StyleNERFUpsample(256)
             ),
             nn.Sequential(
@@ -749,8 +754,8 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         ks = 5 if size == 256 else 3
         self.attention_block = nn.ModuleList([
-            nn.Identity(),
             StyleAttention(512, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=8, padding=0),
+            nn.Identity(),
             StyleAttention(256, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
             nn.Identity(),
             StyleAttention(128, kernel_size=ks, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
