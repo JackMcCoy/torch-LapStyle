@@ -707,7 +707,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks),bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),
+                FusedLeakyReLU(512),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
