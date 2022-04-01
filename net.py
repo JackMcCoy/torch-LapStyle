@@ -661,7 +661,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=3),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, kernel_size=5),
         ])
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
