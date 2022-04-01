@@ -669,11 +669,8 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 25)
-        self.style_encoding_2 = nn.Sequential(
-            StyleEncoderBlock(512, kernel_size=5),
-            *(StyleEncoderBlock(512, kernel_size=3),) * depth
-        )
         self.projection_2 = nn.Linear(8192, self.s_d * 25)
+        self.projection_3 = nn.Linear(8192, self.s_d * 25)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
         self.whitening = [False,True,True,False,True,False, False]
         self.residual = nn.ModuleList([
@@ -793,13 +790,14 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = sF['r4_1'].shape[0]
         if calc_style:
-            style_enc = self.style_encoding(sF['r4_1']).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,25)
+            style_enc_3 = self.style_encoding(sF['r4_1']).flatten(1)
+            style_enc = self.projection(style_enc_3).view(b,self.s_d,25)
             style_enc = self.relu(style_enc).view(b,self.s_d,5,5)
 
-            style_enc_2 = self.style_encoding_2(sF['r4_1']).flatten(1)
-            style_enc_2 = self.projection_2(style_enc_2).view(b, self.s_d, 25)
+            style_enc_2 = self.projection_2(style_enc_3).view(b, self.s_d, 25)
             style_enc_2 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
+            style_enc_3 = self.projection_3(style_enc_3).view(b, self.s_d, 25)
+            style_enc_3 = self.relu(style_enc_2).view(b, self.s_d, 5, 5)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
@@ -819,9 +817,9 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = self.attention_block[idx](x, style_enc, style_enc_2, context=cF[injection])
             elif not injection is None:
-                x = x + self.relu(ada(style_enc_2, cF[injection]))
+                x = x + self.relu(ada(style_enc_3, cF[injection]))
             elif type(ada) != nn.Identity:
-                x = x + self.relu(ada(style_enc_2, x))
+                x = x + self.relu(ada(style_enc_3, x))
             x = res + learnable(x)
         return x
 
