@@ -677,7 +677,7 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
-        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', 'r2_1', 'r2_1', None]
+        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
         self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
@@ -806,17 +806,15 @@ class ThumbAdaConv(nn.Module):
             if idx > 0:
                 res = residual(x)
             if whiten_layer:
-                '''
                 whitening = []
                 N, C, h, w = cF[injection].shape
                 for i in range(N):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
-                '''
                 if idx==0:
-                    x = x + self.attention_block[idx](cF[injection], style_enc)
+                    x = x + self.attention_block[idx](whitening, style_enc)
                 else:
-                    x = self.attention_block[idx](x, style_enc, context=cF[injection])
+                    x = self.attention_block[idx](whitening, style_enc)
             elif not injection is None:
                 x = x + self.relu(ada(style_enc, cF[injection]))
             elif type(ada) != nn.Identity:
