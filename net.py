@@ -668,7 +668,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
-            nn.Identity(),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         depth = 2 if size==256 else 1
@@ -677,7 +677,7 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
-        self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, None]
+        self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', 'r3_1', 'r2_1', 'r2_1', None]
         self.whitening = [True,False,True,False,True,False, False]
         self.residual = nn.ModuleList([
             nn.Identity(),
