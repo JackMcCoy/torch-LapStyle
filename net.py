@@ -604,7 +604,7 @@ class ResidualConvAttention(nn.Module):
 
 class StyleAttention(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 norm_queries=False, dropout=.1):
+                 norm_queries=False):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -619,11 +619,8 @@ class StyleAttention(nn.Module):
 
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads)
         self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2)
-        self.dropout = nn.Dropout2d(p=dropout) if dropout != 0 else nn.Identity()
 
-        self.to_out = nn.Sequential(
-            nn.Conv2d(value_dim * heads, chan_out, 1),
-            self.dropout)
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, x, style_enc, context=None):
@@ -643,7 +640,6 @@ class StyleAttention(nn.Module):
             v = torch.cat((v, cv), dim=3)
 
         k = k.softmax(dim=-1)
-        k = self.dropout(k)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
