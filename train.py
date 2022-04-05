@@ -851,6 +851,7 @@ def adaconv_128_train():
             patch_sF = enc_(si[idx+1])
             disc = disc2_[idx-1] if idx>0 else disc_
             patch_loss = idx>0
+            multiplier = 4 if idx==0 else 1
             patch_losses = calc_losses(stylized_patches[idx], ci[idx+1], si[idx+1], patch_cF, enc_, dec_, None, disc,
                                  calc_identity=False, disc_loss=True,
                                  mdog_losses=args.mdog_loss, style_contrastive_loss=False,
@@ -860,11 +861,11 @@ def adaconv_128_train():
             loss_c, loss_s, content_reltp, style_remdp, l_identity1, l_identity2, l_identity3, l_identity4, \
             mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = patch_losses
 
-            loss = loss + loss_s * args.style_weight + content_reltp * args.content_relt + \
+            loss = loss + (loss_s * args.style_weight + content_reltp * args.content_relt + \
                    style_remdp * args.style_remd + patch_loss * args.patch_loss + \
                    loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                    + l_identity2 + l_identity3 * 50 + l_identity4 + \
-                   style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt
+                   style_contrastive_loss * 0.6 + content_contrastive_loss * 0.6 + pixel_loss / args.content_relt) * multiplier
 
         loss.backward()
         if n > 0:
