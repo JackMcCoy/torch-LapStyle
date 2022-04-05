@@ -829,7 +829,7 @@ def adaconv_128_train():
             for param in rev.parameters():
                 param.grad = None
 
-        stylized = dec_(cF,sF['r4_1'])
+        stylized = dec_(cF,sF)
         thumbs = []
         stylized_patches = []
         patch_stylized = rev_1(stylized.clone().detach().requires_grad_(True),ci[1])
