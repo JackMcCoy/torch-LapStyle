@@ -782,7 +782,7 @@ def adaconv_128_train():
             dec_.eval()
             for rev in rev_: rev.eval()
             rev_1.eval()
-            stylized = dec_(cF, sF['r4_1'])
+            stylized = dec_(cF, sF)
             stylized_patches = []
             patch_stylized = rev_1(stylized.clone().detach().requires_grad_(True), ci[1])
             stylized_patches.append(patch_stylized)
