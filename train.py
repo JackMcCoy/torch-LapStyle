@@ -140,6 +140,7 @@ parser.add_argument('--log_dir', default='./logs',
 parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--disc_lr', type=float, default=1e-3)
 parser.add_argument('--lr_decay', type=float, default=5e-5)
+parser.add_argument('--weight_decay', type=float, default=0)
 parser.add_argument('--max_iter', type=int, default=160000)
 parser.add_argument('--warmup_iters', type=int, default=1000)
 parser.add_argument('--batch_size', type=int, default=8)
@@ -274,7 +275,7 @@ def drafting_train():
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
                             s_d=args.s_d,size=128).to(device)
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
 
     if args.load_model == 'none':
         init_weights(dec_)
