@@ -1132,13 +1132,14 @@ content_emd_loss = CalcContentReltLoss
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def identity_loss(i, F, encoder, decoder, repeat_style=True):
+def identity_loss(i, F, encoder, decoder, content=False, repeat_style=True):
     Icc = decoder(F, F)
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
     l_identity2 = 0
-    for key in F.keys():
+    check = ['r5_1','r4_1'] if content else ['r5_1','r4_1','r3_1','r2_1','r1_1']
+    for key in check:
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2
 
@@ -1213,7 +1214,7 @@ def calc_losses(stylized: torch.Tensor,
                 patch_stylized = None,):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False, content=True)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
     else:
         l_identity1 = 0
