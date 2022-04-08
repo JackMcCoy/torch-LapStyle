@@ -1138,7 +1138,7 @@ def identity_loss(i, F, encoder, decoder, content=False, repeat_style=True):
     with torch.no_grad():
         Fcc = encoder(Icc)
     l_identity2 = 0
-    check = ['r5_1','r4_1'] if content else ['r5_1','r4_1','r3_1','r2_1','r1_1']
+    check = ['r5_1','r4_1']
     for key in check:
         l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
     return l_identity1, l_identity2
