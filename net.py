@@ -1017,8 +1017,8 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.head(x)
         N, C, *_ = x.shape
-        x = self.body(x)
-        x = self.tail(x)
+        x = checkpoint(self.body, x, preserve_rng_state=False)
+        x = checkpoint(self.tail, x, preserve_rng_state=False)
         return x
 
 
