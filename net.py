@@ -809,7 +809,7 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False)
             elif not injection is None:
-                x = x + self.relu(checkpoint(ada,style_enc, whitening, preserve_rng_state=False))
+                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
                 x = x + self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
             x = res + checkpoint(learnable, x, preserve_rng_state=False)
@@ -1211,8 +1211,10 @@ def calc_losses(stylized: torch.Tensor,
                 patch_stylized = None,):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False, content=True)
+        #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False, content=True)
         l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
+        l_identity1 = 0
+        l_identity2 = 0
     else:
         l_identity1 = 0
         l_identity2 = 0
