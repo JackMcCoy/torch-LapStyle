@@ -274,7 +274,7 @@ def drafting_train():
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, args.crop_size, args.crop_size))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
-                            s_d=args.s_d,size=128).to(device)
+                            s_d=args.s_d,size=args.crop_size).to(device)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
 
     if args.load_model == 'none':
