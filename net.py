@@ -4,7 +4,7 @@ import torch
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
-from torch.utils.checkpoint import checkpoin
+from torch.utils.checkpoint import checkpoint
 import torch.nn.functional as F
 import numpy as np
 import vgg
