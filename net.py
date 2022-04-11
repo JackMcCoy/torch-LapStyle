@@ -789,7 +789,7 @@ class ThumbAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
-        b = cF['r4_1'].shape[0]
+        b, C, h, w = cF['r4_1'].shape[0]
         if calc_style:
             style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,16)
@@ -799,19 +799,20 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
-                res = checkpoint(residual, x, preserve_rng_state=False, use_reentrant=False)
+                res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
                 N,C,h,w = cF[injection].shape
                 whitening = self.whiten(cF[injection]).view(N,C,h,w)
+                print(whitening.shape)
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False, use_reentrant=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False, use_reentrant=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False)
             elif not injection is None:
-                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False, use_reentrant=False))
+                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
-                x = x + self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False, use_reentrant=False))
-            x = res + checkpoint(learnable, x, preserve_rng_state=False, use_reentrant=False)
+                x = x + self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
+            x = res + checkpoint(learnable, x, preserve_rng_state=False)
         return x
 
 
