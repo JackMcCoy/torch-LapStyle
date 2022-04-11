@@ -339,7 +339,7 @@ def drafting_train():
 
             set_requires_grad(disc_, True)
             set_requires_grad(dec_, False)
-            loss_D = calc_GAN_loss(si[0], stylized.clone().detach().requires_grad_(True), disc_)
+            loss_D = calc_GAN_loss(si, stylized.clone().detach().requires_grad_(True), disc_)
             loss_D.backward()
 
             if n > 0:
