@@ -799,18 +799,18 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
-                res = checkpoint(residual, x, preserve_rng_state=False)
+                res = checkpoint(residual, x, preserve_rng_state=False, use_reentrant=False)
             if whiten_layer:
                 whitening = self.whiten(cF[injection])
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False, use_reentrant=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False, use_reentrant=False)
             elif not injection is None:
-                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
+                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False, use_reentrant=False))
             elif type(ada) != nn.Identity:
-                x = x + self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
-            x = res + checkpoint(learnable, x, preserve_rng_state=False)
+                x = x + self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False, use_reentrant=False))
+            x = res + checkpoint(learnable, x, preserve_rng_state=False, use_reentrant=False)
         return x
 
 
