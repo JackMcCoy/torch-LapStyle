@@ -55,11 +55,11 @@ def whiten(cf):
     y = cf.flatten(2)
     y, mu = demean(y)
     N = y.shape[-1]
-    cov = y @ y.T / (N - 1)
+    cov = torch.einsum('bcx, bdx -> bcd', y, y) / (N - 1)  # compute covs along batch dim
     u, lambduh, _ = torch.svd(cov)
-    lambduh_inv_sqrt = torch.diag(lambduh ** (-.5))
-    zca_whitener = u @ lambduh_inv_sqrt @ u.T
-    z = zca_whitener @ y
+    lambduh_inv_sqrt = torch.diag_embed(lambduh ** (-.5))
+    zca_whitener = torch.einsum('nab, nbc, ncd -> nad', u, lambduh_inv_sqrt, u.transpose(-2, -1))
+    z = torch.einsum('bac, bcx -> bax', zca_whitener, y)
     return mu + z
 
 def color(sF, whiten_cF):
