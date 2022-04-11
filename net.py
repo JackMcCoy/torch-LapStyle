@@ -802,6 +802,7 @@ class ThumbAdaConv(nn.Module):
                 res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
                 whitening = self.whiten(cF[injection])
+                print(whitening.shape)
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
