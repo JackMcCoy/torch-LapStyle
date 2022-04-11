@@ -797,7 +797,7 @@ class ThumbAdaConv(nn.Module):
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
-                res = checkpoint(residual, x, use_reentrant=False)
+                res = checkpoint(residual, x)
             if whiten_layer:
                 whitening = []
                 N, C, h, w = cF[injection].shape
@@ -805,14 +805,14 @@ class ThumbAdaConv(nn.Module):
                     whitening.append(whiten(cF[injection][i]).unsqueeze(0))
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx],(whitening, style_enc), use_reentrant=False)
+                    x = checkpoint(self.attention_block[idx],(whitening, style_enc))
                 else:
-                    x = checkpoint(self.attention_block[idx],(whitening, style_enc, x), use_reentrant=False)
+                    x = checkpoint(self.attention_block[idx],(whitening, style_enc, x))
             elif not injection is None:
-                x = x + self.relu(checkpoint(ada,(style_enc, cF[injection]), use_reentrant=False))
+                x = x + self.relu(checkpoint(ada,(style_enc, cF[injection])))
             elif type(ada) != nn.Identity:
-                x = x + self.relu(checkpoint(ada,(style_enc, x), use_reentrant=False))
-            x = res + checkpoint(learnable, x, use_reentrant=False)
+                x = x + self.relu(checkpoint(ada,(style_enc, x)))
+            x = res + checkpoint(learnable, x)
         return x
 
 
