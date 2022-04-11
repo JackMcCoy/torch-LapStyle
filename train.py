@@ -317,7 +317,7 @@ def drafting_train():
         for param in dec_.parameters():
             param.grad = None
 
-        stylized = dec_(cF, sF)
+        stylized = dec_(cF, sF['r4_1'])
 
         losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
                              calc_identity=args.identity_loss == 1, disc_loss=False,
@@ -783,7 +783,7 @@ def adaconv_128_train():
             dec_.eval()
             for rev in rev_: rev.eval()
             rev_1.eval()
-            stylized = dec_(cF, sF)
+            stylized = dec_(cF, sF['r4_1'])
             stylized_patches = []
             patch_stylized = rev_1(stylized.clone().detach().requires_grad_(True), ci[1])
             stylized_patches.append(patch_stylized)
@@ -830,7 +830,7 @@ def adaconv_128_train():
             for param in rev.parameters():
                 param.grad = None
 
-        stylized = dec_(cF,sF)
+        stylized = dec_(cF,sF['r4_1'])
         thumbs = []
         stylized_patches = []
         patch_stylized = rev_1(stylized.clone().detach().requires_grad_(True),ci[1])
