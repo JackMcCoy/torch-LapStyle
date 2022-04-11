@@ -332,7 +332,7 @@ def drafting_train():
         sF = enc_(si)
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
-            stylized, style_emb = dec_(cF, sF['r4_1'])
+            stylized = dec_(cF, sF['r4_1'])
 
             for param in disc_.parameters():
                 param.grad = None
