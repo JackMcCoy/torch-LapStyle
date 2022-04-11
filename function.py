@@ -57,7 +57,7 @@ def whiten(cf):
     c_u, c_e, c_v = torch.svd(c_covm, some=False) # singular value decomposition
 
     k_c = c_channels
-    c_e[c_e<0.00001] = (c_e<0.00001).nonzero(as_tuple=True)[0]
+    #c_e[c_e<0.00001] = (c_e<0.00001).nonzero(as_tuple=True)[0]
     '''
     for i in range(c_channels):
         if c_e[i] < 0.00001:
