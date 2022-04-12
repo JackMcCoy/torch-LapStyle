@@ -759,7 +759,12 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
-
+        if style_contrastive_loss:
+            self.proj_style = nn.Sequential(
+                nn.Linear(in_features=256, out_features=128),
+                nn.ReLU(),
+                nn.Linear(in_features=128, out_features=128)
+            )
         if content_contrastive_loss:
             self.proj_content = nn.Sequential(
                 nn.Linear(in_features=512, out_features=256),
@@ -781,16 +786,12 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
-    def proj_style(self, sF):
-        b = sF.shape[0]
-        style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, 16)
-        style_enc = self.relu(style_enc).view(b, self.s_d, 4, 4)
-        return style_enc
-
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
+        b = cF['r4_1'].shape[0]
         if calc_style:
-            style_enc = self.proj_style(sF)
+            style_enc = self.style_encoding(sF).flatten(1)
+            style_enc = self.projection(style_enc).view(b,self.s_d,16)
+            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
@@ -1169,8 +1170,8 @@ def calc_patch_loss(stylized_feats, patch_feats):
     return patch_loss
 
 def style_feature_contrastive(sF, decoder):
-    out = decoder.proj_style(sF)
-    out = torch.sum(out, dim=[2, 3])
+    out = torch.sum(sF, dim=[2, 3])
+    out = decoder.proj_style(out)
     out = out / torch.norm(out, p=2, dim=1, keepdim=True)
     return out
 
@@ -1275,8 +1276,8 @@ def calc_losses(stylized: torch.Tensor,
     c_contrastive_loss = 0
     if style_contrastive_loss:
         half = stylized_feats['r4_1'].shape[0]//2
-        style_up = style_feature_contrastive(stylized_feats['r4_1'][0:half],decoder)
-        style_down = style_feature_contrastive(stylized_feats['r4_1'][half:],decoder)
+        style_up = style_feature_contrastive(stylized_feats['r3_1'][0:half],decoder)
+        style_down = style_feature_contrastive(stylized_feats['r3_1'][half:],decoder)
 
         for i in range(half):
             reference_style = style_up[i:i + 1]
