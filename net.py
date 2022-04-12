@@ -759,12 +759,7 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
-        if style_contrastive_loss:
-            self.proj_style = nn.Sequential(
-                nn.Linear(in_features=256, out_features=128),
-                nn.ReLU(),
-                nn.Linear(in_features=128, out_features=128)
-            )
+
         if content_contrastive_loss:
             self.proj_content = nn.Sequential(
                 nn.Linear(in_features=512, out_features=256),
@@ -786,12 +781,16 @@ class ThumbAdaConv(nn.Module):
             nn.init.normal_(m.weight.data)
             nn.init.constant_(m.bias.data, 0.01)
 
+    def proj_style(self, sF):
+        style_enc = self.style_encoding(sF).flatten(1)
+        style_enc = self.projection(style_enc).view(b, self.s_d, 16)
+        style_enc = self.relu(style_enc).view(b, self.s_d, 4, 4)
+        return style_enc
+
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         if calc_style:
-            style_enc = self.style_encoding(sF).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,16)
-            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+            style_enc = self.proj_style(sF)
         res = 0
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(

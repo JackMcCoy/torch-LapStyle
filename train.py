@@ -162,6 +162,8 @@ parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
 parser.add_argument('--style_remd', type=float, default=22.0)
 parser.add_argument('--mdog_weight', type=float, default=.66)
+parser.add_argument('--style_contrastive_weight', type=float, default=.3)
+parser.add_argument('--content_contrastive_weight', type=float, default=.3)
 parser.add_argument('--thumbnail_loss', type=float, default=.75)
 parser.add_argument('--load_rev', type=int, default=0)
 parser.add_argument('--load_disc', type=int, default=0)
@@ -367,7 +369,7 @@ def drafting_train():
                style_remd * args.style_remd + patch_loss * args.patch_loss + \
                loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
                + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * 0.3 + content_contrastive_loss * 0.3
+               style_contrastive_loss * args.style_contrastive_weight + content_contrastive_loss * args.content_contrastive_weight
 
         loss.backward()
         if n > 0:
