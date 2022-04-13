@@ -636,11 +636,12 @@ class StyleAttention(nn.Module):
             k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
+        print(q.shape)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
-        print(q.shape)
+
         '''
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
@@ -649,6 +650,8 @@ class StyleAttention(nn.Module):
             v = torch.cat((v, cv), dim=3)
         '''
         position = (self.rel_h + self.rel_w).view(1, c, -1).permute(0, 2, 1)
+        print(q.shape)
+        print(position.shape)
         position = torch.matmul(position, q)
 
         q = q + position
