@@ -650,7 +650,7 @@ class StyleAttention(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = (out + mean_s.expand(out.size())) * std_s.expand(out.size)
+        out = (out + mean_s.expand(out.size())) * std_s.expand(out.size())
         #out = self.out_norm(out)
         out = out + x
         return out
