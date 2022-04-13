@@ -630,7 +630,7 @@ class StyleAttention(nn.Module):
 
         q = self.to_q(style_enc, _x)
         if context is not None:
-            context = F.instance_norm(context) + position
+            context = F.instance_norm(context)
             k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
