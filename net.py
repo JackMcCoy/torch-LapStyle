@@ -686,7 +686,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.std_estimate = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=1),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.AdaptiveAvgPool2d(1)
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
