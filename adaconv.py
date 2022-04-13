@@ -11,6 +11,7 @@ class AdaConv(nn.Module):
         self.n_groups = (c_in//p)
         self.batch_groups = batch_size * (c_in // p)
         self.pointwise_groups = s_d//p
+        self.kernel_size = kernel_size
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
         self.style_groups = (s_d//p)
@@ -47,7 +48,7 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 3, 3)
+        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
