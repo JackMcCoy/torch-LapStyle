@@ -637,12 +637,6 @@ class StyleAttention(nn.Module):
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
 
-        position = (self.rel_h + self.rel_w)
-        position = position.repeat(1, heads, 1, 1)
-
-        q = torch.matmul(q,position)
-        q = q + position
-
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
@@ -654,7 +648,10 @@ class StyleAttention(nn.Module):
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
         '''
+        position = (self.rel_h + self.rel_w)
+        position = position.repeat(1, heads, 1, 1)
 
+        q = q + position
         k = k.softmax(dim=-1)
 
         if self.norm_queries:
