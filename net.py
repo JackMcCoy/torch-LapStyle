@@ -629,17 +629,23 @@ class StyleAttention(nn.Module):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
-        q, k, v = (self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x))
+        q, = self.to_q(style_enc, _x)
+        if context is not None:
+            context = context * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+            k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
+        else:
+            k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
-
+        '''
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
+        '''
 
         k = k.softmax(dim=-1)
 
@@ -811,7 +817,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
