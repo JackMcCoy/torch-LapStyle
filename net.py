@@ -618,8 +618,9 @@ class StyleAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, kernel_size=1)
-        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2, kernel_size=1)
+        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
+        self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
+        self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
@@ -627,15 +628,15 @@ class StyleAttention(nn.Module):
     def forward(self, x, style_enc, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-
-        q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x.repeat(1,2,1,1)).chunk(2, dim=1))
+        _x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+        q, k, v = (self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x))
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         if context is not None:
-            ck, cv = self.to_kv(style_enc, context.repeat(1,2,1,1)).chunk(2, dim=1)
+            ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
