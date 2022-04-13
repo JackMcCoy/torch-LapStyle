@@ -629,12 +629,13 @@ class StyleAttention(nn.Module):
     def forward(self, x, style_enc, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        _x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+        _x = F.instance_norm(x)
         position = (self.rel_h + self.rel_w)
+        _x = _x + position
 
-        q = self.to_q(style_enc, _x+position)
+        q = self.to_q(style_enc, _x)
         if context is not None:
-            context = context * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+            context = F.instance_norm(context) + position
             k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
