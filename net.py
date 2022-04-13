@@ -649,7 +649,7 @@ class StyleAttention(nn.Module):
         '''
         position = (self.rel_h + self.rel_w).view(1, c, -1).permute(0, 2, 1)
         position = torch.matmul(position, q)
-
+        print(q.shape)
         q = q + position
         k = k.softmax(dim=-1)
 
