@@ -23,7 +23,7 @@ class AdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Conv2d(self.c_in, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect'))
         else:
-            self.depthwise_kernel_conv = nn.Linear(4, 1)
+            self.depthwise_kernel_conv = nn.Linear(16, 1)
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
