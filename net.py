@@ -616,9 +616,6 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
-
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
@@ -630,8 +627,6 @@ class StyleAttention(nn.Module):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
-        position = (self.rel_h + self.rel_w)
-        _x = _x + position
 
         q = self.to_q(style_enc, _x)
         if context is not None:
@@ -644,13 +639,12 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        '''
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
-        '''
+
 
         k = k.softmax(dim=-1)
 
@@ -684,6 +678,16 @@ class ThumbAdaConv(nn.Module):
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
+        )
+        self.mean_estimate = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.AdaptiveAvgPool2d(1)
+        )
+        self.std_estimate = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.AdaptiveAvgPool2d(1)
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
@@ -771,6 +775,9 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
+        #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
+        #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
+
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -800,16 +807,16 @@ class ThumbAdaConv(nn.Module):
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
-        if calc_style:
-            style_enc = self.style_encoding(sF).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,16)
-            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+        style_enc = self.style_encoding(sF).flatten(1)
+        mean, std = self.mean_estimate(style_enc), self.std_estimate(style_enc)
+        style_enc = self.projection(style_enc).view(b,self.s_d,16)
+        style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+
         res = 0
-        x = 0
+        x = torch.normal(mean.expand(cF['r4_1'].shape), std.expand(cF['r4_1'].shape))
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
-            if idx > 0:
-                res = checkpoint(residual, x, preserve_rng_state=False)
+            res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
                 '''
                 whitening = []
@@ -822,7 +829,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
+                    x = x + checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
