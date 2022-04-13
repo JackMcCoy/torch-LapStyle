@@ -605,7 +605,7 @@ class ResidualConvAttention(nn.Module):
 
 class StyleAttention(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 norm_queries=False):
+                 size=32, norm_queries=False):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -616,7 +616,8 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
+        self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
+        self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
 
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
@@ -646,7 +647,9 @@ class StyleAttention(nn.Module):
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
         '''
-
+        position = (self.rel_h + self.rel_w).view(1, c, -1).permute(0, 2, 1)
+        position = torch.matmul(position, q)
+        q = q + position
         k = k.softmax(dim=-1)
 
         if self.norm_queries:
