@@ -616,8 +616,8 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
+        self.rel_h = nn.Parameter(torch.randn([1, value_dim * heads, 1, size]), requires_grad=True)
+        self.rel_w = nn.Parameter(torch.randn([1, value_dim * heads, size, 1]), requires_grad=True)
 
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
@@ -649,6 +649,7 @@ class StyleAttention(nn.Module):
         '''
         position = (self.rel_h + self.rel_w).view(1, c, -1).permute(0, 2, 1)
         position = torch.matmul(position, q)
+
         q = q + position
         k = k.softmax(dim=-1)
 
