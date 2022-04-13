@@ -792,7 +792,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         if calc_style:
-            style_enc = self.style_encoding(sF).flatten(1)
+            style_enc = self.style_encoding(sF['r4_1']).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,16)
             style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         res = 0
