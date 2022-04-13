@@ -636,6 +636,7 @@ class StyleAttention(nn.Module):
             k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
+        print(q.shape)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -650,14 +651,16 @@ class StyleAttention(nn.Module):
         '''
         position = (self.rel_h + self.rel_w)
         position = position.reshape(1, heads, -1, h * w).transpose(3,2)
-        position = torch.matmul(position, q)
+        position = position + q
 
-        context = torch.einsum('bhdn,bhen->bhde', q, k)
-        print(context.shape)
-        print(position.shape)
-        context = context + position
-        attention = context.softmax(dim=-1)
-        out = torch.einsum('bhdn,bhde->bhen', v, attention)
+        q = q + position
+        k = k.softmax(dim=-1)
+
+        if self.norm_queries:
+            q = q.softmax(dim=-2)
+
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         out = self.out_norm(out)
