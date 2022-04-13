@@ -649,7 +649,7 @@ class StyleAttention(nn.Module):
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
         '''
-        position = (self.rel_h + self.rel_w).view(1, c, -1).permute(0, 2, 1)
+        position = (self.rel_h + self.rel_w)
         print(q.shape)
         print(position.shape)
         position = torch.matmul(position, q)
