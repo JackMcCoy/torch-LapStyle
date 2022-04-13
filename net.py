@@ -653,6 +653,8 @@ class StyleAttention(nn.Module):
         position = torch.matmul(position, q)
 
         context = torch.einsum('bhdn,bhen->bhde', q, k)
+        print(context.shape)
+        print(position.shape)
         context = context + position
         attention = context.softmax(dim=-1)
         out = torch.einsum('bhdn,bhde->bhen', v, attention)
