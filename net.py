@@ -18,7 +18,7 @@ from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings
 from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from fused_act import FusedLeakyReLU
-from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, mean_variance_norm, calc_mean_std
+from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
@@ -618,15 +618,15 @@ class StyleAttention(nn.Module):
 
         conv_kwargs = {'padding': padding, 'stride': stride, 'padding_mode': 'reflect','bias':False}
 
-        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
-        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2, norm=False)
+        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, kernel_size=1)
+        self.to_kv = AdaConv(chan*2, 16, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads * 2, kernel_size=1)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        #self.out_norm = nn.GroupNorm(16,chan_out)
+        self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, x, style_enc, mean_s, std_s, context=None):
+    def forward(self, x, style_enc, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
-        x = mean_variance_norm(x)
+
 
         q, k, v = (self.to_q(style_enc, x), *self.to_kv(style_enc, x.repeat(1,2,1,1)).chunk(2, dim=1))
 
@@ -635,7 +635,6 @@ class StyleAttention(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         if context is not None:
-            context = mean_variance_norm(context)
             ck, cv = self.to_kv(style_enc, context.repeat(1,2,1,1)).chunk(2, dim=1)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
@@ -650,8 +649,7 @@ class StyleAttention(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = (out + mean_s.expand(out.size())) * std_s.expand(out.size())
-        #out = self.out_norm(out)
+        out = self.out_norm(out)
         out = out + x
         return out
 
@@ -675,7 +673,6 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
-
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', 'r4_1', 'r3_1', None, 'r2_1', None, None]
         self.whitening = [True,False,True,False,True,False, False]
@@ -792,7 +789,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         if calc_style:
-            style_enc = self.style_encoding(sF['r4_1']).flatten(1)
+            style_enc = self.style_encoding(sF).flatten(1)
             style_enc = self.projection(style_enc).view(b,self.s_d,16)
             style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         res = 0
@@ -810,11 +807,10 @@ class ThumbAdaConv(nn.Module):
                 whitening = torch.cat(whitening, 0).view(N, C, h, w)
                 '''
                 whitening = cF[injection]
-                mean, std = calc_mean_std(sF[injection])
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, mean, std, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],whitening, style_enc, mean, std, x, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],whitening, style_enc, x, preserve_rng_state=False)
             elif not injection is None:
                 x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
@@ -1137,7 +1133,7 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
 def identity_loss(i, F, encoder, decoder, content=False, repeat_style=True):
-    Icc = decoder(F, F)
+    Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)

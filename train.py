@@ -334,7 +334,7 @@ def drafting_train():
         sF = enc_(si)
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
-            stylized = dec_(cF, sF)
+            stylized = dec_(cF, sF['r4_1'])
 
             for param in disc_.parameters():
                 param.grad = None
@@ -354,7 +354,7 @@ def drafting_train():
         for param in dec_.parameters():
             param.grad = None
 
-        stylized = dec_(cF, sF)
+        stylized = dec_(cF, sF['r4_1'])
 
         losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
                              calc_identity=args.identity_loss == 1, disc_loss=True,
