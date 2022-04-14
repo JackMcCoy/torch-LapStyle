@@ -651,7 +651,6 @@ class StyleAttention(nn.Module):
         '''
 
         position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
-        position = position * q
 
         k = (k + position).softmax(dim=-1)
 
