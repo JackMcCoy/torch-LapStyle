@@ -631,28 +631,22 @@ class StyleAttention(nn.Module):
 
         _x = F.instance_norm(x)
 
-        q = self.to_q(style_enc, _x)
-        if context is not None:
-            context = F.instance_norm(context)
-            k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
-        else:
-            k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        '''
+        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
+
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
+            ck = ck+position
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
-        '''
 
-        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
-
-        k = (k + position).softmax(dim=-1)
+        k = k.softmax(dim=-1)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
