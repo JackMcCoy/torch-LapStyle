@@ -636,6 +636,7 @@ class StyleAttention(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         position = self.position.reshape(1, heads, -1, h * w)
+        k = k + position
 
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
