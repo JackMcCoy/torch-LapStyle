@@ -633,7 +633,7 @@ class StyleAttention(nn.Module):
 
         q = self.to_q(style_enc, _x)
         if context is not None:
-            context = F.instance_norm(context) + position
+            context = F.instance_norm(context)
             k, v = self.to_k(style_enc, context), self.to_v(style_enc, context)
         else:
             k, v = self.to_k(style_enc, _x), self.to_v(style_enc, _x)
@@ -823,7 +823,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
+                    x = x + checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
