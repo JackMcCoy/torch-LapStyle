@@ -15,7 +15,7 @@ from torchvision.models.feature_extraction import create_feature_extractor
 
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
-from function import get_embeddings
+from function import get_embeddings, positionalencoding2d
 from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from fused_act import FusedLeakyReLU
 from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
@@ -616,12 +616,10 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
-
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
+        self.position = positionalencoding2d(chan, size, size).requires_grad_(False)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
@@ -637,7 +635,7 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
+        position = self.position.reshape(1, heads, -1, h * w)
 
         if context is not None:
             ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
