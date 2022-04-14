@@ -650,7 +650,7 @@ class StyleAttention(nn.Module):
             v = torch.cat((v, cv), dim=3)
         '''
 
-        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w).transpose(3,2)
+        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         position = position * q
 
         k = (k + position).softmax(dim=-1)
