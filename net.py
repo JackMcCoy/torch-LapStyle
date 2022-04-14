@@ -706,8 +706,8 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()
             ),
         ])
-        ks = 7 if size==256 else 5
-        p = 3 if size==256 else 2
+        ks = 7 if size==256 else 3
+        p = 3 if size==256 else 1
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
