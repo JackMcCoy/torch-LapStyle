@@ -619,7 +619,7 @@ class StyleAttention(nn.Module):
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
-        self.position = positionalencoding2d(chan, size, size).requires_grad_(False)
+        self.position = positionalencoding2d(key_dim, size, size).requires_grad_(False).repeat(1,heads,1,1)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
