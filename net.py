@@ -619,7 +619,6 @@ class StyleAttention(nn.Module):
         self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
         self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
-        self.position = positionalencoding2d(key_dim, size, size).requires_grad_(False).repeat(1,heads,1,1)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
@@ -629,14 +628,14 @@ class StyleAttention(nn.Module):
 
         _x = F.instance_norm(x)
 
-        q, k, v = self.to_q(style_enc, _x + self.position), self.to_k(style_enc, _x + self.position), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         if context is not None:
-            ck, cv = self.to_k(style_enc, context + self.position), self.to_v(style_enc, context)
+            ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
