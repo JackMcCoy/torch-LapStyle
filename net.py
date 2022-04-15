@@ -636,7 +636,7 @@ class StyleAttention(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         if context is not None:
-            ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
+            ck, cv = self.to_k(style_enc, context + self.position), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
@@ -811,7 +811,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],whitening, style_enc, preserve_rng_state=False)
                 else:
-                    x = x + checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
