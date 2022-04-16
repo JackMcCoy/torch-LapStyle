@@ -792,9 +792,9 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             MHSA(512, width = size//8, height = size//8, s_d = s_d, batch_size=batch_size),
             nn.Identity(),
-            MHSA(256, width = size//4, height = size//4, s_d = s_d, batch_size=batch_size),
+            StyleAttention(256, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
             nn.Identity(),
-            MHSA(128, width = size//2, height = size//2, s_d = s_d, batch_size=batch_size),
+            StyleAttention(128, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -849,7 +849,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx],style_enc, whitening, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],style_enc, whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
