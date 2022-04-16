@@ -604,7 +604,7 @@ class ResidualConvAttention(nn.Module):
 
 
 class MHSA(nn.Module):
-    def __init__(self, n_dims, width=16, height=16, s_d=64, batch_size=):
+    def __init__(self, n_dims, width=16, height=16, s_d=64, batch_size=8):
         super(MHSA, self).__init__()
 
         self.query = AdaConv(n_dims, n_dims//s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=False)
