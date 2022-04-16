@@ -618,6 +618,7 @@ class MHSA(nn.Module):
 
     def forward(self, style, x):  # b, c, 16,16
         n_batch, C, width, height = x.size()
+        x = F.instance_norm(x)
         q = self.query(style, x).view(n_batch, C, -1)
         k = self.key(style, x).view(n_batch, C, -1)
         v = self.value(style, x).view(n_batch, C, -1)
