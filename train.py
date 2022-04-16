@@ -288,7 +288,7 @@ def drafting_train():
     disc_ = torch.jit.trace(build_disc(
         disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'), check_trace=False)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), lr=args.disc_lr)
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
     if args.load_disc == 1 and args.load_model != 'none':
         try:
             opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
@@ -418,9 +418,9 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                #state_dict = dec_optimizer.state_dict()
-                #torch.save(copy.deepcopy(state_dict), save_dir /
-                #           'dec_optimizer.pth.tar')
+                state_dict = opt_D.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'dec_optimizer.pth.tar')
                 del(state_dict)
 
 def revision_train():
