@@ -699,11 +699,11 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
@@ -789,6 +789,7 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
+        '''
         self.attention_block = nn.ModuleList([
             MHSA(512, width = size//8, height = size//8, s_d = s_d, batch_size=batch_size),
             nn.Identity(),
@@ -796,6 +797,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             MHSA(128, width = size//2, height = size//2, s_d = s_d, batch_size=batch_size),
         ])
+        '''
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -837,20 +839,7 @@ class ThumbAdaConv(nn.Module):
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
                 res = checkpoint(residual, x, preserve_rng_state=False)
-            if whiten_layer:
-                '''
-                whitening = []
-                N, C, h, w = cF[injection].shape
-                for i in range(N):
-                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(N, C, h, w)
-                '''
-                whitening = cF[injection]
-                if idx==0:
-                    x = self.attention_block[idx](whitening)
-                else:
-                    x = checkpoint(self.attention_block[idx], x, preserve_rng_state=False)
-            elif not injection is None:
+            if not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
