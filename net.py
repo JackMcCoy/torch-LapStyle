@@ -616,12 +616,12 @@ class MHSA(nn.Module):
 
         self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, style, x):  # b, c, 16,16
+    def forward(self, x):  # b, c, 16,16
         n_batch, C, width, height = x.size()
         x = F.instance_norm(x)
-        q = self.query(style, x).view(n_batch, C, -1)
-        k = self.key(style, x).view(n_batch, C, -1)
-        v = self.value(style, x).view(n_batch, C, -1)
+        q = self.query(x).view(n_batch, C, -1)
+        k = self.key(x).view(n_batch, C, -1)
+        v = self.value(x).view(n_batch, C, -1)
 
         content_content = torch.bmm(q.permute(0, 2, 1), k)
 
