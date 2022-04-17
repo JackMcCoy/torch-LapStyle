@@ -847,9 +847,9 @@ class ThumbAdaConv(nn.Module):
                 '''
                 whitening = cF[injection]
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx], whitening, preserve_rng_state=False)
+                    x = self.attention_block[idx](whitening)
                 else:
-                    x = checkpoint(self.attention_block[idx], whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx], x, preserve_rng_state=False)
             elif not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
