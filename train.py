@@ -285,15 +285,15 @@ def drafting_train():
     else:
         disc_state = None
         init_weights(dec_)
-    disc_ = torch.jit.trace(build_disc(
-        disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'), check_trace=False)
+    #disc_ = torch.jit.trace(build_disc(
+    #    disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'), check_trace=False)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
-    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
-    if args.load_disc == 1 and args.load_model != 'none':
-        try:
-            opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
-        except:
-            print('discriminator optimizer not loaded')
+    #opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
+    #if args.load_disc == 1 and args.load_model != 'none':
+    #    try:
+    #        opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
+    #    except:
+    #        print('discriminator optimizer not loaded')
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -316,8 +316,8 @@ def drafting_train():
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-                         decay=args.disc_lr)
+        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.disc_lr)
 
         ci = content_normalize(next(content_iter))
         si = style_normalize(next(style_iter))
@@ -332,6 +332,7 @@ def drafting_train():
         si = si.to(device)
         cF = enc_(ci)
         sF = enc_(si)
+        '''
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
             stylized = dec_(cF, sF['r4_1'])
@@ -349,15 +350,16 @@ def drafting_train():
 
             set_requires_grad(disc_, False)
             set_requires_grad(dec_, True)
+        '''
 
-        dec_.train()
+        #dec_.train()
         for param in dec_.parameters():
             param.grad = None
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, disc_,
-                             calc_identity=args.identity_loss == 1, disc_loss=True,
+        losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
+                             calc_identity=args.identity_loss == 1, disc_loss=False,
                              mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
                              content_contrastive_loss=args.content_contrastive_loss == 1,
                              remd_loss=remd_loss, patch_loss=False, patch_stylized=None, top_level_patch=None,
@@ -380,10 +382,10 @@ def drafting_train():
             loss_dict = {}
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, loss_Gp_GAN, loss_D, style_contrastive_loss, content_contrastive_loss,
+                     mdog, style_contrastive_loss, content_contrastive_loss,
                      l_identity1, l_identity2, l_identity3, l_identity4, pixel_loss],
                     ['LR', 'Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss', 'Decoder Disc. Loss', 'Discriminator Loss',
+                     'Patch Loss', 'MXDOG Loss',
                      'Style Contrastive Loss', 'Content Contrastive Loss',
                      "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss",
                      'Pixel Loss']):
@@ -418,9 +420,9 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'dec_optimizer.pth.tar')
+                #state_dict = opt_D.state_dict()
+                #torch.save(copy.deepcopy(state_dict), save_dir /
+                #           'dec_optimizer.pth.tar')
                 del(state_dict)
 
 def revision_train():
