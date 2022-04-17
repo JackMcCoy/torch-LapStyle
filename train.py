@@ -157,6 +157,7 @@ parser.add_argument('--revision_depth', type=int, default=1)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc2_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
+parser.add_argument('--grid_width', type=int, default=4)
 parser.add_argument('--accumulation_steps', type=int, default=1)
 parser.add_argument('--revision_full_size_depth', type=int, default=1)
 parser.add_argument('--content_relt', type=float, default=18.5)
@@ -403,9 +404,9 @@ def drafting_train():
 
         with torch.no_grad():
             if (n + 1) % 50 == 0:
-                draft_img_grid = make_grid(invStyleTrans(stylized), nrow=4, scale_each=True)
-                style_source_grid = make_grid(si, nrow=4, scale_each=True)
-                content_img_grid = make_grid(ci, nrow=4, scale_each=True)
+                draft_img_grid = make_grid(invStyleTrans(stylized), nrow=args.grid_width, scale_each=True)
+                style_source_grid = make_grid(si, nrow=args.grid_width, scale_each=True)
+                content_img_grid = make_grid(ci, nrow=args.grid_width, scale_each=True)
                 save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
