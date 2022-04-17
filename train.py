@@ -376,7 +376,7 @@ def drafting_train():
         loss.backward()
         if n > 0:
             dec_optimizer.step()
-        disc_.train()
+        #disc_.train()
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
