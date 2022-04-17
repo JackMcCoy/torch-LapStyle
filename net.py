@@ -839,6 +839,15 @@ class ThumbAdaConv(nn.Module):
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
             if idx > 0:
                 res = checkpoint(residual, x, preserve_rng_state=False)
+            '''
+            if whiten_layer:
+                whitening = []
+                N, C, h, w = cF[injection].shape
+                for i in range(N):
+                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
+                whitening = torch.cat(whitening, 0).view(N, C, h, w)
+                whitening = cF[injection]
+            '''
             if not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
