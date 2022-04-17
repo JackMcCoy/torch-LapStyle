@@ -607,9 +607,9 @@ class MHSA(nn.Module):
     def __init__(self, n_dims, width=16, height=16, s_d=64, batch_size=8):
         super(MHSA, self).__init__()
 
-        self.query = AdaConv(n_dims, n_dims//s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=False)
-        self.key = AdaConv(n_dims, n_dims//s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=False)
-        self.value = AdaConv(n_dims, n_dims//s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=False)
+        self.query = nn.Conv2d(n_dims, n_dims, kernel_size=1)
+        self.key = nn.Conv2d(n_dims, n_dims, kernel_size=1)
+        self.value = nn.Conv2d(n_dims, n_dims, kernel_size=1)
 
         self.rel_h = nn.Parameter(torch.randn([1, n_dims, 1, height]), requires_grad=True)
         self.rel_w = nn.Parameter(torch.randn([1, n_dims, width, 1]), requires_grad=True)
@@ -792,9 +792,9 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             MHSA(512, width = size//8, height = size//8, s_d = s_d, batch_size=batch_size),
             nn.Identity(),
-            StyleAttention(256, s_d=self.s_d, batch_size=batch_size, heads=4, padding=0),
+            MHSA(256, width = size//4, height = size//4, s_d = s_d, batch_size=batch_size),
             nn.Identity(),
-            StyleAttention(128, s_d=self.s_d, batch_size=batch_size, heads=2, padding=0),
+            MHSA(128, width = size//2, height = size//2, s_d = s_d, batch_size=batch_size),
         ])
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -847,9 +847,9 @@ class ThumbAdaConv(nn.Module):
                 '''
                 whitening = cF[injection]
                 if idx==0:
-                    x = checkpoint(self.attention_block[idx],style_enc, whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx], whitening, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx],x, style_enc, whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx], whitening, preserve_rng_state=False)
             elif not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
