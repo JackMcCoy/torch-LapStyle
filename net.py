@@ -665,9 +665,9 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
