@@ -854,7 +854,7 @@ class ThumbAdaConv(nn.Module):
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
-            if idx > 0 and idx <len(whiten_layer)-1:
+            if idx > 0 and idx <len(self.whitening)-1:
                 res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
                 '''
@@ -873,7 +873,7 @@ class ThumbAdaConv(nn.Module):
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
-            if idx < len(whiten_layer)-1:
+            if idx < len(self.whitening)-1:
                 x = res + checkpoint(learnable, x, preserve_rng_state=False)
             else:
                 x = checkpoint(learnable, x, preserve_rng_state=False)
