@@ -868,7 +868,7 @@ class ThumbAdaConv(nn.Module):
                 if idx==0:
                     x = checkpoint(self.attention_block[idx], style_enc, whitening, preserve_rng_state=False)
                 else:
-                    x = checkpoint(self.attention_block[idx], style_enc, whitening, preserve_rng_state=False)
+                    x = checkpoint(self.attention_block[idx], style_enc, x, preserve_rng_state=False)
             elif not injection is None:
                 x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
             elif type(ada) != nn.Identity:
