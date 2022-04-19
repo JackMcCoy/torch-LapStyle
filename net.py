@@ -604,9 +604,10 @@ class ResidualConvAttention(nn.Module):
 
 
 class AdaConv_w_FF(nn.Module):
-    def __init__(self, n_dims, s_d, batch_size, norm=False):
+    def __init__(self, n_dims, s_d, batch_size, c_out=None,norm=False):
         super(AdaConv_w_FF, self).__init__()
-        self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
+        c_out = n_dims if c_out is None else c_out
+        self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=c_out, norm=norm)
         self.relu = nn.LeakyReLU()
         self.conv = nn.Sequential(
             nn.Conv2d(n_dims, n_dims, kernel_size = 3, padding='same', padding_mode='reflect'),
@@ -665,9 +666,9 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, c_out=key_dim * heads, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
