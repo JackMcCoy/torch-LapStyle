@@ -714,13 +714,13 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            nn.Identity(),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
         ])
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
@@ -728,8 +728,8 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
-        self.content_injection_layer = ['r4_1', 'r4_1', None, None, None, None, None]
-        self.whitening = [True,False,False,False,False,False, False]
+        self.content_injection_layer = ['r4_1', None, None, None, None, None, None]
+        self.whitening = [False,False,False,False,False,False, True]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -797,7 +797,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3)),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
             )
@@ -806,11 +806,13 @@ class ThumbAdaConv(nn.Module):
 
 
         self.attention_block = nn.ModuleList([
-            MHSA(512, width = size//8, height = size//8, s_d = s_d, batch_size=batch_size),
             nn.Identity(),
             nn.Identity(),
             nn.Identity(),
             nn.Identity(),
+            nn.Identity(),
+            nn.Identity(),
+            MHSA(64, width=size, height=size, s_d=s_d, batch_size=batch_size),
         ])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
