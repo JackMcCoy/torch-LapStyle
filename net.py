@@ -665,9 +665,9 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.to_q = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
-        self.to_k = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
-        self.to_v = AdaConv(chan, 8, s_d=s_d, batch_size=batch_size, c_out=key_dim * heads, norm=False)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -675,7 +675,7 @@ class StyleAttention(nn.Module):
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, x, style_enc, context=None):
+    def forward(self, style_enc, x, context=None):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
@@ -812,7 +812,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
             nn.Identity(),
-            MHSA(64, width=size, height=size, s_d=s_d, batch_size=batch_size),
+            StyleAttention(64, s_d=s_d, batch_size=batch_size),
         ])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
