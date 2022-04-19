@@ -606,7 +606,7 @@ class ResidualConvAttention(nn.Module):
 class AdaConv_w_FF(nn.Module):
     def __init__(self, n_dims, s_d, batch_size, norm=False):
         super(AdaConv_w_FF, self).__init__()
-        self.ada = AdaConv(n_dims, 8, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
+        self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
         self.relu = nn.LeakyReLU()
         self.conv = nn.Sequential(
             nn.Conv2d(n_dims, n_dims, kernel_size = 3, padding='same', padding_mode='reflect'),
@@ -812,7 +812,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size),
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
