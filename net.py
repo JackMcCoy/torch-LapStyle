@@ -873,7 +873,7 @@ class ThumbAdaConv(nn.Module):
                 if idx == 0:
                     x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
                 else:
-                    x = torch.cat(x,checkpoint(ada, style_enc, cF[injection], preserve_rng_state=False),1)
+                    x = torch.cat([x,checkpoint(ada, style_enc, cF[injection], preserve_rng_state=False)],1)
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
             if idx < len(self.whitening)-1:
