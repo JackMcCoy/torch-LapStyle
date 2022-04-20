@@ -770,7 +770,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
+                nn.Conv2d(512, 256, (3, 3)),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
@@ -786,7 +786,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3)),
+                nn.Conv2d(256, 128, (3, 3)),
                 nn.LeakyReLU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -870,7 +870,10 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = checkpoint(self.attention_block[idx], style_enc, x, whitening, preserve_rng_state=False)
             elif not injection is None:
-                x = x + self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
+                if idx == 0:
+                    x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
+                else:
+                    x = torch.cat(x,checkpoint(ada, style_enc, cF[injection], preserve_rng_state=False),1)
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
             if idx < len(self.whitening)-1:
