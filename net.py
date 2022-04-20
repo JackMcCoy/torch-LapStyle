@@ -717,9 +717,9 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
         ])
@@ -730,7 +730,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
-        self.whitening = [False,False,False,False,False,False, True]
+        self.whitening = [False,False,True,False,True,False, True]
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -770,7 +770,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
+                nn.Conv2d(256, 256, (3, 3)),
                 nn.LeakyReLU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3)),
@@ -786,7 +786,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3)),
+                nn.Conv2d(128, 128, (3, 3)),
                 nn.LeakyReLU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -808,9 +808,9 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
+            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=1),
             nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
+            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
@@ -870,10 +870,7 @@ class ThumbAdaConv(nn.Module):
                 else:
                     x = checkpoint(self.attention_block[idx], style_enc, x, whitening, preserve_rng_state=False)
             elif not injection is None:
-                if idx == 0:
-                    x = self.relu(checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False))
-                else:
-                    x = torch.cat([x,checkpoint(ada, style_enc, cF[injection], preserve_rng_state=False)],1)
+                x = x + checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False)
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
             if idx < len(self.whitening)-1:
