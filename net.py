@@ -808,7 +808,7 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=1),
+            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=4),
             nn.Identity(),
             StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
@@ -854,7 +854,6 @@ class ThumbAdaConv(nn.Module):
         x = 0
         for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
                 zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
-            print(idx)
             if idx > 0 and idx <len(self.whitening)-1:
                 res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
