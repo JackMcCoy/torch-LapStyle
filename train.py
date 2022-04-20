@@ -139,6 +139,7 @@ parser.add_argument('--log_dir', default='./logs',
                     help='Directory to save the log')
 parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--disc_lr', type=float, default=1e-3)
+parser.add_argument('--warmup_start', type=float, default=1e-7)
 parser.add_argument('--lr_decay', type=float, default=5e-5)
 parser.add_argument('--weight_decay', type=float, default=0)
 parser.add_argument('--max_iter', type=int, default=160000)
@@ -315,7 +316,7 @@ def drafting_train():
     remd_loss = True if args.remd_loss == 1 else False
 
     for n in tqdm(range(args.max_iter), position=0):
-        warmup_lr_adjust(dec_optimizer, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
         #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
         #                 decay=args.disc_lr)
