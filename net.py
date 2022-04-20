@@ -607,13 +607,13 @@ class AdaConv_w_FF(nn.Module):
     def __init__(self, n_dims, s_d, batch_size, norm=False):
         super(AdaConv_w_FF, self).__init__()
         self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
-        self.relu = nn.LeakyReLU()
+        self.gelu = nn.GELU()
         self.conv = nn.Sequential(
             nn.Conv2d(n_dims, n_dims, kernel_size = 3, padding='same', padding_mode='reflect'),
-            nn.LeakyReLU()
+            nn.GELU()
         )
     def forward(self, style, x):
-        x = self.relu(self.ada(style, x))
+        x = self.gelu(self.ada(style, x))
         x = self.conv(x)
         return x
 
