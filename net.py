@@ -669,8 +669,6 @@ class StyleAttention(nn.Module):
         self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
-        self.context_to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.context_to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
 
@@ -692,7 +690,7 @@ class StyleAttention(nn.Module):
 
         if context is not None:
             context = F.instance_norm(context)
-            ck, cv = self.context_to_k(style_enc, context), self.context_to_v(style_enc, context)
+            ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
             ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
             k = torch.cat((k, ck), dim=3)
             v = torch.cat((v, cv), dim=3)
