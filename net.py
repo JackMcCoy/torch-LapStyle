@@ -731,6 +731,7 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
+        '''
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -752,6 +753,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Identity(),
         ])
+        '''
         #ks = 7 if size==256 else 3
         #p = 3 if size==256 else 1
         ks = 3
@@ -852,10 +854,10 @@ class ThumbAdaConv(nn.Module):
             style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         res = 0
         x = 0
-        for idx, (ada, learnable, injection,residual,whiten_layer) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer, self.residual,self.whitening)):
-            if idx > 0 and idx <len(self.whitening)-1:
-                res = checkpoint(residual, x, preserve_rng_state=False)
+        for idx, (ada, learnable, injection,whiten_layer) in enumerate(
+                zip(self.adaconvs, self.learnable, self.content_injection_layer,self.whitening)):
+            #if idx > 0 and idx <len(self.whitening)-1:
+            #    res = checkpoint(residual, x, preserve_rng_state=False)
             if whiten_layer:
                 '''
                 whitening = []
@@ -873,10 +875,12 @@ class ThumbAdaConv(nn.Module):
                 x = x + checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False)
             elif type(ada) != nn.Identity:
                 x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
+            '''
             if idx < len(self.whitening)-1:
                 x = res + checkpoint(learnable, x, preserve_rng_state=False)
             else:
-                x = checkpoint(learnable, x, preserve_rng_state=False)
+            '''
+            x = checkpoint(learnable, x, preserve_rng_state=False)
         return x
 
 
