@@ -24,7 +24,7 @@ import random
 from function import crop_mark_extract, _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
-from net import calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
+from net import loss_no_patch, calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
 from function import CartesianGrid as Grid
@@ -313,7 +313,6 @@ def drafting_train():
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
-    remd_loss = True if args.remd_loss == 1 else False
 
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
@@ -323,13 +322,13 @@ def drafting_train():
 
         ci = next(content_iter)
         si = next(style_iter)
-
+        '''
         if args.style_contrastive_loss == 1:
             ci_ = ci[1:]
             ci_ = torch.cat([ci_, ci[0:1]], 0)
             ci = torch.cat([ci, ci_], 0)
             si = torch.cat([si, si], 0)
-
+        '''
         ci = ci.to(device)
         si = si.to(device)
         ci = content_normalize(ci)
@@ -362,47 +361,33 @@ def drafting_train():
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = calc_losses(stylized, ci, si, cF, enc_, dec_, None, None,
-                             calc_identity=args.identity_loss == 1, disc_loss=False,
-                             mdog_losses=args.mdog_loss, style_contrastive_loss=args.style_contrastive_loss == 1,
-                             content_contrastive_loss=args.content_contrastive_loss == 1,
-                             remd_loss=remd_loss, patch_loss=False, patch_stylized=None, top_level_patch=None,
-                             sF=sF)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, \
-        mdog, loss_Gp_GAN, patch_loss, style_contrastive_loss, content_contrastive_loss, pixel_loss = losses
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_sF)
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4 = losses
 
         loss = loss_s * args.style_weight + content_relt * args.content_relt + \
-               style_remd * args.style_remd + patch_loss * args.patch_loss + \
-               loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight + l_identity1 * 50 \
-               + l_identity2 + l_identity3 * 50 + l_identity4 + \
-               style_contrastive_loss * args.style_contrastive_weight + content_contrastive_loss * args.content_contrastive_weight
+               style_remd * args.style_remd + l_identity1 * 50 + \
+               l_identity2 + l_identity3 * 50 + l_identity4
 
         loss.backward()
-        if n > 0:
-            dec_optimizer.step()
+        dec_optimizer.step()
         #disc_.train()
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
             for l, s in zip(
-                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt, patch_loss,
-                     mdog, style_contrastive_loss, content_contrastive_loss,
-                     l_identity1, l_identity2, l_identity3, l_identity4, pixel_loss],
+                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt,
+                     l_identity1, l_identity2, l_identity3, l_identity4],
                     ['LR', 'Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     'Patch Loss', 'MXDOG Loss',
-                     'Style Contrastive Loss', 'Content Contrastive Loss',
-                     "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss",
-                     'Pixel Loss']):
+                     "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss"]):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l) == int:
                     if l != 0:
                         loss_dict[s] = l
-            if (n + 1) % 10 == 0:
-                loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             print(str(n) + '/' + str(args.max_iter) + ': ' + '\t'.join(
                 [str(k) + ': ' + str(v) for k, v in loss_dict.items()]))
-
+            if (n + 1) % 10 == 0:
+                loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             wandb.log(loss_dict, step=n)
 
         with torch.no_grad():

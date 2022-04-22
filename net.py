@@ -18,7 +18,7 @@ from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
 from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, FusedConvNoiseBias
 from fused_act import FusedLeakyReLU
-from losses import pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
+from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
@@ -862,7 +862,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[6], style_enc, cF['r1_1'], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[6], style_enc, x, cF['r1_1'], preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
 
         return x
@@ -1181,15 +1181,13 @@ content_emd_loss = CalcContentReltLoss
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 
-def identity_loss(i, F, encoder, decoder, content=False, repeat_style=True):
+def identity_loss(i, F, encoder, decoder):
     Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
-    l_identity2 = 0
-    check = ['r5_1','r4_1']
-    for key in check:
-        l_identity2 = l_identity2 + content_loss(Fcc[key], F[key])
+    #check = ['r5_1','r4_1']
+    l_identity2 = content_loss(Fcc['r5_1'], F['r5_1']) + content_loss(Fcc['r4_1'], F['r4_1'])
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
@@ -1242,6 +1240,28 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
 
 etf = ETF(1,1,90).to(device)
 
+def loss_no_patch(stylized: torch.Tensor,
+                ci: torch.Tensor,
+                si: torch.Tensor,
+                cF: typing.Dict[str,torch.Tensor],
+                encoder:nn.Module,
+                decoder:nn.Module,
+                sF: typing.Dict[str,torch.Tensor]):
+    l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    stylized_feats = encoder(stylized)
+    loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+    loss_s = loss_s + style_loss(stylized_feats['r2_1'], sF['r2_1'].detach())
+    loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
+    loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+    loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
+    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
+                 CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
+                   CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4
+
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
                 si: torch.Tensor,
@@ -1263,8 +1283,8 @@ def calc_losses(stylized: torch.Tensor,
                 patch_stylized = None,):
     stylized_feats = encoder(stylized)
     if calc_identity==True:
-        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder, repeat_style=False, content=True)
-        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder, repeat_style=True)
+        l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+        l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     else:
         l_identity1 = 0
         l_identity2 = 0

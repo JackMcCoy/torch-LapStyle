@@ -83,6 +83,14 @@ def CalcStyleEmdLoss(X, Y):
         remd=0
     return remd
 
+def CalcStyleEmdNoSample(X, Y):
+    """Calc Style Emd Loss.
+    """
+    X = X.flatten(2).transpose(1,2).contiguous()
+    Y = Y.flatten(2).transpose(1,2).contiguous()
+    remd = sinkhorn_loss(X,Y).mean()
+    return remd
+
 cosinesimilarity = nn.CosineSimilarity()
 
 def calc_emd_loss(pred, target):
@@ -129,6 +137,20 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     d = d.mean()
     return d
 
+def CalcContentReltNoSample(X,Y, eps=1e-5):
+    X = X.flatten(2).transpose(1,2).contiguous()
+    Y = Y.flatten(2).transpose(1,2).contiguous()
+    # Relaxed EMD
+    Mx = cosd_dist(X)
+    Mx = Mx / (Mx.sum(1, keepdim=True)+eps)
+
+    My = cosd_dist(Y)
+    My = My / (My.sum(1, keepdim=True)+eps)
+
+    d = torch.abs(Mx - My).mean(1) * X.size(1)
+    d = d.mean()
+    return d
+
 def pixel_loss(X, Y):
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
     #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
@@ -149,7 +171,11 @@ class CalcContentLoss():
     def __init__(self):
         self.mse_loss = nn.MSELoss()
 
-    def __call__(self, pred, target, norm=False):
+    def no_norm(self, pred, target):
+        if (norm == False):
+            return self.mse_loss(pred, target)
+
+    def __call__(self, pred, target):
         """Forward Function.
 
         Args:
@@ -157,10 +183,8 @@ class CalcContentLoss():
             target (Tensor): of shape (N, C, H, W). Ground truth tensor.
             norm(Bool): whether use mean_variance_norm for pred and target
         """
-        if (norm == False):
-            return self.mse_loss(pred, target)
-        else:
-            return self.mse_loss(mean_variance_norm(pred),
+
+        return self.mse_loss(mean_variance_norm(pred),
                                  mean_variance_norm(target))
 
 
@@ -295,7 +319,6 @@ def calc_mean_std(feat, eps=1e-5):
         shape: [N, C, 1, 1]
     """
     size = feat.shape
-    assert (len(size) == 4)
     N, C = size[:2]
     feat_var,feat_mean = torch.var_mean(feat.view(N, C, -1),unbiased=False,dim=2)
     feat_mean = feat_mean.view(N,C,1,1)
