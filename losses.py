@@ -172,7 +172,7 @@ class CalcContentLoss():
         self.mse_loss = nn.MSELoss()
 
     def no_norm(self, pred, target):
-        ]return self.mse_loss(pred, target)
+        return self.mse_loss(pred, target)
 
     def __call__(self, pred, target):
         """Forward Function.
