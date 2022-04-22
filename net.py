@@ -688,11 +688,13 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
+        '''
         context = F.instance_norm(context)
         ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
+        '''
 
         k = k.softmax(dim=-1)
 
@@ -716,9 +718,9 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
         ])
@@ -809,9 +811,9 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=4),
             nn.Identity(),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=2),
+            nn.Identity(),
+            nn.Identity(),
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
@@ -854,15 +856,15 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[1], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[2], style_enc, cF['r3_1'], x, preserve_rng_state=False)
+        x = x + self.relu(checkpoint(self.adaconvs[2], style_enc, cF['r3_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[3], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[4], style_enc, cF['r2_1'], x, preserve_rng_state=False)
+        x = x + self.relu(checkpoint(self.adaconvs[4], style_enc, cF['r2_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[6], style_enc, cF['r1_1'], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[6], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
 
         return x
