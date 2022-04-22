@@ -413,6 +413,7 @@ def drafting_train():
                 #torch.save(copy.deepcopy(state_dict), save_dir /
                 #           'dec_optimizer.pth.tar')
                 del(state_dict)
+    del(si, ci, stylized, cF, sF, loss, losses)
 
 def revision_train():
     num_rev = {256 * 2 ** i: i for i in range(4)}[args.crop_size]
