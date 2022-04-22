@@ -361,7 +361,7 @@ def drafting_train():
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_sF)
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4 = losses
 
         loss = loss_s * args.style_weight + content_relt * args.content_relt + \
