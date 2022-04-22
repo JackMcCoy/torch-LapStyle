@@ -321,8 +321,8 @@ def drafting_train():
         #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
         #                 decay=args.disc_lr)
 
-        ci = content_normalize(next(content_iter))
-        si = style_normalize(next(style_iter))
+        ci = next(content_iter)
+        si = next(style_iter)
 
         if args.style_contrastive_loss == 1:
             ci_ = ci[1:]
@@ -332,6 +332,8 @@ def drafting_train():
 
         ci = ci.to(device)
         si = si.to(device)
+        ci = content_normalize(ci)
+        si = style_normalize(si)
         cF = enc_(ci)
         sF = enc_(si)
         '''

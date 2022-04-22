@@ -15,7 +15,7 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.style_groups = (s_d//p)
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
-        self.norm = norm
+        self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(s_d,self.c_in,kernel_size=1),
             nn.LeakyReLU(),
@@ -51,9 +51,7 @@ class AdaConv(nn.Module):
 
         a, b, c, d = predicted.size()
         #predicted = self.project_in(predicted)
-        if self.norm:
-            predicted = F.instance_norm(predicted)
-            #predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
+        predicted = self.norm(predicted)
 
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(

@@ -675,7 +675,7 @@ class StyleAttention(nn.Module):
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, style_enc, x, context=None):
+    def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
@@ -688,12 +688,11 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        if context is not None:
-            context = F.instance_norm(context)
-            ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
-            ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
-            k = torch.cat((k, ck), dim=3)
-            v = torch.cat((v, cv), dim=3)
+        context = F.instance_norm(context)
+        ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
+        ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
+        k = torch.cat((k, ck), dim=3)
+        v = torch.cat((v, cv), dim=3)
 
         k = k.softmax(dim=-1)
 
@@ -848,39 +847,24 @@ class ThumbAdaConv(nn.Module):
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
-        if calc_style:
-            style_enc = self.style_encoding(sF).flatten(1)
-            style_enc = self.projection(style_enc).view(b,self.s_d,16)
-            style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        res = 0
-        x = 0
-        for idx, (ada, learnable, injection,whiten_layer) in enumerate(
-                zip(self.adaconvs, self.learnable, self.content_injection_layer,self.whitening)):
-            #if idx > 0 and idx <len(self.whitening)-1:
-            #    res = checkpoint(residual, x, preserve_rng_state=False)
-            if whiten_layer:
-                '''
-                whitening = []
-                N, C, h, w = cF[injection].shape
-                for i in range(N):
-                    whitening.append(whiten(cF[injection][i]).unsqueeze(0))
-                whitening = torch.cat(whitening, 0).view(N, C, h, w)
-                '''
-                whitening = cF[injection]
-                if idx==0:
-                    x = checkpoint(self.attention_block[idx], style_enc, whitening, preserve_rng_state=False)
-                else:
-                    x = checkpoint(self.attention_block[idx], style_enc, whitening, x, preserve_rng_state=False)
-            elif not injection is None:
-                x = x + checkpoint(ada,style_enc, cF[injection], preserve_rng_state=False)
-            elif type(ada) != nn.Identity:
-                x = self.relu(checkpoint(ada,style_enc, x, preserve_rng_state=False))
-            '''
-            if idx < len(self.whitening)-1:
-                x = res + checkpoint(learnable, x, preserve_rng_state=False)
-            else:
-            '''
-            x = checkpoint(learnable, x, preserve_rng_state=False)
+        style_enc = self.style_encoding(sF).flatten(1)
+        style_enc = self.projection(style_enc).view(b,self.s_d,16)
+        style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
+        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconv[1], style_enc, x, preserve_rng_state=False))
+        x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[2], style_enc, cF['r3_1'], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconv[3], style_enc, x, preserve_rng_state=False))
+        x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[4], style_enc, cF['r2_1'], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconv[5], style_enc, x, preserve_rng_state=False))
+        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[6], style_enc, cF['r1_1'], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
+
         return x
 
 
