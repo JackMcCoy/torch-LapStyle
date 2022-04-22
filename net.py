@@ -675,7 +675,7 @@ class StyleAttention(nn.Module):
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, style_enc, x, context):
+    def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
