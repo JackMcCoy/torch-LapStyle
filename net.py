@@ -1181,7 +1181,10 @@ def identity_loss(i, F, encoder, decoder):
     with torch.no_grad():
         Fcc = encoder(Icc)
     #check = ['r5_1','r4_1']
-    l_identity2 = content_loss.no_norm(Fcc['r4_1'], F['r4_1']) + content_loss.no_norm(Fcc['r3_1'], F['r3_1'])
+    l_identity2 = content_loss.no_norm(Fcc['r4_1'], F['r4_1']) +\
+                  content_loss.no_norm(Fcc['r3_1'], F['r3_1']) +\
+                  content_loss.no_norm(Fcc['r2_1'], F['r2_1']) + \
+                  content_loss.no_norm(Fcc['r1_1'], F['r1_1'])
     return l_identity1, l_identity2
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
