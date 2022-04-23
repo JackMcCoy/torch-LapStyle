@@ -665,6 +665,7 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
+        conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
