@@ -713,11 +713,11 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             nn.Identity(),
         ])
         depth = 2 if size==256 else 1
@@ -850,15 +850,12 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         x = self.relu(self.adaconvs[0](style_enc, cF['r4_1']))
         x = self.learnable[0](x)
-        x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
         x = x + self.relu(self.adaconvs[2](style_enc, cF['r3_1']))
         x = self.learnable[2](x)
-        x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
         x = x + self.relu(self.adaconvs[4](style_enc, cF['r2_1']))
         x = self.learnable[4](x)
-        x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
         x = self.attention_block[6](style_enc, x, cF['r1_1'])
         x = self.learnable[6](x)
