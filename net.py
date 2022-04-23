@@ -732,7 +732,7 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
-        '''
+
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -754,7 +754,6 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Identity(),
         ])
-        '''
         #ks = 7 if size==256 else 3
         #p = 3 if size==256 else 1
         ks = 3
@@ -854,16 +853,26 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         x = self.relu(checkpoint(self.adaconvs[0], style_enc, cF['r4_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        res = self.residual[1](x)
         x = self.relu(checkpoint(self.adaconvs[1], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
+        x = self.relu(x + res)
+        res = self.residual[2](x)
         x = x + self.relu(checkpoint(self.adaconvs[2], style_enc, cF['r3_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = self.relu(x + res)
+        res = self.residual[3](x)
         x = self.relu(checkpoint(self.adaconvs[3], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
+        x = self.relu(x + res)
+        res = self.residual[4](x)
         x = x + self.relu(checkpoint(self.adaconvs[4], style_enc, cF['r2_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
+        x = self.relu(x + res)
+        res = self.residual[5](x)
         x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = self.relu(x + res)
         x = checkpoint(self.attention_block[6], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
 
