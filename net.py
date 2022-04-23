@@ -610,10 +610,10 @@ class AdaConv_w_FF(nn.Module):
         self.gelu = nn.GELU()
         self.conv = nn.Sequential(
             nn.Conv2d(n_dims, n_dims, kernel_size = 3, padding='same', padding_mode='reflect'),
-            nn.GELU()
+            nn.LeakyReLU()
         )
     def forward(self, style, x):
-        x = self.gelu(self.ada(style, x))
+        x = self.ada(style, x)
         x = self.conv(x)
         return x
 
