@@ -608,10 +608,7 @@ class AdaConv_w_FF(nn.Module):
         super(AdaConv_w_FF, self).__init__()
         self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
         self.gelu = nn.GELU()
-        self.conv = nn.Sequential(
-            nn.Conv2d(n_dims, n_dims, kernel_size = 3, padding='same', padding_mode='reflect'),
-            nn.LeakyReLU()
-        )
+        self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
         x = self.ada(style, x)
         x = self.conv(x)
@@ -674,6 +671,7 @@ class StyleAttention(nn.Module):
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        self.norm_out = nn.GroupNorm(16)
 
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -702,6 +700,7 @@ class StyleAttention(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
+        out = self.norm_out(out)
         out = out + x
         return out
 
@@ -713,11 +712,11 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
         ])
         depth = 2 if size==256 else 1
@@ -850,12 +849,15 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         x = self.relu(self.adaconvs[0](style_enc, cF['r4_1']))
         x = self.learnable[0](x)
+        x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
         x = self.relu(self.adaconvs[2](style_enc, x))
         x = self.learnable[2](x)
+        x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
         x = self.relu(self.adaconvs[4](style_enc, x))
         x = self.learnable[4](x)
+        x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
         x = self.attention_block[6](style_enc, x, cF['r1_1'])
         x = self.learnable[6](x)
