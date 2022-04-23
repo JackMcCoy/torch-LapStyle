@@ -674,7 +674,7 @@ class StyleAttention(nn.Module):
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
 
-    def forward(self, style_enc, x):
+    def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
@@ -687,13 +687,11 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        '''
         context = F.instance_norm(context)
         ck, cv = self.to_k(style_enc, context), self.to_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
-        '''
 
         k = k.softmax(dim=-1)
 
@@ -862,7 +860,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        x = self.attention_block[6](style_enc, x)
+        x = self.attention_block[6](style_enc, x, cF['r1_1'])
         x = self.learnable[6](x)
         return x
 
