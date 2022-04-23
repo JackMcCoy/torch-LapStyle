@@ -717,7 +717,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
@@ -859,6 +859,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
+        x = self.relu(self.adaconvs[6](style_enc, x))
         x = self.learnable[6](x)
         return x
 
