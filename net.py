@@ -665,8 +665,8 @@ class StyleAttention(nn.Module):
 
         self.norm_queries = norm_queries
 
-        self.to_q = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
-        self.to_k = nn.Conv2d(chan, key_dim * heads, kernel_size, **conv_kwargs)
+        self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
