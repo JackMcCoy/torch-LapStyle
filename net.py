@@ -855,7 +855,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        x = self.relu(self.adaconvs[4](style_enc, cF['r2_1']))
+        x = x + self.relu(self.adaconvs[4](style_enc, cF['r2_1']))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
