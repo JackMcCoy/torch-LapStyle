@@ -802,7 +802,7 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
-
+        '''
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
@@ -812,7 +812,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
-
+        '''
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -859,7 +859,6 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        x = self.attention_block[6](style_enc, x, cF['r1_1'])
         x = self.learnable[6](x)
         return x
 
