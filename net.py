@@ -757,45 +757,54 @@ class ThumbAdaConv(nn.Module):
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
-                nn.Conv2d(512, 512, (ks, ks)),
-                nn.LeakyReLU()
+                nn.Conv2d(512, 512, (ks, ks), bias = False),
+                GaussianNoise(),
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3)),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(256)
+                nn.Conv2d(512, 256, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
+                nn.Conv2d(256, 256, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
+                nn.Conv2d(256, 256, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
-                nn.LeakyReLU(),
+                nn.Conv2d(256, 256, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
             ),nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3)),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(128)
+                nn.Conv2d(256, 128, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3)),
-                nn.LeakyReLU()),
+                nn.Conv2d(128, 128, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3)),
-                nn.LeakyReLU(),
-                StyleNERFUpsample(64)
+                nn.Conv2d(128, 64, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
-                nn.GELU(),
+                nn.Conv2d(64, 64, (3, 3), bias = False),
+                GaussianNoise(),
+                FusedLeakyReLU(256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
             )
