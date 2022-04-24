@@ -759,6 +759,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks), bias = False),
                 GaussianNoise(),
+                FusedLeakyReLU(512),
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
@@ -785,19 +786,19 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias = False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),
+                FusedLeakyReLU(128),
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias = False),
                 GaussianNoise(),
-                FusedLeakyReLU(256)),
+                FusedLeakyReLU(128)),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias = False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),
+                FusedLeakyReLU(64),
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
