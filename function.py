@@ -3,6 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 import math
+import typing
 from losses import calc_mean_std
 
 
@@ -45,7 +46,7 @@ class CartesianGrid(nn.Module):
 
         return grid.to(x)
 
-def demean(feature_map, dim=-1):
+def demean(feature_map, dim: int=-1):
     """removes mean of tensor channels"""
     mu = torch.mean(feature_map, dim=dim, keepdim=True)
     demeaned = -mu + feature_map
@@ -54,7 +55,7 @@ def demean(feature_map, dim=-1):
 def flatten_space(feature_map):  # squash spatial dims
     return torch.flatten(feature_map, start_dim=-2).clone()  # n x c x (h*w)
 
-def unflatten_space(feature_map, tensor_shape):  # unsquash spatial dims
+def unflatten_space(feature_map, tensor_shape: typing.Tuple[int, int, int, int]):  # unsquash spatial dims
     return feature_map.reshape(tensor_shape).clone()  # n x c x h x w
 
 @torch.jit.script
