@@ -66,7 +66,7 @@ def whiten(batch_feature_map):
     N = y.shape[-1]
     cov = torch.einsum('bcx, bdx -> bcd', y, y) / (N - 1)  # compute covs along batch dim
     u, lambduh, _ = torch.svd(cov)
-    lambduh_inv_sqrt = torch.diag_embed(lambduh+1e-5 ** (-.5))
+    lambduh_inv_sqrt = torch.diag_embed(lambduh+1e-8 ** (-.5))
     zca_whitener = torch.einsum('nab, nbc, ncd -> nad', u, lambduh_inv_sqrt, u.transpose(-2, -1))
     z = torch.einsum('bac, bcx -> bax', zca_whitener, y)
     return unflatten_space(mu + z, shape)
