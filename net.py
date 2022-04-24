@@ -12,7 +12,7 @@ from revlib.utils import momentum_net
 from torchvision.models import vgg19
 from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
-from kornia.enhance import zca_whiten
+
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
@@ -847,22 +847,22 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        whiten = zca_whiten(cF['r4_1'])
+        whiten = whiten(cF['r4_1'])
         x = self.relu(self.adaconvs[0](style_enc, whiten))
         x = self.learnable[0](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
-        whiten = zca_whiten(cF['r3_1'])
+        whiten = whiten(cF['r3_1'])
         x = x + self.relu(self.adaconvs[2](style_enc, whiten))
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whiten = zca_whiten(cF['r2_1'])
+        whiten = whiten(cF['r2_1'])
         x = x + self.relu(self.adaconvs[4](style_enc, whiten))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        whiten = zca_whiten(cF['r1_1'])
+        whiten = whiten(cF['r1_1'])
         x = x + self.relu(self.adaconvs[6](style_enc, whiten))
         x = self.learnable[6](x)
         return x
