@@ -54,11 +54,12 @@ def demean(feature_map, dim=-1):
 def flatten_space(feature_map):  # squash spatial dims
     return torch.flatten(feature_map, start_dim=-2).clone()  # n x c x (h*w)
 
-def unflatten_space(feature_map, tensor_shape=shape):  # unsquash spatial dims
+def unflatten_space(feature_map, tensor_shape):  # unsquash spatial dims
     return feature_map.reshape(tensor_shape).clone()  # n x c x h x w
 
 @torch.jit.script
 def whiten(batch_feature_map):
+    shape = batch_feature_map.shape
     y = flatten_space(batch_feature_map)
     y, mu = demean(y)
     N = y.shape[-1]
@@ -67,7 +68,7 @@ def whiten(batch_feature_map):
     lambduh_inv_sqrt = torch.diag_embed(lambduh ** (-.5))
     zca_whitener = torch.einsum('nab, nbc, ncd -> nad', u, lambduh_inv_sqrt, u.transpose(-2, -1))
     z = torch.einsum('bac, bcx -> bax', zca_whitener, y)
-    return unflatten_space(mu + z)
+    return unflatten_space(mu + z, shape)
 
 def color(sF, whiten_cF):
     sFSize = sF.size()
