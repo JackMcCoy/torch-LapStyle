@@ -863,10 +863,8 @@ class ThumbAdaConv(nn.Module):
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
         whitened = whiten(cF['r1_1'])
-        print(whitened.shape)
         x = x + self.relu(self.adaconvs[6](style_enc, whitened))
         x = self.learnable[6](x)
-        print(x.shape)
         return x
 
 
