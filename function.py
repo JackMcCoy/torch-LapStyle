@@ -3,7 +3,6 @@ import torch.nn as nn
 import random
 import numpy as np
 import math
-import typing
 from losses import calc_mean_std
 
 
@@ -46,30 +45,41 @@ class CartesianGrid(nn.Module):
 
         return grid.to(x)
 
-def demean(feature_map, dim: int=-1):
+def demean(feature_map, dim=-1):
     """removes mean of tensor channels"""
     mu = torch.mean(feature_map, dim=dim, keepdim=True)
     demeaned = -mu + feature_map
     return demeaned, mu
 
-def flatten_space(feature_map):  # squash spatial dims
-    return torch.flatten(feature_map, start_dim=-2).clone()  # n x c x (h*w)
-
-def unflatten_space(feature_map, tensor_shape: typing.List[int]):  # unsquash spatial dims
-    return feature_map.reshape(tensor_shape).clone()  # n x c x h x w
-
 @torch.jit.script
-def whiten(batch_feature_map):
-    shape = batch_feature_map.shape
-    y = flatten_space(batch_feature_map)
-    y, mu = demean(y)
-    N = y.shape[-1]
-    cov = torch.einsum('bcx, bdx -> bcd', y, y) / (N - 1)  # compute covs along batch dim
-    u, lambduh, _ = torch.svd(cov)
-    lambduh_inv_sqrt = torch.diag_embed(lambduh ** (-.5))
-    zca_whitener = torch.einsum('nab, nbc, ncd -> nad', u, lambduh_inv_sqrt, u.transpose(-2, -1))
-    z = torch.einsum('bac, bcx -> bax', zca_whitener, y)
-    return unflatten_space(mu + z, shape)
+def whiten(cf):
+    whitening = []
+    N, C, h, w = cf.shape
+    for i in range(N):
+        c_channels, c_width, c_height = C, h, w
+        cfv = cf[i].view(c_channels, -1)  # c x (h x w)
+
+        c_mean = torch.mean(cfv, 1) # perform mean for each row
+        c_mean = c_mean.unsqueeze(1).expand_as(cfv) # add dim and replicate mean on rows
+        cfv = cfv - c_mean # subtract mean element-wise
+
+        c_covm = torch.mm(cfv, cfv.t()).div((c_width * c_height) - 1)  # construct covariance matrix
+        c_u, c_e, c_v = torch.svd(c_covm, some=False) # singular value decomposition
+
+        k_c = c_channels
+
+        for i in range(c_channels):
+            if c_e[i] < 0.00001:
+                k_c = i
+                break
+        c_d = (c_e[0:k_c]).pow(-0.5)
+
+        w_step1 = torch.mm(c_v[:, 0:k_c], torch.diag(c_d))
+        w_step2 = torch.mm(w_step1, (c_v[:, 0:k_c].t()))
+        whitened = torch.mm(w_step2, cfv)
+        whitening.append(whitened.unsqueeze(0))
+    whitening = torch.cat(whitening, 0).view(N, C, h, w)
+    return whitening
 
 def color(sF, whiten_cF):
     sFSize = sF.size()
