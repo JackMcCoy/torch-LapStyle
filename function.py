@@ -55,7 +55,7 @@ def demean(feature_map, dim: int=-1):
 def flatten_space(feature_map):  # squash spatial dims
     return torch.flatten(feature_map, start_dim=-2).clone()  # n x c x (h*w)
 
-def unflatten_space(feature_map, tensor_shape: typing.List[int, int, int, int]):  # unsquash spatial dims
+def unflatten_space(feature_map, tensor_shape: typing.List[int]):  # unsquash spatial dims
     return feature_map.reshape(tensor_shape).clone()  # n x c x h x w
 
 @torch.jit.script
