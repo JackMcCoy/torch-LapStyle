@@ -51,6 +51,7 @@ def demean(feature_map, dim=-1):
     demeaned = -mu + feature_map
     return demeaned, mu
 
+@torch.jit.script
 def whiten(cf):
     whitening = []
     N, C, h, w = cf.shape
