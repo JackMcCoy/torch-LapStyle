@@ -1261,11 +1261,11 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
-                 CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
+    #             CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4
+    return loss_c, loss_s, content_relt, 0, l_identity1, l_identity2, l_identity3, l_identity4
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
