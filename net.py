@@ -810,7 +810,10 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-
+        self.cf_x_combine = nn.ModuleList([
+            nn.Conv2d(512,256,kernel_size=1),
+            nn.Conv2d(256,128, kernel_size=1)
+        ])
         '''
         self.attention_block = nn.ModuleList([
             nn.Identity(),
@@ -862,12 +865,12 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[0](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
-        whitened = cF['r3_1']
+        whitened = self.cf_x_combine[0](torch.cat([cF['r3_1'],x],1))
         x = x + self.relu(self.adaconvs[2](style_enc, whitened))
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whitened = cF['r2_1']
+        whitened = self.cf_x_combine[1](torch.cat([cF['r2_1'],x],1))
         x = x + self.relu(self.adaconvs[4](style_enc, whitened))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
