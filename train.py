@@ -364,7 +364,7 @@ def drafting_train():
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, mdog = losses
 
-        loss = loss_s * args.style_weight + content_relt * args.content_relt + \
+        loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
                l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight
 
