@@ -12,7 +12,7 @@ from revlib.utils import momentum_net
 from torchvision.models import vgg19
 from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
-from kornia.filters import BlurPool2d
+from kornia.filters import BlurPool2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
