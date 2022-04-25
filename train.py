@@ -362,11 +362,11 @@ def drafting_train():
         stylized = dec_(cF, sF['r4_1'])
 
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN = losses
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, mdog = losses
 
         loss = loss_s * args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
-               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss
+               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss + mdog * args.mdog_weight
 
         loss.backward()
         dec_optimizer.step()
@@ -376,10 +376,10 @@ def drafting_train():
             loss_dict = {}
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt,
-                     l_identity1, l_identity2, l_identity3, l_identity4, loss_D, loss_Gp_GAN],
+                     l_identity1, l_identity2, l_identity3, l_identity4, loss_D, loss_Gp_GAN, mdog],
                     ['LR', 'Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
                      "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss",
-                     "Discriminator Loss", 'Decoder Disc. Loss']):
+                     "Discriminator Loss", 'Decoder Disc. Loss', 'MXDOG Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l) == int:
