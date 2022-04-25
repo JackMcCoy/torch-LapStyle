@@ -410,9 +410,9 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = opt_D.state_dict()
+                state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
-                           'dec_optimizer.pth.tar')
+                           'discriminator_iter_{:d}.pth.tar'.format(n + 1))
                 del(state_dict)
         del(si, ci, stylized, cF, sF, loss, losses, loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4)
 
