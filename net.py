@@ -864,7 +864,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whitened = blur_pool2d(cF['r2_1'], 6, stride=1)
+        whitened = blur_pool2d(cF['r2_1'], 7, stride=1)
         x = x + self.gelu(self.adaconvs[4](style_enc, x + whitened))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
