@@ -802,7 +802,9 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
+                GaussianNoise(),
+                FusedLeakyReLU(64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
             )
@@ -1256,7 +1258,8 @@ def loss_no_patch(stylized: torch.Tensor,
                 cF: typing.Dict[str,torch.Tensor],
                 encoder:nn.Module,
                 decoder:nn.Module,
-                sF: typing.Dict[str,torch.Tensor]):
+                sF: typing.Dict[str,torch.Tensor],
+                disc_):
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)
@@ -1270,7 +1273,9 @@ def loss_no_patch(stylized: torch.Tensor,
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4
+    fake_loss = disc_(stylized)
+    loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,

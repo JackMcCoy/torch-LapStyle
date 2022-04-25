@@ -287,15 +287,15 @@ def drafting_train():
     else:
         disc_state = None
         init_weights(dec_)
-    #disc_ = torch.jit.trace(build_disc(
-    #    disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'), check_trace=False)
+    disc_ = torch.jit.trace(build_disc(
+        disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 256, 256, device='cuda'), check_trace=False)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
-    #opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
-    #if args.load_disc == 1 and args.load_model != 'none':
-    #    try:
-    #        opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
-    #    except:
-    #        print('discriminator optimizer not loaded')
+    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
+    if args.load_disc == 1 and args.load_model != 'none':
+        try:
+            opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
+        except:
+            print('discriminator optimizer not loaded')
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -317,8 +317,8 @@ def drafting_train():
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-        #                 decay=args.disc_lr)
+        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                         decay=args.disc_lr)
 
         ci = next(content_iter)
         si = next(style_iter)
@@ -335,7 +335,7 @@ def drafting_train():
         si = style_normalize(si)
         cF = enc_(ci)
         sF = enc_(si)
-        '''
+
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
             stylized = dec_(cF, sF['r4_1'])
@@ -353,24 +353,24 @@ def drafting_train():
 
             set_requires_grad(disc_, False)
             set_requires_grad(dec_, True)
-        '''
 
-        #dec_.train()
+
+        dec_.train()
         for param in dec_.parameters():
             param.grad = None
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4 = losses
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_)
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN = losses
 
         loss = loss_s * args.style_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
-               l_identity2 + l_identity3 * 50 + l_identity4
+               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss
 
         loss.backward()
         dec_optimizer.step()
-        #disc_.train()
+        disc_.train()
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
@@ -409,9 +409,9 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                #state_dict = opt_D.state_dict()
-                #torch.save(copy.deepcopy(state_dict), save_dir /
-                #           'dec_optimizer.pth.tar')
+                state_dict = opt_D.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'dec_optimizer.pth.tar')
                 del(state_dict)
         del(si, ci, stylized, cF, sF, loss, losses, loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4)
 
