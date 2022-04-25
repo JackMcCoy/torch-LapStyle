@@ -812,9 +812,15 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         self.cf_x_combine = nn.ModuleList([
-            nn.Conv2d(512,256,kernel_size=1),
-            nn.Conv2d(256,128, kernel_size=1),
-            nn.Conv2d(128,64, kernel_size=1)
+            nn.Sequential(
+                nn.Conv2d(512,256,kernel_size=1),
+                nn.LeakyReLU()),
+            nn.Sequential(
+                nn.Conv2d(256,128, kernel_size=1),
+                nn.LeakyReLU()),
+            nn.Sequential(
+                nn.Conv2d(128,64, kernel_size=1),
+                nn.LeakyReLU())
         ])
 
         self.attention_block = nn.ModuleList([
