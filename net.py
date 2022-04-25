@@ -824,9 +824,6 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU()),
             nn.Sequential(
                 nn.Conv2d(256,128, kernel_size=1),
-                nn.LeakyReLU()),
-            nn.Sequential(
-                nn.Conv2d(128,64, kernel_size=1),
                 nn.LeakyReLU())
         ])
 
@@ -890,9 +887,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        whitened = self.cf_x_combine[2](torch.cat([whiten(cF['r1_1']), x], 1))
-
-        x = self.attention_block[6](style_enc, whitened)
+        x = self.attention_block[6](style_enc, x)
         x = self.learnable[6](x)
         return x
 
