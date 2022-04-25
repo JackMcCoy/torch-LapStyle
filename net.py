@@ -713,9 +713,9 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
@@ -860,13 +860,13 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[0](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
-        whitened = whiten(self.blurpool(cF['r3_1']))
-        x = x + self.gelu(self.adaconvs[2](style_enc, x + whitened))
+        whitened = whiten(cF['r3_1']) + F.instance_norm(x)
+        x = x + self.gelu(self.adaconvs[2](style_enc, whitened))
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whitened = whiten(self.blurpool(cF['r2_1']))
-        x = x + self.gelu(self.adaconvs[4](style_enc, x + whitened))
+        whitened = whiten(cF['r2_1']) + F.instance_norm(x)
+        x = x + self.gelu(self.adaconvs[4](style_enc, whitened))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
