@@ -879,7 +879,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[5](x)
         whitened = self.cf_x_combine[2](torch.cat([cF['r1_1'], x], 1))
 
-        x = self.style_attention_block[6](style_enc, whitened)
+        x = self.attention_block[6](style_enc, whitened)
         x = self.learnable[6](x)
         return x
 
