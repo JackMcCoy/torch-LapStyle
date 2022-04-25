@@ -376,9 +376,10 @@ def drafting_train():
             loss_dict = {}
             for l, s in zip(
                     [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt,
-                     l_identity1, l_identity2, l_identity3, l_identity4],
+                     l_identity1, l_identity2, l_identity3, l_identity4, loss_D, loss_Gp_GAN],
                     ['LR', 'Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
-                     "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss"]):
+                     "Identity 1 Loss", "Identity 2 Loss", "Identity 3 Loss", "Identity 4 Loss",
+                     "Discriminator Loss", 'Decoder Disc. Loss']):
                 if type(l) == torch.Tensor:
                     loss_dict[s] = l.item()
                 elif type(l) == float or type(l) == int:
