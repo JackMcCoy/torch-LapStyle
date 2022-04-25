@@ -12,7 +12,7 @@ from revlib.utils import momentum_net
 from torchvision.models import vgg19
 from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
-from kornia.filters import BlurPool2D, blur_pool2d
+from kornia.filters import BlurPool2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
@@ -836,6 +836,7 @@ class ThumbAdaConv(nn.Module):
             )
         self.relu = nn.LeakyReLU()
         self.gelu = nn.GELU()
+        self.blurpool = BlurPool2D(3,stride=1)
         self.apply(self._init_weights)
 
     @staticmethod
@@ -854,17 +855,17 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        whitened = cF['r4_1']
+        whitened = whiten(cF['r4_1'])
         x = self.relu(self.adaconvs[0](style_enc, whitened))
         x = self.learnable[0](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
-        whitened = blur_pool2d(cF['r3_1'], 3, stride=1)
+        whitened = whiten(self.blurpool(cF['r3_1']))
         x = x + self.gelu(self.adaconvs[2](style_enc, x + whitened))
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whitened = blur_pool2d(cF['r2_1'], 7, stride=1)
+        whitened = whiten(self.blurpool(cF['r2_1']))
         x = x + self.gelu(self.adaconvs[4](style_enc, x + whitened))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
