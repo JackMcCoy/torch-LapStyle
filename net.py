@@ -673,7 +673,7 @@ class StyleAttention(nn.Module):
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
-    def forward(self, style_enc, x, context):
+    def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
         _x = F.instance_norm(x)
@@ -685,11 +685,12 @@ class StyleAttention(nn.Module):
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
-
+        '''
         ck, cv = self.to_k(context), self.to_v(style_enc, F.instance_norm(context))
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
+        '''
 
         k = k.softmax(dim=-1)
 
@@ -812,9 +813,10 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
         self.cf_x_combine = nn.ModuleList([
             nn.Conv2d(512,256,kernel_size=1),
-            nn.Conv2d(256,128, kernel_size=1)
+            nn.Conv2d(256,128, kernel_size=1),
+            nn.Conv2d(128,64, kernel_size=1)
         ])
-        '''
+
         self.attention_block = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
@@ -824,7 +826,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
-        '''
+
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
         if style_contrastive_loss:
@@ -875,7 +877,9 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        x = self.relu(self.adaconvs[6](style_enc, x))
+        whitened = self.cf_x_combine[2](torch.cat([cF['r1_1'], x], 1))
+
+        x = self.style_attention_block[6](style_enc, whitened)
         x = self.learnable[6](x)
         return x
 
