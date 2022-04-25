@@ -836,7 +836,7 @@ class ThumbAdaConv(nn.Module):
             )
         self.relu = nn.LeakyReLU()
         self.gelu = nn.GELU()
-        self.blurpool = BlurPool2d(3,stride=1)
+        self.blurpool = BlurPool2D(3,stride=1)
         self.apply(self._init_weights)
 
     @staticmethod
