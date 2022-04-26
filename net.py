@@ -735,29 +735,29 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
-        '''
+
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.LeakyReLU(),
-                StyleNERFUpsample(256)
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.LeakyReLU(),
-                StyleNERFUpsample(128)
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
                 nn.LeakyReLU(),
-                StyleNERFUpsample(64)
+                nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Identity(),
         ])
-        '''
+
         #ks = 7 if size==256 else 3
         #p = 3 if size==256 else 1
         ks = 3
@@ -818,14 +818,6 @@ class ThumbAdaConv(nn.Module):
             )
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
-        self.cf_x_combine = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(512,256,kernel_size=1),
-                nn.LeakyReLU()),
-            nn.Sequential(
-                nn.Conv2d(256,128, kernel_size=1),
-                nn.LeakyReLU())
-        ])
 
         self.attention_block = StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8)
 
@@ -867,16 +859,26 @@ class ThumbAdaConv(nn.Module):
 
         x = self.attention_block(style_enc, cF['r4_1'])
         x = self.learnable[0](x)
+        res = self.residual[1](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
+        x = x + res
+        res = self.residual[2](x)
         x = self.relu(self.adaconvs[2](style_enc, x))
         x = self.learnable[2](x)
+        x = x + res
+        res = self.residual[3](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
+        x = x + res
+        res = self.residual[4](x)
         x = self.relu(self.adaconvs[4](style_enc, x))
         x = self.learnable[4](x)
+        x = x + res
+        res = self.residual[5](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
+        x = x + res
         x = self.relu(self.adaconvs[6](style_enc, x))
         x = self.learnable[6](x)
         return x
