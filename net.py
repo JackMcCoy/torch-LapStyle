@@ -743,7 +743,7 @@ class StyleAttention_w_Context(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        context = F.instant_norm(context)
+        context = F.instance_norm(context)
         ck, cv = self.context_k(style_enc,context), self.context_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
