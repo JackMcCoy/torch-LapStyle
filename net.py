@@ -706,6 +706,59 @@ class StyleAttention(nn.Module):
         return out
 
 
+class StyleAttention_w_Context(nn.Module):
+    def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
+                 size=32, norm_queries=False):
+        super().__init__()
+        self.chan = chan
+        chan_out = chan if chan_out is None else chan_out
+
+        self.key_dim = key_dim
+        self.value_dim = value_dim
+        self.heads = heads
+
+        self.norm_queries = norm_queries
+
+        conv_kwargs = {'padding': padding, 'stride': stride}
+        self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        self.out_norm = nn.GroupNorm(16,chan_out)
+
+    def forward(self, style_enc, x, context):
+        b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
+
+        _x = F.instance_norm(x)
+
+        #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
+
+        q, k, v = self.to_q(x), self.to_k(x), self.to_v(style_enc, _x)
+
+        q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
+
+        q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
+
+        ck, cv = self.to_k(context), self.to_v(style_enc, F.instance_norm(context))
+        ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
+        k = torch.cat((k, ck), dim=3)
+        v = torch.cat((v, cv), dim=3)
+
+        k = k.softmax(dim=-1)
+
+        if self.norm_queries:
+            q = q.softmax(dim=-2)
+
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
+        out = out.reshape(b, -1, h, w)
+        out = self.to_out(out)
+        out = self.out_norm(out)
+        out = out + x
+        return out
+
+
 class AdaConv1x1Combine(nn.Module):
     def __init__(self):
         super(AdaConv1x1Combine, self).__init__()
@@ -719,9 +772,9 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
+            nn.Identity(),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
@@ -819,7 +872,10 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
-        self.attention_block = StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8)
+        self.attention_block = nn.ModuleList([
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8),
+            nn.Identity(),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -857,14 +913,14 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
 
-        x = self.attention_block(style_enc, cF['r4_1'])
+        x = self.attention_block[0](style_enc, cF['r4_1'])
         x = self.learnable[0](x)
         res = self.residual[1](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
         x = x + res
         res = self.residual[2](x)
-        x = self.relu(self.adaconvs[2](style_enc, x + cF['r3_1']))
+        x = self.attention_block[2](style_enc, x, cF['r3_1'])
         x = self.learnable[2](x)
         x = x + res
         res = self.residual[3](x)
