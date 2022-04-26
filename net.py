@@ -884,7 +884,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1)
         ])
         self.head = DeformableAttention2D(512)
-        self.out_deform = DeformableAttention2D(64, inner_dim=16, heads=2)
+        self.out_deform = DeformableAttention2D(64, dim_head=16, heads=2)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
