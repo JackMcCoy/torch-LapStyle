@@ -919,7 +919,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        x = self.head(x)
+        x = self.head(cF['r4_1'])
         x = checkpoint(self.attention_block[0],style_enc, x,preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
