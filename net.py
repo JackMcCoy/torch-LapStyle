@@ -702,7 +702,6 @@ class StyleAttention(nn.Module):
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         out = self.out_norm(out)
-        out = out + x
         return out
 
 
@@ -758,7 +757,6 @@ class StyleAttention_w_Context(nn.Module):
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         out = self.out_norm(out)
-        out = out + x
         return out
 
 
