@@ -919,29 +919,29 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
 
         x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
-        x = checkpoint(self.learnable[0],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[1],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[2],x,preserve_rng_state=False)
         x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[2],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[2],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[3],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[3],style_enc, x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[3],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[3],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[4],x,preserve_rng_state=False)
         x = x + self.relu(checkpoint(self.attention_block[4],style_enc, cF['r2_1'], x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[4],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[5],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[5],style_enc, x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[5],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[5],x,preserve_rng_state=True)
         x = x + res
         x = x + self.relu(checkpoint(self.attention_block[6],style_enc, cF['r1_1'], x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[6],x,preserve_rng_state=False)
+        x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
         return x
 
 
