@@ -774,7 +774,7 @@ class ThumbAdaConv(nn.Module):
         self.s_d = s_d
 
         self.adaconvs = nn.ModuleList([
-            nn.Identity(),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
@@ -875,7 +875,7 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8),
+            nn.Identity(),
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),
             nn.Identity(),
@@ -920,7 +920,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         x = self.head(cF['r4_1'])
-        x = checkpoint(self.attention_block[0],style_enc, x,preserve_rng_state=False)
+        x = checkpoint(self.adaconvs[0],style_enc, x,preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
