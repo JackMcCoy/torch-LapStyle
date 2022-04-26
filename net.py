@@ -779,7 +779,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
@@ -878,7 +878,10 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),])
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),
+            nn.Identity(),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2)
+        ])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -930,7 +933,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[3](x)
         x = x + res
         res = self.residual[4](x)
-        x = self.relu(self.adaconvs[4](style_enc, x))
+        x = self.attention_block[2](style_enc, cF['r2_1'], x)
         x = self.learnable[4](x)
         x = x + res
         res = self.residual[5](x)
