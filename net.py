@@ -759,7 +759,6 @@ class StyleAttention_w_Context(nn.Module):
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         out = self.out_norm(out)
-        out = out + x
         return out
 
 
@@ -923,7 +922,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[1](x)
         x = x + res
         res = self.residual[2](x)
-        x = self.attention_block[2](style_enc, cF['r3_1'], x)
+        x = x + self.attention_block[2](style_enc, cF['r3_1'], x)
         x = self.learnable[2](x)
         x = x + res
         res = self.residual[3](x)
