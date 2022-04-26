@@ -13,6 +13,7 @@ from torchvision.models import vgg19
 from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
 
+from deformable_attention import DeformableAttention2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
@@ -882,6 +883,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1)
         ])
+        self.head = DeformableAttention2D(512)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -917,8 +919,8 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-
-        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        x = checkpoint(self.head, x)
+        x = checkpoint(self.attention_block[0],style_enc, x,preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
