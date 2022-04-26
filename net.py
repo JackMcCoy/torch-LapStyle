@@ -925,7 +925,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[1](x)
         x = x + res
         res = self.residual[2](x)
-        x = x + self.gelu(self.attention_block[2](style_enc, cF['r3_1'], x))
+        x = x + self.relu(self.attention_block[2](style_enc, cF['r3_1'], x))
         x = self.learnable[2](x)
         x = x + res
         res = self.residual[3](x)
@@ -933,14 +933,14 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[3](x)
         x = x + res
         res = self.residual[4](x)
-        x = x + self.gelu(self.attention_block[4](style_enc, cF['r2_1'], x))
+        x = x + self.relu(self.attention_block[4](style_enc, cF['r2_1'], x))
         x = self.learnable[4](x)
         x = x + res
         res = self.residual[5](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
         x = x + res
-        x = x + self.gelu(self.attention_block[6](style_enc, cF['r1_1'], x))
+        x = x + self.relu(self.attention_block[6](style_enc, cF['r1_1'], x))
         x = self.learnable[6](x)
         return x
 
