@@ -93,7 +93,6 @@ class CPB(nn.Module):
 class DeformableAttention2D(nn.Module):
     def __init__(
         self,
-        *,
         dim,
         dim_head = 64,
         heads = 8,
