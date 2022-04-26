@@ -724,6 +724,9 @@ class StyleAttention_w_Context(nn.Module):
         self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
+        self.context_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         self.out_norm = nn.GroupNorm(16,chan_out)
 
@@ -740,7 +743,7 @@ class StyleAttention_w_Context(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        ck, cv = self.to_k(context), self.to_v(style_enc, F.instance_norm(context))
+        ck, cv = self.context_k(context), self.context_v(style_enc, F.instance_norm(context))
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
