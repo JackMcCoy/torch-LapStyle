@@ -922,7 +922,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[1](x)
         x = x + res
         res = self.residual[2](x)
-        x = self.attention_block[2](style_enc, x, cF['r3_1'])
+        x = self.attention_block[2](style_enc, cF['r3_1'], x)
         x = self.learnable[2](x)
         x = x + res
         res = self.residual[3](x)
