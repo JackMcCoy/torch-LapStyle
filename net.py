@@ -740,19 +740,19 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.GELU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.GELU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.GELU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
@@ -864,7 +864,7 @@ class ThumbAdaConv(nn.Module):
         x = self.learnable[1](x)
         x = x + res
         res = self.residual[2](x)
-        x = self.relu(self.adaconvs[2](style_enc, x))
+        x = self.relu(self.adaconvs[2](style_enc, cF['r3_1']))
         x = self.learnable[2](x)
         x = x + res
         res = self.residual[3](x)
