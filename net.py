@@ -880,7 +880,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=1)
+            StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1)
         ])
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
