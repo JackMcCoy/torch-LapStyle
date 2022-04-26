@@ -827,15 +827,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU())
         ])
 
-        self.attention_block = nn.ModuleList([
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Identity(),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
-        ])
+        self.attention_block = StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8),
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -872,22 +864,20 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        whitened = whiten(cF['r4_1'])
-        x = self.relu(self.adaconvs[0](style_enc, whitened))
+
+        x = self.attention_block(style_enc, cF['r4_1'])
         x = self.learnable[0](x)
         x = self.relu(self.adaconvs[1](style_enc, x))
         x = self.learnable[1](x)
-        whitened = self.cf_x_combine[0](torch.cat([whiten(cF['r3_1']),x],1))
-        x = x + self.relu(self.adaconvs[2](style_enc, whitened))
+        x = self.relu(self.adaconvs[2](style_enc, x))
         x = self.learnable[2](x)
         x = self.relu(self.adaconvs[3](style_enc, x))
         x = self.learnable[3](x)
-        whitened = self.cf_x_combine[1](torch.cat([whiten(cF['r2_1']),x],1))
-        x = x + self.relu(self.adaconvs[4](style_enc, whitened))
+        x = self.relu(self.adaconvs[4](style_enc, x))
         x = self.learnable[4](x)
         x = self.relu(self.adaconvs[5](style_enc, x))
         x = self.learnable[5](x)
-        x = self.attention_block[6](style_enc, x)
+        x = self.relu(self.adaconvs[6](style_enc, x))
         x = self.learnable[6](x)
         return x
 
