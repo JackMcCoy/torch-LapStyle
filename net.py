@@ -740,20 +740,20 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.GELU(),
+                nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.GELU(),
+                nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.GELU(),
+                nn.Upsample(scale_factor = 2, mode='nearest')
             ),
             nn.Identity(),
         ])
