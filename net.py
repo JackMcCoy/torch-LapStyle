@@ -943,7 +943,7 @@ class ThumbAdaConv(nn.Module):
         x = self.relu(checkpoint(self.adaconvs[5],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[5],x,preserve_rng_state=True)
         x = x + res
-        x = x + checkpoint(self.out_deform,x,preserve_rng_state=False)
+        x = x + self.relu(checkpoint(self.out_deform,x,preserve_rng_state=False))
         x = x + self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
         return x
