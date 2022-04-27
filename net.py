@@ -813,6 +813,14 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
         ])
+        self.quarter_res = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(512, 256, kernel_size=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=2, mode='bilinear')
+            ),
+
+        ])
         self.half_residual = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
@@ -960,10 +968,10 @@ class ThumbAdaConv(nn.Module):
         res = x
         x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], self.layer_norm[2](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[2],x,preserve_rng_state=False)
-        x = x + res + half_res
+        x = x + res
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
-        x = x + res
+        x = x + res + half_res
         res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[4], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
