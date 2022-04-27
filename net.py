@@ -776,6 +776,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             nn.Identity(),
+            # Half res in
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
@@ -951,6 +952,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         half_res = res
+        quarter_res = res
         # quarter res
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
@@ -959,7 +961,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], self.layer_norm[2](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[2],x,preserve_rng_state=False)
-        x = x + res
+        x = x + res + quarter_res
         # + quarter res
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
@@ -969,6 +971,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
         x = x + res
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
+        quarter_res = half_res
         res = x
         x = x + self.relu(checkpoint(self.attention_block[5],style_enc, cF['r2_1'], self.layer_norm[5](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[5],x,preserve_rng_state=False)
@@ -977,7 +980,7 @@ class ThumbAdaConv(nn.Module):
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
-        x = x + res
+        x = x + res + quarter_res
         # in = 64 ch
         res = x
         x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
