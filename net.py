@@ -982,7 +982,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
         x = checkpoint(torch.add,x, res)
         x = checkpoint(torch.add,x,half_res)
-        half_res = checkpoint(self.self.residual[6], x, preserve_rng_state=False)
+        half_res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         #####
         x = x + self.relu(checkpoint(self.attention_block[5],style_enc, cF['r2_1'], self.layer_norm[5](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[5],x,preserve_rng_state=False)
