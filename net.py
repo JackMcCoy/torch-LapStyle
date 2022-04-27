@@ -4,7 +4,7 @@ import torch
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
-from torch.utils.checkpoint import checkpoint, checkpoint_sequential
+from torch.utils.checkpoint import checkpoint
 import torch.nn.functional as F
 import numpy as np
 import vgg
@@ -831,6 +831,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 128, kernel_size=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=4, mode='bilinear')),
+            nn.Sequential(
+                nn.Conv2d(128,64, kernel_size=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=2, mode='bilinear')),
         ])
 
         #ks = 7 if size==256 else 3
@@ -966,23 +970,22 @@ class ThumbAdaConv(nn.Module):
         # quarter res
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
-        x = checkpoint(torch.add, x, res)
+        x = x + res
         # in = 256 ch
         res = x
         x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], self.layer_norm[2](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[2],x,preserve_rng_state=False)
-        x = checkpoint(torch.add,x, res)
+        x = x + res
         #####
-        out_res = checkpoint(torch.add,out_res, checkpoint(self.full_res[1],x,preserve_rng_state=False))
+        out_res = out_res + checkpoint(self.full_res[1],x,preserve_rng_state=False)
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
-        x = checkpoint(torch.add,x,res)
+        x = x + res
         res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[4], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
-        x = checkpoint(torch.add,x, res)
-        x = checkpoint(torch.add,x,half_res)
-        half_res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        x = x + res + half_res
+        half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         x = x + self.relu(checkpoint(self.attention_block[5],style_enc, cF['r2_1'], self.layer_norm[5](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[5],x,preserve_rng_state=False)
@@ -991,15 +994,14 @@ class ThumbAdaConv(nn.Module):
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
-        x = checkpoint(torch.add,x,res)
+        x = x + res
         ######
         # in = 64 ch
         res = x
         x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
-        x = checkpoint(torch.add,x,res)
-        x = checkpoint(torch.add,x,half_res)
-        x = checkpoint(torch.add,x,out_res)
+        out_res = out_res + x
+        x = x + res + half_res + out_res
         x = x + self.relu(checkpoint(self.out_deform,self.layer_norm[8](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[8],x,preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
@@ -1207,7 +1209,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.head(x)
         N, C, *_ = x.shape
-        x = checkpoint_sequential(self.body, 7,x, preserve_rng_state=False)
+        x = checkpoint(self.body, x, preserve_rng_state=False)
         x = checkpoint(self.tail, x, preserve_rng_state=False)
         return x
 
