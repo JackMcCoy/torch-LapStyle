@@ -4,7 +4,7 @@ import torch
 from torchvision.transforms import RandomCrop
 from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
-from torch.utils.checkpoint import checkpoint
+from torch.utils.checkpoint import checkpoint, checkpoint_sequential
 import torch.nn.functional as F
 import numpy as np
 import vgg
@@ -1209,7 +1209,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.head(x)
         N, C, *_ = x.shape
-        x = checkpoint(self.body, x, preserve_rng_state=False)
+        x = checkpoint_sequential(self.body, 7, x, preserve_rng_state=False)
         x = checkpoint(self.tail, x, preserve_rng_state=False)
         return x
 
