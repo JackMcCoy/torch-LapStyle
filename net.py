@@ -814,11 +814,18 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
         ])
-        self.full_res = nn.Sequential(
+        self.full_res = nn.ModuleList([
+            nn.Sequential(
                 nn.Conv2d(512, 64, kernel_size=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor = 8, mode='bilinear')
-            )
+            ),
+            nn.Sequential(
+                nn.Conv2d(256, 64, kernel_size=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=4, mode='bilinear')
+            ),
+            ])
         self.half_residual = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 128, kernel_size=1),
@@ -959,7 +966,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         half_res = checkpoint(self.half_residual[0],x,preserve_rng_state=False)
-        full_res = checkpoint(self.full_res,x,preserve_rng_state=False)
+        full_res = checkpoint(self.full_res[0],x,preserve_rng_state=False)
         # quarter res
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
@@ -970,6 +977,7 @@ class ThumbAdaConv(nn.Module):
         x = x + checkpoint(self.learnable[2],x,preserve_rng_state=False)
         x = x + res
         #####
+        out_res = full_res + checkpoint(self.full_res[1],x,preserve_rng_state=False)
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
         x = x + res
@@ -981,6 +989,7 @@ class ThumbAdaConv(nn.Module):
         #####
         x = x + self.relu(checkpoint(self.attention_block[5],style_enc, cF['r2_1'], self.layer_norm[5](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[5],x,preserve_rng_state=False)
+        out_res = out_res + checkpoint(self.residual[6],x,preserve_rng_state=False)
         # in = 128 ch
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
@@ -991,9 +1000,11 @@ class ThumbAdaConv(nn.Module):
         res = x
         x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
+        out_res = out_res + x
         x = x + res + half_res + full_res
         x = x + self.relu(checkpoint(self.out_deform,self.layer_norm[8](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[8],x,preserve_rng_state=False)
+        x = x + out_res
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
 
