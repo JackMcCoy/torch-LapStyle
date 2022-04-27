@@ -728,7 +728,6 @@ class StyleAttention_w_Context(nn.Module):
         self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(16,chan_out)
 
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -757,7 +756,6 @@ class StyleAttention_w_Context(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = self.out_norm(out)
         return out
 
 
@@ -776,6 +774,7 @@ class ThumbAdaConv(nn.Module):
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
@@ -799,6 +798,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Identity(),
+            nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.GELU(),
@@ -810,6 +810,7 @@ class ThumbAdaConv(nn.Module):
                 nn.GELU(),
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
+            nn.Identity(),
             nn.Identity(),
         ])
 
@@ -832,10 +833,11 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
+                nn.GroupNorm(32, 256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3), bias = False),
-                GaussianNoise(),
-                FusedLeakyReLU(256),
+                nn.Conv2d(256, 256, (3, 3)),
+                nn.LeakyReLU()),
+            nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias = False),
                 GaussianNoise(),
@@ -852,10 +854,10 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
+                nn.GroupNorm(16, 128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3), bias = False),
-                GaussianNoise(),
-                FusedLeakyReLU(128)),
+                nn.Conv2d(128, 128, (3, 3)),
+                nn.LeakyReLU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias = False),
@@ -867,7 +869,13 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64),
+                FusedLeakyReLU(64),),
+            nn.Sequential(
+                nn.GroupNorm(8, 64),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3)),
+                nn.LeakyReLU()),
+            nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
             )
@@ -879,12 +887,23 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),
             nn.Identity(),
+            nn.Identity(),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
-            StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1)
+            nn.Identity(),
         ])
-        self.head = DeformableAttention2D(512)
-        self.out_deform = DeformableAttention2D(64, heads=4, downsample_factor=16, offset_kernel_size=32)
+        self.layer_norm = nn.ModuleList([
+            nn.Identity(),
+            nn.Identity(),
+            nn.GroupNorm(32, 256),
+            nn.Identity(),
+            nn.Identity(),
+            nn.GroupNorm(16, 128),
+            nn.Identity(),
+            nn.Identity(),
+            nn.GroupNorm(8, 64)
+        ])
+        self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -920,31 +939,43 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        x = self.head(cF['r4_1'])
-        x = checkpoint(self.adaconvs[0],style_enc, x,preserve_rng_state=False)
+        x = checkpoint(self.adaconvs[0],style_enc, cF['r4_1'],preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
         x = x + res
+        # in = 256 ch
         res = checkpoint(self.residual[2],x,preserve_rng_state=False)
-        x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], x,preserve_rng_state=False))
+        x = x + self.relu(checkpoint(self.attention_block[2],style_enc, cF['r3_1'], self.layer_norm[2](x),preserve_rng_state=False))
         x = checkpoint(self.learnable[2],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[3],x,preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[3],style_enc, x,preserve_rng_state=False))
-        x = checkpoint(self.learnable[3],x,preserve_rng_state=True)
+        x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
         x = x + res
-        res = checkpoint(self.residual[4],x,preserve_rng_state=False)
-        x = x + self.relu(checkpoint(self.attention_block[4],style_enc, cF['r2_1'], x,preserve_rng_state=False))
+        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconvs[4], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[5],x,preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[5],style_enc, x,preserve_rng_state=False))
+        x = x + self.relu(checkpoint(self.attention_block[5],style_enc, cF['r2_1'], self.layer_norm[5](x),preserve_rng_state=False))
         x = checkpoint(self.learnable[5],x,preserve_rng_state=True)
         x = x + res
-        x = x + self.relu(checkpoint(self.out_deform,x,preserve_rng_state=False))
+        # in = 128 ch
+        res = checkpoint(self.residual[6],x,preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
+        x = x + res
+        # in = 64 ch
+        res = checkpoint(self.residual[7], x, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
+        x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
+        x = x + res
+        res = checkpoint(self.residual[8], x, preserve_rng_state=False)
+        x = x + self.relu(checkpoint(self.out_deform,self.layer_norm[8](x),preserve_rng_state=False))
+        x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
+        x = x + res
+        x = checkpoint(self.learnable[9], x, preserve_rng_state=True)
         return x
 
 
