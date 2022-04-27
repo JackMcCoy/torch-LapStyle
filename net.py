@@ -884,7 +884,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1)
         ])
         self.head = DeformableAttention2D(512)
-        self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
+        self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=8, offset_kernel_size=16)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
         #                                    nn.LeakyReLU())
@@ -944,7 +944,6 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[5],x,preserve_rng_state=True)
         x = x + res
         x = x + self.relu(checkpoint(self.out_deform,x,preserve_rng_state=False))
-        x = x + self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
         return x
 
