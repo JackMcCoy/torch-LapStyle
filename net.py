@@ -1172,6 +1172,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         kernel_size=3
         patch_size=16
+        self.body_depth = depth - 2
         self.head = nn.Sequential(
             nn.Conv2d(3, num_channels, kernel_size=kernel_size, stride=1, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(),
@@ -1210,7 +1211,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.head(x)
         N, C, *_ = x.shape
-        x = checkpoint_sequential(self.body, 7, x, preserve_rng_state=False)
+        x = checkpoint_sequential(self.body, self.body_depth, x, preserve_rng_state=False)
         x = checkpoint(self.tail, x, preserve_rng_state=False)
         return x
 
