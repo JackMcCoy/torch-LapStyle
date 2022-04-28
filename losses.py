@@ -10,12 +10,12 @@ sinkhorn_loss = SamplesLoss("sinkhorn", p=1, blur=0.03, scaling=0.9)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
-def pairwise_distances_cos(a:torch.Tensor,eps:float = 1e-5):
-    a_n = a.norm(dim=2,p=2)[:, :, None]
-    a_n = a / torch.clip(a_n, min=eps)
-    sim_mt = torch.einsum('bij,bjk->bik',a_n,a_n.transpose(1,2))
-    sim_mt = 1 - sim_mt
-    return sim_mt
+def pairwise_distances_cos(x, y):
+    x_norm = torch.sqrt((x**2).sum(1).view(-1, 1))
+    y_t = torch.transpose(y, 0, 1)
+    y_norm = torch.sqrt((y**2).sum(1).view(1, -1))
+    dist = 1.-torch.mm(x, y_t)/x_norm/y_norm
+    return dist
 
 def pairwise_distances_sq_l2(x, y):
     N,C,*_ = x.shape
@@ -98,8 +98,6 @@ def CalcStyleEmdNoSample(X, Y):
 
     remd = torch.max(m1.mean(), m2.mean())
     return remd
-
-cosinesimilarity = nn.CosineSimilarity()
 
 def calc_emd_loss(pred, target):
     """calculate emd loss.
