@@ -88,8 +88,8 @@ def CalcStyleEmdNoSample(X, Y):
     """Calc Style Emd Loss.
     """
     d = X.shape[1]
-    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
-    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    X = X.flatten(2).transpose(1,2).contiguous()
+    Y = Y.flatten(2).transpose(1,2).contiguous()
     CX_M = pairwise_distances_cos(X, Y)
 
     if d == 3: CX_M = CX_M + pairwise_distances_cos(X, Y)
