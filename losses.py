@@ -147,10 +147,10 @@ def CalcContentReltNoSample(X,Y, eps=1e-5):
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
     # Relaxed EMD
-    Mx = cosd_dist(X)
+    Mx = pairwise_distances_cos(X,X)
     Mx = Mx / (Mx.sum(1, keepdim=True)+eps)
 
-    My = cosd_dist(Y)
+    My = pairwise_distances_cos(Y,Y)
     My = My / (My.sum(1, keepdim=True)+eps)
 
     d = torch.abs(Mx - My).mean(1) * X.size(1)
