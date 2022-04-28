@@ -815,18 +815,18 @@ class ThumbAdaConv(nn.Module):
         self.full_res = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 64, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor = 8, mode='bilinear')
             )
             ])
         self.half_residual = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 128, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor=4, mode='bilinear')),
             nn.Sequential(
                 nn.Conv2d(128,64, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor=2, mode='bilinear')),
         ])
 
