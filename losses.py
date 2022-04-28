@@ -10,12 +10,13 @@ sinkhorn_loss = SamplesLoss("sinkhorn", p=1, blur=0.03, scaling=0.9)
 maxpool = nn.AdaptiveMaxPool2d(64)
 
 @torch.jit.script
-def pairwise_distances_cos(x, y):
-    x_norm = torch.sqrt((x**2).sum(1).view(-1, 1))
-    y_t = torch.transpose(y, 0, 1)
-    y_norm = torch.sqrt((y**2).sum(1).view(1, -1))
-    dist = 1.-torch.mm(x, y_t)/x_norm/y_norm
-    return dist
+def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
+    a_n, b_n = a.norm(dim=2,p=2)[:, :, None], b.norm(dim=2,p=2)[:, :, None]
+    a_norm = a / torch.clip(a_n, min=eps)
+    b_norm = b / torch.clip(b_n, min=eps)
+    sim_mt = torch.bmm(a_norm, b_norm.transpose(1, 2))
+    sim_mt = 1 - sim_mt
+    return sim_mt
 
 def pairwise_distances_sq_l2(x, y):
     N,C,*_ = x.shape
