@@ -854,9 +854,10 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.GroupNorm(32, 256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 256, (3, 3)),
+                nn.Conv2d(256, 256, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(256),),
+                Bias(256),
+                nn.GELU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias = False),
@@ -876,9 +877,10 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.GroupNorm(16, 128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 128, (3, 3)),
+                nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(128),),
+                Bias(128),
+                nn.GELU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias = False),
@@ -894,9 +896,10 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.GroupNorm(8, 64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3)),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64),),
+                Bias(64),
+                nn.GELU()),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
