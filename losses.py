@@ -86,9 +86,17 @@ def CalcStyleEmdLoss(X, Y):
 def CalcStyleEmdNoSample(X, Y):
     """Calc Style Emd Loss.
     """
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
-    remd = sinkhorn_loss(X,Y).mean()
+    d = X.shape[1]
+    X = X.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    Y = Y.transpose(0, 1).contiguous().view(d, -1).transpose(0, 1)
+    CX_M = pairwise_distances_cos(X, Y)
+
+    if d == 3: CX_M = CX_M + pairwise_distances_cos(X, Y)
+
+    m1, m1_inds = CX_M.min(1)
+    m2, m2_inds = CX_M.min(0)
+
+    remd = torch.max(m1.mean(), m2.mean())
     return remd
 
 cosinesimilarity = nn.CosineSimilarity()
