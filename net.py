@@ -732,17 +732,14 @@ class StyleAttention_w_Context(nn.Module):
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        _x = F.instance_norm(x)
+        #_x = F.instance_norm(x)
 
-        #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
-
-        q, k, v = self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        context = F.instance_norm(context)
         ck, cv = self.context_k(style_enc, context), self.context_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
