@@ -18,6 +18,14 @@ def pairwise_distances_cos(a:torch.Tensor, b:torch.Tensor,eps:float = 1e-5):
     sim_mt = 1 - sim_mt
     return sim_mt
 
+@torch.jit.script
+def pairwise_cos_self(a:torch.Tensor,eps:float = 1e-5):
+    a_n = a.norm(dim=2,p=2)[:, :, None]
+    a_norm = a / torch.clip(a_n, min=eps)
+    sim_mt = torch.bmm(a_norm, a_norm.transpose(1, 2))
+    sim_mt = 1 - sim_mt
+    return sim_mt
+
 def pairwise_distances_sq_l2(x, y):
     N,C,*_ = x.shape
     x_norm = (x**2).sum(1).view(N,C,1)
@@ -148,10 +156,10 @@ def CalcContentReltNoSample(X,Y, eps=1e-5):
     X = X.flatten(2).transpose(1,2).contiguous()
     Y = Y.flatten(2).transpose(1,2).contiguous()
     # Relaxed EMD
-    Mx = pairwise_distances_cos(X, X)
+    Mx = pairwise_cos_self(X)
     Mx = Mx / (Mx.sum(1, keepdim=True)+eps)
 
-    My = pairwise_distances_cos(Y, Y)
+    My = pairwise_cos_self(Y)
     My = My / (My.sum(1, keepdim=True)+eps)
 
     d = torch.abs(Mx - My).mean(1) * X.size(1)
