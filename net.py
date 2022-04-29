@@ -929,7 +929,7 @@ class ThumbAdaConv(nn.Module):
         ])
         #self.in_deform = DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6)
         self.in_deform = nn.Sequential(
-            nn.Conv2d(512,512,kernel_size=1),
+            nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='same'),
             nn.LeakyReLU(),
             nn.Conv2d(512, 512, kernel_size=1),
         )
