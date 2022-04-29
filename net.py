@@ -732,9 +732,9 @@ class StyleAttention_w_Context(nn.Module):
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        #_x = F.instance_norm(x)
+        _x = F.instance_norm(x)
 
-        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
+        q, k, v = self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
