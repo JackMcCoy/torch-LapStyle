@@ -189,7 +189,7 @@ def augment_list():  # 16 oeprations and their ranges
         (SolarizeAdd, 0, 80),
         (Color, 0.1, 1.9),
         (Contrast, 0.3, 1.9),
-        (Brightness, 0.5, 1.5),
+        (Brightness, 1, 1.5),
         (Sharpness, 0.1, 1.9),
         (ShearX, 0., 0.3),
         (ShearY, 0., 0.3),
