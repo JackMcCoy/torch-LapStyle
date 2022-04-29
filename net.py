@@ -886,10 +886,12 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
+                nn.GroupNorm(8, 64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
-                FusedLeakyReLU(64),),
+                Bias(64),
+                nn.GELU()),
             nn.Sequential(
                 nn.GroupNorm(8, 64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -912,7 +914,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
-            nn.Identity(),
+            StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
         self.layer_norm = nn.ModuleList([
             nn.Identity(),
@@ -922,10 +924,15 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.GroupNorm(16, 128),
             nn.Identity(),
-            nn.Identity(),
+            nn.GroupNorm(8, 64),
             nn.GroupNorm(8, 64)
         ])
-        self.in_deform = DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6)
+        #self.in_deform = DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6)
+        self.in_deform = nn.Sequential(
+            nn.Conv2d(512,512,kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(512, 512, kernel_size=1),
+        )
         self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
@@ -996,10 +1003,10 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         ######
         # in = 64 ch
-        res = x
-        x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
-        x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
-        x = x + res + half_res + out_res
+        x = x + self.relu(
+            checkpoint(self.attention_block[7], style_enc, cF['r1_1'], self.layer_norm[7](x), preserve_rng_state=False))
+        x = x + checkpoint(self.learnable[7], x, preserve_rng_state=True)
+        x = x + half_res + out_res
         x = x + self.relu(checkpoint(self.out_deform,self.layer_norm[8](x),preserve_rng_state=False))
         x = x + checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
