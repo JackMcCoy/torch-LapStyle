@@ -786,6 +786,7 @@ class ThumbAdaConv(nn.Module):
         )
         self.content_projection = nn.Linear(8192, self.s_d * 16)
         self.content_encoding = nn.Sequential(
+            nn.Conv2d(256,512,kernel_size=1),
             StyleEncoderBlock(512, kernel_size=5),
             *(StyleEncoderBlock(512, kernel_size=3),) * (depth+1)
         )
