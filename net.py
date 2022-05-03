@@ -924,7 +924,11 @@ class ThumbAdaConv(nn.Module):
             nn.GroupNorm(8, 64)
         ])
         '''
-        #self.in_deform = DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6)
+        self.in_deform = nn.ModuleList([
+            DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
+            DeformableAttention2D(256, heads=8),
+            DeformableAttention2D(128, heads=8),
+            ])
 
         #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
 
@@ -962,7 +966,8 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        x = checkpoint(self.adaconvs[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        x = self.in_deform[0](cF['r4_1'])
+        x = checkpoint(self.adaconvs[0],style_enc, x,preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         half_res = checkpoint(self.half_residual[0],x,preserve_rng_state=False)
@@ -974,6 +979,7 @@ class ThumbAdaConv(nn.Module):
         # in = 256 ch
         res = x
         whitened = whiten(cF['r3_1'])
+        whitened = checkpoint(self.in_deform[1],whitened, preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[2], style_enc, whitened, preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -988,6 +994,7 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         whitened = whiten(cF['r2_1'])
+        whitened = checkpoint(self.in_deform[2], whitened, preserve_rng_state=False)
         res = x
         x = self.relu(checkpoint(self.adaconvs[5], style_enc, whitened, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
