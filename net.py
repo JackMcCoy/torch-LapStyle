@@ -930,12 +930,14 @@ class ThumbAdaConv(nn.Module):
             ])
         self.in_projection = nn.ModuleList([
             nn.Sequential(
-                nn.Conv2d(512,512,kernel_size=1),
-                nn.LeakyReLU()
+                nn.Conv2d(512, 512, kernel_size=3,padding=1,padding_mode='reflect'),
+                nn.LeakyReLU(),
+                nn.Conv2d(512, 512, kernel_size=1),
             ),
             nn.Sequential(
+                nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+                nn.LeakyReLU(),
                 nn.Conv2d(256, 256, kernel_size=1),
-                nn.LeakyReLU()
             ),
         ])
 
