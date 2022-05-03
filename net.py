@@ -977,8 +977,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         # in = 256 ch
         res = x
-        whitened = whiten(cF['r3_1'])
-        whitened = self.in_deform[1](whitened)
+        whitened = self.in_deform[1](cF['r3_1'])
         x = self.relu(checkpoint(self.adaconvs[2], style_enc, whitened, preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
