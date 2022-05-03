@@ -927,7 +927,6 @@ class ThumbAdaConv(nn.Module):
         self.in_deform = nn.ModuleList([
             DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
             DeformableAttention2D(256, heads=8),
-            DeformableAttention2D(128, heads=8),
             ])
 
         #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
@@ -994,7 +993,6 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         whitened = whiten(cF['r2_1'])
-        whitened = checkpoint(self.in_deform[2], whitened, preserve_rng_state=False)
         res = x
         x = self.relu(checkpoint(self.adaconvs[5], style_enc, whitened, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
