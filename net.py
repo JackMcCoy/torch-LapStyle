@@ -970,8 +970,8 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        content_enc = self.style_encoding(cF['r3_1']).flatten(1)
-        content_enc = self.projection(content_enc).view(b, self.s_d, 16)
+        content_enc = self.content_encoding(cF['r3_1']).flatten(1)
+        content_enc = self.content_projection(content_enc).view(b, self.s_d, 16)
         content_enc = self.relu(content_enc).view(b, self.s_d, 4, 4)
         style_enc = style_enc + content_enc
         x = checkpoint(self.adaconvs[0],style_enc, cF['r4_1'],preserve_rng_state=False)
