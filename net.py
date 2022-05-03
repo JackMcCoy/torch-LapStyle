@@ -926,7 +926,7 @@ class ThumbAdaConv(nn.Module):
         '''
         self.in_deform = nn.ModuleList([
             DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
-            DeformableAttention2D(256, heads=8),
+            DeformableAttention2D(256, heads=4),
             ])
 
         #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
