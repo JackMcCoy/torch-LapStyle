@@ -36,7 +36,7 @@ lap_weight = np.repeat(np.array([[[[-8, -8, -8], [-8, 1, -8], [-8, -8, -8]]]]), 
 lap_weight = torch.Tensor(lap_weight).to(device)
 
 unfold = torch.nn.Unfold(256,stride=256)
-random_crop = RandomCrop(256)
+random_crop = RandomCrop(64)
 
 def _l2normalize(v, eps=1e-12):
     return v / (v.norm() + eps)
@@ -1427,7 +1427,7 @@ def loss_no_patch(stylized: torch.Tensor,
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    fake_loss = disc_(stylized)
+    fake_loss = disc_(random_crop(stylized))
     loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     '''
     cX, _ = xdog(torch.clip(ci, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)

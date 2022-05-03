@@ -311,6 +311,7 @@ def drafting_train():
             except:
                 print('optimizer not loaded ')
         dec_optimizer.lr = args.lr
+    random_crop = transforms.RandomCrop(64)
     dec_.train()
     enc_.to(device)
 
@@ -345,7 +346,7 @@ def drafting_train():
 
             set_requires_grad(disc_, True)
             set_requires_grad(dec_, False)
-            loss_D = calc_GAN_loss(si, stylized.clone().detach().requires_grad_(True), disc_)
+            loss_D = calc_GAN_loss(random_crop(si), random_crop(stylized.clone().detach().requires_grad_(True)), disc_)
             loss_D.backward()
 
             if n > 0:
