@@ -927,6 +927,7 @@ class ThumbAdaConv(nn.Module):
         self.in_deform = nn.ModuleList([
             DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
             DeformableAttention2D(256, heads=4),
+            DeformableAttention2D(128, heads=2),
             ])
         self.in_projection = nn.ModuleList([
             nn.Sequential(
@@ -938,6 +939,11 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
                 nn.LeakyReLU(),
                 nn.Conv2d(256, 256, kernel_size=1),
+            ),
+            nn.Sequential(
+                nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+                nn.LeakyReLU(),
+                nn.Conv2d(128, 128, kernel_size=1),
             ),
         ])
 
@@ -1006,9 +1012,12 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         res = x
-        x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
+        whitened = self.in_projection[2](cF['r2_1'])
+        whitened = checkpoint(self.in_deform[2], whitened, preserve_rng_state=False)
+        x = self.relu(checkpoint(self.adaconvs[5], style_enc, whitened, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
+
         # in = 128 ch
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
