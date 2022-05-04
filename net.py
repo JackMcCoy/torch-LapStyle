@@ -1409,7 +1409,9 @@ def loss_no_patch(stylized: torch.Tensor,
                 encoder:nn.Module,
                 decoder:nn.Module,
                 sF: typing.Dict[str,torch.Tensor],
-                disc_):
+                disc_,
+                crop_size=128):
+    random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)

@@ -311,16 +311,19 @@ def drafting_train():
             except:
                 print('optimizer not loaded ')
         dec_optimizer.lr = args.lr
-    random_crop = transforms.RandomCrop(64)
     dec_.train()
     enc_.to(device)
-
+    lowest_range = 128
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
         warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.disc_lr)
-
+        if n == args.warmup_iters//2:
+            lowest_range = 64
+        elif n == args.warmup_iters:
+            lowest_range = 32
+        crop_size = random.randint(lowest_range,128)
         ci = next(content_iter)
         si = next(style_iter)
         '''
@@ -346,7 +349,9 @@ def drafting_train():
 
             set_requires_grad(disc_, True)
             set_requires_grad(dec_, False)
-            loss_D = calc_GAN_loss(random_crop(si), random_crop(stylized.clone().detach().requires_grad_(True)), disc_)
+            loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
+                                   transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
+                                   disc_)
             loss_D.backward()
 
             if n > 0:
@@ -362,7 +367,7 @@ def drafting_train():
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_)
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_, crop_size=128)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, mdog = losses
 
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
