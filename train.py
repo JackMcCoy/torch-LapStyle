@@ -321,7 +321,7 @@ def drafting_train():
                          decay=args.disc_lr)
         if n == args.warmup_iters//2:
             lowest_range = 64
-        elif n == args.warmup_iters:
+        elif n == args.warmup_iters*2:
             lowest_range = 32
         crop_size = random.randint(lowest_range,128)
         ci = next(content_iter)
