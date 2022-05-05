@@ -314,6 +314,7 @@ def drafting_train():
     dec_.train()
     enc_.to(device)
     lowest_range = 32
+    random_flip = transforms.RandomVerticalFlip(.5)
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
@@ -353,7 +354,7 @@ def drafting_train():
             set_requires_grad(disc_, True)
             set_requires_grad(dec_, False)
             loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
-                                   transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
+                                   random_flip(transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True))) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
                                    disc_)
             loss_D.backward()
 
