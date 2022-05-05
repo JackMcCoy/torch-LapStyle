@@ -313,17 +313,20 @@ def drafting_train():
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
-    lowest_range = 64
+    lowest_range = 32
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
         warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.disc_lr)
-        if n == args.warmup_iters//2:
-            lowest_range = 64
-        elif n == args.warmup_iters*2:
-            lowest_range = 32
-        crop_size = random.randint(lowest_range,128)
+        #if n == args.warmup_iters//2:
+        #    lowest_range = 64
+        #elif n == args.warmup_iters*2:
+        #    lowest_range = 32
+        if n < args.warmup_iters:
+            crop_size = random.randint(lowest_range,128)
+        else:
+            crop_size = (random.randint(lowest_range, 128),random.randint(lowest_range, 128))
         ci = next(content_iter)
         si = next(style_iter)
         '''
