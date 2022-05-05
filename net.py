@@ -1455,7 +1455,7 @@ def loss_no_patch(stylized: torch.Tensor,
     mxdog_style = mse_loss(cdogF['r3_1'], sXF['r3_1']) + mse_loss(cdogF['r4_1'], sXF['r4_1'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, mxdog_losses
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
