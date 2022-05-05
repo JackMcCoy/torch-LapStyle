@@ -319,9 +319,9 @@ def drafting_train():
                          decay=args.lr_decay)
         warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.disc_lr)
-        #if n == args.warmup_iters//2:
-        #    lowest_range = 64
-        if n == args.warmup_iters*4:
+        if n == args.warmup_iters//2:
+            lowest_range = 64
+        elif n == args.warmup_iters*2:
             lowest_range = 32
         crop_size = random.randint(lowest_range,128)
         ci = next(content_iter)
