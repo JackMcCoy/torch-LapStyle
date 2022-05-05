@@ -350,7 +350,7 @@ def drafting_train():
             set_requires_grad(disc_, True)
             set_requires_grad(dec_, False)
             loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
-                                   random_flip(transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True))) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
+                                   transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
                                    disc_)
             loss_D.backward()
 
