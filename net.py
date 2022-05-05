@@ -1437,7 +1437,9 @@ def loss_no_patch(stylized: torch.Tensor,
     style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
-                   CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+                   CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach()) + \
+                   CalcContentReltNoSample(stylized_feats['r2_1'], cF['r2_1'].detach()) + \
+                   CalcContentReltNoSample(stylized_feats['r1_1'], cF['r1_1'].detach())
     fake_loss = disc_(random_crop(stylized))
     loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
 
