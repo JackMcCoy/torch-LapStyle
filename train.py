@@ -325,7 +325,7 @@ def drafting_train():
         #    lowest_range = 48
         if n !=0 and n%500==0:
             if lowest_range==128:
-                lowest_range = 48
+                lowest_range = 64
             else:
                 lowest_range = 128
         crop_size = (random.randint(lowest_range, 128),random.randint(lowest_range, 128))
