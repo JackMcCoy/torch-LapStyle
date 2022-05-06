@@ -323,7 +323,7 @@ def drafting_train():
         #    lowest_range = 64
         #if n == args.warmup_iters*2:
         #    lowest_range = 48
-        if n !=0 and n%1000==0:
+        if n !=0 and n%500==0:
             if lowest_range==128:
                 lowest_range = 48
             else:
