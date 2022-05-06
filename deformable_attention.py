@@ -122,7 +122,7 @@ class DeformableAttention2D(nn.Module):
         self.downsample_factor = downsample_factor
 
         self.to_offsets = nn.Sequential(
-            nn.Conv2d(offset_dims, offset_dims, offset_kernel_size, groups = offset_dims, stride = downsample_factor, padding = (offset_kernel_size - downsample_factor) // 2),
+            nn.Conv2d(offset_dims, offset_dims, offset_kernel_size, groups = offset_dims, stride = downsample_factor, padding = (offset_kernel_size - downsample_factor) // 2, padding_mode='reflect'),
             nn.GELU(),
             nn.Conv2d(offset_dims, 2, 1, bias = False),
             nn.Tanh(),
