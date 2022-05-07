@@ -954,13 +954,13 @@ class ThumbAdaConv(nn.Module):
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.Linear(in_features=128, out_features=128)
             )
         if content_contrastive_loss:
             self.proj_content = nn.Sequential(
                 nn.Linear(in_features=512, out_features=256),
-                nn.ReLU(),
+                nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
         self.relu = nn.LeakyReLU()
