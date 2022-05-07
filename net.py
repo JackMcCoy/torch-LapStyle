@@ -65,7 +65,8 @@ class Encoder(nn.Module):
         self.enc_1 = nn.Sequential(*enc_layers[:2])  # input -> relu1_1
         self.enc_2 = nn.Sequential(*enc_layers[2:7])  # relu1_1 -> relu2_1
         self.enc_3 = nn.Sequential(*enc_layers[7:12])  # relu2_1 -> relu3_1
-        self.enc_4 = nn.Sequential(*enc_layers[12:21])  # relu3_1 -> relu4_1
+        self.enc_3_3 = nn.Sequential(*enc_layers[12:16])  # relu3_1 -> relu3_3
+        self.enc_4 = nn.Sequential(*enc_layers[16:21])
         self.enc_5 = nn.Sequential(*enc_layers[21:30])
 
     def forward(self, x):
@@ -76,6 +77,8 @@ class Encoder(nn.Module):
         encodings['r2_1'] = x
         x = self.enc_3(x)
         encodings['r3_1'] = x
+        x = self.enc_3_3(x)
+        encodings['r3_3'] = x
         x = self.enc_4(x)
         encodings['r4_1'] = x
         x = self.enc_5(x)
@@ -1453,9 +1456,9 @@ def loss_no_patch(stylized: torch.Tensor,
                            morphs=1)
     cdogF = encoder(F.leaky_relu(stylized_dog))
 
-    mxdog_content = content_loss.no_norm(stylized_feats['r3_1'], cXF['r3_1'])
-    mxdog_content_contraint = content_loss.no_norm(cdogF['r3_1'], cXF['r3_1'])
-    mxdog_style = mse_loss(cdogF['r3_1'], sXF['r3_1'])
+    mxdog_content = content_loss.no_norm(stylized_feats['r3_3'], cXF['r3_3'])
+    mxdog_content_contraint = content_loss.no_norm(cdogF['r3_3'], cXF['r3_3'])
+    mxdog_style = mse_loss(cdogF['r3_3'], sXF['r3_3'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
     '''
     s_contrastive_loss = 0
