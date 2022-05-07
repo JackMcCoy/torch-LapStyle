@@ -1453,10 +1453,11 @@ def loss_no_patch(stylized: torch.Tensor,
                            morphs=1)
     cdogF = encoder(F.leaky_relu(stylized_dog))
 
-    mxdog_content = content_loss(stylized_feats['r4_1'], cXF['r4_1'])
-    mxdog_content_contraint = content_loss(cdogF['r4_1'], cXF['r4_1'])
-    mxdog_style = mse_loss(cdogF['r3_1'], sXF['r3_1']) + mse_loss(cdogF['r4_1'], sXF['r4_1'])
+    mxdog_content = content_loss.no_norm(stylized_feats['r3_1'], cXF['r3_1'])
+    mxdog_content_contraint = content_loss.no_norm(cdogF['r3_1'], cXF['r3_1'])
+    mxdog_style = mse_loss(cdogF['r3_1'], sXF['r3_1'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
+    '''
     s_contrastive_loss = 0
     c_contrastive_loss = 0
     half = stylized_feats['r4_1'].shape[0] // 2
@@ -1534,7 +1535,7 @@ def loss_no_patch(stylized: torch.Tensor,
                  content_down[i + 1:]], 0)
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
-                                                                           0.2, 0)
+    '''
     return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN_patch, loss_Gp_GAN, mxdog_losses, s_contrastive_loss, c_contrastive_loss
 
 def calc_losses(stylized: torch.Tensor,
