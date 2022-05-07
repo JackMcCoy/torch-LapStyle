@@ -1419,6 +1419,7 @@ def loss_no_patch(stylized: torch.Tensor,
                 decoder:nn.Module,
                 sF: typing.Dict[str,torch.Tensor],
                 disc_,
+                disc2_,
                 crop_size=128):
     random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
@@ -1440,6 +1441,8 @@ def loss_no_patch(stylized: torch.Tensor,
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r2_1'], cF['r2_1'].detach())
     fake_loss = disc_(random_crop(stylized))
+    loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
+    fake_loss = disc2_(stylized)
     loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
 
     cX, _ = xdog(torch.clip(ci, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
@@ -1455,7 +1458,7 @@ def loss_no_patch(stylized: torch.Tensor,
     mxdog_style = mse_loss(cdogF['r3_1'], sXF['r3_1']) + mse_loss(cdogF['r4_1'], sXF['r4_1'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
 
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, mxdog_losses
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN_patch, loss_Gp_GAN, mxdog_losses
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
