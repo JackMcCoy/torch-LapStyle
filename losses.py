@@ -95,18 +95,12 @@ def CalcStyleEmdLoss(X, Y):
 def CalcStyleEmdNoSample(X, Y):
     """Calc Style Emd Loss.
     """
-    d = X.shape[1]
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
-    CX_M = pairwise_distances_cos(X, Y)
-
-    if d == 3: CX_M = CX_M + pairwise_distances_cos(X, Y)
-
-    m1, m1_inds = CX_M.min(1)
-    m2, m2_inds = CX_M.min(0)
-
-    remd = torch.max(m1.mean(), m2.mean())
-    return remd
+    CX_M = calc_emd_loss(X, Y)
+    m1 = CX_M.min(2)
+    m2 = CX_M.min(1)
+    m = torch.cat([m1.mean(), m2.mean()])
+    loss_remd = torch.amax(m)
+    return loss_remd
 
 def calc_emd_loss(pred, target):
     """calculate emd loss.
@@ -115,8 +109,13 @@ def calc_emd_loss(pred, target):
         pred (Tensor): of shape (N, C, H, W). Predicted tensor.
         target (Tensor): of shape (N, C, H, W). Ground truth tensor.
     """
-
-    similarity = cosinesimilarity(pred, target)
+    b, _, h, w = pred.shape
+    pred = pred.reshape([b, -1, w * h])
+    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))
+    pred = pred.transpose(2,1)
+    target_t = target.reshape([b, -1, w * h])
+    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))
+    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
     dist = 1. - similarity
     return dist
 
@@ -153,18 +152,14 @@ def CalcContentReltLoss(X,Y, eps=1e-5):
     return d
 
 def CalcContentReltNoSample(X,Y, eps=1e-5):
-    X = X.flatten(2).transpose(1,2).contiguous()
-    Y = Y.flatten(2).transpose(1,2).contiguous()
-    # Relaxed EMD
-    Mx = pairwise_cos_self(X)
+    dM = 1.
+    Mx = calc_emd_loss(X, X)
     Mx = Mx / (Mx.sum(1, keepdim=True)+eps)
-
-    My = pairwise_cos_self(Y)
+    My = calc_emd_loss(Y, Y)
     My = My / (My.sum(1, keepdim=True)+eps)
-
-    d = torch.abs(Mx - My).mean(1) * X.size(1)
-    d = d.mean()
-    return d
+    loss_content = torch.abs(
+        dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
+    return loss_content
 
 def pixel_loss(X, Y):
     #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
