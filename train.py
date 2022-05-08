@@ -389,8 +389,8 @@ def drafting_train():
 
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
-               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss + loss_Gp_GAN_patch * args.gan_loss + \
-               mdog * args.mdog_weight + s_contrastive_loss * .45 + c_contrastive_loss * .15
+               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * (args.gan_loss*.75) + loss_Gp_GAN_patch * args.gan_loss + \
+               mdog * args.mdog_weight
 
         loss.backward()
         dec_optimizer.step()
