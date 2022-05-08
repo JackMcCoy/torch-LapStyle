@@ -335,12 +335,13 @@ def drafting_train():
         #crop_size = (random.randint(lowest_range, 128),random.randint(lowest_range, 128))
         ci = next(content_iter)
         si = next(style_iter)
-        #if args.style_contrastive_loss == 1:
-        ci_ = ci[1:]
-        ci_ = torch.cat([ci_, ci[0:1]], 0)
-        ci = torch.cat([ci, ci_], 0)
-        si = torch.cat([si, si], 0)
-
+        '''
+        if args.style_contrastive_loss == 1:
+            ci_ = ci[1:]
+            ci_ = torch.cat([ci_, ci[0:1]], 0)
+            ci = torch.cat([ci, ci_], 0)
+            si = torch.cat([si, si], 0)
+        '''
         ci = ci.to(device)
         si = si.to(device)
         ci = content_normalize(ci)
