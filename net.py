@@ -1450,16 +1450,16 @@ def loss_no_patch(stylized: torch.Tensor,
 
     cX, _ = xdog(torch.clip(ci, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
     sX, _ = xdog(torch.clip(si, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
-    cXF = encoder(F.leaky_relu(cX))
-    sXF = encoder(F.leaky_relu(sX))
+    cXF = encoder(cX)
+    sXF = encoder(sX)
     stylized_dog, _ = xdog(torch.clip(stylized, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85,
                            morphs=1)
-    cdogF = encoder(F.leaky_relu(stylized_dog))
+    cdogF = encoder(stylized_dog)
 
     mxdog_content = content_loss.no_norm(stylized_feats['r3_3'], cXF['r3_3'])
     mxdog_content_contraint = content_loss.no_norm(cdogF['r3_3'], cXF['r3_3'])
     mxdog_style = mse_loss(cdogF['r3_3'], sXF['r3_3'])
-    mxdog_losses = mxdog_content * .2 + mxdog_content_contraint * 200 + mxdog_style * 1000
+    mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
     '''
     s_contrastive_loss = 0
     c_contrastive_loss = 0
