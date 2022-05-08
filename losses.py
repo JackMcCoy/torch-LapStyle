@@ -96,8 +96,8 @@ def CalcStyleEmdNoSample(X, Y):
     """Calc Style Emd Loss.
     """
     CX_M = calc_emd_loss(X, Y)
-    m1,_ = CX_M.min(2)
-    m2,_ = CX_M.min(1)
+    m1 = CX_M.amin(dim=2)
+    m2 = CX_M.amin(dim=1)
     m = torch.cat([m1.mean(), m2.mean()])
     loss_remd = torch.amax(m)
     return loss_remd
