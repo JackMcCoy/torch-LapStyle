@@ -158,7 +158,7 @@ def CalcContentReltNoSample(X,Y, eps=1e-5):
     My = calc_emd_loss(Y, Y)
     My = My / (My.sum(1, keepdim=True)+eps)
     loss_content = torch.abs(
-        dM * (Mx - My)).mean() * pred.shape[2] * pred.shape[3]
+        dM * (Mx - My)).mean() * Y.shape[2] * Y.shape[3]
     return loss_content
 
 def pixel_loss(X, Y):
