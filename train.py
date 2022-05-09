@@ -289,11 +289,12 @@ def drafting_train():
         disc_state = None
         disc2_state = None
         init_weights(dec_)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.lr)
+    '''    
     disc_ = torch.jit.trace(build_disc(
         disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
     disc2_ = torch.jit.trace(build_disc(
         disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
-    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.lr)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
     opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.disc_lr)
     if args.load_disc == 1 and args.load_model != 'none':
@@ -302,6 +303,7 @@ def drafting_train():
             opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc2_optimizer.pth.tar'))
         except:
             print('discriminator optimizer not loaded')
+    '''
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -323,10 +325,10 @@ def drafting_train():
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-                         decay=args.disc_lr)
-        warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-                         decay=args.disc_lr)
+        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.disc_lr)
+        #warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        #                 decay=args.disc_lr)
         #if n == args.warmup_iters//2:
         #    lowest_range = 64
         #if n == args.warmup_iters*2:
@@ -347,7 +349,7 @@ def drafting_train():
         si = style_normalize(si)
         cF = enc_(ci)
         sF = enc_(si)
-
+        '''
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
             stylized = dec_(cF, sF['r4_1'])
@@ -376,15 +378,14 @@ def drafting_train():
             set_requires_grad(disc_, False)
             set_requires_grad(disc2_, False)
             set_requires_grad(dec_, True)
-
-
         dec_.train()
+        '''
         for param in dec_.parameters():
             param.grad = None
 
         stylized = dec_(cF, sF['r4_1'])
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_, disc2_, crop_size=128)
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN_patch, loss_Gp_GAN, mdog, s_contrastive_loss, c_contrastive_loss = losses
 
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
@@ -394,8 +395,8 @@ def drafting_train():
 
         loss.backward()
         dec_optimizer.step()
-        disc_.train()
-        disc2_.train()
+        #disc_.train()
+        #disc2_.train()
         if (n + 1) % args.log_every_ == 0:
 
             loss_dict = {}
