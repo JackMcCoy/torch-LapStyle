@@ -873,7 +873,6 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
-                nn.GroupNorm(16, 128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
@@ -1015,9 +1014,7 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         res = x
-        whitened = self.in_projection[2](cF['r2_1'])
-        whitened = checkpoint(self.in_deform[2], style_enc, whitened, x, preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[5], style_enc, whitened, preserve_rng_state=False))
+        x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
 
