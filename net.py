@@ -773,13 +773,13 @@ class ThumbAdaConv(nn.Module):
 
         self.adaconvs = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
             nn.Identity(),
             # Half res in
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
+            nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         depth = 2 if size==256 else 1
@@ -993,7 +993,6 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[0],x,preserve_rng_state=False)
         out_res = checkpoint(self.full_res[0],x,preserve_rng_state=False)
         # quarter res
-        x = self.relu(checkpoint(self.adaconvs[1],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
         x = x + res
         # in = 256 ch
@@ -1008,7 +1007,6 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[3], x, preserve_rng_state=True)
         x = x + res
         res = checkpoint(self.residual[4], x, preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[4], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[4],x,preserve_rng_state=True)
         x = x + res + half_res
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
@@ -1020,7 +1018,6 @@ class ThumbAdaConv(nn.Module):
 
         # in = 128 ch
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[6],style_enc, x,preserve_rng_state=False))
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
         x = x + res
         ######
