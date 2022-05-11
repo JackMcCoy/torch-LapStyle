@@ -19,7 +19,7 @@ from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
 from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
 from fused_act import FusedLeakyReLU
-from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors
+from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, EdgeLoss
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
@@ -1345,6 +1345,7 @@ style_remd_loss = CalcStyleEmdLoss
 content_emd_loss = CalcContentReltLoss
 content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
+edge_loss = EdgeLoss()
 
 def identity_loss(i, F, encoder, decoder):
     Icc = decoder(F, F['r4_1'])
@@ -1435,6 +1436,7 @@ def loss_no_patch(stylized: torch.Tensor,
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r2_1'], cF['r2_1'].detach())
+    edge = edge_loss(stylized, ci)
     '''
     fake_loss = disc_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
@@ -1532,7 +1534,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0 # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0, edge # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,

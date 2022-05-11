@@ -216,6 +216,57 @@ class CalcStyleLoss():
             pred_std, target_std)
 
 
+class CharbonnierLoss():
+    """Charbonnier Loss (L1).
+    Args:
+        eps (float): Default: 1e-12.
+    """
+    def __init__(self, eps=1e-12, reduction='sum'):
+        self.eps = eps
+        self.reduction = reduction
+
+    def __call__(self, pred, target, **kwargs):
+        """Forward Function.
+        Args:
+            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+        """
+        if self.reduction == 'sum':
+            out = torch.sqrt((pred - target)**2 + self.eps).sum()
+        elif self.reduction == 'mean':
+            out = torch.sqrt((pred - target)**2 + self.eps).mean()
+        else:
+            raise NotImplementedError('CharbonnierLoss %s not implemented' %
+                                      self.reduction)
+        return out
+
+
+class EdgeLoss():
+    def __init__(self):
+        k = torch.tensor([[.05, .25, .4, .25, .05]],device=device)
+        self.kernel = torch.matmul(k.t(), k).unsqueeze(0).tile([3, 1, 1, 1])
+        self.loss = CharbonnierLoss()
+
+    def conv_gauss(self, img):
+        n_channels, _, kw, kh = self.kernel.shape
+        img = F.pad(img, [kw // 2, kh // 2, kw // 2, kh // 2], mode='reflect')
+        return F.conv2d(img, self.kernel, groups=n_channels)
+
+    def laplacian_kernel(self, current):
+        filtered = self.conv_gauss(current)  # filter
+        down = filtered[:, :, ::2, ::2]  # downsample
+        new_filter = torch.zeros_like(filtered)
+        with torch.no_grad():
+            new_filter[:, :, ::2, ::2] = down * 4  # upsample
+            filtered = self.conv_gauss(new_filter)  # filter
+        diff = current - filtered
+        return diff
+
+    def __call__(self, x, y):
+        loss = self.loss(self.laplacian_kernel(x), self.laplacian_kernel(y))
+        return loss
+
+
 class GANLoss(nn.Module):
     """Define different GAN objectives.
 
