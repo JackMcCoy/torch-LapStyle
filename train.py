@@ -415,7 +415,7 @@ def drafting_train():
                     if l != 0:
                         loss_dict[s] = l
             print(str(n) + '/' + str(args.max_iter) + ': ' + '\t'.join(
-                [str(k) + ': ' + str('{:.2f}').format(v) for k, v in loss_dict.items()]))
+                [str(k) + ': ' + str('{:.4f}').format(v) for k, v in loss_dict.items()]))
             if (n + 1) % 10 == 0:
                 loss_dict['example'] = wandb.Image(stylized[0].transpose(2, 0).transpose(1, 0).detach().cpu().numpy())
             wandb.log(loss_dict, step=n)
