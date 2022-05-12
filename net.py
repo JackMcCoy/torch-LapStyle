@@ -1426,11 +1426,11 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_c = loss_c + content_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
     #loss_c = loss_c + content_loss(stylized_feats['r2_1'], cF['r2_1'].detach())
     #loss_c = loss_c + content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
-    loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
-    loss_s = loss_s + style_loss(stylized_feats['r2_1'], sF['r2_1'].detach())
-    loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
-    loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
-    loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
+    loss_s = mse_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
+    loss_s = loss_s + mse_loss(stylized_feats['r2_1'], sF['r2_1'].detach())
+    loss_s = loss_s + mse_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
+    loss_s = loss_s + mse_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
+    loss_s = loss_s + mse_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
     #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
     #             CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
