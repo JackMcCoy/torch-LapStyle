@@ -402,7 +402,7 @@ def drafting_train():
 
             loss_dict = {}
             for l, s in zip(
-                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s, style_remd, content_relt,
+                    [dec_optimizer.param_groups[0]['lr'], loss, loss_c, loss_s* args.style_weight, style_remd, content_relt,
                      l_identity1, l_identity2, l_identity3, l_identity4, loss_D, loss_Gp_GAN, mdog,
                      s_contrastive_loss, c_contrastive_loss, edge_loss* .00001],
                     ['LR', 'Loss', 'Content Loss', 'Style Loss', 'Style REMD', 'Content RELT',
