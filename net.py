@@ -1431,11 +1431,12 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
-    #             CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
-    #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
-    #               CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    edge = edge_loss(stylized, ci)
+    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
+                 CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
+                   CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    #edge = edge_loss(stylized, ci)
+    edge = 0
     '''
     fake_loss = disc_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
@@ -1533,7 +1534,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, 0, 0, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0, edge # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0, edge # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
