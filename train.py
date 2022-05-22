@@ -79,7 +79,12 @@ class FlatFolderDataset(data.Dataset):
         super(FlatFolderDataset, self).__init__()
         if os.path.isdir(root):
             self.root = root
-            self.paths = list(Path(self.root).glob('*'))
+            try:
+                path = args.save_dir.split('/')
+                with open('/'.join(path[:-1])+root.replace('/','.'),'r') as file:
+                    self.paths = file.read().split('\n')
+            except:
+                self.paths = list(Path(self.root).glob('*'))
         else:
             self.paths = [root]
         self.transform = transform
