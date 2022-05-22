@@ -81,7 +81,8 @@ class FlatFolderDataset(data.Dataset):
             self.root = root
             try:
                 path = args.save_dir.split('/')
-                with open('/'.join(path[:-2])+'/'+root.replace('/','.'),'r') as file:
+                filelist = root.split('/')[-2]+'.txt'
+                with open('/'.join(path[:-2])+'/'+filelist,'r') as file:
                     self.paths = file.read().split('\n')
             except:
                 self.paths = list(Path(self.root).glob('*'))
