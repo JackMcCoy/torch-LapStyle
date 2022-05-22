@@ -312,6 +312,10 @@ def drafting_train():
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
 
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
+        try:
+            enc_.load_state_dict(torch.load('/'.join(path[:-1])+'vgg_trained.pth.tar'), strict=False)
+        except:
+            'VGG encoder not loaded.'
         if args.load_optimizer == 1:
             try:
                 dec_optimizer.load_state_dict(
