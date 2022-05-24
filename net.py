@@ -932,7 +932,6 @@ class ThumbAdaConv(nn.Module):
             DeformableAttention2D(256, heads=4),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             ])
-        '''
         self.in_projection = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 512, kernel_size=3,padding=1,padding_mode='reflect'),
@@ -950,7 +949,9 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(128, 128, kernel_size=1),
             ),
         ])
-
+        '''
+        #self.to_patch = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=8, p2=8)
+        #self.from_patch = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=8, d=8)
         #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
 
         #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
@@ -987,9 +988,9 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        x = self.in_projection[0](cF['r4_1'])
+        #x = self.in_projection[0](cF['r4_1'])
         #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
-        x = checkpoint(self.adaconvs[0],style_enc, x,preserve_rng_state=False)
+        x = checkpoint(self.adaconvs[0],style_enc, cF['r4_1'],preserve_rng_state=False)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         half_res = checkpoint(self.half_residual[0],x,preserve_rng_state=False)
