@@ -893,7 +893,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.GroupNorm(8, 64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3), bias=False),
+                nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
@@ -1029,7 +1029,7 @@ class ThumbAdaConv(nn.Module):
         x = self.relu(checkpoint(self.adaconvs[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
-        x = x + half_res + out_res
+        x = torch.cat([x, half_res + out_res],1)
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
