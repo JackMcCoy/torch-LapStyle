@@ -1029,7 +1029,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
         x = x + half_res + out_res
-        x = x + checkpoint(self.learnable[8],x,preserve_rng_state=True)
+        x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
 
