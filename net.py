@@ -1015,7 +1015,7 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         res = x
-        x = x + self.relu(checkpoint(self.adaconvs[5], style_enc, cF['r2_1'], preserve_rng_state=False))
+        x = x + self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
 
