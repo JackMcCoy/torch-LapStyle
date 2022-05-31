@@ -1002,7 +1002,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = self.relu(checkpoint(self.adaconvs[2], style_enc, x, preserve_rng_state=False))
+        x = x + self.relu(checkpoint(self.adaconvs[2], style_enc, cF['r3_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
         #####
@@ -1015,7 +1015,7 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         res = x
-        x = self.relu(checkpoint(self.adaconvs[5], style_enc, x, preserve_rng_state=False))
+        x = x + self.relu(checkpoint(self.adaconvs[5], style_enc, cF['r2_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
 
@@ -1424,11 +1424,11 @@ def loss_no_patch(stylized: torch.Tensor,
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)
-    loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
-    loss_c = loss_c + content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
-    loss_c = loss_c + content_loss.no_norm(stylized_feats['r3_1'], cF['r3_1'].detach())
-    loss_c = loss_c + content_loss.no_norm(stylized_feats['r2_1'], cF['r2_1'].detach())
-    loss_c = loss_c + content_loss.no_norm(stylized_feats['r1_1'], cF['r1_1'].detach())
+    loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
+    loss_c = loss_c + content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
+    loss_c = loss_c + content_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
+    loss_c = loss_c + content_loss(stylized_feats['r2_1'], cF['r2_1'].detach())
+    loss_c = loss_c + content_loss(stylized_feats['r1_1'], cF['r1_1'].detach())
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r2_1'], sF['r2_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
