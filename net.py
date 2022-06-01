@@ -666,8 +666,8 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
-        self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
@@ -683,7 +683,7 @@ class StyleAttention(nn.Module):
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
 
-        q, k, v = self.to_q(x), self.to_k(x), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, _x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -704,7 +704,6 @@ class StyleAttention(nn.Module):
         out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        out = self.out_norm(out)
         return out
 
 
@@ -991,7 +990,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         #x = self.in_projection[0](cF['r4_1'])
         #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
-        x = self.relu(checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False))
+        x = self.gelu(checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False))
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
         half_res = checkpoint(self.half_residual[0],x,preserve_rng_state=False)
@@ -1003,7 +1002,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = x + self.relu(checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False))
+        x = x + self.gelu(checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
         #####
@@ -1016,7 +1015,7 @@ class ThumbAdaConv(nn.Module):
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
         res = x
-        x = x + self.relu(checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False))
+        x = x + self.gelu(checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
 
