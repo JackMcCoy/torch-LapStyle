@@ -1030,7 +1030,7 @@ class ThumbAdaConv(nn.Module):
         x = self.gelu(checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
-        x = self.gelu(checkpoint(self.attention_block[8], style_enc, x, half_res + out_res preserve_rng_state=False))
+        x = self.gelu(checkpoint(self.attention_block[8], style_enc, x, half_res + out_res, preserve_rng_state=False))
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
