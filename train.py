@@ -295,7 +295,7 @@ def drafting_train():
         disc_state = None
         disc2_state = None
         init_weights(dec_)
-    dec_optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True)), weight_decay=args.weight_decay, lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(enc_.parameters(recurse=True)), weight_decay=args.weight_decay, lr=args.lr)
     '''    
     disc_ = torch.jit.trace(build_disc(
         disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
@@ -318,7 +318,10 @@ def drafting_train():
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
 
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
-
+        try:
+            enc_.load_state_dict(torch.load('/'.join(path[:-1])+'vgg_trained.pth.tar'), strict=False)
+        except:
+            'VGG encoder not loaded.'
         if args.load_optimizer == 1:
             try:
                 dec_optimizer.load_state_dict(
@@ -446,14 +449,13 @@ def drafting_train():
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
+                state_dict = enc_.state_dict()
+                torch.save(copy.deepcopy(state_dict), save_dir /
+                           'vgg_trained.pth.tar'.format(n + 1))
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
                 '''
-                state_dict = enc_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'vgg_trained.pth.tar'.format(n + 1))
-                
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
