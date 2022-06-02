@@ -611,9 +611,8 @@ class AdaConv_w_FF(nn.Module):
     def __init__(self, n_dims, s_d, batch_size, norm=False):
         super(AdaConv_w_FF, self).__init__()
         self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
-        self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
+        #self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
-        x = self.conv(x)
         x = self.ada(style, x)
         return x
 
@@ -892,9 +891,9 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
-                nn.GroupNorm(8, 128),
+                nn.GroupNorm(8, 64),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3), bias=False),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
@@ -913,7 +912,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=2),
+            StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
         '''
         self.layer_norm = nn.ModuleList([
@@ -1028,11 +1027,10 @@ class ThumbAdaConv(nn.Module):
         ######
         # in = 64 ch
         res = x
-        x = self.relu(checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False))
+        x = self.gelu(checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
-        x = torch.cat([x, half_res + out_res],1)
-        x = self.relu(checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False))
+        x = self.gelu(checkpoint(self.attention_block[8], style_enc, x, half_res + out_res preserve_rng_state=False))
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
