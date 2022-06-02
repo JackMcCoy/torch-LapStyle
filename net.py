@@ -613,8 +613,8 @@ class AdaConv_w_FF(nn.Module):
         self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
         self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
-        x = self.ada(style, x)
         x = self.conv(x)
+        x = self.ada(style, x)
         return x
 
 
@@ -679,11 +679,11 @@ class StyleAttention(nn.Module):
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        _x = F.instance_norm(x)
+        #_x = F.instance_norm(x)
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
 
-        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -733,9 +733,9 @@ class StyleAttention_w_Context(nn.Module):
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        _x = F.instance_norm(x)
+        #_x = F.instance_norm(x)
 
-        q, k, v = self.to_q(style_enc, _x), self.to_k(style_enc, _x), self.to_v(style_enc, _x)
+        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
