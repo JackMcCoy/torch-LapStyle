@@ -435,7 +435,7 @@ def drafting_train():
                 draft_img_grid = make_grid(invStyleTrans(stylized), nrow=args.grid_width, scale_each=True)
                 style_source_grid = make_grid(si, nrow=args.grid_width, scale_each=True)
                 content_img_grid = make_grid(ci, nrow=args.grid_width, scale_each=True)
-                save_image(invTrans(draft_img_grid),
+                save_image(draft_img_grid,
                            args.save_dir + '/drafting_draft_iter' + str(n + 1) + '.jpg')
                 save_image(invTrans(content_img_grid),
                            args.save_dir + '/drafting_training_iter_ci' + str(
