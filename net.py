@@ -726,8 +726,8 @@ class StyleAttention_w_Context(nn.Module):
         self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -735,7 +735,7 @@ class StyleAttention_w_Context(nn.Module):
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        #_x = F.instance_norm(x)
+        x = F.instance_norm(x)
 
         q, k, v = self.to_q(style_enc,x), self.to_k(style_enc,x), self.to_v(style_enc, x)
 
@@ -1014,7 +1014,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, cF['r3_1'], x, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[2](x))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -1029,7 +1029,7 @@ class ThumbAdaConv(nn.Module):
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        x = checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, cF['r2_1'], x, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[5](x))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
@@ -1042,7 +1042,7 @@ class ThumbAdaConv(nn.Module):
         # in = 64 ch
         x = self.layer_norm_in[7](x)
         res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[7](x))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
