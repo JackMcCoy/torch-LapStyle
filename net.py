@@ -934,7 +934,7 @@ class ThumbAdaConv(nn.Module):
             nn.LayerNorm((batch_size, 128, 64, 64)),
             nn.LayerNorm((batch_size, 128, 64, 64)),
             nn.LayerNorm((batch_size, 64, 128, 128)),
-            nn.LayerNorm((batch_size, 128, 64, 64)),
+            nn.LayerNorm((batch_size, 128, 128, 128)),
         ])
         '''
         self.in_deform = nn.ModuleList([
