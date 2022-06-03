@@ -907,14 +907,14 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
             nn.Identity(),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1, size=128),
         ])
         self.layer_norm = nn.ModuleList([
             nn.Identity(),
