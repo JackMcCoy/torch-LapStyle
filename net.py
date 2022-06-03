@@ -674,7 +674,7 @@ class StyleAttention(nn.Module):
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(chan_out//16,chan_out)
+        self.out_norm = nn.LayerNorm(chan_out)
 
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -730,7 +730,7 @@ class StyleAttention_w_Context(nn.Module):
         self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.GroupNorm(chan_out // 16, chan_out)
+        self.out_norm = nn.LayerNorm(chan_out)
 
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -919,12 +919,12 @@ class ThumbAdaConv(nn.Module):
         self.layer_norm = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
-            nn.GroupNorm(32, 256),
+            nn.LayerNorm(256),
             nn.Identity(),
             nn.Identity(),
-            nn.GroupNorm(16, 128),
+            nn.LayerNorm(128),
             nn.Identity(),
-            nn.GroupNorm(8, 64),
+            nn.LayerNorm(64),
             nn.Identity(),
         ])
         '''
