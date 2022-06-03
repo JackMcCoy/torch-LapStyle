@@ -613,8 +613,8 @@ class AdaConv_w_FF(nn.Module):
         self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
         self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
-        x = self.conv(x)
         x = self.ada(style, x)
+        x = self.conv(x)
         return x
 
 
