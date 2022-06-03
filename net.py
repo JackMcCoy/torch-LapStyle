@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -683,7 +683,7 @@ class StyleAttention(nn.Module):
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
 
-        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
+        q, k, v = self.to_q(x), self.to_k(x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
@@ -721,11 +721,11 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_q = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
+        self.to_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.context_k = nn.Conv2d(chan, key_dim * heads, 1, **conv_kwargs)
         self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
@@ -735,13 +735,13 @@ class StyleAttention_w_Context(nn.Module):
 
         #_x = F.instance_norm(x)
 
-        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
+        q, k, v = self.to_q(x), self.to_k(x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        ck, cv = self.context_k(style_enc, context), self.context_v(style_enc, context)
+        ck, cv = self.context_k(context), self.context_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
