@@ -668,7 +668,7 @@ class StyleAttention(nn.Module):
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -723,10 +723,10 @@ class StyleAttention_w_Context(nn.Module):
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
         self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
 
