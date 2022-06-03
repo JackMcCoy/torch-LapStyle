@@ -913,7 +913,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
-            StyleAttention_w_Context(64, s_d=s_d, batch_size=batch_size, heads=1),
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1),
         ])
         '''
         self.layer_norm = nn.ModuleList([
@@ -1030,8 +1030,8 @@ class ThumbAdaConv(nn.Module):
         res = x
         x = self.gelu(checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
-        x = res + x
-        x = self.gelu(checkpoint(self.attention_block[8], style_enc, x, half_res + out_res, preserve_rng_state=False))
+        x = res + x + half_res + out_res
+        x = self.gelu(checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
