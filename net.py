@@ -839,6 +839,7 @@ class ThumbAdaConv(nn.Module):
         p = 1
         self.learnable = nn.ModuleList([
             nn.Sequential(
+                nn.GroupNorm(32, 512),
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks), bias = False),
                 GaussianNoise(),
@@ -874,6 +875,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor = 2, mode='bilinear')
             ),
             nn.Sequential(
+                nn.GroupNorm(16, 128),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=False),
                 GaussianNoise(),
