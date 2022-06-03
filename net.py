@@ -674,7 +674,7 @@ class StyleAttention(nn.Module):
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.LayerNorm(chan_out)
+        self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
 
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -730,7 +730,7 @@ class StyleAttention_w_Context(nn.Module):
         self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
-        self.out_norm = nn.LayerNorm(chan_out)
+        self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
 
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
@@ -881,7 +881,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(128)),
             nn.Sequential(
-                nn.GroupNorm(16, 128),
+                nn.LayerNorm((batch_size, 128, 64, 64)),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias = False),
                 GaussianNoise(),
@@ -894,7 +894,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
-                nn.GroupNorm(16, 128),
+                nn.LayerNorm((batch_size, 128, 128, 128)),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=False),
                 GaussianNoise(),
@@ -919,12 +919,12 @@ class ThumbAdaConv(nn.Module):
         self.layer_norm = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
-            nn.LayerNorm(256),
+            nn.LayerNorm((batch_size, 256, 32, 32)),
             nn.Identity(),
             nn.Identity(),
-            nn.LayerNorm(128),
+            nn.LayerNorm((batch_size, 128, 64, 64)),
             nn.Identity(),
-            nn.LayerNorm(64),
+            nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
         '''
