@@ -932,9 +932,9 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
             nn.LayerNorm((batch_size, 128, 64, 64)),
-            nn.LayerNorm((batch_size, 128, 64, 64)),
+            nn.Identity(),
             nn.LayerNorm((batch_size, 64, 128, 128)),
-            nn.LayerNorm((batch_size, 128, 128, 128)),
+            nn.Identity(),
         ])
         '''
         self.in_deform = nn.ModuleList([
@@ -1035,7 +1035,6 @@ class ThumbAdaConv(nn.Module):
         x = x + res
 
         # in = 128 ch
-        x = self.layer_norm_out[6](x)
         res = checkpoint(self.residual[6],x,preserve_rng_state=False)
         x = checkpoint(self.learnable[6],x,preserve_rng_state=True)
         x = x + res
@@ -1048,7 +1047,6 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = res + x
         x = torch.cat([x, half_res + out_res], 1)
-        x = self.layer_norm_out[8](x)
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x
