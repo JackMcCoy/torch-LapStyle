@@ -1053,9 +1053,9 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         ######
         # in = 64 ch
-        x = self.layer_norm_in[7](x)
+        #x = self.layer_norm_in[7](x)
         res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[7], style_enc, F.instance_norm(x), preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = torch.cat([x, res, half_res, out_res], 1)
         x = checkpoint(self.learnable[8],x,preserve_rng_state=True)
