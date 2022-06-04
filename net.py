@@ -797,14 +797,16 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.Upsample(scale_factor = 2, mode='bilinear'),
+                BlurPool(256, filt_size=3, stride=1),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.Upsample(scale_factor = 2, mode='bilinear'),
+                BlurPool(128, filt_size=3, stride=1)
             ),
             nn.Identity(),
             nn.Sequential(
@@ -819,18 +821,23 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(512, 64, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor = 8, mode='bilinear')
+                nn.Upsample(scale_factor = 8, mode='bilinear'),
+                BlurPool(64, filt_size=7, stride=1)
             )
             ])
         self.half_residual = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(512, 128, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=4, mode='bilinear')),
+                nn.Upsample(scale_factor=4, mode='bilinear'),
+                BlurPool(128, filt_size=5, stride=1)
+            ),
             nn.Sequential(
                 nn.Conv2d(128,64, kernel_size=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear')),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
+                BlurPool(64, filt_size=3, stride=1)
+            ),
         ])
 
 
@@ -851,6 +858,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(256),
                 nn.Upsample(scale_factor = 2, mode='bilinear'),
+                BlurPool(256, filt_size=3, stride=1)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -872,6 +880,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(128),
                 nn.Upsample(scale_factor = 2, mode='bilinear'),
+                BlurPool(128, filt_size=3, stride=1)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -884,6 +893,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),
                 nn.Upsample(scale_factor = 2, mode='bilinear'),
+                BlurPool(64, filt_size=3, stride=1)
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -894,7 +904,6 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3,3)),
                 nn.GELU(),
-                nn.GroupNorm(4,256),
                 nn.Conv2d(256, 64, kernel_size=1),
                 nn.LeakyReLU(),
             ),
