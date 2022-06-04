@@ -891,12 +891,13 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
-                nn.Conv2d(256, 256, kernel_size=1),
-                nn.GELU()
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3,3)),
+                nn.GELU(),
+                nn.Conv2d(256, 64, kernel_size=1),
+                nn.LeakyReLU(),
             ),
             nn.Sequential(
-                nn.Conv2d(256,64, kernel_size=1),
-                nn.GELU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
@@ -917,7 +918,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size)
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
         self.layer_norm_in = nn.ModuleList([
             nn.Identity(),
