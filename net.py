@@ -894,6 +894,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3,3)),
                 nn.GELU(),
+                nn.GroupNorm(4,256),
                 nn.Conv2d(256, 64, kernel_size=1),
                 nn.LeakyReLU(),
             ),
