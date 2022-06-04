@@ -822,7 +822,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 64, kernel_size=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor = 8, mode='bilinear'),
-                BlurPool(64, filt_size=7, stride=1)
+                BlurPool(64, filt_size=3, stride=1)
             )
             ])
         self.half_residual = nn.ModuleList([
@@ -830,7 +830,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 128, kernel_size=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=4, mode='bilinear'),
-                BlurPool(128, filt_size=5, stride=1)
+                BlurPool(128, filt_size=3, stride=1)
             ),
             nn.Sequential(
                 nn.Conv2d(128,64, kernel_size=1),
