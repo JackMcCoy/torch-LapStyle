@@ -911,8 +911,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
             nn.Identity(),
-            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
-            nn.Identity(),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
         self.layer_norm_in = nn.ModuleList([
             nn.Identity(),
@@ -933,7 +932,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.LayerNorm((batch_size, 128, 64, 64)),
             nn.Identity(),
-            nn.LayerNorm((batch_size, 64, 128, 128)),
+            #nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
         self.r3_1_project = nn.Sequential(
