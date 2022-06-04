@@ -1065,7 +1065,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = torch.cat([x, res, half_res, out_res], 1)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=True)
-        x = self.relu(checkpoint(self.attention_block[8], style_enc, F.instance_norm(x), preserve_rng_state=False))
+        x = checkpoint(self.attention_block[8], style_enc, F.instance_norm(x), preserve_rng_state=False)
         x = checkpoint(self.learnable[9],x,preserve_rng_state=True)
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x
