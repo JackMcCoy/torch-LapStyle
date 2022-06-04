@@ -892,11 +892,11 @@ class ThumbAdaConv(nn.Module):
                 FusedLeakyReLU(64),),
             nn.Sequential(
                 nn.Conv2d(256, 256, kernel_size=1),
-                nn.LeakyReLU()
+                nn.GELU()
             ),
             nn.Sequential(
                 nn.Conv2d(256,64, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=False),
                 GaussianNoise(),
