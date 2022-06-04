@@ -934,18 +934,18 @@ class ThumbAdaConv(nn.Module):
             nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
-        self.r3_1_project = nn.Sequential([
+        self.r3_1_project = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=1),
             nn.LeakyReLU(),
             nn.Conv2d(256, 256, kernel_size=1),
             nn.LayerNorm((batch_size, 256, 32, 32)),
-        ])
-        self.r2_1_project = nn.Sequential([
+        )
+        self.r2_1_project = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=1),
             nn.LeakyReLU(),
             nn.Conv2d(128, 128, kernel_size=1),
             nn.LayerNorm((batch_size, 128, 64, 64)),
-        ])
+        )
         '''
         self.in_deform = nn.ModuleList([
             DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
