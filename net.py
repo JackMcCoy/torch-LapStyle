@@ -735,8 +735,6 @@ class StyleAttention_w_Context(nn.Module):
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        x = F.instance_norm(x)
-
         q, k, v = self.to_q(style_enc,x), self.to_k(style_enc,x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
@@ -907,10 +905,10 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
             nn.Identity(),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
             nn.Identity(),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1, size=128),
         ])
@@ -1014,7 +1012,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, F.instance_norm(cF['r3_1']), preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[2](x))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -1029,7 +1027,7 @@ class ThumbAdaConv(nn.Module):
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, x, F.instance_norm(cF['r2_1']), preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[5](x))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
