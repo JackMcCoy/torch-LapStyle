@@ -614,9 +614,8 @@ class AdaConv_w_FF(nn.Module):
         self.relu = nn.LeakyReLU()
         self.conv = nn.Sequential(
             nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(n_dims, n_dims, (3, 3), bias=False),
-            GaussianNoise(),
-            FusedLeakyReLU(n_dims),
+            nn.Conv2d(n_dims, n_dims, (3, 3), bias=True),
+            nn.LeakyReLU()
         )
         #self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
