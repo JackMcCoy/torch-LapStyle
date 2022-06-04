@@ -934,6 +934,18 @@ class ThumbAdaConv(nn.Module):
             nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
+        self.r3_1_project = nn.Sequential([
+            nn.Conv2d(256, 256, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(256, 256, kernel_size=1),
+            nn.LayerNorm((batch_size, 256, 32, 32)),
+        ])
+        self.r2_1_project = nn.Sequential([
+            nn.Conv2d(128, 128, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(128, 128, kernel_size=1),
+            nn.LayerNorm((batch_size, 128, 64, 64)),
+        ])
         '''
         self.in_deform = nn.ModuleList([
             DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
@@ -1012,7 +1024,8 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, F.instance_norm(cF['r3_1']), preserve_rng_state=False)
+        content_in = self.r3_1_project(cF['r3_1'])
+        x = x + checkpoint(self.attention_block[2], style_enc, x, content_in, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[2](x))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -1027,7 +1040,8 @@ class ThumbAdaConv(nn.Module):
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        x = x + checkpoint(self.attention_block[5], style_enc, x, F.instance_norm(cF['r2_1']), preserve_rng_state=False)
+        content_in = self.r2_1_project(cF['r2_1'])
+        x = x + checkpoint(self.attention_block[5], style_enc, x, content_in, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[5](x))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
