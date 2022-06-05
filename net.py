@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -722,12 +722,12 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -1029,7 +1029,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
         #x = self.in_projection[0](cF['r4_1'])
         #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[0],style_enc, F.instance_norm(cF['r4_1']),preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[0](x))
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
