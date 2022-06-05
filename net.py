@@ -931,7 +931,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        '''
+
         self.layer_norm_in = nn.ModuleList([
             nn.Identity(),
             nn.Identity(),
@@ -953,7 +953,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             #nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
-        ])'''
+        ])
         self.r3_1_project = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=1),
             nn.LeakyReLU(),
