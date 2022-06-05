@@ -1046,7 +1046,7 @@ class ThumbAdaConv(nn.Module):
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
         content_in = checkpoint(self.r3_1_project, cF['r3_1'])
-        x = checkpoint(self.attention_block[2], style_enc, x, content_in, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, content_in, preserve_rng_state=False)
         #x = self.gelu(self.layer_norm_out[2](x))
         x = self.gelu(x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
