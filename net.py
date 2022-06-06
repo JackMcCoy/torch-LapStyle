@@ -959,13 +959,13 @@ class ThumbAdaConv(nn.Module):
             nn.Conv2d(256, 256, kernel_size=1),
             nn.LeakyReLU(),
             nn.Conv2d(256, 256, kernel_size=1),
-            nn.LayerNorm((batch_size, 256, 32, 32)),
+            #nn.LayerNorm((batch_size, 256, 32, 32)),
         )
         self.r2_1_project = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=1),
             nn.LeakyReLU(),
             nn.Conv2d(128, 128, kernel_size=1),
-            nn.LayerNorm((batch_size, 128, 64, 64)),
+            #nn.LayerNorm((batch_size, 128, 64, 64)),
         )
         '''
         self.in_deform = nn.ModuleList([
