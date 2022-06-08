@@ -92,7 +92,11 @@ class FlatFolderDataset(data.Dataset):
 
     def __getitem__(self, index):
         path = self.paths[index]
-        img = Image.open(str(path)).convert('RGB')
+        try:
+            img = Image.open(str(path)).convert('RGB')
+        except:
+            path = self.paths[index+1]
+            img = Image.open(str(path)).convert('RGB')
         img = self.transform(img)
         return img
 
