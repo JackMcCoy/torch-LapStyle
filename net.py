@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -722,12 +722,12 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=False)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -1179,17 +1179,6 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
 
-        self.layer_norm_in = nn.ModuleList([
-            nn.Identity(),
-            nn.Identity(),
-            nn.BatchNorm2d(256),
-            nn.Identity(),
-            nn.Identity(),
-            nn.BatchNorm2d(128),
-            nn.Identity(),
-            nn.BatchNorm2d(64),
-            nn.Identity(),
-        ])
         self.layer_norm_out = nn.ModuleList([
             nn.BatchNorm2d(512),
             nn.Identity(),
@@ -1201,36 +1190,7 @@ class ThumbAdaConv(nn.Module):
             #nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
-        '''
-        self.in_deform = nn.ModuleList([
-            DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
-            DeformableAttention2D(256, heads=4),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
-            ])
-        self.in_projection = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(512, 512, kernel_size=3,padding=1,padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(512, 512, kernel_size=1),
-            ),
-            nn.Sequential(
-                nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(256, 256, kernel_size=1),
-            ),
-            nn.Sequential(
-                nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(128, 128, kernel_size=1),
-            ),
-        ])
-        '''
-        #self.to_patch = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=8, p2=8)
-        #self.from_patch = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=8, d=8)
-        #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
 
-        #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
-        #                                    nn.LeakyReLU())
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -1263,9 +1223,8 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b,self.s_d,16)
         style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        #x = self.in_projection[0](cF['r4_1'])
-        #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        c = cF['r4_1'] * torch.rsqrt(torch.mean(cF['r4_1'] ** 2, dim=1, keepdim=True) + 1e-8)
+        x = checkpoint(self.attention_block[0],style_enc, c,preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[0](x))
         #x = self.gelu(x)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
@@ -1276,11 +1235,10 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[1],x,preserve_rng_state=True)
         x = x + res
         # in = 256 ch
-        x = self.layer_norm_in[2](x)
         res = x
-        #whitened = self.in_projection[1](cF['r3_1'])
-        #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
+        c = cF['r3_1'] * torch.rsqrt(torch.mean(cF['r3_1'] ** 2, dim=1, keepdim=True) + 1e-8)
+        x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+        x = checkpoint(self.attention_block[2], style_enc, x, c, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[2](x))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -1293,9 +1251,10 @@ class ThumbAdaConv(nn.Module):
         x = x + res + half_res
         half_res = checkpoint(self.half_residual[1], x, preserve_rng_state=False)
         #####
-        x = self.layer_norm_in[5](x)
         res = x
-        x = checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
+        c = cF['r2_1'] * torch.rsqrt(torch.mean(cF['r2_1'] ** 2, dim=1, keepdim=True) + 1e-8)
+        x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+        x = checkpoint(self.attention_block[5], style_enc, x, c, preserve_rng_state=False)
         x = self.gelu(self.layer_norm_out[5](x))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
@@ -1306,8 +1265,8 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         ######
         # in = 64 ch
-        x = self.layer_norm_in[7](x)
         res = x
+        x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
         x = self.relu(checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = torch.cat([x, res, half_res, out_res], 1)
