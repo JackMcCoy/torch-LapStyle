@@ -901,11 +901,9 @@ class ThumbAdaConv_AttentionEnd(nn.Module):
                 GaussianNoise(),
                 FusedLeakyReLU(64),),
             nn.Sequential(
-                nn.GroupNorm(32, 256),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3,3)),
                 nn.LeakyReLU(),
-                nn.GroupNorm(32, 256),
                 nn.Conv2d(256, 64, kernel_size=1),
                 nn.LeakyReLU(),
             ),
@@ -936,70 +934,6 @@ class ThumbAdaConv_AttentionEnd(nn.Module):
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=1, size=128),
         ])
 
-        self.layer_norm_in = nn.ModuleList([
-            nn.Identity(),
-            nn.Identity(),
-            nn.LayerNorm((batch_size, 256, 32, 32)),
-            nn.Identity(),
-            nn.Identity(),
-            nn.LayerNorm((batch_size, 128, 64, 64)),
-            nn.Identity(),
-            nn.LayerNorm((batch_size, 64, 128, 128)),
-            nn.Identity(),
-        ])
-        self.layer_norm_out = nn.ModuleList([
-            nn.LayerNorm((batch_size, 512, 16, 16)),
-            nn.Identity(),
-            nn.LayerNorm((batch_size, 256, 32, 32)),
-            nn.Identity(),
-            nn.Identity(),
-            nn.LayerNorm((batch_size, 128, 64, 64)),
-            nn.Identity(),
-            #nn.LayerNorm((batch_size, 64, 128, 128)),
-            nn.Identity(),
-        ])
-        self.r3_1_project = nn.Sequential(
-            nn.Conv2d(256, 256, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.Conv2d(256, 256, kernel_size=1),
-            #nn.LayerNorm((batch_size, 256, 32, 32)),
-        )
-        self.r2_1_project = nn.Sequential(
-            nn.Conv2d(128, 128, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.Conv2d(128, 128, kernel_size=1),
-            #nn.LayerNorm((batch_size, 128, 64, 64)),
-        )
-        '''
-        self.in_deform = nn.ModuleList([
-            DeformableAttention2D(512, heads=8, downsample_factor=4, offset_kernel_size=6),
-            DeformableAttention2D(256, heads=4),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2),
-            ])
-        self.in_projection = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(512, 512, kernel_size=3,padding=1,padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(512, 512, kernel_size=1),
-            ),
-            nn.Sequential(
-                nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(256, 256, kernel_size=1),
-            ),
-            nn.Sequential(
-                nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
-                nn.LeakyReLU(),
-                nn.Conv2d(128, 128, kernel_size=1),
-            ),
-        ])
-        '''
-        #self.to_patch = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=8, p2=8)
-        #self.from_patch = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=16, w=16, e=8, d=8)
-        #self.out_deform = DeformableAttention2D(64, heads=2, downsample_factor=16, offset_kernel_size=32)
-
-        #self.attention_conv = nn.Sequential(nn.Conv2d(512,512,kernel_size=3,padding=1,padding_mode='reflect'),
-        #                                    nn.LeakyReLU())
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -1042,8 +976,6 @@ class ThumbAdaConv_AttentionEnd(nn.Module):
         x = x + res
         # in = 256 ch
         res = x
-        #whitened = self.in_projection[1](cF['r3_1'])
-        #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
         x = self.relu(checkpoint(self.adaconvs[2], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
@@ -1072,8 +1004,9 @@ class ThumbAdaConv_AttentionEnd(nn.Module):
         x = checkpoint(self.learnable[7], x, preserve_rng_state=True)
         x = torch.cat([x, res, half_res, out_res], 1)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=True)
-        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = self.gelu(checkpoint(self.attention_block[9], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[9],x,preserve_rng_state=True)
+        x = self.gelu(checkpoint(self.attention_block[10], style_enc, x, preserve_rng_state=False))
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x
 
@@ -1788,8 +1721,8 @@ def loss_no_patch(stylized: torch.Tensor,
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    #edge = edge_loss(stylized, ci)
-    edge = 0
+    edge = edge_loss(stylized, ci)
+    #edge = 0
     '''
     fake_loss = disc_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
