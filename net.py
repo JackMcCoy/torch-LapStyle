@@ -1043,7 +1043,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.GELU(),
                 nn.Upsample(scale_factor = 2, mode='bilinear'),
-                BlurPool(256, filt_size=3, stride=1),
+                #BlurPool(256, filt_size=3, stride=1),
             ),
             nn.Identity(),
             nn.Identity(),
@@ -1051,7 +1051,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.GELU(),
                 nn.Upsample(scale_factor = 2, mode='bilinear'),
-                BlurPool(128, filt_size=3, stride=1)
+                #BlurPool(128, filt_size=3, stride=1)
             ),
             nn.Identity(),
             nn.Sequential(
@@ -1067,7 +1067,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 64, kernel_size=1),
                 nn.GELU(),
                 nn.Upsample(scale_factor = 8, mode='bilinear'),
-                BlurPool(64, filt_size=3, stride=1)
+                #BlurPool(64, filt_size=3, stride=1)
             )
             ])
         self.half_residual = nn.ModuleList([
@@ -1075,13 +1075,13 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(512, 128, kernel_size=1),
                 nn.GELU(),
                 nn.Upsample(scale_factor=4, mode='bilinear'),
-                BlurPool(128, filt_size=3, stride=1)
+                #BlurPool(128, filt_size=3, stride=1)
             ),
             nn.Sequential(
                 nn.Conv2d(128,64, kernel_size=1),
                 nn.GELU(),
                 nn.Upsample(scale_factor=2, mode='bilinear'),
-                BlurPool(64, filt_size=3, stride=1)
+                #BlurPool(64, filt_size=3, stride=1)
             ),
         ])
 
@@ -1264,7 +1264,7 @@ class ThumbAdaConv(nn.Module):
         #x = self.in_projection[0](cF['r4_1'])
         #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
-        x = self.gelu(self.layer_norm_out[0](x))
+        x = self.relu(self.layer_norm_out[0](x))
         #x = self.gelu(x)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=True)
         res = checkpoint(self.residual[1],x,preserve_rng_state=False)
@@ -1279,7 +1279,7 @@ class ThumbAdaConv(nn.Module):
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
         x = checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
-        x = self.gelu(self.layer_norm_out[2](x))
+        x = self.relu(self.layer_norm_out[2](x))
         x = checkpoint(self.learnable[2], x, preserve_rng_state=True)
         x = x + res
         #####
@@ -1294,7 +1294,7 @@ class ThumbAdaConv(nn.Module):
         x = self.layer_norm_in[5](x)
         res = x
         x = checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
-        x = self.gelu(self.layer_norm_out[5](x))
+        x = self.relu(self.layer_norm_out[5](x))
         x = checkpoint(self.learnable[5], x, preserve_rng_state=True)
         x = x + res
 
