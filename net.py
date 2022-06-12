@@ -920,7 +920,7 @@ class ThumbAdaConv(nn.Module):
                 GaussianNoise(),
                 Bias(64),
                 nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                FusedLeakyReLU(),
+                nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
             nn.Sequential(
