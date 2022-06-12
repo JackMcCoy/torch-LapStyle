@@ -12,6 +12,7 @@ class AdaConv(nn.Module):
         self.batch_groups = batch_size * (c_in // p)
         self.c_out = c_out if not c_out is None else c_in
         self.c_in = c_in
+        self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Conv2d(self.s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect')
