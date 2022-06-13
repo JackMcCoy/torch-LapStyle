@@ -727,6 +727,9 @@ class StyleAttention_w_Context(nn.Module):
         self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
+        self.context_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
+
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
 
@@ -739,7 +742,7 @@ class StyleAttention_w_Context(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        ck, cv = self.to_k(style_enc,context), self.to_v(style_enc, context)
+        ck, cv = self.context_k(style_enc,context), self.context_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
@@ -918,12 +921,12 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=True),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=16, adaconv_norm=True),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=True),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=True),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=True),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
