@@ -654,7 +654,7 @@ class MHSA(nn.Module):
 
 class StyleAttention(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 size=32, norm_queries=False):
+                 size=32, norm_queries=False, adaconv_norm=True):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -710,7 +710,7 @@ class StyleAttention(nn.Module):
 
 class StyleAttention_w_Context(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 size=32, norm_queries=False):
+                 size=32, adaconv_norm=True,norm_queries=False):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -722,12 +722,12 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -783,10 +783,11 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         '''
-        self.adaconv_in = AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size)
+        self.adaconv_in = AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, adaconv_norm=True)
         self.conv_in = nn.Sequential(
             nn.Conv2d(512,512,kernel_size=1),
-            nn.LeakyReLU()
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(512)
         )
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
@@ -925,12 +926,12 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=False),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=False),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=False),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
