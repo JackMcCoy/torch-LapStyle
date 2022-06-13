@@ -932,10 +932,10 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
-        x = checkpoint(self.learnable[0],x,preserve_rng_state=False)
-        res = checkpoint(self.residual[1],x,preserve_rng_state=False)
+        x = self.learnable[0](x)
+        res = self.residual[1](x)
         # quarter res
-        x = checkpoint(self.learnable[1],x,preserve_rng_state=False)
+        x = self.learnable[1](x)
         x = x + res
         # in = 256 ch
         x = self.layer_norm_in[2](x)
@@ -945,14 +945,14 @@ class ThumbAdaConv(nn.Module):
         #c = self.r3_1_in(cF['r3_1'])
         x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
         x = self.layer_norm_out[2](x)
-        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = self.learnable[2](x)
         x = x + res
         #####
         res = x
-        x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
+        x = self.learnable[3](x)
         x = x + res
         res = checkpoint(self.residual[4], x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[4],x,preserve_rng_state=False)
+        x = self.learnable[4](x)
         x = x + res
         #####
         x = self.layer_norm_in[5](x)
@@ -960,24 +960,24 @@ class ThumbAdaConv(nn.Module):
         #c = self.r2_1_in(cF['r2_1'])
         x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
         x = self.layer_norm_out[5](x)
-        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = self.learnable[5](x)
         x = x + res
 
         # in = 128 ch
-        res = checkpoint(self.residual[6],x,preserve_rng_state=False)
-        x = checkpoint(self.learnable[6],x,preserve_rng_state=False)
+        res = self.residual[6](x)
+        x = self.learnable[6](x)
         x = x + res
         ######
         # in = 64 ch
         x = self.layer_norm_in[7](x)
         res = x
         x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = self.learnable[7](x)
         x = x + res
-        x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
+        x = self.learnable[8](x)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[9],x,preserve_rng_state=False)
-        x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
+        x = self.learnable[9](x)
+        x = self.learnable[10](x)
         return x
 
 
