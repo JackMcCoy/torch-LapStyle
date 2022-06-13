@@ -11,7 +11,7 @@ class AdaConv(nn.Module):
         self.n_groups = (c_in//p)
         self.c_out = c_out if not c_out is None else c_in
         self.batch_groups = batch_size *(c_in // p)
-        self.out_groups = batch_size * (c_out // p)
+        self.out_groups = batch_size * (self.c_out // p)
         self.c_in = c_in
         self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
