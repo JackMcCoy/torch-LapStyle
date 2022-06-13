@@ -997,10 +997,10 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        mean = self.style_mean(style_enc)
-        std = self.style_std(style_enc)
+        mean = self.style_mean(style_enc).view(b,512,1,1).expand(b,512,16,16)
+        std = self.style_std(style_enc).view(b,512,1,1)
         style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = torch.normal(mean, std, size=(b,512,16,16))
+        x = torch.normal(mean, std)
         x = x + checkpoint(self.attention_block[0],style_enc, x, cF['r4_1'],preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
