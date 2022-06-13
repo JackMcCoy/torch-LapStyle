@@ -608,9 +608,9 @@ class ResidualConvAttention(nn.Module):
 
 
 class AdaConv_w_FF(nn.Module):
-    def __init__(self, n_dims, s_d, batch_size, norm=False, kernel_relu=True):
+    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_relu=True):
         super(AdaConv_w_FF, self).__init__()
-        self.ada = AdaConv(n_dims, n_dims, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm, kernel_relu=kernel_relu)
+        self.ada = AdaConv(in_dims, s_d=s_d, batch_size=batch_size, c_out=out_dims, norm=norm, kernel_relu=kernel_relu)
         #self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
         x = self.ada(style, x)
@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -722,12 +722,12 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
