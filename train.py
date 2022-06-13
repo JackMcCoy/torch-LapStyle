@@ -309,7 +309,7 @@ def drafting_train():
         disc_state = None
         disc2_state = None
         init_weights(dec_)
-    dec_optimizer = torch.optim.AdamW(list(dec_.parameters(recurse=True))+list(enc_.parameters(recurse=True)), weight_decay=args.weight_decay, lr=args.lr)
+    dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.lr)
     '''    
     disc_ = torch.jit.trace(build_disc(
         disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
@@ -345,6 +345,7 @@ def drafting_train():
         dec_optimizer.lr = args.lr
     dec_.train()
     enc_.to(device)
+    enc_.eval()
     lowest_range = 32
     loss_D = 0
     for n in tqdm(range(args.max_iter), position=0):
@@ -458,14 +459,13 @@ def drafting_train():
                            args.save_dir + '/drafting_training_iter_si' + str(
                                n + 1) + '.jpg')
                 del (draft_img_grid, style_source_grid, content_img_grid)
-
+        del (si, ci, stylized, cF, sF, loss, losses, loss_c, loss_s, content_relt, style_remd, l_identity1,
+             l_identity2, l_identity3, l_identity4)
+        with torch.no_grad():
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'decoder_iter_{:d}.pth.tar'.format(n + 1))
-                state_dict = enc_.state_dict()
-                torch.save(copy.deepcopy(state_dict), save_dir /
-                           'vgg_trained.pth.tar'.format(n + 1))
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
@@ -478,7 +478,6 @@ def drafting_train():
                            'discriminator2_iter_{:d}.pth.tar'.format(n + 1))
                 '''
                 del(state_dict)
-        del(si, ci, stylized, cF, sF, loss, losses, loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4)
 
 def revision_train():
     num_rev = {256 * 2 ** i: i for i in range(4)}[args.crop_size]
