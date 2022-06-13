@@ -712,7 +712,7 @@ class StyleAttention(nn.Module):
 
 class StyleAttention_w_Context(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 size=32, adaconv_norm=True,norm_queries=False):
+                 size=32, adaconv_norm=True, context_ada_norm=True, norm_queries=False):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -721,6 +721,7 @@ class StyleAttention_w_Context(nn.Module):
         self.value_dim = value_dim
         self.heads = heads
         self.adaconv_norm = adaconv_norm
+        self.context_ada_norm = context_ada_norm
 
         self.norm_queries = norm_queries
 
@@ -744,7 +745,8 @@ class StyleAttention_w_Context(nn.Module):
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
-
+        if self.context_ada_norm:
+            context = context * torch.rsqrt(torch.mean(context ** 2, dim=1, keepdim=True) + 1e-8)
         ck, cv = self.context_k(style_enc,context), self.context_v(style_enc, context)
         ck, cv = map(lambda t: t.reshape(b, heads, k_dim, -1), (ck, cv))
         k = torch.cat((k, ck), dim=3)
@@ -924,12 +926,12 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=False),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=True),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, context_ada_norm=True, adaconv_norm=True),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=True),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, context_ada_norm=True, adaconv_norm=True),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
@@ -957,6 +959,7 @@ class ThumbAdaConv(nn.Module):
             #nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
+        '''
         self.r4_1_in = nn.Sequential(
             nn.Conv2d(512,512,kernel_size=1),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
@@ -978,6 +981,7 @@ class ThumbAdaConv(nn.Module):
             nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             nn.InstanceNorm2d(128)
         )
+        '''
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -1010,8 +1014,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
         style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = self.r4_1_in(cF['r4_1'])
-        x = x + checkpoint(self.attention_block[0],style_enc, x,preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=False)
@@ -1024,8 +1027,8 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        c = self.r3_1_in(cF['r3_1'])
-        x = x + checkpoint(self.attention_block[2], style_enc, x, c, preserve_rng_state=False)
+        #c = self.r3_1_in(cF['r3_1'])
+        x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
         x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
@@ -1039,8 +1042,8 @@ class ThumbAdaConv(nn.Module):
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        c = self.r2_1_in(cF['r2_1'])
-        x = x + checkpoint(self.attention_block[5], style_enc, x, c, preserve_rng_state=False)
+        #c = self.r2_1_in(cF['r2_1'])
+        x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
         x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = x + res
