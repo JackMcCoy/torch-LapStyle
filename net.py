@@ -18,7 +18,7 @@ from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
 from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
-from fused_act import FusedLeakyReLU
+from cuda.fused_act import FusedLeakyReLU
 from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, EdgeLoss
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
@@ -776,19 +776,6 @@ class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
-        '''
-        self.adaconvs = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
-            # Half res in
-            nn.Identity(),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size),
-            nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
-        ])
-        '''
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
@@ -834,13 +821,7 @@ class ThumbAdaConv(nn.Module):
         ks = 3
         p = 1
         self.learnable = nn.ModuleList([
-            nn.Sequential(
-                nn.ReflectionPad2d((p, p, p, p)),
-                nn.Conv2d(512, 512, (ks, ks), bias = True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            ),
+            Conv2d_ScaledReLU(512,512,6),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias = True),

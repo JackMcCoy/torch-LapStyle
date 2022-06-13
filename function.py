@@ -6,7 +6,6 @@ import math
 import typing
 from losses import calc_mean_std
 
-
 def crop_mark_extract(num_rev,crop_marks,img,level):
     scale = torch.tensor([[2 ** num_rev / 2 ** i] for i in range(num_rev)])
     scaled_crops = crop_marks*scale

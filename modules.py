@@ -8,8 +8,29 @@ from gaussian_diff import gaussian
 from adaconv import AdaConv
 import numpy as np
 from torch.nn import functional as F
-from fused_act import FusedLeakyReLU
+from cuda.fused_act import FusedLeakyReLU
+from torch_utils.ops import filtered_lrelu
 
+
+def get_gaussian_filt(filt_size):
+    if (filt_size == 1):
+        a = np.array([1., ])
+    elif (filt_size == 2):
+        a = np.array([1., 1.])
+    elif (filt_size == 3):
+        a = np.array([1., 2., 1.])
+    elif (filt_size == 4):
+        a = np.array([1., 3., 3., 1.])
+    elif (filt_size == 5):
+        a = np.array([1., 4., 6., 4., 1.])
+    elif (filt_size == 6):
+        a = np.array([1., 5., 10., 10., 5., 1.])
+    elif (filt_size == 7):
+        a = np.array([1., 6., 15., 20., 15., 6., 1.])
+
+    filt = torch.Tensor(a[:, None] * a[None, :])
+    filt = filt / torch.sum(filt)
+    return filt
 
 class BlurPool(nn.Module):
     def __init__(self, channels, pad_type='reflect', filt_size=4, stride=2, pad_off=0):
@@ -22,23 +43,7 @@ class BlurPool(nn.Module):
         self.off = int((self.stride-1)/2.)
         self.channels = channels
 
-        if(self.filt_size==1):
-            a = np.array([1.,])
-        elif(self.filt_size==2):
-            a = np.array([1., 1.])
-        elif(self.filt_size==3):
-            a = np.array([1., 2., 1.])
-        elif(self.filt_size==4):
-            a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size==5):
-            a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size==6):
-            a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size==7):
-            a = np.array([1., 6., 15., 20., 15., 6., 1.])
-
-        filt = torch.Tensor(a[:,None]*a[None,:])
-        filt = filt/torch.sum(filt)
+        filt = get_gaussian_filt(self.filt_size)
         self.register_buffer('filt', filt[None,None,:,:].repeat((self.channels,1,1,1)))
 
         self.pad = get_pad_layer(pad_type)(self.pad_sizes)
@@ -64,6 +69,35 @@ def get_pad_layer(pad_type):
     else:
         print('Pad type [%s] not recognized'%pad_type)
     return PadLayer
+
+
+class Conv2d_ScaledReLU(nn.Module):
+    def __init__(self, in_ch, out_ch, filt_size):
+        super(Conv2d_ScaledReLU, self).__init__()
+        self.conv = nn.Conv2d(in_ch,
+                              out_ch,
+                              kernel_size=3,
+                              padding=1,
+                              padding_mode='reflect')
+        self.pad = int(1.*(filt_size-1)/2)
+        self.filt = get_gaussian_filt(filt_size)
+    def forward(self, x):
+        x = self.conv(x)
+        x = filtered_lrelu.filtered_lrelu(x,
+                                        self.filt,
+                                        self.filt,
+                                        None,
+                                        2,
+                                        2,
+                                        self.pad,
+                                        np.sqrt(2),
+                                        0.2,
+                                        None,
+                                        False,
+                                        'cuda'
+                                        )
+        return x
+
 
 
 class ThumbInstanceNorm(nn.Module):
