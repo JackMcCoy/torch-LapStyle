@@ -10,7 +10,8 @@ class AdaConv(nn.Module):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//p)
         self.c_out = c_out if not c_out is None else c_in
-        self.batch_groups = int(batch_size *(self.c_out/c_in) * (c_in // p))
+        self.batch_groups = batch_size *(c_in // p)
+        self.out_groups = batch_size * (c_out // p)
         self.c_in = c_in
         self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
@@ -22,7 +23,7 @@ class AdaConv(nn.Module):
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(self.s_d, self.c_out*(self.c_in//self.n_groups), kernel_size=1),
+            nn.Conv2d(self.s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1),
             nn.ReLU() if kernel_relu else nn.Identity())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(self.s_d, self.c_out, kernel_size=1),
@@ -59,6 +60,6 @@ class AdaConv(nn.Module):
                 stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
-                groups=self.batch_groups)
+                groups=self.out_groups)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
         return content_out
