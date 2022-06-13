@@ -783,7 +783,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         '''
-        self.adaconv_in = AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, adaconv_norm=True)
+        self.adaconv_in = AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True)
         self.conv_in = nn.Sequential(
             nn.Conv2d(512,512,kernel_size=1),
             nn.LeakyReLU(),
