@@ -666,9 +666,9 @@ class StyleAttention(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -722,12 +722,12 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.to_q = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -783,25 +783,17 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
         ])
         '''
+        self.adaconv_in = AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size)
+        self.conv_in = nn.Sequential(
+            nn.Conv2d(512,512,kernel_size=1),
+            nn.LeakyReLU()
+        )
         depth = 2 if size==256 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
-        self.style_mean = nn.Sequential(
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.Linear(self.s_d * 16, 512)
-        )
-        self.style_std = nn.Sequential(
-            nn.Linear(self.s_d * 16, self.s_d * 16),
-            nn.LeakyReLU(),
-            nn.BatchNorm1d(self.s_d * 16),
-            nn.Linear(self.s_d * 16, 512),
-            nn.ReLU()
-        )
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
 
@@ -933,7 +925,7 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention_w_Context(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
             nn.Identity(),
@@ -997,10 +989,9 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        mean = self.style_mean(style_enc).view(b,512,1,1).expand(b,512,16,16)
-        std = self.style_std(style_enc).view(b,512,1,1)
         style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = torch.normal(mean, std)
+        x = self.adaconv_in(cF['r4_1'])
+        x = self.conv_in(x)
         x = x + checkpoint(self.attention_block[0],style_enc, x, cF['r4_1'],preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
