@@ -792,13 +792,13 @@ class ThumbAdaConv(nn.Module):
         self.style_mean = nn.Sequential(
             nn.Linear(self.s_d * 16, self.s_d * 16),
             nn.LeakyReLU(),
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(self.s_d * 16),
             nn.Linear(self.s_d * 16, 512)
         )
         self.style_std = nn.Sequential(
             nn.Linear(self.s_d * 16, self.s_d * 16),
             nn.LeakyReLU(),
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(self.s_d * 16),
             nn.Linear(self.s_d * 16, 512)
         )
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
