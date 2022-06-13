@@ -923,7 +923,7 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=True),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=True),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
             nn.Identity(),
             nn.Identity(),
             StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=True),
