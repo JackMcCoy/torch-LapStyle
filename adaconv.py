@@ -61,5 +61,5 @@ class AdaConv(nn.Module):
                 weight=pointwise_kn,
                 bias=pointwise_bias,
                 groups=self.batch_groups)
-        content_out = content_out.permute([1, 0, 2, 3]).view(a,b,c,d)
+        content_out = content_out.permute([1, 0, 2, 3]).view(a,self.c_out,c,d)
         return content_out
