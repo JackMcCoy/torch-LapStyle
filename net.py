@@ -955,6 +955,24 @@ class ThumbAdaConv(nn.Module):
             #nn.LayerNorm((batch_size, 64, 128, 128)),
             nn.Identity(),
         ])
+        self.r4_1_in = nn.Sequential(
+            nn.Conv2d(512,512,kernel_size=1),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.LeakyReLU(),
+            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+        )
+        self.r3_1_in = nn.Sequential(
+            nn.Conv2d(256, 256, kernel_size=1),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.LeakyReLU(),
+            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+        )
+        self.r2_1_in = nn.Sequential(
+            nn.Conv2d(128, 128, kernel_size=1),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.LeakyReLU(),
+            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+        )
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),
@@ -987,7 +1005,8 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
         style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        x = checkpoint(self.r4_1_in, cF['r4_1'])
+        x = x + checkpoint(self.attention_block[0],style_enc, x,preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=False)
@@ -1000,7 +1019,8 @@ class ThumbAdaConv(nn.Module):
         res = x
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
+        c = checkpoint(self.r3_1_in, cF['r3_1'])
+        x = x + checkpoint(self.attention_block[2], style_enc, x, c, preserve_rng_state=False)
         x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
@@ -1014,7 +1034,8 @@ class ThumbAdaConv(nn.Module):
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
+        c = checkpoint(self.r2_1_in, cF['r2_1'])
+        x = x + checkpoint(self.attention_block[5], style_enc, x, c, preserve_rng_state=False)
         x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = x + res
