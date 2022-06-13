@@ -920,12 +920,12 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=Truez),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=True),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=False),
+            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=True),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=False),
+            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=True),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
