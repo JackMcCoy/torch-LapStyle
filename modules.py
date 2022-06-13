@@ -90,7 +90,7 @@ class Conv2d_ScaledReLU(nn.Module):
                                         None,
                                         2,
                                         2,
-                                        self.pad,
+                                        0,
                                         np.sqrt(2),
                                         0.2,
                                         None,
