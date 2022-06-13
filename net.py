@@ -720,23 +720,25 @@ class StyleAttention_w_Context(nn.Module):
         self.key_dim = key_dim
         self.value_dim = value_dim
         self.heads = heads
+        self.adaconv_norm = adaconv_norm
 
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
 
-        self.context_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
-        self.context_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=False, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=False, kernel_relu=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
 
     def forward(self, style_enc, x, context):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
-
+        if self.adaconv_norm:
+            x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
         q, k, v = self.to_q(style_enc,x), self.to_k(style_enc,x), self.to_v(style_enc, x)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
@@ -922,7 +924,7 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=True),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=False),
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
             nn.Identity(),
@@ -960,18 +962,21 @@ class ThumbAdaConv(nn.Module):
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            nn.InstanceNorm2d(512)
         )
         self.r3_1_in = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=1),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            nn.InstanceNorm2d(256)
         )
         self.r2_1_in = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=1),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            nn.InstanceNorm2d(128)
         )
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
