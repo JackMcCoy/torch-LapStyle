@@ -23,7 +23,7 @@ class AdaConv(nn.Module):
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
         self.pw_cn_kn = nn.Sequential(
-            nn.Conv2d(self.s_d, self.c_out * self.c_out // n_groups, kernel_size=1),
+            nn.Conv2d(self.s_d, self.c_out * self.c_out // self.n_groups, kernel_size=1),
             nn.ReLU() if kernel_relu else nn.Identity())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(self.s_d, self.c_out, kernel_size=1),
