@@ -9,8 +9,8 @@ class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, kernel_relu=False):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//p)
-        self.batch_groups = batch_size * (c_in // p)
         self.c_out = c_out if not c_out is None else c_in
+        self.batch_groups = int(batch_size *(self.c_out/c_in) * (c_in // p))
         self.c_in = c_in
         self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
