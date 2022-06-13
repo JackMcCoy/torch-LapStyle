@@ -725,9 +725,9 @@ class StyleAttention_w_Context(nn.Module):
         self.norm_queries = norm_queries
 
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
-        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
-        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=False)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=False, kernel_relu=False)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=False, kernel_relu=False)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=False, kernel_relu=False)
 
         self.context_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=False, kernel_relu=True)
         self.context_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=False, kernel_relu=True)
