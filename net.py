@@ -726,8 +726,8 @@ class StyleAttention_w_Context(nn.Module):
         self.to_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
 
-        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
-        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.context_k = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
+        self.context_v = AdaConv_w_FF(chan, s_d, batch_size, norm=True, kernel_relu=True)
 
         self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
         #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
@@ -920,7 +920,7 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=True),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16, adaconv_norm=Truez),
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32, adaconv_norm=False),
             nn.Identity(),
