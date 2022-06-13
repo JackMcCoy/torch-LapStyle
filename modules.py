@@ -79,7 +79,7 @@ class Conv2d_ScaledReLU(nn.Module):
                               kernel_size=3,
                               padding=1,
                               padding_mode='reflect')
-        self.pad = int(1.*(filt_size-1)/2)
+        self.pad = int(1.*(filt_size-1))
         filt = get_gaussian_filt(filt_size)
         self.register_buffer('filt', filt)
     def forward(self, x):
@@ -90,7 +90,7 @@ class Conv2d_ScaledReLU(nn.Module):
                                         None,
                                         2,
                                         2,
-                                        0,
+                                        self.pad,
                                         np.sqrt(2),
                                         0.2,
                                         None,
