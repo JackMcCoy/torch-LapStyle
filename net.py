@@ -799,7 +799,8 @@ class ThumbAdaConv(nn.Module):
             nn.Linear(self.s_d * 16, self.s_d * 16),
             nn.LeakyReLU(),
             nn.BatchNorm1d(self.s_d * 16),
-            nn.Linear(self.s_d * 16, 512)
+            nn.Linear(self.s_d * 16, 512),
+            nn.ReLU()
         )
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
