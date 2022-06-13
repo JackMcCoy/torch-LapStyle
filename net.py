@@ -789,6 +789,18 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         self.projection = nn.Linear(8192, self.s_d * 16)
+        self.style_mean = nn.Sequential(
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(),
+            nn.Linear(self.s_d * 16, 512)
+        )
+        self.style_std = nn.Sequential(
+            nn.Linear(self.s_d * 16, self.s_d * 16),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(),
+            nn.Linear(self.s_d * 16, 512)
+        )
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
 
@@ -920,7 +932,7 @@ class ThumbAdaConv(nn.Module):
         #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
+            StyleAttention_w_Context(512, s_d=s_d, batch_size=batch_size, heads=8, size=16),
             nn.Identity(),
             StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=4, size=32),
             nn.Identity(),
@@ -983,11 +995,12 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b,self.s_d,16)
-        style_enc = self.relu(style_enc).view(b,self.s_d,4,4)
-        #x = self.in_projection[0](cF['r4_1'])
-        #x = checkpoint(self.in_deform[0], x, preserve_rng_state=False)
-        x = cF['r4_1'] + checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        style_enc = self.projection(style_enc)
+        mean = self.style_mean(style_enc)
+        std = self.style_std(style_enc)
+        style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
+        x = torch.normal(mean, std)
+        x = x + checkpoint(self.attention_block[0],style_enc, x, cF['r4_1'],preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
         x = checkpoint(self.learnable[0],x,preserve_rng_state=False)
