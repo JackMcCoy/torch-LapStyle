@@ -822,7 +822,7 @@ class ThumbAdaConv(nn.Module):
                 Conv2d_ScaledReLU(256,256,5),
                 Conv2d_ScaledReLU(256,256,5),
             ),nn.Sequential(
-                Conv2d_ScaledReLU(128,128,5),
+                Conv2d_ScaledReLU(256,128,5),
                 nn.Upsample(scale_factor = 2, mode='bilinear', align_corners=True),
             ),
             Conv2d_ScaledReLU(128,128,5),
