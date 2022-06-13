@@ -21,6 +21,7 @@ import math
 import vgg
 import net
 import random
+import pickle
 from function import crop_mark_extract, _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
 from modules import RiemannNoise
@@ -75,7 +76,7 @@ def style_transform(load_size, crop_size):
 
 
 class FlatFolderDataset(data.Dataset):
-    def __init__(self, root, transform):
+    def __init__(self, root, transform, style_class=False):
         super(FlatFolderDataset, self).__init__()
         if os.path.isdir(root):
             self.root = root
@@ -89,6 +90,10 @@ class FlatFolderDataset(data.Dataset):
         else:
             self.paths = [root]
         self.transform = transform
+        self.style_class = True if style_class else False
+        if style_class:
+            with open(style_class,'rb') as file:
+                self.style_list = pickle.load(file)
 
     def __getitem__(self, index):
         path = self.paths[index]
@@ -98,6 +103,11 @@ class FlatFolderDataset(data.Dataset):
             path = self.paths[index+1]
             img = Image.open(str(path)).convert('RGB')
         img = self.transform(img)
+        if self.style_class:
+            token = path.split('/')[-1]
+            cls = self.style_list[token]
+            cls = F.one_hot(torch.tensor(np.array(cls)), 27)
+            return img, cls
         return img
 
     def __len__(self):

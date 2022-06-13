@@ -610,7 +610,7 @@ class ResidualConvAttention(nn.Module):
 class AdaConv_w_FF(nn.Module):
     def __init__(self, n_dims, s_d, batch_size, norm=False):
         super(AdaConv_w_FF, self).__init__()
-        self.ada = AdaConv(n_dims, n_dims // s_d, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
+        self.ada = AdaConv(n_dims, 1, s_d=s_d, batch_size=batch_size, c_out=n_dims, norm=norm)
         #self.conv = nn.Conv2d(n_dims, n_dims, kernel_size = 1, padding='same', padding_mode='reflect')
     def forward(self, style, x):
         x = self.ada(style, x)
@@ -1221,6 +1221,17 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(),
             nn.Conv2d(num_channels, 1, kernel_size=1),
         )
+        self.style_cls = nn.Sequential(
+            nn.Conv2d(num_channels, num_channels, kernel_size=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(num_channels, num_channels//2, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(num_channels // 2, 27, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(),
+            nn.Flatten(1),
+            nn.LazyLinear(27),
+            nn.SoftMax(1)
+        )
         self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
@@ -1239,8 +1250,9 @@ class Discriminator(nn.Module):
         x = self.head(x)
         N, C, *_ = x.shape
         x = checkpoint_sequential(self.body, self.body_depth, x, preserve_rng_state=False)
+        cls = checkpoint(self.style_cls, x, preserve_rng_state=False)
         x = checkpoint(self.tail, x, preserve_rng_state=False)
-        return x
+        return x, cls
 
 
 class SNLinear(nn.Linear):

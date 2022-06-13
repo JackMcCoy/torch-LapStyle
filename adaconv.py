@@ -15,12 +15,18 @@ class AdaConv(nn.Module):
         self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = F.instance_norm if norm else nn.Identity()
-        self.depthwise_kernel_conv = nn.Conv2d(self.s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect')
+        self.depthwise_kernel_conv = nn.Sequential(
+            nn.Conv2d(self.s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect'),
+            nn.ReLU())
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
-        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1)
-        self.pw_cn_bias = nn.Conv2d(self.s_d, self.c_out, kernel_size=1)
+        self.pw_cn_kn = nn.Sequential(
+            nn.Conv2d(self.s_d, self.c_out*(self.c_out//self.n_groups), kernel_size=1),
+            nn.ReLU())
+        self.pw_cn_bias = nn.Sequential(
+            nn.Conv2d(self.s_d, self.c_out, kernel_size=1),
+            nn.ReLU())
         self.apply(self._init_weights)
 
     @staticmethod
