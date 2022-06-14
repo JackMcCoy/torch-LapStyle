@@ -9,6 +9,7 @@ class AdaConv(nn.Module):
     def __init__(self, c_in:int, p:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//p)
+        print(self.n_groups)
         self.c_out = c_out if not c_out is None else c_in
         self.batch_groups = batch_size *(c_in // p)
         self.out_groups = batch_size * (self.c_out // p)
