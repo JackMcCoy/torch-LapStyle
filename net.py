@@ -929,7 +929,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
         style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        x = self.attention_block[0](style_enc, cF['r4_1'])
         x = self.layer_norm_out[0](x)
         #x = self.gelu(x)
         x = self.learnable[0](x)
@@ -943,7 +943,7 @@ class ThumbAdaConv(nn.Module):
         #whitened = self.in_projection[1](cF['r3_1'])
         #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
         #c = self.r3_1_in(cF['r3_1'])
-        x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
+        x = x + self.attention_block[2](style_enc, x, cF['r3_1'])
         x = self.layer_norm_out[2](x)
         x = self.learnable[2](x)
         x = x + res
@@ -958,7 +958,7 @@ class ThumbAdaConv(nn.Module):
         x = self.layer_norm_in[5](x)
         res = x
         #c = self.r2_1_in(cF['r2_1'])
-        x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
+        x = x + self.attention_block[5](style_enc, x, cF['r2_1'])
         x = self.layer_norm_out[5](x)
         x = self.learnable[5](x)
         x = x + res
@@ -971,11 +971,11 @@ class ThumbAdaConv(nn.Module):
         # in = 64 ch
         x = self.layer_norm_in[7](x)
         res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = self.attention_block[7](style_enc, x)
         x = self.learnable[7](x)
         x = x + res
         x = self.learnable[8](x)
-        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = self.attention_block[8](style_enc, x)
         x = self.learnable[9](x)
         x = self.learnable[10](x)
         return x
