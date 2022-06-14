@@ -17,7 +17,7 @@ from deformable_attention import DeformableAttention2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
-from modules import Conv2d_ScaledReLU, StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
+from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
 from cuda.fused_act import FusedLeakyReLU
 from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, EdgeLoss
 from einops.layers.torch import Rearrange
@@ -784,61 +784,131 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(8192, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
-
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
-                Conv2d_ScaledReLU(512,256,6),
-                nn.Upsample(scale_factor = 2, mode='bilinear'),
+                nn.Conv2d(512, 256, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=6, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
-                Conv2d_ScaledReLU(256,128,5),
-                nn.Upsample(scale_factor = 2, mode='bilinear'),
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(128, filt_size=7, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Sequential(
-                Conv2d_ScaledReLU(128,64,3),
-                nn.Upsample(scale_factor = 2, mode='bilinear')
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=7, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear')
             ),
             nn.Identity(),
             nn.Identity(),
         ])
 
-
-        #ks = 7 if size==256 else 3
-        #p = 3 if size==256 else 1
+        # ks = 7 if size==256 else 3
+        # p = 3 if size==256 else 1
         ks = 3
         p = 1
         self.learnable = nn.ModuleList([
-            Conv2d_ScaledReLU(512,512,6),
             nn.Sequential(
-                Conv2d_ScaledReLU(512,256,6),
-                nn.Upsample(scale_factor = 2, mode='bilinear', align_corners=True),
+                nn.ReflectionPad2d((p, p, p, p)),
+                nn.Conv2d(512, 512, (ks, ks), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
-            Conv2d_ScaledReLU(256,256,5),
             nn.Sequential(
-                Conv2d_ScaledReLU(256,256,5),
-                Conv2d_ScaledReLU(256,256,5),
-            ),nn.Sequential(
-                Conv2d_ScaledReLU(256,128,5),
-                nn.Upsample(scale_factor = 2, mode='bilinear', align_corners=True),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=6, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
-            Conv2d_ScaledReLU(128,128,5),
             nn.Sequential(
-                Conv2d_ScaledReLU(128,64,5),
-                nn.Upsample(scale_factor = 2, mode='bilinear', align_corners=True),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
-            Conv2d_ScaledReLU(64,64,5),
-            Conv2d_ScaledReLU(64,64,5),
-            Conv2d_ScaledReLU(64,64,5),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ), nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 128, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(128, filt_size=7, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 128, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(128, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=7, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=6, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=6, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=6, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
-        #self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
+        # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=True),
@@ -928,56 +998,56 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        style_enc = self.relu(style_enc.view(b,self.s_d,16)).view(b,self.s_d,4,4)
-        x = checkpoint(self.attention_block[0],style_enc, cF['r4_1'],preserve_rng_state=False)
+        style_enc = self.relu(style_enc.view(b, self.s_d, 16)).view(b, self.s_d, 4, 4)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = self.layer_norm_out[0](x)
-        #x = self.gelu(x)
-        x = self.learnable[0](x)
-        res = self.residual[1](x)
+        # x = self.gelu(x)
+        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
-        x = self.learnable[1](x)
+        x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
         x = x + res
         # in = 256 ch
         x = self.layer_norm_in[2](x)
         res = x
-        #whitened = self.in_projection[1](cF['r3_1'])
-        #whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
-        #c = self.r3_1_in(cF['r3_1'])
+        # whitened = self.in_projection[1](cF['r3_1'])
+        # whitened = checkpoint(self.in_deform[1], whitened,preserve_rng_state=False)
+        # c = self.r3_1_in(cF['r3_1'])
         x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
         x = self.layer_norm_out[2](x)
-        x = self.learnable[2](x)
+        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
         #####
         res = x
-        x = self.learnable[3](x)
+        x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
         x = x + res
-        res = self.residual[4](x)
-        x = self.learnable[4](x)
+        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
         x = x + res
         #####
         x = self.layer_norm_in[5](x)
         res = x
-        #c = self.r2_1_in(cF['r2_1'])
+        # c = self.r2_1_in(cF['r2_1'])
         x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
         x = self.layer_norm_out[5](x)
-        x = self.learnable[5](x)
+        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = x + res
 
         # in = 128 ch
-        res = self.residual[6](x)
-        x = self.learnable[6](x)
+        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
         x = x + res
         ######
         # in = 64 ch
         x = self.layer_norm_in[7](x)
         res = x
         x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        x = self.learnable[7](x)
+        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = x + res
-        x = self.learnable[8](x)
+        x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        x = self.learnable[9](x)
-        x = self.learnable[10](x)
+        x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x
 
 
