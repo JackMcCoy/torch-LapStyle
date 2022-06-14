@@ -211,6 +211,8 @@ def _filtered_lrelu_cuda(up=1, down=1, padding=0, gain=np.sqrt(2), slope=0.2, cl
                 warnings.warn("low-performance memory layout detected in filtered_lrelu input", RuntimeWarning)
 
             # Call C++/Cuda plugin if datatype is supported.
+            print(x.dtype)
+            print(x.dtype in [torch.float16, torch.float32])
             if x.dtype in [torch.float16, torch.float32]:
                 if torch.cuda.current_stream(x.device) != torch.cuda.default_stream(x.device):
                     warnings.warn("filtered_lrelu called with non-default cuda stream but concurrent execution is not supported", RuntimeWarning)
