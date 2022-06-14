@@ -80,10 +80,11 @@ class Conv2d_ScaledReLU(nn.Module):
                               padding=1,
                               padding_mode='reflect')
         self.pad = int(1.*(filt_size-1))
-        filt = get_gaussian_filt(filt_size)
+        filt = get_gaussian_filt(filt_size).to(torch.float32)
         self.register_buffer('filt', filt)
     def forward(self, x):
         x = self.conv(x)
+        x = x.to()
         x = filtered_lrelu.filtered_lrelu(x,
                                         self.filt,
                                         self.filt,
