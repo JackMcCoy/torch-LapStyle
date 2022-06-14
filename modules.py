@@ -9,7 +9,7 @@ from adaconv import AdaConv
 import numpy as np
 from torch.nn import functional as F
 from cuda.fused_act import FusedLeakyReLU
-from torch_utils.ops import filtered_lrelu
+#from torch_utils.ops import filtered_lrelu
 
 
 def get_gaussian_filt(filt_size):
@@ -71,7 +71,7 @@ def get_pad_layer(pad_type):
     return PadLayer
 
 
-class Conv2d_ScaledReLU(nn.Module):
+'''class Conv2d_ScaledReLU(nn.Module):
     def __init__(self, in_ch, out_ch, filt_size):
         super(Conv2d_ScaledReLU, self).__init__()
         self.conv = nn.Conv2d(in_ch,
@@ -98,7 +98,7 @@ class Conv2d_ScaledReLU(nn.Module):
                                         'cuda'
                                         )
         return x
-
+'''
 
 
 class ThumbInstanceNorm(nn.Module):
