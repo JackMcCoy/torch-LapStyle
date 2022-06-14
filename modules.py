@@ -84,7 +84,9 @@ class Conv2d_ScaledReLU(nn.Module):
         self.register_buffer('filt', filt)
     def forward(self, x):
         x = self.conv(x)
-        x = x.to()
+        print(x.dtype)
+        print(torch.cuda.current_stream(x.device))
+        print(torch.cuda.default_stream(x.device))
         x = filtered_lrelu.filtered_lrelu(x,
                                         self.filt,
                                         self.filt,
