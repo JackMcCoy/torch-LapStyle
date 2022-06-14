@@ -406,10 +406,11 @@ def drafting_train():
             set_requires_grad(dec_, True)
         dec_.train()
         '''
-        for param in dec_.parameters():
-            param.grad = None
 
         stylized = dec_(cF, sF['r4_1'])
+
+        for param in dec_.parameters():
+            param.grad = None
 
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN_patch, loss_Gp_GAN, mdog, s_contrastive_loss, c_contrastive_loss, edge_loss = losses
