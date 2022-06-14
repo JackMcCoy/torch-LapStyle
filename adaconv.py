@@ -16,18 +16,19 @@ class AdaConv(nn.Module):
         self.s_d = s_d
         self.pad = nn.ReflectionPad2d((1, 1, 1, 1))
         self.norm = F.instance_norm if norm else nn.Identity()
+        self.kernel_relu = kernel_relu
         self.depthwise_kernel_conv = nn.Sequential(
             nn.Conv2d(self.s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect'),
-            nn.ReLU() if kernel_relu else nn.Identity())
+            nn.ELU() if kernel_relu else nn.Identity())
 
         self.pointwise_avg_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1))
         self.pw_cn_kn = nn.Sequential(
             nn.Conv2d(self.s_d, self.c_out * self.c_out // self.n_groups, kernel_size=1),
-            nn.ReLU() if kernel_relu else nn.Identity())
+            nn.ELU() if kernel_relu else nn.Identity())
         self.pw_cn_bias = nn.Sequential(
             nn.Conv2d(self.s_d, self.c_out, kernel_size=1),
-            nn.ReLU() if kernel_relu else nn.Identity())
+            nn.ELU() if kernel_relu else nn.Identity())
         self.apply(self._init_weights)
 
     @staticmethod
@@ -44,6 +45,11 @@ class AdaConv(nn.Module):
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
+
+        if self.kernel_relu:
+            depthwise += 1
+            pointwise_kn += 1
+            pointwise_bias += 1
 
         a, b, c, d = predicted.size()
         #predicted = self.project_in(predicted)
