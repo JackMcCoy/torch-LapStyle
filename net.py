@@ -613,10 +613,9 @@ class AdaConv_w_FF(nn.Module):
         #p = in_dims
         p = in_dims//s_d
         self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, norm=norm)
-        self.act = nn.ELU()
+
     def forward(self, style, x):
         x = self.ada(style, x)
-        x = self.act(x) + 1
         return x
 
 
