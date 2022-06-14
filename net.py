@@ -764,6 +764,57 @@ class StyleAttention_w_Context(nn.Module):
         return out
 
 
+class StyleAttention_ContentValues(nn.Module):
+    def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
+                 size=32, norm_queries=False, adaconv_norm=True):
+        super().__init__()
+        self.chan = chan
+        chan_out = chan if chan_out is None else chan_out
+
+        self.key_dim = key_dim
+        self.value_dim = value_dim
+        self.heads = heads
+
+        self.norm_queries = norm_queries
+
+        conv_kwargs = {'padding': padding, 'stride': stride}
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
+
+        #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
+        #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
+
+        self.to_out = nn.Conv2d(value_dim * heads, chan_out, 1)
+        #self.out_norm = nn.LayerNorm((batch_size, chan_out,size,size))
+
+    def forward(self, style_enc, x, context):
+        b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
+
+        #_x = F.instance_norm(x)
+
+        #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
+        x = x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+        content = content * torch.rsqrt(torch.mean(content ** 2, dim=1, keepdim=True) + 1e-8)
+        q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, content), self.to_v(style_enc, content)
+
+        q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
+
+        q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
+
+        k = k.softmax(dim=-1)
+
+        if self.norm_queries:
+            q = q.softmax(dim=-2)
+
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
+        out = out.reshape(b, -1, h, w)
+        out = self.to_out(out)
+        #out = self.out_norm(out)
+        return out
+
+
 class AdaConv1x1Combine(nn.Module):
     def __init__(self):
         super(AdaConv1x1Combine, self).__init__()
@@ -912,10 +963,10 @@ class ThumbAdaConv(nn.Module):
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=True),
             nn.Identity(),
-            StyleAttention_w_Context(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, context_ada_norm=True, adaconv_norm=True),
+            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_w_Context(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, context_ada_norm=True, adaconv_norm=True),
+            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=True),
             nn.Identity(),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
