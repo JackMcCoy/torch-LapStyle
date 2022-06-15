@@ -195,6 +195,7 @@ parser.add_argument('--remd_loss', type=int, default=1)
 parser.add_argument('--content_style_loss', type=int, default=1)
 parser.add_argument('--identity_loss', type=int, default=0)
 parser.add_argument('--mdog_loss', type=int, default=0)
+parser.add_argument('--pixel_loss', type=float, default=.125)
 parser.add_argument('--patch_loss', type=float, default=1)
 parser.add_argument('--gan_loss', type=float, default=2.5)
 parser.add_argument('--gan_loss2', type=float, default=2.5)
@@ -420,7 +421,7 @@ def drafting_train():
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
                l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * (args.gan_loss*.75) + loss_Gp_GAN_patch * args.gan_loss + \
-               mdog * args.mdog_weight + pixel_loss
+               mdog * args.mdog_weight + pixel_loss * args.pixel_loss
 
         loss.backward()
         dec_optimizer.step()
