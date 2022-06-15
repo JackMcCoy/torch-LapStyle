@@ -34,6 +34,22 @@ def pairwise_distances_sq_l2(x, y):
     dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
     return torch.clamp(dist, 1e-5, 1e5)/x.size(1)
 
+def calc_emd_loss(pred, target):
+    """calculate emd loss.
+
+    Args:
+        pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+        target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+    """
+    b, _, h, w = pred.shape
+    pred = pred.reshape([b, -1, w * h])
+    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))
+    pred = pred.transpose(2,1)
+    target_t = target.reshape([b, -1, w * h])
+    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))
+    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
+    dist = 1. - similarity
+    return dist
 
 def cosd_dist(x):
     M = pairwise_distances_cos(x)
@@ -47,9 +63,6 @@ def rgb_to_yuv(rgb):
     B,C,h,w = rgb.shape
 
     rgb = (rgb.view(B, C, -1) * torch.tensor([0.157,0.164,0.159],device='cuda').view(1,3,1)) + torch.tensor([0.339, 0.385, 0.465],device='cuda').view(1,3,1)
-    #x_min: torch.Tensor = rgb.min(-1)[0].view(B, C, 1)
-    #x_max: torch.Tensor = rgb.max(-1)[0].view(B, C, 1)
-    #rgb: torch.Tensor = (rgb - x_min) / (x_max - x_min + 1e-6)
 
     r: torch.Tensor = rgb[..., 0, :]
     g: torch.Tensor = rgb[..., 1, :]
@@ -102,23 +115,6 @@ def CalcStyleEmdNoSample(X, Y):
     loss_remd = torch.amax(m)
     return loss_remd
 
-def calc_emd_loss(pred, target):
-    """calculate emd loss.
-
-    Args:
-        pred (Tensor): of shape (N, C, H, W). Predicted tensor.
-        target (Tensor): of shape (N, C, H, W). Ground truth tensor.
-    """
-    b, _, h, w = pred.shape
-    pred = pred.reshape([b, -1, w * h])
-    pred_norm = torch.sqrt((pred**2).sum(1).reshape([b, -1, 1]))
-    pred = pred.transpose(2,1)
-    target_t = target.reshape([b, -1, w * h])
-    target_norm = torch.sqrt((target**2).sum(1).reshape([b, 1, -1]))
-    similarity = torch.bmm(pred, target_t) / pred_norm / target_norm
-    dist = 1. - similarity
-    return dist
-
 def flatten_and_sample(X, Y, shuffle=True):
     B,C,h,w = X.shape
     choices = h*w
@@ -161,19 +157,16 @@ def CalcContentReltNoSample(X,Y, eps=1e-5):
         dM * (Mx - My)).mean() * Y.shape[2] * Y.shape[3]
     return loss_content
 
-def pixel_loss(X, Y):
-    #pred = rgb_to_yuv(pred.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    #target = rgb_to_yuv(target.flatten(2)[:,:,r[:1024]]).transpose(1,2)
-    N,C,h,w = X.shape
+def pixel_loss(pred, target):
+    pred = rgb_to_yuv(pred.flatten(2))
+    target = rgb_to_yuv(target.flatten(2))
     # flatten and convert with rgb_to_yuv
-    X = F.avg_pool2d(X, kernel_size=4, stride=4).flatten(2).transpose(1,2).contiguous()
-    Y = F.avg_pool2d(Y, kernel_size=4, stride=4).flatten(2).transpose(1,2).contiguous()
-
-    try:
-        remd = sinkhorn_loss(X, Y).mean()
-    except:
-        remd = 0
-    return remd
+    dist = torch.cdist(pred, target)
+    m1 = dist.amin(dim=2)
+    m2 = dist.amin(dim=1)
+    m = torch.cat([m1.mean(dim=0), m2.mean(dim=0)])
+    loss = torch.amax(m)
+    return loss
 
 class CalcContentLoss():
     """Calc Content Loss.
