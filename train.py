@@ -354,6 +354,8 @@ def drafting_train():
     lowest_range = 32
     loss_D = 0
     blurpool = BlurPool(3, filt_size=5, stride=1)
+    blur_iters = 200000 // args.batch_size
+    print(str(blur_iters)+' blur iters')
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
@@ -402,7 +404,7 @@ def drafting_train():
                 opt_D.step()
             '''
             loss_D = calc_GAN_loss(si, stylized.clone().detach().requires_grad_(True), \
-                                   disc_, blur = blurpool if n<6250 else False)
+                                   disc_, blur = blurpool if n<blur_iters else False)
             loss_D.backward()
 
             if n > 0:
@@ -418,7 +420,7 @@ def drafting_train():
         for param in dec_.parameters():
             param.grad = None
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128, blur = blurpool if n<6250 else False)
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128, blur = blurpool if n<blur_iters else False)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
 
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
