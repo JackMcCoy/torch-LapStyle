@@ -162,6 +162,7 @@ def pixel_loss(pred, target):
     target = rgb_to_yuv(target)
     # flatten and convert with rgb_to_yuv
     dist = torch.cdist(pred.flatten(2), target.flatten(2))
+    dist = torch.clamp(dist, 1e-5, 1e5)/pred.size(1)
     m1 = dist.amin(dim=2)
     m2 = dist.amin(dim=1)
     m = torch.cat([m1.mean(dim=0), m2.mean(dim=0)])

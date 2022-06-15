@@ -968,7 +968,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=True),
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size),
+            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=True),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
 
@@ -1091,7 +1091,7 @@ class ThumbAdaConv(nn.Module):
         # in = 64 ch
         x = self.layer_norm_in[7](x)
         res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[7], style_enc, x, cF['r1_1'], preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = x + res
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
