@@ -333,8 +333,6 @@ def drafting_train():
         new_path_func = lambda x: '/'.join(path[:-1]) + '/' + x + "_".join(path_tokens[-2:])
 
         dec_.load_state_dict(torch.load(args.load_model), strict=False)
-        for group in dec_.param_groups:
-            group['weight_decay'] = args.weight_decay
         '''
         try:
             enc_.load_state_dict(torch.load('/'.join(path[:-1])+'vgg_trained.pth.tar'), strict=False)
@@ -345,6 +343,8 @@ def drafting_train():
             try:
                 dec_optimizer.load_state_dict(
                     torch.load('/'.join(args.load_model.split('/')[:-1]) + '/dec_optimizer.pth.tar'))
+                for group in dec_optimizer.param_groups:
+                    group['weight_decay'] = args.weight_decay
             except:
                 print('optimizer not loaded ')
         dec_optimizer.lr = args.lr
