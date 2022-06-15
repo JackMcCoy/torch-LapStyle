@@ -1492,6 +1492,7 @@ def loss_no_patch(stylized: torch.Tensor,
                 encoder:nn.Module,
                 decoder:nn.Module,
                 sF: typing.Dict[str,torch.Tensor],
+                disc_,
                 crop_size=128,
                 blur = False):
     random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
