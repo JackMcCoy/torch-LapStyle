@@ -24,7 +24,7 @@ import random
 import pickle
 from function import crop_mark_extract, _clip_gradient, setup_torch, init_weights, PositionalEncoding2D, get_embeddings
 from losses import GANLoss
-from modules import RiemannNoise
+from modules import RiemannNoise, BlurPool
 from net import loss_no_patch, calc_losses, calc_patch_loss, calc_GAN_loss, calc_GAN_loss_from_pred
 from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, SimilarityRankedSampler
 from torch.cuda.amp import autocast, GradScaler
@@ -311,20 +311,20 @@ def drafting_train():
         disc2_state = None
         init_weights(dec_)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.lr)
-    '''    
+
     disc_ = torch.jit.trace(build_disc(
         disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
-    disc2_ = torch.jit.trace(build_disc(
-        disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
     opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
-    opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.disc_lr)
+    #disc2_ = torch.jit.trace(build_disc(
+    #    disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
+    #opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.disc_lr)
     if args.load_disc == 1 and args.load_model != 'none':
         try:
             opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
-            opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc2_optimizer.pth.tar'))
+            #opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc2_optimizer.pth.tar'))
         except:
             print('discriminator optimizer not loaded')
-    '''
+
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -353,18 +353,19 @@ def drafting_train():
     enc_.eval()
     lowest_range = 32
     loss_D = 0
+    blurpool = BlurPool(3, filt_size=5, stride=1)
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-        #                 decay=args.disc_lr)
+        warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                         decay=args.disc_lr)
         #warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
         #                 decay=args.disc_lr)
         #if n == args.warmup_iters//2:
         #    lowest_range = 64
         #if n == args.warmup_iters*2:
         #    lowest_range = 48
-        crop_size = (random.randint(lowest_range, 128),random.randint(lowest_range, 128))
+        #crop_size = (random.randint(lowest_range, 128),random.randint(lowest_range, 128))
         ci = next(content_iter)
         si = next(style_iter)
         '''
@@ -380,7 +381,7 @@ def drafting_train():
         si = style_normalize(si)
         cF = enc_(ci)
         sF = enc_(si)
-        '''
+
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
             stylized = dec_(cF, sF['r4_1'])
@@ -389,8 +390,9 @@ def drafting_train():
                 param.grad = None
 
             set_requires_grad(disc_, True)
-            set_requires_grad(disc2_, True)
+            #set_requires_grad(disc2_, True)
             set_requires_grad(dec_, False)
+            '''
             loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
                                    transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
                                    disc_)
@@ -398,31 +400,30 @@ def drafting_train():
 
             if n > 0:
                 opt_D.step()
-
+            '''
             loss_D = calc_GAN_loss(si, stylized.clone().detach().requires_grad_(True), \
-                                   disc2_)
+                                   disc_, blur = blurpool if n<6250 else False)
             loss_D.backward()
 
             if n > 0:
-                opt_D2.step()
+                opt_D.step()
 
             set_requires_grad(disc_, False)
-            set_requires_grad(disc2_, False)
+            #set_requires_grad(disc2_, False)
             set_requires_grad(dec_, True)
         dec_.train()
-        '''
 
         stylized = dec_(cF, sF['r4_1'])
 
         for param in dec_.parameters():
             param.grad = None
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128)
-        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN_patch, loss_Gp_GAN, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, crop_size=128, blur = blurpool if n<6250 else False)
+        loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
 
         loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
-               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * (args.gan_loss*.75) + loss_Gp_GAN_patch * args.gan_loss + \
+               l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss + loss_Gp_GAN_patch * args.gan_loss + \
                mdog * args.mdog_weight + pixel_loss * args.pixel_loss
 
         loss.backward()
@@ -475,10 +476,10 @@ def drafting_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
-                '''
                 state_dict = disc_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator_iter_{:d}.pth.tar'.format(n + 1))
+                '''
                 state_dict = disc2_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'discriminator2_iter_{:d}.pth.tar'.format(n + 1))

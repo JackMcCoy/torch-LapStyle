@@ -1457,10 +1457,16 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     loss = F.binary_cross_entropy_with_logits(prediction, target_tensor)
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
-    pred_fake = disc_(fake)
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module, blur=False):
+    if blur:
+        pred_fake = blur(fake)
+        pred_real = blur(real)
+    else:
+        pred_fake = fake
+        pred_real = real
+    pred_fake = disc_(pred_fake)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
-    pred_real = disc_(real)
+    pred_real = disc_(pred_real)
     loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
     return loss_D
@@ -1497,7 +1503,8 @@ def loss_no_patch(stylized: torch.Tensor,
                 encoder:nn.Module,
                 decoder:nn.Module,
                 sF: typing.Dict[str,torch.Tensor],
-                crop_size=128):
+                crop_size=128,
+                blur = False):
     random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
@@ -1517,11 +1524,15 @@ def loss_no_patch(stylized: torch.Tensor,
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
     p_loss = pixel_loss(stylized, si)
-    '''
-    fake_loss = disc_(random_crop(stylized))
-    loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
-    fake_loss = disc2_(stylized)
+    if blur:
+        fake = blur(stylized)
+    else:
+        fake = stylized
+    fake_loss = disc_(fake)
     loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+    '''
+    fake_loss = disc2_(random_crop(stylized))
+    loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
     
     cX, _ = xdog(torch.clip(ci, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
     sX, _ = xdog(torch.clip(si, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
@@ -1614,7 +1625,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0, p_loss # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, 0, 0, 0, p_loss # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
