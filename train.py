@@ -353,7 +353,7 @@ def drafting_train():
     enc_.eval()
     lowest_range = 32
     loss_D = 0
-    blurpool = BlurPool(3, filt_size=5, stride=1)
+    blurpool = BlurPool(3, filt_size=5, stride=1).to(device='cuda').eval()
     blur_iters = 200000 // args.batch_size
     print(str(blur_iters)+' blur iters')
     for n in tqdm(range(args.max_iter), position=0):
@@ -407,8 +407,7 @@ def drafting_train():
                                    disc_, blur = blurpool if n<blur_iters else False)
             loss_D.backward()
 
-            if n > 0:
-                opt_D.step()
+            opt_D.step()
 
             set_requires_grad(disc_, False)
             #set_requires_grad(disc2_, False)
