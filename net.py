@@ -1286,17 +1286,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(),
             nn.Conv2d(num_channels, 1, kernel_size=1),
         )
-        self.style_cls = nn.Sequential(
-            nn.Conv2d(num_channels, num_channels, kernel_size=1),
-            nn.LeakyReLU(),
-            nn.Conv2d(num_channels, num_channels//2, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(),
-            nn.Conv2d(num_channels // 2, 27, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(),
-            nn.Flatten(1),
-            nn.LazyLinear(27),
-            nn.SoftMax(1)
-        )
+
         self.ganloss = GANLoss('vanilla', batch_size=batch_size)
         self.relgan = relgan
         self.quantize = quantize
@@ -1315,9 +1305,8 @@ class Discriminator(nn.Module):
         x = self.head(x)
         N, C, *_ = x.shape
         x = checkpoint_sequential(self.body, self.body_depth, x, preserve_rng_state=False)
-        cls = checkpoint(self.style_cls, x, preserve_rng_state=False)
         x = checkpoint(self.tail, x, preserve_rng_state=False)
-        return x, cls
+        return x
 
 
 class SNLinear(nn.Linear):
