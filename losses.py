@@ -158,10 +158,10 @@ def CalcContentReltNoSample(X,Y, eps=1e-5):
     return loss_content
 
 def pixel_loss(pred, target):
-    pred = rgb_to_yuv(pred.flatten(2))
-    target = rgb_to_yuv(target.flatten(2))
+    pred = rgb_to_yuv(pred)
+    target = rgb_to_yuv(target)
     # flatten and convert with rgb_to_yuv
-    dist = torch.cdist(pred, target)
+    dist = torch.cdist(pred.flatten(2), target.flatten(2))
     m1 = dist.amin(dim=2)
     m2 = dist.amin(dim=1)
     m = torch.cat([m1.mean(dim=0), m2.mean(dim=0)])
