@@ -4,44 +4,57 @@ import torch
 
 vgg = nn.Sequential(
     nn.Conv2d(3, 64, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu1-1
-    # 4
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu1-1 [:3]
+    # 3
     nn.Conv2d(64, 64, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu1-2
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu1-2
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    # 8
+    # 7
     nn.Conv2d(64, 128, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu2-1
-    # 11
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu2-1
+    # 10
     nn.Conv2d(128, 128, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu2-2
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu2-2
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    # 15
+    # 14
     nn.Conv2d(128, 256, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu3-1
-    # 18
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu3-1
+    # 17
     nn.Conv2d(256, 256, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu3-2
-    # 21
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu3-2
+    # 20
     nn.Conv2d(256, 256, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu3-3
-    # 24
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu3-3
+    # 23
     nn.Conv2d(256, 256, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu3-4
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu3-4
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    # 28
+    # 27
     nn.Conv2d(256, 512, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu4-1, this is the last layer used
-    # 31
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu4-1, this is the last layer used
+    # 30
     nn.Conv2d(512, 512, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu4-2
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu4-2
     nn.Conv2d(512, 512, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu4-3
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu4-3
     nn.Conv2d(512, 512, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu4-4
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu4-4
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
     nn.Conv2d(512, 512, kernel_size=3, padding=1),
-    nn.ReLU(),  # relu5-1
+    nn.BatchNorm2d(v),
+    nn.ReLU(inplace=True),  # relu5-1
 )
 
 '''
