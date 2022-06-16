@@ -1496,7 +1496,6 @@ def loss_no_patch(stylized: torch.Tensor,
     random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
-    stylized_feats = encoder(stylized)
     loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
