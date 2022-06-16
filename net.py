@@ -12,7 +12,6 @@ from revlib.utils import momentum_net
 from torchvision.models import vgg19
 from gaussian_diff import gaussian
 from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision import transforms
 
 from deformable_attention import DeformableAttention2D
 from gaussian_diff import xdog, make_gaussians
@@ -1413,14 +1412,11 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 edge_loss = EdgeLoss()
 
-content_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
-
 def identity_loss(i, F, encoder, decoder):
     Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
-        Fcc = encoder(content_normalize(Icc))
+        Fcc = encoder(Icc)
     #check = ['r5_1','r4_1']
     l_identity2 = content_loss.no_norm(Fcc['r4_1'], F['r4_1']) +\
                   content_loss.no_norm(Fcc['r3_1'], F['r3_1']) +\
@@ -1487,7 +1483,6 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
 etf = ETF(1,1,90).to(device)
 
 def loss_no_patch(stylized: torch.Tensor,
-                stylized_feats,
                 ci: torch.Tensor,
                 si: torch.Tensor,
                 cF: typing.Dict[str,torch.Tensor],
@@ -1500,6 +1495,7 @@ def loss_no_patch(stylized: torch.Tensor,
     random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
     l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    stylized_feats = encoder(stylized)
     loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r3_1'], cF['r3_1'].detach())
