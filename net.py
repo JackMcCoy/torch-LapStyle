@@ -1483,6 +1483,7 @@ def compute_contrastive_loss(feat_q, feat_k, tau, index):
 etf = ETF(1,1,90).to(device)
 
 def loss_no_patch(stylized: torch.Tensor,
+                stylized_feats,
                 ci: torch.Tensor,
                 si: torch.Tensor,
                 cF: typing.Dict[str,torch.Tensor],
