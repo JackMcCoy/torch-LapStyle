@@ -45,14 +45,20 @@ invTrans = transforms.Compose([transforms.Normalize(
     std=[1/0.229, 1/0.224, 1/0.225]
 )])
 invStyleTrans = transforms.Compose([transforms.Normalize(
-    mean=[-0.339/0.157, -0.385/0.164, -0.465/0.159],
-    std=[1/0.157, 1/0.164, 1/0.159]
+    mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
+    std=[1/0.229, 1/0.224, 1/0.225]
 )])
+#invStyleTrans = transforms.Compose([transforms.Normalize(
+#    mean=[-0.339/0.157, -0.385/0.164, -0.465/0.159],
+#    std=[1/0.157, 1/0.164, 1/0.159]
+#)])
 
 content_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
-style_normalize = transforms.Normalize(mean=[0.339, 0.385, 0.465],
-                             std=[0.157, 0.164, 0.159])
+style_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+#style_normalize = transforms.Normalize(mean=[0.339, 0.385, 0.465],
+#                             std=[0.157, 0.164, 0.159])
 
 #invTrans = nn.Identity()
 def train_transform(load_size, crop_size):
