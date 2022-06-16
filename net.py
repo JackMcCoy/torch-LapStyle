@@ -1412,11 +1412,14 @@ content_loss = CalcContentLoss()
 style_loss = CalcStyleLoss()
 edge_loss = EdgeLoss()
 
+content_normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+
 def identity_loss(i, F, encoder, decoder):
     Icc = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
-        Fcc = encoder(Icc)
+        Fcc = encoder(content_normalize(Icc))
     #check = ['r5_1','r4_1']
     l_identity2 = content_loss.no_norm(Fcc['r4_1'], F['r4_1']) +\
                   content_loss.no_norm(Fcc['r3_1'], F['r3_1']) +\
