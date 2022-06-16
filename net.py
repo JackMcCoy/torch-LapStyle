@@ -62,11 +62,11 @@ class Encoder(nn.Module):
     def __init__(self, vggs):
         super(Encoder,(self)).__init__()
         enc_layers = list(vggs.children())
-        self.enc_1 = nn.Sequential(*enc_layers[:3])  # input -> relu1_1
-        self.enc_2 = nn.Sequential(*enc_layers[3:10])  # relu1_1 -> relu2_1
-        self.enc_3 = nn.Sequential(*enc_layers[10:17])  # relu2_1 -> relu3_1
-        self.enc_4 = nn.Sequential(*enc_layers[17:30])
-        self.enc_5 = nn.Sequential(*enc_layers[30:])
+        self.enc_1 = nn.Sequential(*enc_layers[:2])  # input -> relu1_1
+        self.enc_2 = nn.Sequential(*enc_layers[2:7])  # relu1_1 -> relu2_1
+        self.enc_3 = nn.Sequential(*enc_layers[7:16])  # relu2_1 -> relu3_1
+        self.enc_4 = nn.Sequential(*enc_layers[16:21])
+        self.enc_5 = nn.Sequential(*enc_layers[21:30])
 
     def forward(self, x):
         encodings = {}
