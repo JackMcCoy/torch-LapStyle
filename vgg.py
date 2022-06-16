@@ -3,44 +3,44 @@ import torch
 
 
 vgg = nn.Sequential(
-    nn.Conv2d(3, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(3, 64, kernel_size=3, padding=1),
     nn.ReLU(),  # relu1-1
     # 4
-    nn.Conv2d(64, 64, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(64, 64, kernel_size=3, padding=1),
     nn.ReLU(),  # relu1-2
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
     # 8
-    nn.Conv2d(64, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(64, 128, kernel_size=3, padding=1),
     nn.ReLU(),  # relu2-1
     # 11
-    nn.Conv2d(128, 128, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(128, 128, kernel_size=3, padding=1),
     nn.ReLU(),  # relu2-2
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
     # 15
-    nn.Conv2d(128, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(128, 256, kernel_size=3, padding=1),
     nn.ReLU(),  # relu3-1
     # 18
-    nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(256, 256, kernel_size=3, padding=1),
     nn.ReLU(),  # relu3-2
     # 21
-    nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(256, 256, kernel_size=3, padding=1),
     nn.ReLU(),  # relu3-3
     # 24
-    nn.Conv2d(256, 256, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(256, 256, kernel_size=3, padding=1),
     nn.ReLU(),  # relu3-4
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
     # 28
-    nn.Conv2d(256, 512, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(256, 512, kernel_size=3, padding=1),
     nn.ReLU(),  # relu4-1, this is the last layer used
     # 31
-    nn.Conv2d(512, 512, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(512, 512, kernel_size=3, padding=1),
     nn.ReLU(),  # relu4-2
-    nn.Conv2d(512, 512, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(512, 512, kernel_size=3, padding=1),
     nn.ReLU(),  # relu4-3
-    nn.Conv2d(512, 512, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(512, 512, kernel_size=3, padding=1),
     nn.ReLU(),  # relu4-4
     nn.MaxPool2d((2, 2), (2, 2), (0, 0), ceil_mode=True),
-    nn.Conv2d(512, 512, kernel_size=3, padding=1, padding_mode='reflect'),
+    nn.Conv2d(512, 512, kernel_size=3, padding=1),
     nn.ReLU(),  # relu5-1
 )
 
@@ -100,7 +100,7 @@ def make_layers(cfg, batch_norm: bool = False) -> nn.Sequential:
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
             v = int(v)
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1, padding_mode='reflect')
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
