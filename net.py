@@ -832,7 +832,7 @@ class ThumbAdaConv(nn.Module):
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         d = int((size/2**3)*512)
-        self.projection = nn.LazyLinear(d, self.s_d * 16)
+        self.projection = nn.Linear(d, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
         self.residual = nn.ModuleList([
