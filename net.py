@@ -828,8 +828,8 @@ class ThumbAdaConv(nn.Module):
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
-        d = int((size/2**3)*512)
-        self.projection = nn.Linear(4608, self.s_d * 16)
+        d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
+        self.projection = nn.Linear(d, self.s_d * 16)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
         self.residual = nn.ModuleList([
@@ -959,14 +959,14 @@ class ThumbAdaConv(nn.Module):
         # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=True),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=16, adaconv_norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=True),
+            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=32, adaconv_norm=False),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=True),
+            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=64, adaconv_norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=True),
+            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
         '''
