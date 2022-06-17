@@ -1038,11 +1038,10 @@ class ThumbAdaConv(nn.Module):
         if isinstance(m, nn.Conv2d):
             nn.init.kaiming_normal_(m.weight.data, mode="fan_out", nonlinearity="leaky_relu")
             if not m.bias is None:
-                nn.init.constant_(m.bias.data, 0.01)
-            m.requires_grad = True
+                nn.init.constant_(m.bias.data, 0)
         elif isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0.01)
+            nn.init.normal_(m.weight.data, 0.01)
+            nn.init.constant_(m.bias.data, 0)
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
