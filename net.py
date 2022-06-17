@@ -1,6 +1,7 @@
 import typing
 import torch.nn as nn
 import torch
+import math
 from torchvision.transforms import RandomCrop, RandomVerticalFlip
 from torchvision.transforms.functional import crop
 from torch.nn.utils.parametrizations import spectral_norm
