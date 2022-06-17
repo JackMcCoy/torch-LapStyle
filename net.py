@@ -1049,8 +1049,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
         style_enc = self.relu(style_enc.view(b, self.s_d, 16)).view(b, self.s_d, 4, 4)
-        whitened = whiten(cF['r4_1'])
-        x = checkpoint(self.attention_block[0], style_enc, whitened, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
         # x = self.gelu(x)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
@@ -1060,9 +1059,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         # in = 256 ch
         #x = self.layer_norm_in[2](x)
-        whitened = whiten(cF['r3_1'])
-        # c = self.r3_1_in(cF['r3_1'])
-        x = x + checkpoint(self.attention_block[2], style_enc, x, whitened, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         #####
@@ -1074,8 +1071,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         #####
         #x = self.layer_norm_in[5](x)
-        whitened = whiten(cF['r2_1'])
-        x = x + checkpoint(self.attention_block[5], style_enc, x, whitened, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
 
@@ -1085,8 +1081,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         ######
         # in = 64 ch
-        whitened = whiten(cF['r1_1'])
-        x = checkpoint(self.attention_block[7], style_enc, x, whitened, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[7], style_enc, x, cF['r1_1'], preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
@@ -1491,9 +1486,14 @@ def loss_no_patch(stylized: torch.Tensor,
                 disc_,
                 crop_size=128,
                 blur = False):
-    random_crop = transforms.RandomCrop(crop_size) if crop_size != 128 else nn.Identity()
-    l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    l_identity1 = 0
+    l_identity2 = 0
+    l_identity3 = 0
+    l_identity4 = 0
+    style_remd = 0
+    content_relt = 0
+    #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+    #l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)
     loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
@@ -1505,10 +1505,12 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
+    '''
     style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    '''
     #p_loss = pixel_loss(stylized, si)
     p_loss = 0
     if blur:
