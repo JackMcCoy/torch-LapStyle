@@ -18,7 +18,7 @@ from deformable_attention import DeformableAttention2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
-from modules import StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
+from modules import RelPosEmb, StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
 from cuda.fused_act import FusedLeakyReLU
 from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, EdgeLoss
 from einops.layers.torch import Rearrange
@@ -610,9 +610,11 @@ class AdaConv_w_FF(nn.Module):
         super(AdaConv_w_FF, self).__init__()
         #p = in_dims
         p = in_dims//s_d
-        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, norm=norm)
+        self.project = nn.Conv2d(in_dims, out_dims, kernel_size = 1)
+        self.ada = AdaConv(out_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, norm=norm)
 
     def forward(self, style, x):
+        x = self.project(x)
         x = self.ada(style, x)
         return x
 
@@ -970,53 +972,7 @@ class ThumbAdaConv(nn.Module):
             StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=64, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
-        '''
-        self.layer_norm_in = nn.ModuleList([
-            nn.Identity(),
-            nn.Identity(),
-            nn.BatchNorm2d(256),
-            nn.Identity(),
-            nn.Identity(),
-            nn.BatchNorm2d(128),
-            nn.Identity(),
-            nn.BatchNorm2d(64),
-            nn.Identity(),
-        ])
-        self.layer_norm_out = nn.ModuleList([
-            nn.BatchNorm2d(512),
-            nn.Identity(),
-            nn.BatchNorm2d(256),
-            nn.Identity(),
-            nn.Identity(),
-            nn.BatchNorm2d(128),
-            nn.Identity(),
-            #nn.LayerNorm((batch_size, 64, 128, 128)),
-            nn.Identity(),
-        ])
-        '''
-        '''
-        self.r4_1_in = nn.Sequential(
-            nn.Conv2d(512,512,kernel_size=1),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.LeakyReLU(),
-            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            nn.InstanceNorm2d(512)
-        )
-        self.r3_1_in = nn.Sequential(
-            nn.Conv2d(256, 256, kernel_size=1),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.LeakyReLU(),
-            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            nn.InstanceNorm2d(256)
-        )
-        self.r2_1_in = nn.Sequential(
-            nn.Conv2d(128, 128, kernel_size=1),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.LeakyReLU(),
-            nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            nn.InstanceNorm2d(128)
-        )
-        '''
+
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
                 nn.Linear(in_features=256, out_features=128),

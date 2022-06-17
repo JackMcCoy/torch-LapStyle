@@ -9,8 +9,51 @@ from adaconv import AdaConv
 import numpy as np
 from torch.nn import functional as F
 from cuda.fused_act import FusedLeakyReLU
+from einops import rearrange
 #from torch_utils.ops import filtered_lrelu
 
+def relative_logits_1d(q, rel_k):
+    b, heads, h, w, dim = q.shape
+    logits = einsum('b h x y d, r d -> b h x y r', q, rel_k)
+    logits = rearrange(logits, 'b h x y r -> b (h x) y r')
+    logits = rel_to_abs(logits)
+    logits = logits.reshape(b, heads, h, w, w)
+    logits = expand_dim(logits, dim = 3, k = h)
+    return logits
+
+def relative_logits_1d(q, rel_k):
+    b, heads, h, w, dim = q.shape
+    logits = einsum('b h x y d, r d -> b h x y r', q, rel_k)
+    logits = rearrange(logits, 'b h x y r -> b (h x) y r')
+    logits = rel_to_abs(logits)
+    logits = logits.reshape(b, heads, h, w, w)
+    logits = expand_dim(logits, dim = 3, k = h)
+    return logits
+
+class RelPosEmb(nn.Module):
+    def __init__(
+        self,
+        fmap_size,
+        dim_head
+    ):
+        super().__init__()
+        height, width = pair(fmap_size)
+        scale = dim_head ** -0.5
+        self.fmap_size = fmap_size
+        self.rel_height = nn.Parameter(torch.randn(height * 2 - 1, dim_head) * scale)
+        self.rel_width = nn.Parameter(torch.randn(width * 2 - 1, dim_head) * scale)
+
+    def forward(self, q):
+        h, w = self.fmap_size
+
+        q = rearrange(q, 'b h (x y) d -> b h x y d', x = h, y = w)
+        rel_logits_w = relative_logits_1d(q, self.rel_width)
+        rel_logits_w = rearrange(rel_logits_w, 'b h x i y j-> b h (x y) (i j)')
+
+        q = rearrange(q, 'b h x y d -> b h y x d')
+        rel_logits_h = relative_logits_1d(q, self.rel_height)
+        rel_logits_h = rearrange(rel_logits_h, 'b h x i y j -> b h (y x) (j i)')
+        return rel_logits_w + rel_logits_h
 
 def get_gaussian_filt(filt_size):
     if (filt_size == 1):
