@@ -665,8 +665,8 @@ class StyleAttention(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
+        #self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
+        #self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -691,16 +691,14 @@ class StyleAttention(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
-        content_position = torch.matmul(content_position, q.transpose(3, 2))
+        #content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
+        #content_position = torch.matmul(content_position, q.transpose(3, 2))
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
-        context = torch.einsum('bhdn,bhen->bhde', q, k)
-        context = context + content_position
-        context = context.softmax(dim=-1)
-        out = torch.einsum('bhdn,bhde->bhen', v, context)
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         return out
@@ -773,8 +771,8 @@ class StyleAttention_ContentValues(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
+        #self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
+        #self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
 
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -800,19 +798,16 @@ class StyleAttention_ContentValues(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
-        content_position = torch.matmul(content_position, q.transpose(3,2))
+        #content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
+        #content_position = torch.matmul(content_position, q.transpose(3,2))
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
-        context = torch.einsum('bhdn,bhen->bhde', q, k)
-        context = context + content_position
-        context = context.softmax(dim=-1)
-        out = torch.einsum('bhdn,bhde->bhen', v, context)
+        context = torch.einsum('bhdn,bhen->bhde', k, v)
+        out = torch.einsum('bhdn,bhde->bhen', q, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
-        #out = self.out_norm(out)
         return out
 
 
