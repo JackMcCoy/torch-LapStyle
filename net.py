@@ -665,7 +665,7 @@ class StyleAttention(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-
+        self.pos_emb = RelPosEmb(size, key_dim)
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -695,7 +695,7 @@ class StyleAttention(nn.Module):
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
         '''
-
+        q = q + self.pos_emb(q)
         k = k.softmax(dim=-1)
 
         if self.norm_queries:
