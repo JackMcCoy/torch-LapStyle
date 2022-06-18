@@ -774,8 +774,8 @@ class StyleAttention_ContentValues(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
+        self.rel_h = nn.Parameter(torch.randn([1, key_dim * heads, 1, size]), requires_grad=True)
+        self.rel_w = nn.Parameter(torch.randn([1, key_dim * heads, size, 1]), requires_grad=True)
 
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
