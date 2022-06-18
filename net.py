@@ -804,11 +804,14 @@ class StyleAttention_ContentValues(nn.Module):
 
         content_position = (self.rel_h + self.rel_w).view(1, heads, self.key_dim, -1).permute(0, 1, 3, 2)
         content_position = torch.matmul(content_position, q)
+        print(content_position.shape)
+        print(q.shape)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
         context = torch.einsum('bhdn,bhen->bhde', q, k)
+        print(context.shape)
         context = context + content_position
         context = context.softmax(dim=-1)
         out = torch.einsum('bhdn,bhde->bhen', v, context)
