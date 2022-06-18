@@ -804,7 +804,7 @@ class StyleAttention_ContentValues(nn.Module):
 
         content_position = (self.rel_h + self.rel_w).view(1, heads, self.key_dim, -1)
         print(content_position.shape)
-        content_position = torch.matmul(content_position, q)
+        content_position = torch.matmul(content_position, q.transpose(3,2))
         print(content_position.shape)
         print(q.shape)
 
