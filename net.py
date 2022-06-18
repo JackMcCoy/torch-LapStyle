@@ -665,7 +665,6 @@ class StyleAttention(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.pos_emb = RelPosEmb((size,size), key_dim)
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -695,7 +694,6 @@ class StyleAttention(nn.Module):
         k = torch.cat((k, ck), dim=3)
         v = torch.cat((v, cv), dim=3)
         '''
-        q = q + self.pos_emb(q)
         k = k.softmax(dim=-1)
 
         if self.norm_queries:
@@ -776,7 +774,8 @@ class StyleAttention_ContentValues(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.pos_emb = RelPosEmb((size,size), key_dim)
+        self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
+        self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
 
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -794,7 +793,7 @@ class StyleAttention_ContentValues(nn.Module):
 
         #_x = F.instance_norm(x)
 
-        #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
+        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         x = F.instance_norm(x)
         context = F.instance_norm(context)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, context), self.to_v(style_enc, context)
@@ -803,14 +802,17 @@ class StyleAttention_ContentValues(nn.Module):
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
-        k = k.softmax(dim=-1)
 
-        q = q + self.pos_emb(q)
+        content_position = (self.rel_h + self.rel_w).view(1, self.heads, C // self.heads, -1).permute(0, 1, 3, 2)
+        content_position = torch.matmul(content_position, q)
+
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
-        context = torch.einsum('bhdn,bhen->bhde', k, v)
-        out = torch.einsum('bhdn,bhde->bhen', q, context)
+        context = torch.einsum('bhdn,bhen->bhde', q, k)
+        context = context + content_position
+        context = context.softmax(dim=-1)
+        out = torch.einsum('bhdn,bhde->bhen', v, context)
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         #out = self.out_norm(out)
