@@ -802,9 +802,9 @@ class StyleAttention_ContentValues(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
         print(q.shape)
-        content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1).permute(0, 1, 3, 2)
+        content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
         print(content_position.shape)
-        content_position = torch.matmul(content_position, q)
+        content_position = torch.matmul(content_position, q.transpose(3,2))
         print(content_position.shape)
 
 
