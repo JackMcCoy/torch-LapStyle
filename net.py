@@ -1445,13 +1445,14 @@ def loss_no_patch(stylized: torch.Tensor,
     '''
     l_identity1 = 0
     l_identity2 = 0
-    l_identity3 = 0
-    l_identity4 = 0
+
     style_remd = 0
     content_relt = 0
     '''
+    l_identity3 = 0
+    l_identity4 = 0
     l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    #l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)
     loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = loss_c + content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
