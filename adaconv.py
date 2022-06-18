@@ -19,7 +19,7 @@ class AdaConv(nn.Module):
         self.depthwise_kernel_conv = nn.Conv2d(self.s_d, self.c_out * (self.c_in//self.n_groups), kernel_size=2, padding_mode='reflect')
 
         self.pointwise_avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out * self.c_out // self.n_groups, kernel_size=1)
+        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out, kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(self.s_d, self.c_out, kernel_size=1)
         self.apply(self._init_weights)
 
@@ -35,7 +35,7 @@ class AdaConv(nn.Module):
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, 3, 3)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out // self.n_groups, 1, 1)
+        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
@@ -52,7 +52,6 @@ class AdaConv(nn.Module):
                                      ),
                 stride=1,
                 weight=pointwise_kn,
-                bias=pointwise_bias,
-                groups=self.batch_groups)
+                bias=pointwise_bias)
         content_out = content_out.permute([1, 0, 2, 3]).view(a,self.c_out,c,d)
         return content_out
