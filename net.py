@@ -802,7 +802,7 @@ class StyleAttention_ContentValues(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
 
-        content_position = (self.rel_h + self.rel_w).view(1, heads, c // heads, -1).permute(0, 1, 3, 2)
+        content_position = (self.rel_h + self.rel_w).view(1, heads, self.key_dim, -1).permute(0, 1, 3, 2)
         content_position = torch.matmul(content_position, q)
 
         if self.norm_queries:
