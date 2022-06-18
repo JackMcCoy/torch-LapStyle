@@ -793,7 +793,6 @@ class StyleAttention_ContentValues(nn.Module):
 
         #_x = F.instance_norm(x)
 
-        position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         x = F.instance_norm(x)
         context = F.instance_norm(context)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, context), self.to_v(style_enc, context)
@@ -803,7 +802,7 @@ class StyleAttention_ContentValues(nn.Module):
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
 
 
-        content_position = (self.rel_h + self.rel_w).view(1, self.heads, C // self.heads, -1).permute(0, 1, 3, 2)
+        content_position = (self.rel_h + self.rel_w).view(1, heads, c // heads, -1).permute(0, 1, 3, 2)
         content_position = torch.matmul(content_position, q)
 
         if self.norm_queries:
