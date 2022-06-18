@@ -665,7 +665,7 @@ class StyleAttention(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.pos_emb = RelPosEmb(size, key_dim)
+        self.pos_emb = RelPosEmb((size,size), key_dim)
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
         self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -776,7 +776,7 @@ class StyleAttention_ContentValues(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
-        self.pos_emb = RelPosEmb(size, key_dim)
+        self.pos_emb = RelPosEmb((size,size), key_dim)
 
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
