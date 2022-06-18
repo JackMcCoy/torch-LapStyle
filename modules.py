@@ -12,6 +12,9 @@ from cuda.fused_act import FusedLeakyReLU
 from einops import rearrange
 #from torch_utils.ops import filtered_lrelu
 
+def pair(x):
+    return (x, x) if not isinstance(x, tuple) else x
+
 def relative_logits_1d(q, rel_k):
     b, heads, h, w, dim = q.shape
     logits = einsum('b h x y d, r d -> b h x y r', q, rel_k)
