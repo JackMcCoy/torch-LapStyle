@@ -969,14 +969,14 @@ class ThumbAdaConv(nn.Module):
         # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size/2**4), adaconv_norm=False),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size/2**3), adaconv_norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size/2**3), adaconv_norm=False),
+            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size/2**2), adaconv_norm=False),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size/2**2), adaconv_norm=False),
+            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size/2**1), adaconv_norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=int(size/2**1), adaconv_norm=False),
+            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=size, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
         ])
 
