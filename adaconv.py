@@ -51,7 +51,8 @@ class AdaConv(nn.Module):
                                      )
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
-                bias=pointwise_bias)
+                bias=pointwise_bias,
+                groups = N)
         content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
 
         return content_out
