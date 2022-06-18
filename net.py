@@ -776,6 +776,7 @@ class StyleAttention_ContentValues(nn.Module):
         self.heads = heads
 
         self.norm_queries = norm_queries
+        self.pos_emb = RelPosEmb(size, key_dim)
 
         conv_kwargs = {'padding': padding, 'stride': stride}
         self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_relu=True)
@@ -804,6 +805,7 @@ class StyleAttention_ContentValues(nn.Module):
 
         k = k.softmax(dim=-1)
 
+        q = q + self.pos_emb(q)
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
