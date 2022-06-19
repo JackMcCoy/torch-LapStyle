@@ -792,8 +792,8 @@ class StyleAttention_ContentValues(nn.Module):
 
         #_x = F.instance_norm(x)
 
-        x = F.instance_norm(x)
-        context = F.instance_norm(context)
+        #x = F.instance_norm(x)
+        #context = F.instance_norm(context)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, context), self.to_v(style_enc, context)
 
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
