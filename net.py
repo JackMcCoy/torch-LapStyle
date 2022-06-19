@@ -694,6 +694,8 @@ class StyleAttention(nn.Module):
         #content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
         #content_position = torch.matmul(content_position, q.transpose(3, 2))
 
+        k = k.softmax(dim=-1)
+
         if self.norm_queries:
             q = q.softmax(dim=-2)
 
@@ -800,6 +802,8 @@ class StyleAttention_ContentValues(nn.Module):
 
         #content_position = (self.rel_h + self.rel_w).view(1, heads, k_dim, -1)
         #content_position = torch.matmul(content_position, q.transpose(3,2))
+
+        k = k.softmax(dim=-1)
 
         if self.norm_queries:
             q = q.softmax(dim=-2)
