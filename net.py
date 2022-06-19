@@ -985,7 +985,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        self.relu = nn.ModuleList(
+        self.relu = nn.ModuleList([
             nn.Sequential(
                 nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 BlurPool(512, filt_size=3, stride=1),
@@ -1010,7 +1010,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             )
-        )
+        ])
         self.gelu = nn.GELU()
         self.apply(self._init_weights)
 
