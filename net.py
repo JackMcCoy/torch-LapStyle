@@ -1013,10 +1013,12 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
         x = x + res
         # in = 256 ch
+        res = x
         #x = self.layer_norm_in[2](x)
         x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = x + res
         #####
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
@@ -1025,19 +1027,22 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
         x = x + res
         #####
+        res = x
         #x = self.layer_norm_in[5](x)
         x = checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
-
+        x = res + x
         # in = 128 ch
         res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
         x = x + res
         ######
         # in = 64 ch
+        res = x
         x = checkpoint(self.attention_block[7], style_enc, x,  preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
