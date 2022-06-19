@@ -962,15 +962,15 @@ class ThumbAdaConv(nn.Module):
         # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size/2**3), adaconv_norm=False),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size/2**2), adaconv_norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False),
             nn.Identity(),
             nn.Identity(),
-            StyleAttention_ContentValues(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size/2**1), adaconv_norm=False),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False),
             nn.Identity(),
-            StyleAttention_ContentValues(64, s_d=s_d, batch_size=batch_size, heads=2, size=size, adaconv_norm=False),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size)
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False)
         ])
 
         if style_contrastive_loss:
@@ -1014,7 +1014,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         # in = 256 ch
         #x = self.layer_norm_in[2](x)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, cF['r3_1'], preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         #####
@@ -1026,7 +1026,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         #####
         #x = self.layer_norm_in[5](x)
-        x = x + checkpoint(self.attention_block[5], style_enc, x, cF['r2_1'], preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
 
@@ -1036,7 +1036,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         ######
         # in = 64 ch
-        x = checkpoint(self.attention_block[7], style_enc, x, cF['r1_1'], preserve_rng_state=False)
+        x = checkpoint(self.attention_block[7], style_enc, x,  preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
@@ -1467,14 +1467,16 @@ def loss_no_patch(stylized: torch.Tensor,
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    p_loss = pixel_loss(stylized, si)
-    #p_loss = 0
+    #p_loss = pixel_loss(stylized, si)
+    p_loss = 0
+    '''
     if blur:
         fake = blur(stylized)
     else:
         fake = stylized
     fake_loss = disc_(fake)
     loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
+    '''
     '''
     fake_loss = disc2_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
