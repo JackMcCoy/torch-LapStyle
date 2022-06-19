@@ -1014,7 +1014,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         # in = 256 ch
         #x = self.layer_norm_in[2](x)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         #####
@@ -1026,7 +1026,7 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         #####
         #x = self.layer_norm_in[5](x)
-        x = x + checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
+        x = checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
 
