@@ -960,7 +960,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
-        self.vector_quantize = VectorQuantize(dim=self.kernel_size**2, codebook_size = 1200, decay = 0.8)
+        self.vector_quantize = VectorQuantize(dim=self.kernel_size**2, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
