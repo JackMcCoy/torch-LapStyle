@@ -385,10 +385,11 @@ def drafting_train():
         '''
         ci = ci.to(device)
         si = si.to(device)
-        ci = content_normalize(ci)
-        si = style_normalize(si)
-        cF = enc_(ci)
-        sF = enc_(si)
+        with torch.no_grad():
+            ci = content_normalize(ci)
+            si = style_normalize(si)
+            cF = enc_(ci)
+            sF = enc_(si)
         '''
         if n > 2 and n % args.disc_update_steps == 0:
             dec_.eval()
@@ -424,10 +425,10 @@ def drafting_train():
             set_requires_grad(dec_, True)
         dec_.train()
         '''
-        stylized = dec_(cF, sF['r4_1'])
-
         for param in dec_.parameters():
             param.grad = None
+
+        stylized = dec_(cF, sF['r4_1'])
 
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, None, crop_size=128, blur = False)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
