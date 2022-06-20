@@ -16,9 +16,14 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.s_d = s_d
         self.kernel_size = kernel_size
-
-        padding = math.ceil((kernel_size - 1) / 2)
-        self.pad = nn.ReflectionPad2d((padding, padding, padding, padding))
+        if (kernel_size-1) % 2 == 0:
+            padding = int((kernel_size - 1) / 2)
+            self.pad = nn.ReflectionPad2d((padding, padding, padding, padding))
+        else:
+            tl = math.ceil((kernel_size - 1) / 2)
+            br = math.floor((kernel_size - 1) / 2)
+            padding = (tl, br, tl, br)
+            self.pad = nn.ReflectionPad2d(padding)
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Conv2d(self.s_d,
                                                self.c_in * (self.c_in//self.n_groups),
