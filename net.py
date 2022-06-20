@@ -985,6 +985,33 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        self.relu = nn.ModuleList([
+            nn.Sequential(
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(512, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(128, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                BlurPool(64, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            )
+        ])
+        self.leakyrelu = nn.LeakyReLU()
         self.apply(self._init_weights)
 
     @staticmethod
@@ -1003,7 +1030,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc)
         style_enc = style_enc.view(b, self.s_d, 16).view(b, self.s_d, 4, 4)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
-        #x = checkpoint(self.relu[0], x, preserve_rng_state=False)
+        x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
         # x = self.gelu(x)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
@@ -1015,7 +1042,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #x = self.layer_norm_in[2](x)
         x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        #x = checkpoint(self.relu[1], x, preserve_rng_state=False)
+        x = checkpoint(self.relu[1], x, preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
@@ -1030,7 +1057,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #x = self.layer_norm_in[5](x)
         x = checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
-        #x = checkpoint(self.relu[2], x, preserve_rng_state=False)
+        x = checkpoint(self.relu[2], x, preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = res + x
@@ -1042,12 +1069,12 @@ class ThumbAdaConv(nn.Module):
         # in = 64 ch
         res = x
         x = checkpoint(self.attention_block[7], style_enc, x,  preserve_rng_state=False)
-        #x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        x = checkpoint(self.relu[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        #x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        x = checkpoint(self.relu[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x
