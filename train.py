@@ -425,16 +425,15 @@ def drafting_train():
             set_requires_grad(dec_, True)
         dec_.train()
         '''
-
-        stylized = dec_(cF, sF['r4_1'])
-
         for param in dec_.parameters():
             param.grad = None
+
+        stylized, cb_loss = dec_(cF, sF['r4_1'])
 
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, None, crop_size=128, blur = False)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
 
-        loss = loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
+        loss = cb_loss + loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
                style_remd * args.style_remd + l_identity1 * 50 + \
                l_identity2 + l_identity3 * 50 + l_identity4 + loss_Gp_GAN * args.gan_loss + loss_Gp_GAN_patch * args.gan_loss + \
                mdog * args.mdog_weight + pixel_loss * args.pixel_loss
