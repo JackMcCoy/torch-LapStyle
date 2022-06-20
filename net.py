@@ -960,7 +960,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
-        # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
+        self.vector_quantize = VectorQuantize(dim=self.kernel_size**2, codebook_size = 1200, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
@@ -1032,6 +1032,7 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
+        style_enc = self.vector_quantize(style_enc)
         style_enc = style_enc.view(b, self.s_d, self.kernel_size**2)\
             .view(b, self.s_d, self.kernel_size, self.kernel_size)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
