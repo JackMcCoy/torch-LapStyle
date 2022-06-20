@@ -826,13 +826,14 @@ class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
+        self.kernel_size = 3
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
-        self.projection = nn.Linear(d, self.s_d * 16)
+        self.projection = nn.Linear(d, self.s_d * self.kernel_size**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
         self.residual = nn.ModuleList([
@@ -962,15 +963,15 @@ class ThumbAdaConv(nn.Module):
         # self.vector_quantize = VectorQuantize(dim=25, codebook_size = 512, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
             nn.Identity(),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False)
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
 
         if style_contrastive_loss:
@@ -1028,7 +1029,8 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        style_enc = style_enc.view(b, self.s_d, 16).view(b, self.s_d, 4, 4)
+        style_enc = style_enc.view(b, self.s_d, self.kernel_size**2)\
+            .view(b, self.s_d, self.kernel_size, self.kernel_size)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
