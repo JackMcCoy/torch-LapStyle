@@ -1028,7 +1028,7 @@ class ThumbAdaConv(nn.Module):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        style_enc = self.leakyrelu(style_enc.view(b, self.s_d, 16)).view(b, self.s_d, 4, 4)
+        style_enc = style_enc.view(b, self.s_d, 16).view(b, self.s_d, 4, 4)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
