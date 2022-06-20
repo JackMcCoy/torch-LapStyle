@@ -3,6 +3,7 @@ from torch import nn
 import typing
 import torch.nn.functional as F
 from losses import calc_mean_std
+import math
 
 
 class AdaConv(nn.Module):
@@ -16,7 +17,7 @@ class AdaConv(nn.Module):
         self.s_d = s_d
         self.kernel_size = kernel_size
 
-        padding = (kernel_size - 1) / 2
+        padding = math.ceil((kernel_size - 1) / 2)
         self.pad = nn.ReflectionPad2d((padding, padding, padding, padding))
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Conv2d(self.s_d,
