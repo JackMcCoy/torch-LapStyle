@@ -30,9 +30,7 @@ class AdaConv(nn.Module):
             nn.ReflectionPad2d(padding),
             nn.Conv2d(self.s_d,
                    self.c_in * (self.c_in//self.n_groups),
-                   kernel_size=kernel_size,
-                   padding = padding,
-                   padding_mode='reflect',))
+                   kernel_size=kernel_size,))
 
         self.pointwise_avg_pool = nn.AdaptiveAvgPool2d(1)
         self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_in * self.c_out, kernel_size=1)
