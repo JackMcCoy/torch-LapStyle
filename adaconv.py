@@ -26,11 +26,9 @@ class AdaConv(nn.Module):
             padding = (tl, br, tl, br)
             self.pad = nn.ReflectionPad2d(padding)
         self.norm = F.instance_norm if norm else nn.Identity()
-        self.depthwise_kernel_conv = nn.Sequential(
-            nn.ReflectionPad2d(padding),
-            nn.Conv2d(self.s_d,
+        self.depthwise_kernel_conv = nn.Conv2d(self.s_d,
                    self.c_in * (self.c_in//self.n_groups),
-                   kernel_size=kernel_size))
+                   kernel_size=kernel_size)
 
         self.pointwise_avg_pool = nn.AdaptiveAvgPool2d(1)
         self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_in * self.c_out, kernel_size=1)

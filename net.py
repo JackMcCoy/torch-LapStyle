@@ -826,14 +826,14 @@ class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
-        self.kernel_size = 4
+        self.kernel_size = 3
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
-        self.projection = nn.Linear(d, self.s_d * self.kernel_size**2)
+        self.projection = nn.Linear(d, self.s_d * 25)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
         self.residual = nn.ModuleList([
@@ -986,6 +986,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        '''
         self.relu = nn.ModuleList([
             nn.Sequential(
                 nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
@@ -1012,27 +1013,29 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             )
         ])
+        '''
         self.leakyrelu = nn.LeakyReLU()
         self.apply(self._init_weights)
 
     @staticmethod
     def _init_weights(m):
         if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight.data, mode="fan_out", nonlinearity="leaky_relu")
+            nn.init.normal_(m.weight.data)
             if not m.bias is None:
-                nn.init.constant_(m.bias.data, 0)
+                nn.init.constant_(m.bias.data, 0.01)
+            m.requires_grad = True
         elif isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight.data, 0.01)
-            nn.init.constant_(m.bias.data, 0)
+            nn.init.normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc)
-        style_enc = style_enc.view(b, self.s_d, self.kernel_size**2)\
-            .view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc = style_enc.view(b, self.s_d, 25)\
+            .view(b, self.s_d, 5, 5)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
-        x = checkpoint(self.relu[0], x, preserve_rng_state=False)
+        #x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
         # x = self.gelu(x)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
@@ -1044,7 +1047,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #x = self.layer_norm_in[2](x)
         x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.relu[1], x, preserve_rng_state=False)
+        #x = checkpoint(self.relu[1], x, preserve_rng_state=False)
         #x = self.layer_norm_out[2](x)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
@@ -1059,7 +1062,7 @@ class ThumbAdaConv(nn.Module):
         res = x
         #x = self.layer_norm_in[5](x)
         x = checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
-        x = checkpoint(self.relu[2], x, preserve_rng_state=False)
+        #x = checkpoint(self.relu[2], x, preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = res + x
@@ -1071,12 +1074,12 @@ class ThumbAdaConv(nn.Module):
         # in = 64 ch
         res = x
         x = checkpoint(self.attention_block[7], style_enc, x,  preserve_rng_state=False)
-        x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        #x = checkpoint(self.relu[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        #x = checkpoint(self.relu[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x
