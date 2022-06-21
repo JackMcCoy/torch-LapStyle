@@ -963,15 +963,15 @@ class ThumbAdaConv(nn.Module):
         self.vector_quantize = VectorQuantize(dim=self.kernel_size**2, codebook_size = 1200, decay = 0.8)
 
         self.attention_block = nn.ModuleList([
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
             nn.Identity(),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
 
         if style_contrastive_loss:
