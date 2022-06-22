@@ -19,6 +19,7 @@ class AdaConv(nn.Module):
         if (kernel_size-1) % 2 == 0:
             if kernel_size == 1:
                 self.pad = nn.Identity()
+                kernel_size = 3
             else:
                 padding = int((kernel_size - 1) / 2)
                 padding = (padding,)*4
