@@ -1066,7 +1066,7 @@ class ThumbAdaConv(nn.Module):
         #x = x + res
         #####
         x = x + res
-        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
         x = x + res
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
