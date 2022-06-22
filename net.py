@@ -1047,7 +1047,7 @@ class ThumbAdaConv(nn.Module):
         #x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         #x = self.layer_norm_out[0](x)
         # x = self.gelu(x)
-        res = checkpoint(self.residual[1], x, preserve_rng_state=False)
+        res = x
 
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
@@ -1076,7 +1076,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.attention_block[5], style_enc, x,  preserve_rng_state=False)
         #x = checkpoint(self.relu[2], x, preserve_rng_state=False)
         #x = self.layer_norm_out[5](x)
-        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        res = x
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         #x = res + x
         # in = 128 ch
