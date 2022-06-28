@@ -1094,6 +1094,301 @@ class ThumbAdaConv(nn.Module):
         return x, cb_loss
 
 
+class FourierAdaConv(nn.Module):
+    def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
+        super(FourierAdaConv, self).__init__()
+        self.s_d = s_d
+        self.kernel_size = 3
+        depth = 2 if size>128 else 1
+        self.style_encoding = nn.Sequential(
+            StyleEncoderBlock(512, kernel_size=3),
+            *(StyleEncoderBlock(512, kernel_size=3),)*depth
+        )
+        d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
+        self.projection = nn.Linear(d, self.s_d * self.kernel_size**2)
+        self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
+        self.whitening = [False,False,True,False,True,False, True]
+        self.residual = nn.ModuleList([
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(512, 256, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(256, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(128, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(64, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear')
+            ),
+            nn.Identity(),
+            nn.Identity(),
+        ])
+
+        # ks = 7 if size==256 else 3
+        # p = 3 if size==256 else 1
+        ks = 3
+        p = 1
+        self.learnable = nn.ModuleList([
+            nn.Sequential(
+                nn.ReflectionPad2d((p, p, p, p)),
+                nn.Conv2d(512, 512, (ks, ks), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(512, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(256, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ), nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(256, 128, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(128, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 128, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(128, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(128, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                #BlurPool(64, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(64, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(64, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                #BlurPool(64, filt_size=3, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+            ),
+            nn.Sequential(
+                nn.ReflectionPad2d((1, 1, 1, 1)),
+                nn.Conv2d(64, 3, (3, 3))
+            )
+        ])
+        self.vector_quantize = VectorQuantize(dim=self.kernel_size**2, codebook_size = 1200, decay = 0.8)
+
+        self.attention_block = nn.ModuleList([
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            nn.Identity(),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+
+            nn.Identity(),
+            nn.Identity(),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+
+            nn.Identity(),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
+        ])
+
+        if style_contrastive_loss:
+            self.proj_style = nn.Sequential(
+                nn.Linear(in_features=256, out_features=128),
+                nn.LeakyReLU(),
+                nn.Linear(in_features=128, out_features=128)
+            )
+        if content_contrastive_loss:
+            self.proj_content = nn.Sequential(
+                nn.Linear(in_features=512, out_features=256),
+                nn.LeakyReLU(),
+                nn.Linear(in_features=256, out_features=128)
+            )
+        self.channels = 512
+        freqs = torch.randn([self.channels, 2])
+        radii = freqs.square().sum(dim=1, keepdim=True).sqrt()
+        freqs /= radii * radii.square().exp().pow(0.25)
+        freqs *= bandwidth
+        phases = torch.rand([self.channels]) - 0.5
+
+        # Setup parameters and buffers.
+        self.weight = torch.nn.Parameter(torch.randn([self.channels, self.channels]))
+        self.affine = FullyConnectedLayer(w_dim, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        self.register_buffer('transform', torch.eye(3, 3))  # User-specified inverse transform wrt. resulting image.
+        self.register_buffer('freqs', freqs)
+        self.register_buffer('phases', phases)
+
+        self.leakyrelu = nn.LeakyReLU()
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.normal_(m.weight.data)
+            if not m.bias is None:
+                nn.init.constant_(m.bias.data, 0.01)
+            m.requires_grad = True
+        elif isinstance(m, nn.Linear):
+            nn.init.normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.01)
+
+    def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
+        b = cF['r4_1'].shape[0]
+
+        # Introduce batch dimension.
+        transforms = self.transform.unsqueeze(0)  # [batch, row, col]
+        freqs = self.freqs.unsqueeze(0)  # [batch, channel, xy]
+        phases = self.phases.unsqueeze(0)  # [batch, channel]
+
+        # Apply learned transformation.
+        t = self.affine(cF['r4_1'])  # t = (r_c, r_s, t_x, t_y)
+        t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
+        m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
+            [w.shape[0], 1, 1])  # Inverse rotation wrt. resulting image.
+        m_r[:, 0, 0] = t[:, 0]  # r'_c
+        m_r[:, 0, 1] = -t[:, 1]  # r'_s
+        m_r[:, 1, 0] = t[:, 1]  # r'_s
+        m_r[:, 1, 1] = t[:, 0]  # r'_c
+        m_t = torch.eye(3, device='cuda').unsqueeze(0).repeat(
+            [w.shape[0], 1, 1])  # Inverse translation wrt. resulting image.
+        m_t[:, 0, 2] = -t[:, 2]  # t'_x
+        m_t[:, 1, 2] = -t[:, 3]  # t'_y
+        transforms = m_r @ m_t @ transforms  # First rotate resulting image, then translate, and finally apply user-specified transform.
+
+        # Transform frequencies.
+        phases = phases + (freqs @ transforms[:, :2, 2:]).squeeze(2)
+        freqs = freqs @ transforms[:, :2, :2]
+
+        # Dampen out-of-band frequencies that may occur due to the user-specified transform.
+        amplitudes = (1 - (freqs.norm(dim=2) - self.bandwidth) / (self.sampling_rate / 2 - self.bandwidth)).clamp(0, 1)
+
+        # Construct sampling grid.
+        theta = torch.eye(2, 3, device='cuda')
+        theta[0, 0] = 0.5 * self.size[0] / self.sampling_rate
+        theta[1, 1] = 0.5 * self.size[1] / self.sampling_rate
+        grids = torch.nn.functional.affine_grid(theta.unsqueeze(0), [1, 1, self.size[1], self.size[0]],
+                                                align_corners=False)
+        x = (grids.unsqueeze(3) @ freqs.permute(0, 2, 1).unsqueeze(1).unsqueeze(2)).squeeze(
+            3)  # [batch, height, width, channel]
+        x = x + phases.unsqueeze(1).unsqueeze(2)
+        x = torch.sin(x * (np.pi * 2))
+        x = x * amplitudes.unsqueeze(1).unsqueeze(2)
+
+        # Apply trainable mapping.
+        weight = self.weight / np.sqrt(self.channels)
+        x = x @ weight.t()
+
+        style_enc = self.style_encoding(sF).flatten(1)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
+        style_enc, _, cb_loss = self.vector_quantize(style_enc)
+        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
+        x = checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
+        # x = checkpoint(self.relu[0], x, preserve_rng_state=False)
+        # x = self.layer_norm_out[0](x)
+        # x = self.gelu(x)
+        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        res = checkpoint(self.residual[1], x, preserve_rng_state=False)
+        # quarter res
+        x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
+        x = x + res
+        # in = 256 ch
+        res = x
+        # x = self.layer_norm_in[2](x)
+        x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        # x = checkpoint(self.relu[1], x, preserve_rng_state=False)
+        # x = self.layer_norm_out[2](x)
+        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = x + res
+        #####
+        res = x
+        x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
+        x = x + res
+        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
+        x = x + res
+        #####
+        res = x
+        # x = self.layer_norm_in[5](x)
+        x = checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
+        # x = checkpoint(self.relu[2], x, preserve_rng_state=False)
+        # x = self.layer_norm_out[5](x)
+        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = res + x
+        # in = 128 ch
+        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
+        x = x + res
+        ######
+        # in = 64 ch
+        res = x
+        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        # x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = res + x
+        x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        # x = checkpoint(self.relu[3], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
+        return x, cb_loss
+
+
 class DecoderVQGAN(nn.Module):
     def __init__(self):
         super(DecoderVQGAN, self).__init__()
