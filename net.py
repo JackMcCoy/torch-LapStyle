@@ -1306,7 +1306,7 @@ class FourierAdaConv(nn.Module):
 
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(torch.randn([self.channels, self.channels]))
-        self.affine = FullyConnectedLayer(401408, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        self.affine = FullyConnectedLayer(3136, 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
         self.register_buffer('phases', phases)
