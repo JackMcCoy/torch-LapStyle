@@ -1369,6 +1369,7 @@ class FourierAdaConv(nn.Module):
 
         # Apply trainable mapping.
         x = x @ cF['r4_1'].transpose(1,0).flatten(1)
+        print(x.shape)
         x = x.permute(0,3,1,2).contiguous()
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
