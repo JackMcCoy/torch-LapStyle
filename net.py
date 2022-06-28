@@ -1370,7 +1370,7 @@ class FourierAdaConv(nn.Module):
         # Apply trainable mapping.
         weight = self.weight / np.sqrt(self.channels)
         x = x @ weight.t()
-        print(x.shape)
+        x = x.permute(0,3,1,2)
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
         style_enc, _, cb_loss = self.vector_quantize(style_enc)
