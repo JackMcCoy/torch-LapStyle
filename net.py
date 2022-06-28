@@ -1260,6 +1260,7 @@ class FourierAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
+        bandwidth = 2
         self.channels = 512
         freqs = torch.randn([self.channels, 2])
         radii = freqs.square().sum(dim=1, keepdim=True).sqrt()
@@ -1269,7 +1270,7 @@ class FourierAdaConv(nn.Module):
 
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(torch.randn([self.channels, self.channels]))
-        self.affine = FullyConnectedLayer(w_dim, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        self.affine = FullyConnectedLayer(512, 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
         self.register_buffer('phases', phases)
