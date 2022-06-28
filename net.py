@@ -1306,7 +1306,7 @@ class FourierAdaConv(nn.Module):
 
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(torch.randn([self.channels, self.channels]))
-        self.affine = FullyConnectedLayer(3136, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        self.affine = FullyConnectedLayer(401408, 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
         self.register_buffer('phases', phases)
@@ -1332,18 +1332,18 @@ class FourierAdaConv(nn.Module):
         transforms = self.transform.unsqueeze(0)  # [batch, row, col]
         freqs = self.freqs.unsqueeze(0)  # [batch, channel, xy]
         phases = self.phases.unsqueeze(0)  # [batch, channel]
-        x = cF['r4_1'].transpose(1,0).flatten(1)
+
         # Apply learned transformation.
-        t = self.affine(x)  # t = (r_c, r_s, t_x, t_y)
+        t = self.affine(cF['r4_1'].flatten(1))  # t = (r_c, r_s, t_x, t_y)
         t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
         m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [512, 1, 1])  # Inverse rotation wrt. resulting image.
+            [b, 1, 1])  # Inverse rotation wrt. resulting image.
         m_r[:, 0, 0] = t[:, 0]  # r'_c
         m_r[:, 0, 1] = -t[:, 1]  # r'_s
         m_r[:, 1, 0] = t[:, 1]  # r'_s
         m_r[:, 1, 1] = t[:, 0]  # r'_c
         m_t = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [512, 1, 1])  # Inverse translation wrt. resulting image.
+            [b, 1, 1])  # Inverse translation wrt. resulting image.
         m_t[:, 0, 2] = -t[:, 2]  # t'_x
         m_t[:, 1, 2] = -t[:, 3]  # t'_y
         transforms = m_r @ m_t @ transforms  # First rotate resulting image, then translate, and finally apply user-specified transform.
@@ -1370,7 +1370,6 @@ class FourierAdaConv(nn.Module):
         # Apply trainable mapping.
         weight = self.weight / np.sqrt(self.channels)
         x = x @ weight.t()
-        print(x.shape)
         x = x.permute(0,3,1,2).contiguous()
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
