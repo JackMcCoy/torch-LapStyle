@@ -1369,6 +1369,7 @@ class FourierAdaConv(nn.Module):
 
         # Apply trainable mapping.
         weight = self.weight / np.sqrt(self.channels)
+        print(weight.shape)
         x = x @ weight.t()
         x = x.permute(0,3,1,2).contiguous()
         style_enc = self.style_encoding(sF).flatten(1)
