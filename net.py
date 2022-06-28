@@ -1334,8 +1334,7 @@ class FourierAdaConv(nn.Module):
         phases = self.phases.unsqueeze(0)  # [batch, channel]
 
         # Apply learned transformation.
-        t2 = cF['r4_1'].flatten(1)
-        t = self.affine(t2)  # t = (r_c, r_s, t_x, t_y)
+        t = self.affine(cF['r4_1'].flatten(1))  # t = (r_c, r_s, t_x, t_y)
         t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
         m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
             [b, 1, 1])  # Inverse rotation wrt. resulting image.
@@ -1369,7 +1368,7 @@ class FourierAdaConv(nn.Module):
         x = x * amplitudes.unsqueeze(1).unsqueeze(2)
 
         # Apply trainable mapping.
-        x = x @ t2
+        x = x @ cF['r4_1'].transpose(1,0).flatten(1)
         x = x.permute(0,3,1,2).contiguous()
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
