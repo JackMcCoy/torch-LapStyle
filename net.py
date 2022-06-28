@@ -1094,6 +1094,41 @@ class ThumbAdaConv(nn.Module):
         return x, cb_loss
 
 
+class FullyConnectedLayer(torch.nn.Module):
+    def __init__(self,
+        in_features,                # Number of input features.
+        out_features,               # Number of output features.
+        activation      = 'linear', # Activation function: 'relu', 'lrelu', etc.
+        bias            = True,     # Apply additive bias before the activation function?
+        lr_multiplier   = 1,        # Learning rate multiplier.
+        weight_init     = 1,        # Initial standard deviation of the weight tensor.
+        bias_init       = 0,        # Initial value of the additive bias.
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.activation = activation
+        self.weight = torch.nn.Parameter(torch.randn([out_features, in_features]) * (weight_init / lr_multiplier))
+        bias_init = np.broadcast_to(np.asarray(bias_init, dtype=np.float32), [out_features])
+        self.bias = torch.nn.Parameter(torch.from_numpy(bias_init / lr_multiplier)) if bias else None
+        self.weight_gain = lr_multiplier / np.sqrt(in_features)
+        self.bias_gain = lr_multiplier
+
+    def forward(self, x):
+        w = self.weight.to(x.dtype) * self.weight_gain
+        b = self.bias
+        if b is not None:
+            b = b.to(x.dtype)
+            if self.bias_gain != 1:
+                b = b * self.bias_gain
+        if self.activation == 'linear' and b is not None:
+            x = torch.addmm(b.unsqueeze(0), x, w.t())
+        else:
+            x = x.matmul(w.t())
+            x = bias_act.bias_act(x, b, act=self.activation)
+        return x
+
+
 class FourierAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(FourierAdaConv, self).__init__()
