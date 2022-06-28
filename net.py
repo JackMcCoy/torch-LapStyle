@@ -1305,7 +1305,7 @@ class FourierAdaConv(nn.Module):
 
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(torch.randn([self.channels, self.channels]))
-        self.affine = FullyConnectedLayer((512,math.floor(size / 2 ** (4 + depth)),math.floor(size / 2 ** (4 + depth))), 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        self.affine = FullyConnectedLayer(512*math.floor(size / 2 ** (4 + depth))*math.floor(size / 2 ** (4 + depth)), 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
         self.register_buffer('phases', phases)
@@ -1333,7 +1333,7 @@ class FourierAdaConv(nn.Module):
         phases = self.phases.unsqueeze(0)  # [batch, channel]
 
         # Apply learned transformation.
-        t = self.affine(cF['r4_1'])  # t = (r_c, r_s, t_x, t_y)
+        t = self.affine(cF['r4_1'].flatten(1))  # t = (r_c, r_s, t_x, t_y)
         t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
         m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
             [w.shape[0], 1, 1])  # Inverse rotation wrt. resulting image.
