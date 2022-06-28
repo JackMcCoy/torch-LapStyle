@@ -1337,13 +1337,13 @@ class FourierAdaConv(nn.Module):
         t = self.affine(x)  # t = (r_c, r_s, t_x, t_y)
         t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
         m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [b, 1, 1])  # Inverse rotation wrt. resulting image.
+            [512, 1, 1])  # Inverse rotation wrt. resulting image.
         m_r[:, 0, 0] = t[:, 0]  # r'_c
         m_r[:, 0, 1] = -t[:, 1]  # r'_s
         m_r[:, 1, 0] = t[:, 1]  # r'_s
         m_r[:, 1, 1] = t[:, 0]  # r'_c
         m_t = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [b, 1, 1])  # Inverse translation wrt. resulting image.
+            [512, 1, 1])  # Inverse translation wrt. resulting image.
         m_t[:, 0, 2] = -t[:, 2]  # t'_x
         m_t[:, 1, 2] = -t[:, 3]  # t'_y
         transforms = m_r @ m_t @ transforms  # First rotate resulting image, then translate, and finally apply user-specified transform.
