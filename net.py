@@ -1326,7 +1326,7 @@ class FourierAdaConv(nn.Module):
             nn.init.constant_(m.bias.data, 0.01)
 
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
-        b = cF['r4_1'].shape[0]
+        b,C,s,_ = cF['r4_1'].shape
 
         # Introduce batch dimension.
         transforms = self.transform.unsqueeze(0)  # [batch, row, col]
@@ -1357,9 +1357,9 @@ class FourierAdaConv(nn.Module):
 
         # Construct sampling grid.
         theta = torch.eye(2, 3, device='cuda')
-        theta[0, 0] = 0.5 * self.size[0] / self.sampling_rate
-        theta[1, 1] = 0.5 * self.size[1] / self.sampling_rate
-        grids = torch.nn.functional.affine_grid(theta.unsqueeze(0), [1, 1, 27, 27],
+        theta[0, 0] = 0.5 * s / self.sampling_rate
+        theta[1, 1] = 0.5 * s / self.sampling_rate
+        grids = torch.nn.functional.affine_grid(theta.unsqueeze(0), [1, 1, s, s],
                                                 align_corners=False)
         x = (grids.unsqueeze(3) @ freqs.permute(0, 2, 1).unsqueeze(1).unsqueeze(2)).squeeze(
             3)  # [batch, height, width, channel]
