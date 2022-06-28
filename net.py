@@ -1295,12 +1295,13 @@ class FourierAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        bandwidth = 2
+        self.bandwidth = 2
         self.channels = 512
+        self.sampling_rate = 16
         freqs = torch.randn([self.channels, 2])
         radii = freqs.square().sum(dim=1, keepdim=True).sqrt()
         freqs /= radii * radii.square().exp().pow(0.25)
-        freqs *= bandwidth
+        freqs *= self.bandwidth
         phases = torch.rand([self.channels]) - 0.5
 
         # Setup parameters and buffers.
@@ -1336,13 +1337,13 @@ class FourierAdaConv(nn.Module):
         t = self.affine(cF['r4_1'].flatten(1))  # t = (r_c, r_s, t_x, t_y)
         t = t / t[:, :2].norm(dim=1, keepdim=True)  # t' = (r'_c, r'_s, t'_x, t'_y)
         m_r = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [w.shape[0], 1, 1])  # Inverse rotation wrt. resulting image.
+            [b, 1, 1])  # Inverse rotation wrt. resulting image.
         m_r[:, 0, 0] = t[:, 0]  # r'_c
         m_r[:, 0, 1] = -t[:, 1]  # r'_s
         m_r[:, 1, 0] = t[:, 1]  # r'_s
         m_r[:, 1, 1] = t[:, 0]  # r'_c
         m_t = torch.eye(3, device='cuda').unsqueeze(0).repeat(
-            [w.shape[0], 1, 1])  # Inverse translation wrt. resulting image.
+            [b, 1, 1])  # Inverse translation wrt. resulting image.
         m_t[:, 0, 2] = -t[:, 2]  # t'_x
         m_t[:, 1, 2] = -t[:, 3]  # t'_y
         transforms = m_r @ m_t @ transforms  # First rotate resulting image, then translate, and finally apply user-specified transform.
@@ -1358,7 +1359,7 @@ class FourierAdaConv(nn.Module):
         theta = torch.eye(2, 3, device='cuda')
         theta[0, 0] = 0.5 * self.size[0] / self.sampling_rate
         theta[1, 1] = 0.5 * self.size[1] / self.sampling_rate
-        grids = torch.nn.functional.affine_grid(theta.unsqueeze(0), [1, 1, self.size[1], self.size[0]],
+        grids = torch.nn.functional.affine_grid(theta.unsqueeze(0), [1, 1, 27, 27],
                                                 align_corners=False)
         x = (grids.unsqueeze(3) @ freqs.permute(0, 2, 1).unsqueeze(1).unsqueeze(2)).squeeze(
             3)  # [batch, height, width, channel]
