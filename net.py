@@ -1428,7 +1428,7 @@ def identity_loss(i, F, encoder, decoder):
                   content_loss.no_norm(Fcc['r3_1'], F['r3_1']) +\
                   content_loss.no_norm(Fcc['r2_1'], F['r2_1']) + \
                   content_loss.no_norm(Fcc['r1_1'], F['r1_1'])
-    return l_identity1, l_identity2
+    return l_identity1, l_identity2, _
 
 content_layers = ['r1_1','r2_1','r3_1','r4_1']
 style_layers = ['r4_1','r3_1','r2_1','r1_1']
