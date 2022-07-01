@@ -1506,8 +1506,9 @@ def loss_no_patch(stylized: torch.Tensor,
     #content_relt = 0
     #l_identity3 = 0
     #l_identity4 = 0
-    l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
+    l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
+    cb_loss = cb_loss + cb
     stylized_feats = encoder(stylized)
     #loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
@@ -1629,7 +1630,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, 0, 0, 0, p_loss # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, 0, 0, 0, p_loss, cb_loss # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
