@@ -967,7 +967,7 @@ class ThumbAdaConv(nn.Module):
                                               orthogonal_reg_max_codes = 128,
                                               orthogonal_reg_active_codes_only = False,
                                               codebook_dim = 16)
-        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
+        #self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
             #StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
@@ -1046,11 +1046,11 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
-        style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
-        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
-        style_enc, _, cb = self.vector_quantize(style_enc)
-        cb_loss = cb_loss + cb
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
+        #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
+        #style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc, _, cb_loss = self.vector_quantize(style_enc)
+        #cb_loss = cb_loss + cb
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         # x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         # x = self.layer_norm_out[0](x)
