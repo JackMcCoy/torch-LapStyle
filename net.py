@@ -1419,7 +1419,7 @@ style_loss = CalcStyleLoss()
 edge_loss = EdgeLoss()
 
 def identity_loss(i, F, encoder, decoder):
-    Icc = decoder(F, F['r4_1'])
+    Icc, _ = decoder(F, F['r4_1'])
     l_identity1 = content_loss(Icc, i)
     with torch.no_grad():
         Fcc = encoder(Icc)
