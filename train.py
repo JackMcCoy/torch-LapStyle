@@ -399,7 +399,7 @@ def drafting_train():
         if use_disc:
             if n > 2 and n % args.disc_update_steps == 0:
                 dec_.eval()
-                stylized = dec_(cF, sF['r4_1'])
+                stylized, _ = dec_(cF, sF['r4_1'])
 
                 set_requires_grad(disc_, True)
                 '''
