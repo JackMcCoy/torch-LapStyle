@@ -1046,7 +1046,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size ** 2)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
         style_enc, _, cb = self.vector_quantize(style_enc)
         cb_loss = cb_loss + cb
