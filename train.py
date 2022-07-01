@@ -181,7 +181,7 @@ parser.add_argument('--load_model', type=str, default='none')
 parser.add_argument('--style_augment', type=int, default=0)
 parser.add_argument('--content_augment', type=int, default=0)
 parser.add_argument('--revision_depth', type=int, default=1)
-parser.add_argument('--discriminator', type=int, default=0)
+parser.add_argument('--discriminator', type=int, default=5)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc2_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
@@ -302,7 +302,7 @@ def build_disc(disc_state, depth):
 
 def drafting_train():
     num_rev = 0
-    use_disc = args.dicriminator == 1
+    use_disc = args.discriminator == 1
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, args.crop_size, args.crop_size))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
