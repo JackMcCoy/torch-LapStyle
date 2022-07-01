@@ -1524,8 +1524,8 @@ def loss_no_patch(stylized: torch.Tensor,
                  CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
                    CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    p_loss = pixel_loss(stylized, si)
-    #p_loss = 0
+    #p_loss = pixel_loss(stylized, si)
+    p_loss = 0
     if disc_:
         if blur:
             fake = blur(stylized)
