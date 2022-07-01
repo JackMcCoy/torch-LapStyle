@@ -967,7 +967,7 @@ class ThumbAdaConv(nn.Module):
                                               orthogonal_reg_max_codes = 128,
                                               orthogonal_reg_active_codes_only = False,
                                               codebook_dim = 32)
-
+        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
             #StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
@@ -1046,8 +1046,10 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
-        style_enc, _, cb_loss = self.vector_quantize(style_enc)
+        style_enc = self.projection(style_enc)
+        style_enc, _, cb_loss = self.channelwise_quantize(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc, _, cb = self.vector_quantize(style_enc)
+        cb_loss = cb_loss + cb
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         # x = checkpoint(self.relu[0], x, preserve_rng_state=False)
         # x = self.layer_norm_out[0](x)
@@ -1496,15 +1498,15 @@ def loss_no_patch(stylized: torch.Tensor,
                 crop_size=128,
                 blur = False):
 
-    l_identity1 = 0
-    l_identity2 = 0
+    #l_identity1 = 0
+    #l_identity2 = 0
 
-    style_remd = 0
-    content_relt = 0
-    l_identity3 = 0
-    l_identity4 = 0
-    #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-    #l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    #style_remd = 0
+    #content_relt = 0
+    #l_identity3 = 0
+    #l_identity4 = 0
+    l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     stylized_feats = encoder(stylized)
     #loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
@@ -1516,20 +1518,21 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     #loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
-    #             CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
-    #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
-    #               CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
-    #p_loss = pixel_loss(stylized, si)
-    p_loss = 0
-    '''
-    if blur:
-        fake = blur(stylized)
+    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
+                 CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
+                   CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    p_loss = pixel_loss(stylized, si)
+    #p_loss = 0
+    if disc_:
+        if blur:
+            fake = blur(stylized)
+        else:
+            fake = stylized
+        fake_loss = disc_(fake)
+        loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
-        fake = stylized
-    fake_loss = disc_(fake)
-    loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
-    '''
+        loss_Gp_GAN = 0
     '''
     fake_loss = disc2_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
@@ -1625,7 +1628,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, 0, 0, 0, 0, 0, p_loss # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, 0, 0, 0, p_loss # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,

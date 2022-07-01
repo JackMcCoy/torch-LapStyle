@@ -181,6 +181,7 @@ parser.add_argument('--load_model', type=str, default='none')
 parser.add_argument('--style_augment', type=int, default=0)
 parser.add_argument('--content_augment', type=int, default=0)
 parser.add_argument('--revision_depth', type=int, default=1)
+parser.add_argument('--discriminator', type=int, default=0)
 parser.add_argument('--disc_depth', type=int, default=5)
 parser.add_argument('--disc2_depth', type=int, default=5)
 parser.add_argument('--disc_channels', type=int, default=64)
@@ -301,7 +302,7 @@ def build_disc(disc_state, depth):
 
 def drafting_train():
     num_rev = 0
-
+    use_disc = args.dicriminator == 1
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, args.crop_size, args.crop_size))), strict=False)
     dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
@@ -317,20 +318,21 @@ def drafting_train():
         disc2_state = None
         init_weights(dec_)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.lr)
-    '''
-    disc_ = torch.jit.trace(build_disc(
-        disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
-    opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
-    #disc2_ = torch.jit.trace(build_disc(
-    #    disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
-    #opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.disc_lr)
-    if args.load_disc == 1 and args.load_model != 'none':
-        try:
-            opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
-            #opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc2_optimizer.pth.tar'))
-        except:
-            print('discriminator optimizer not loaded')
-    '''
+    if use_disc:
+        disc_ = torch.jit.trace(build_disc(
+            disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
+        opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
+        #disc2_ = torch.jit.trace(build_disc(
+        #    disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
+        #opt_D2 = torch.optim.AdamW(disc2_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.disc_lr)
+        if args.load_disc == 1 and args.load_model != 'none':
+            try:
+                opt_D.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc_optimizer.pth.tar'))
+                #opt_D2.load_state_dict(torch.load('/'.join(args.load_model.split('/')[:-1]) + '/disc2_optimizer.pth.tar'))
+            except:
+                print('discriminator optimizer not loaded')
+    else:
+        disc_ = False
     if args.load_model == 'none':
         init_weights(dec_)
     else:
@@ -359,14 +361,18 @@ def drafting_train():
     enc_.eval()
     lowest_range = 32
     loss_D = 0
-    #blurpool = BlurPool(3, filt_size=5, stride=1).to(device='cuda').eval()
-    #blur_iters = 100000 // args.batch_size
-    #print(str(blur_iters)+' blur iters')
+    if use_disc:
+        blurpool = BlurPool(3, filt_size=5, stride=1).to(device='cuda').eval()
+    else:
+        blurpool = False
+    blur_iters = 100000 // args.batch_size
+    print(str(blur_iters)+' blur iters')
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
-        #warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
-        #                 decay=args.disc_lr)
+        if use_disc:
+            warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+                             decay=args.disc_lr)
         #warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
         #                 decay=args.disc_lr)
         #if n == args.warmup_iters//2:
@@ -390,47 +396,47 @@ def drafting_train():
             si = style_normalize(si)
             cF = enc_(ci)
             sF = enc_(si)
-        '''
-        if n > 2 and n % args.disc_update_steps == 0:
-            dec_.eval()
-            stylized = dec_(cF, sF['r4_1'])
+        if use_disc:
+            if n > 2 and n % args.disc_update_steps == 0:
+                dec_.eval()
+                stylized = dec_(cF, sF['r4_1'])
 
-            set_requires_grad(disc_, True)
-            #set_requires_grad(disc2_, True)
-            set_requires_grad(dec_, False)
-            
-            loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
-                                   transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
-                                   disc_)
-            loss_D.backward()
+                set_requires_grad(disc_, True)
+                #set_requires_grad(disc2_, True)
+                set_requires_grad(dec_, False)
 
-            if n > 0:
+                loss_D = calc_GAN_loss(transforms.RandomCrop(crop_size)(si) if crop_size !=128 else si, \
+                                       transforms.RandomCrop(crop_size)(stylized.clone().detach().requires_grad_(True)) if crop_size !=128 else stylized.clone().detach().requires_grad_(True),\
+                                       disc_)
+                loss_D.backward()
+
+                if n > 0:
+                    opt_D.step()
+
+                if n < blur_iters:
+                    with torch.no_grad():
+                        real = blurpool(si.clone().detach())
+                        fake = blurpool(stylized.clone().detach())
+                else:
+                    real = si
+                    fake = stylized.clone().detach()
+                loss_D = calc_GAN_loss(real, fake.requires_grad_(True), \
+                                       disc_)
+                loss_D.backward()
+
                 opt_D.step()
-            
-            if n < blur_iters:
-                with torch.no_grad():
-                    real = blurpool(si.clone().detach())
-                    fake = blurpool(stylized.clone().detach())
-            else:
-                real = si
-                fake = stylized.clone().detach()
-            loss_D = calc_GAN_loss(real, fake.requires_grad_(True), \
-                                   disc_)
-            loss_D.backward()
 
-            opt_D.step()
+                set_requires_grad(disc_, False)
+                #set_requires_grad(disc2_, False)
+                set_requires_grad(dec_, True)
+            dec_.train()
 
-            set_requires_grad(disc_, False)
-            #set_requires_grad(disc2_, False)
-            set_requires_grad(dec_, True)
-        dec_.train()
-        '''
         for param in dec_.parameters():
             param.grad = None
 
         stylized, cb_loss = dec_(cF, sF['r4_1'])
 
-        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, None, crop_size=128, blur = False)
+        losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_, crop_size=128, blur = blurpool if n<blur_iters else False)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss = losses
 
         loss = cb_loss + loss_s * args.style_weight + loss_c * args.content_weight + content_relt * args.content_relt + \
@@ -488,9 +494,10 @@ def drafting_train():
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
-                #state_dict = disc_.state_dict()
-                #torch.save(copy.deepcopy(state_dict), save_dir /
-                #           'discriminator_iter_{:d}.pth.tar'.format(n + 1))
+                if use_disc:
+                    state_dict = disc_.state_dict()
+                    torch.save(copy.deepcopy(state_dict), save_dir /
+                               'discriminator_iter_{:d}.pth.tar'.format(n + 1))
                 '''
                 state_dict = disc2_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
