@@ -402,6 +402,7 @@ def drafting_train():
                 stylized = dec_(cF, sF['r4_1'])
 
                 set_requires_grad(disc_, True)
+                '''
                 #set_requires_grad(disc2_, True)
                 set_requires_grad(dec_, False)
 
@@ -412,7 +413,7 @@ def drafting_train():
 
                 if n > 0:
                     opt_D.step()
-
+                '''
                 if n < blur_iters:
                     with torch.no_grad():
                         real = blurpool(si.clone().detach())
