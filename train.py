@@ -365,7 +365,7 @@ def drafting_train():
         blurpool = BlurPool(3, filt_size=5, stride=1).to(device='cuda').eval()
     else:
         blurpool = False
-    blur_iters = 100000 // args.batch_size
+    blur_iters = 50000 // args.batch_size
     print(str(blur_iters)+' blur iters')
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
