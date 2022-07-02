@@ -320,8 +320,8 @@ def drafting_train():
         init_weights(dec_)
     dec_optimizer = torch.optim.AdamW(dec_.parameters(recurse=True), weight_decay=args.weight_decay, lr=args.lr)
     if use_disc:
-        disc_ = torch.jit.trace(build_disc(
-            disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
+        disc_ = build_disc(
+            disc_state, args.disc_depth)
         disc_.train()
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
         #disc2_ = torch.jit.trace(build_disc(
