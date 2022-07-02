@@ -399,6 +399,7 @@ def drafting_train():
             sF = enc_(si)
         if use_disc:
             if n > 2 and n % args.disc_update_steps == 0:
+                print('disc')
                 dec_.eval()
                 stylized, _ = dec_(cF, sF['r4_1'])
 
@@ -435,9 +436,9 @@ def drafting_train():
 
         for param in dec_.parameters():
             param.grad = None
-
+        print('dec')
         stylized, cb_loss = dec_(cF, sF['r4_1'])
-
+        print('loss')
         losses = loss_no_patch(stylized, ci, si, cF, enc_, dec_, sF, disc_, crop_size=128, blur = blurpool if n<blur_iters else False)
         loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, loss_Gp_GAN_patch, mdog, s_contrastive_loss, c_contrastive_loss, pixel_loss, cb = losses
 
