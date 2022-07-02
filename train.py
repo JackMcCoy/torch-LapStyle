@@ -402,7 +402,8 @@ def drafting_train():
             if n > 2 and n % args.disc_update_steps == 0:
                 print('disc')
                 dec_.eval()
-                stylized, _ = dec_(cF, sF['r4_1'])
+                with torch.no_grad():
+                    stylized, _ = dec_(cF, sF['r4_1'])
 
                 set_requires_grad(disc_, True)
                 for param in disc_.parameters():
