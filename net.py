@@ -1531,10 +1531,11 @@ def loss_no_patch(stylized: torch.Tensor,
     #p_loss = pixel_loss(stylized, si)
     if disc_:
         if blur:
-            fake = blur(stylized)
+            with torch.no_grad():
+                fake = blur(stylized)
         else:
             fake = stylized
-        fake_loss = disc_(fake)
+        fake_loss = disc_(fake.requires_grad_(True))
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0
