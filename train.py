@@ -426,7 +426,9 @@ def drafting_train():
                 else:
                     real = si
                     fake = stylized.clone().detach()
-                loss_D = calc_GAN_loss(real.requires_grad_(True), fake.requires_grad_(True), \
+                real.requires_grad_(True)
+                fake.requires_grad_(True)
+                loss_D = calc_GAN_loss(real, fake, \
                                        disc_)
                 loss_D.backward()
 
