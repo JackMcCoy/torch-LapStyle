@@ -1305,9 +1305,12 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
+        print('head')
         x = self.head(x)
         N, C, *_ = x.shape
+        print('body')
         x = checkpoint_sequential(self.body, self.body_depth, x, preserve_rng_state=False)
+        print('tail')
         x = checkpoint(self.tail, x, preserve_rng_state=False)
         return x
 
