@@ -171,6 +171,7 @@ parser.add_argument('--weight_decay', type=float, default=0)
 parser.add_argument('--max_iter', type=int, default=160000)
 parser.add_argument('--warmup_iters', type=int, default=1000)
 parser.add_argument('--batch_size', type=int, default=8)
+parser.add_argument('--blur_iters', type=int, default=0)
 parser.add_argument('--style_weight', type=float, default=10.0)
 parser.add_argument('--content_weight', type=float, default=1.0)
 parser.add_argument('--n_threads', type=int, default=16)
@@ -365,7 +366,7 @@ def drafting_train():
         blurpool = BlurPool(3, filt_size=5, stride=1).to(device='cuda').eval()
     else:
         blurpool = False
-    blur_iters = 50000 // args.batch_size
+    blur_iters = args.blur_iters
     print(str(blur_iters)+' blur iters')
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
