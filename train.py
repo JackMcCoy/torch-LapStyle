@@ -438,9 +438,9 @@ def drafting_train():
                 set_requires_grad(disc_, False)
                 #set_requires_grad(disc2_, False)
                 set_requires_grad(dec_, True)
-                disc_.eval()
-            dec_.train()
 
+            dec_.train()
+        disc_.eval()
         for param in dec_.parameters():
             param.grad = None
         print('dec')
