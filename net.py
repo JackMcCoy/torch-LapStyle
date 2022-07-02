@@ -1305,6 +1305,7 @@ class Discriminator(nn.Module):
         return loss_D
 
     def forward(self, x):
+        print('head')
         x = self.head(x)
         N, C, *_ = x.shape
         x = checkpoint_sequential(self.body, self.body_depth, x, preserve_rng_state=False)
@@ -1527,7 +1528,7 @@ def loss_no_patch(stylized: torch.Tensor,
                 fake = blur(stylized)
         else:
             fake = stylized
-        fake_loss = disc_(fake.requires_grad_(True))
+        fake_loss = disc_(fake)
         loss_Gp_GAN = calc_GAN_loss_from_pred(fake_loss, True)
     else:
         loss_Gp_GAN = 0

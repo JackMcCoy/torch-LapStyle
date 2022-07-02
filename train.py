@@ -421,14 +421,14 @@ def drafting_train():
                     opt_D.step()
                 '''
                 if n < blur_iters:
+                    print('blur')
                     with torch.no_grad():
                         real = blurpool(si.clone().detach())
                         fake = blurpool(stylized.clone().detach())
                 else:
                     real = si
                     fake = stylized.clone().detach()
-                real.requires_grad_(True)
-                fake.requires_grad_(True)
+                disc_.train()
                 loss_D = calc_GAN_loss(real, fake, \
                                        disc_)
                 loss_D.backward()
@@ -438,6 +438,7 @@ def drafting_train():
                 set_requires_grad(disc_, False)
                 #set_requires_grad(disc2_, False)
                 set_requires_grad(dec_, True)
+                disc_.eval()
             dec_.train()
 
         for param in dec_.parameters():
