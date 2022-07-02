@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import math
 from inspect import isfunction
+from einops.layers.torch import Rearrange
 
 # constants
 
@@ -250,22 +251,23 @@ class MoE(nn.Module):
                  capacity_factor_train=1.25,
                  capacity_factor_eval=2.,
                  loss_coef=1e-2,
-                 experts=None):
+                 experts=None,
+                 size = 32,
+                 patch_size = 7):
         super().__init__()
 
         self.num_experts = num_experts
 
-        gating_kwargs = {'second_policy_train': second_policy_train,
-                         'second_policy_eval': second_policy_eval,
+        gating_kwargs = {'second_policy_train': second_policy_train, 'second_policy_eval': second_policy_eval,
                          'second_threshold_train': second_threshold_train,
-                         'second_threshold_eval': second_threshold_eval,
-                         'capacity_factor_train': capacity_factor_train,
+                         'second_threshold_eval': second_threshold_eval, 'capacity_factor_train': capacity_factor_train,
                          'capacity_factor_eval': capacity_factor_eval}
         self.gate = Top2Gating(dim, num_gates=num_experts, **gating_kwargs)
-        self.experts = default(experts,
-                               lambda: Experts(dim, num_experts=num_experts, hidden_dim=hidden_dim,
-                                               activation=activation))
+        self.experts = default(experts, lambda: Experts(dim, num_experts=num_experts, hidden_dim=hidden_dim,
+                                                        activation=activation))
         self.loss_coef = loss_coef
+        self.rearrange = Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=patch_size, p2=patch_size)
+        self.decompose_axis = Rearrange('b (h w) (c e d) -> b c (h e) (w d)', h=size, w=size, d=patch_size, e=patch_size)
 
     def forward(self, inputs, **kwargs):
         b, n, d, e = *inputs.shape, self.num_experts
@@ -305,20 +307,17 @@ class HeirarchicalMoE(nn.Module):
         self.num_experts_outer = num_experts_outer
         self.num_experts_inner = num_experts_inner
 
-        gating_kwargs = {'second_policy_train': second_policy_train,
-                         'second_policy_eval': second_policy_eval,
+        gating_kwargs = {'second_policy_train': second_policy_train, 'second_policy_eval': second_policy_eval,
                          'second_threshold_train': second_threshold_train,
-                         'second_threshold_eval': second_threshold_eval,
-                         'capacity_factor_train': capacity_factor_train,
+                         'second_threshold_eval': second_threshold_eval, 'capacity_factor_train': capacity_factor_train,
                          'capacity_factor_eval': capacity_factor_eval}
 
         self.gate_outer = Top2Gating(dim, num_gates=num_experts_outer, **gating_kwargs)
-        self.gate_inner = Top2Gating(dim, num_gates=num_experts_inner,
-                                     outer_expert_dims=(num_experts_outer,), **gating_kwargs)
+        self.gate_inner = Top2Gating(dim, num_gates=num_experts_inner, outer_expert_dims=(num_experts_outer,),
+                                     **gating_kwargs)
 
-        self.experts = default(experts,
-                               lambda: Experts(dim, num_experts=num_experts, hidden_dim=hidden_dim,
-                                               activation=activation))
+        self.experts = default(experts, lambda: Experts(dim, num_experts=num_experts, hidden_dim=hidden_dim,
+                                                        activation=activation))
         self.loss_coef = loss_coef
 
     def forward(self, inputs, **kwargs):
@@ -333,10 +332,9 @@ class HeirarchicalMoE(nn.Module):
         importance = combine_tensor_outer.permute(2, 0, 3, 1).sum(dim=-1)
         importance = 0.5 * ((importance > 0.5).float() + (importance > 0.).float())
 
-        dispatch_tensor_inner, combine_tensor_inner, loss_inner = self.gate_inner(
-            expert_inputs_outer, importance=importance)
-        expert_inputs = torch.einsum('ebnd,ebnfc->efbcd', expert_inputs_outer,
-                                     dispatch_tensor_inner)
+        dispatch_tensor_inner, combine_tensor_inner, loss_inner = self.gate_inner(expert_inputs_outer,
+                                                                                  importance=importance)
+        expert_inputs = torch.einsum('ebnd,ebnfc->efbcd', expert_inputs_outer, dispatch_tensor_inner)
 
         # Now feed the expert inputs through the experts.
         orig_shape = expert_inputs.shape
@@ -347,7 +345,6 @@ class HeirarchicalMoE(nn.Module):
         # NOW COMBINE EXPERT OUTPUTS (reversing everything we have done)
         # expert_output has shape [y0, x1, h, d, n]
 
-        expert_outputs_outer = torch.einsum('efbcd,ebnfc->ebnd', expert_outputs,
-                                            combine_tensor_inner)
+        expert_outputs_outer = torch.einsum('efbcd,ebnfc->ebnd', expert_outputs, combine_tensor_inner)
         output = torch.einsum('ebcd,bnec->bnd', expert_outputs_outer, combine_tensor_outer)
         return output, (loss_outer + loss_inner) * self.loss_coef
