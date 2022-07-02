@@ -322,6 +322,7 @@ def drafting_train():
     if use_disc:
         disc_ = torch.jit.trace(build_disc(
             disc_state, args.disc_depth), torch.rand(args.batch_size, 3, 128, 128, device='cuda'), check_trace=False)
+        disc_.train()
         opt_D = torch.optim.AdamW(disc_.parameters(recurse=True), weight_decay = args.weight_decay, lr=args.disc_lr)
         #disc2_ = torch.jit.trace(build_disc(
         #    disc2_state, args.disc_depth), torch.rand(args.batch_size, 3, 64, 64, device='cuda'), check_trace=False)
@@ -404,6 +405,8 @@ def drafting_train():
                 stylized, _ = dec_(cF, sF['r4_1'])
 
                 set_requires_grad(disc_, True)
+                for param in disc_.parameters():
+                    param.grad = None
                 '''
                 #set_requires_grad(disc2_, True)
                 set_requires_grad(dec_, False)

@@ -1449,17 +1449,9 @@ def calc_GAN_loss_from_pred(prediction: torch.Tensor,
     loss = F.binary_cross_entropy_with_logits(prediction, target_tensor)
     return loss
 
-def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module, blur=False):
-    if blur:
-        pred_fake = blur(fake)
-        pred_real = blur(real)
-    else:
-        pred_fake = fake
-        pred_real = real
-    pred_fake = disc_(pred_fake)
-    pred_real = disc_(pred_real)
-    for param in disc_.parameters():
-        param.grad = None
+def calc_GAN_loss(real: torch.Tensor, fake:torch.Tensor, disc_:torch.nn.Module):
+    pred_fake = disc_(fake)
+    pred_real = disc_(real)
     loss_D_fake = calc_GAN_loss_from_pred(pred_fake, False)
     loss_D_real = calc_GAN_loss_from_pred(pred_real, True)
     loss_D = ((loss_D_real + loss_D_fake) * 0.5)
