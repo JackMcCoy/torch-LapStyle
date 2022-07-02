@@ -960,6 +960,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
+        '''
         self.vector_quantize = VectorQuantize(dim=self.s_d,
                                               codebook_size = 1200,
                                               accept_image_fmap = True,
@@ -967,24 +968,25 @@ class ThumbAdaConv(nn.Module):
                                               orthogonal_reg_max_codes = 128,
                                               orthogonal_reg_active_codes_only = False,
                                               codebook_dim = 32)
-        #self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
+        '''
+        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             #AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
             nn.Identity(),
             #AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size / 2 ** 2),
+            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 2),
                            kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             nn.Identity(),
             #AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size / 2 ** 1),
+            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=6, size=int(size / 2 ** 1),
                            kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=2, size=size,
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=4, size=size,
                            kernel_size=self.kernel_size, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
@@ -1046,10 +1048,10 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
-        #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
-        #style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
-        style_enc, _, cb_loss = self.vector_quantize(style_enc)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
+        style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
+        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
+        #style_enc, _, cb_loss = self.vector_quantize(style_enc)
         #cb_loss = cb_loss + cb
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         # x = checkpoint(self.relu[0], x, preserve_rng_state=False)
