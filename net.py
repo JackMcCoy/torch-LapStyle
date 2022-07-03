@@ -969,7 +969,7 @@ class ThumbAdaConv(nn.Module):
                                               orthogonal_reg_active_codes_only = False,
                                               codebook_dim = self.s_d//2)
         '''
-        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1600, decay=0.8)
+        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
             #StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
