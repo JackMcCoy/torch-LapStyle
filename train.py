@@ -438,7 +438,7 @@ def drafting_train():
                 set_requires_grad(dec_, True)
 
             dec_.train()
-        disc_.eval()
+            disc_.eval()
         for param in dec_.parameters():
             param.grad = None
         stylized, cb_loss = dec_(cF, sF['r4_1'])
