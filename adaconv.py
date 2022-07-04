@@ -32,7 +32,9 @@ class AdaConv(nn.Module):
             padding = (tl, br, tl, br)
             self.pad = nn.ReflectionPad2d(padding)
         if self.layernorm:
-            self.ln = nn.LayerNorm((c_in, size, size))
+            self.shape
+            self.ln_weight = nn.Parameter(torch.ones(c_in, size, size))
+            self.ln_bias = nn.Parameter(torch.zeros(c_in, size, size))
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Sequential(
             self.pad,
@@ -78,7 +80,7 @@ class AdaConv(nn.Module):
         if self.layernorm:
             print('ln')
             content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
-            content_out = checkpoint(self.ln, content_out, preserve_rng_state=False)
+            content_out = checkpoint(F.layer_norm, content_out, self.shape, self.ln_weight, self.ln_bias, preserve_rng_state=False)
             content_out = content_out.view(1,a*b,c,d)
         print('content_out 2')
         content_out = nn.functional.conv2d(content_out,stride=1,
