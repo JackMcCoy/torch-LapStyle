@@ -1007,6 +1007,7 @@ class ThumbAdaConv(nn.Module):
         res = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
         print('attn1')
         x = checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
+        print('add')
         x = res + x
         print('ff1')
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
