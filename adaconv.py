@@ -56,7 +56,6 @@ class AdaConv(nn.Module):
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
-        print('depthwise')
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_in, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
         s_d = self.pointwise_avg_pool(style_encoding)
@@ -67,22 +66,17 @@ class AdaConv(nn.Module):
         #predicted = self.project_in(predicted)
         if self.norm:
             #predicted = F.instance_norm(predicted)
-            print('norm')
             predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
-        print('predicted view')
         predicted = predicted.view(1,a*b,c,d)
-        print('content_out 1')
         content_out = nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
                                      groups=self.batch_groups
                                      )
         if self.layernorm:
-            print('ln')
             content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
             content_out = checkpoint(F.layer_norm, content_out, self.shape, self.ln_weight, self.ln_bias, preserve_rng_state=False)
             content_out = content_out.view(1,a*b,c,d)
-        print('content_out 2')
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
