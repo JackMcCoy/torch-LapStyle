@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import typing
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 from losses import calc_mean_std
 import math
 
@@ -72,7 +73,7 @@ class AdaConv(nn.Module):
                                      )
         if self.layernorm:
             content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
-            content_out = self.ln(content_out)
+            content_out = checkpoint(self.ln, content_out, preserve_rng_state=False)
             content_out = content_out.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
