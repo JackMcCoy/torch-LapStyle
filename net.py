@@ -1000,7 +1000,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
-        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size).requires_grad_(True)
         print('project')
         x = self.content_project(cF['r4_1'])
         print('layernorm1')
