@@ -684,9 +684,9 @@ class StyleAttention(nn.Module):
         #_x = F.instance_norm(x)
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
-
+        print('styleattention adaconv')
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
-
+        print('reshape')
         q, k, v = map(lambda t: t.reshape(b, heads, -1, h * w), (q, k, v))
 
         q, k = map(lambda x: x * (self.key_dim ** -0.25), (q, k))
@@ -1004,12 +1004,9 @@ class ThumbAdaConv(nn.Module):
         print('project')
         x = self.content_project(cF['r4_1'].requires_grad_(True))
         print('layernorm1')
-        res = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
+        x = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
         print('attn1')
-        x = checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
-        print('add')
-        x = res + x
-        print('ff1')
+        x = x + checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
