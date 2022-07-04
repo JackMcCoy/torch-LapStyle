@@ -1002,7 +1002,7 @@ class ThumbAdaConv(nn.Module):
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
         print('attn 1')
-        x = self.content_project(x)
+        x = self.content_project(cF['r4_1'])
         x = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
         x = x + checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
