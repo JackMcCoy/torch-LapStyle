@@ -606,12 +606,12 @@ class ResidualConvAttention(nn.Module):
 
 
 class AdaConv_w_FF(nn.Module):
-    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_size=3):
+    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_size=3, layernorm=False, size=16):
         super(AdaConv_w_FF, self).__init__()
         #p = in_dims
         p = in_dims//s_d
         #self.project = nn.Conv2d(in_dims, out_dims, kernel_size = 1)
-        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, norm=norm)
+        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, layernorm=layernorm, size=size, norm=norm)
 
     def forward(self, style, x):
         #x = self.project(x)
