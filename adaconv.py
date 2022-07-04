@@ -32,7 +32,7 @@ class AdaConv(nn.Module):
             padding = (tl, br, tl, br)
             self.pad = nn.ReflectionPad2d(padding)
         if self.layernorm:
-            self.shape
+            self.shape = (c_in, size, size)
             self.ln_weight = nn.Parameter(torch.ones(c_in, size, size))
             self.ln_bias = nn.Parameter(torch.zeros(c_in, size, size))
         self.norm = F.instance_norm if norm else nn.Identity()
