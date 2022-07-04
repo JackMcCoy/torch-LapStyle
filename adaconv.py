@@ -7,7 +7,7 @@ import math
 
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, n_g_denominator:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, kernel_size=4):
+    def __init__(self, c_in:int, n_g_denominator:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, size=16, layernorm=False, kernel_size=4):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//n_g_denominator)
         self.c_out = c_out if not c_out is None else c_in
@@ -16,6 +16,7 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.s_d = s_d
         self.kernel_size = kernel_size
+        self.layernorm = layernorm
         if (kernel_size-1) % 2 == 0:
             if kernel_size == 1:
                 self.pad = nn.Identity()
@@ -29,6 +30,8 @@ class AdaConv(nn.Module):
             br = math.floor((kernel_size - 1) / 2)
             padding = (tl, br, tl, br)
             self.pad = nn.ReflectionPad2d(padding)
+        if self.layernorm:
+            self.ln = nn.LayerNorm((c_in, size, size))
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Sequential(
             self.pad,
@@ -67,6 +70,10 @@ class AdaConv(nn.Module):
                                      stride=1,
                                      groups=self.batch_groups
                                      )
+        if self.layernorm:
+            content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
+            content_out = self.ln(content_out)
+            content_out = content_out.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
