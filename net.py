@@ -835,41 +835,21 @@ class ThumbAdaConv(nn.Module):
         d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
         self.projection = nn.Linear(d, self.s_d * self.kernel_size**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
-        '''
-        self.residual = nn.ModuleList([
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(512, 256, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                #BlurPool(256, filt_size=5, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
-            ),
-            nn.Identity(),
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                #BlurPool(128, filt_size=5, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
-            ),
-            nn.Identity(),
-            nn.Sequential(
-                nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                #BlurPool(64, filt_size=5, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear')
-            ),
-            nn.Identity(),
-            nn.Identity(),
-        ])
-        '''
+        self.whitening = [False,False,True,False,True,False, True]
+
+
         # ks = 7 if size==256 else 3
         # p = 3 if size==256 else 1
         ks = 3
         p = 1
+        # 1,4,6,8
+        # 256, 128, 64,64
+        self.layer_norm = nn.ModuleList([
+            nn.LayerNorm((256, math.floor(size / 2 ** 2),math.floor(size / 2 ** 2))),
+            nn.LayerNorm((128, math.floor(size / 2 ** 1), math.floor(size / 2 ** 1))),
+            nn.LayerNorm((64, size, size)),
+            nn.LayerNorm((64, size, size)),
+        ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
@@ -960,34 +940,26 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
-        '''
-        self.vector_quantize = VectorQuantize(dim=self.s_d,
-                                              codebook_size = 1200,
-                                              accept_image_fmap = True,
-                                              orthogonal_reg_weight = 10,
-                                              orthogonal_reg_max_codes = 128,
-                                              orthogonal_reg_active_codes_only = False,
-                                              codebook_dim = self.s_d//2)
-        '''
+
         self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
-            #StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
-            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
+            #AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
             nn.Identity(),
-            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            #StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 2),
-            #               kernel_size=self.kernel_size, adaconv_norm=False),
+            #AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 2),
+                           kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             nn.Identity(),
-            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            #StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=6, size=int(size / 2 ** 1),
-            #               kernel_size=self.kernel_size, adaconv_norm=False),
+            #AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=6, size=int(size / 2 ** 1),
+                           kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            #StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=4, size=size,
-            #               kernel_size=self.kernel_size, adaconv_norm=False),
+            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=4, size=size,
+                           kernel_size=self.kernel_size, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
 
@@ -1003,34 +975,6 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Linear(in_features=256, out_features=128)
             )
-        '''
-        self.relu = nn.ModuleList([
-            nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                BlurPool(512, filt_size=3, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            ),
-            nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                BlurPool(256, filt_size=3, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            ),
-            nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                BlurPool(128, filt_size=3, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            ),
-            nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                BlurPool(64, filt_size=3, stride=1),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
-            )
-        ])
-        '''
         self.leakyrelu = nn.LeakyReLU()
         self.apply(self._init_weights)
 
@@ -1051,55 +995,33 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
-        #style_enc, _, cb_loss = self.vector_quantize(style_enc)
-        #cb_loss = cb_loss + cb
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
-        # x = checkpoint(self.relu[0], x, preserve_rng_state=False)
-        # x = self.layer_norm_out[0](x)
-        # x = self.gelu(x)
-        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
-        #res = checkpoint(self.residual[1], x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
-        #x = x + res
         # in = 256 ch
-        #res = x
         # x = self.layer_norm_in[2](x)
-        x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        # x = checkpoint(self.relu[1], x, preserve_rng_state=False)
-        # x = self.layer_norm_out[2](x)
-        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
-        #x = x + res
+        x = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[2], x, preserve_rng_state=False)
         #####
-        #res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
-        #x = x + res
-        #res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
-        #x = x + res
         #####
-        #res = x
-        # x = self.layer_norm_in[5](x)
-        x = checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
-        # x = checkpoint(self.relu[2], x, preserve_rng_state=False)
-        # x = self.layer_norm_out[5](x)
-        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
-        #x = res + x
+        x = checkpoint(self.layer_norm[1], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[5], x, preserve_rng_state=False)
         # in = 128 ch
-        #res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
-        #x = x + res
         ######
         # in = 64 ch
-        #res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        # x = checkpoint(self.relu[3], x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
-        #x = res + x
+        x = checkpoint(self.layer_norm[2], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
-        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        # x = checkpoint(self.relu[3], x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
+        x = checkpoint(self.layer_norm[3], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[9], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x, cb_loss
 
