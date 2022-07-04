@@ -1004,9 +1004,10 @@ class ThumbAdaConv(nn.Module):
         print('project')
         x = self.content_project(cF['r4_1'])
         print('layernorm1')
-        x = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
+        res = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
         print('attn1')
-        x = x + checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
+        x = res + x
         print('ff1')
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
