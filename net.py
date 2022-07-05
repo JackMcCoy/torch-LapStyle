@@ -668,9 +668,9 @@ class StyleAttention(nn.Module):
         #self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, layernorm=True, size=size)
-        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, layernorm=True, size=size)
-        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, layernorm=True, size=size)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -843,11 +843,11 @@ class ThumbAdaConv(nn.Module):
         # 1,4,6,8
         # 256, 128, 64,64
         self.layer_norm = nn.ModuleList([
-            nn.LayerNorm((512, math.floor(size / 2 ** 3), math.floor(size / 2 ** 3))),
-            nn.LayerNorm((256, math.floor(size / 2 ** 2),math.floor(size / 2 ** 2))),
-            nn.LayerNorm((128, math.floor(size / 2 ** 1), math.floor(size / 2 ** 1))),
-            nn.LayerNorm((64, size, size)),
-            nn.LayerNorm((64, size, size)),
+            nn.BatchNorm2d(512),
+            nn.BatchNorm2d(256),
+            nn.BatchNorm2d(128),
+            nn.BatchNorm2d(64),
+            nn.BatchNorm2d(64),
         ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
