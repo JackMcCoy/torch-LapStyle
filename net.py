@@ -961,10 +961,6 @@ class ThumbAdaConv(nn.Module):
                            kernel_size=self.kernel_size, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
-        self.content_project = nn.Sequential(
-            nn.ReflectionPad2d((1, 1, 1, 1)),
-            nn.Conv2d(512,512,kernel_size=3),
-        )
 
         if style_contrastive_loss:
             self.proj_style = nn.Sequential(
@@ -998,9 +994,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
-        x = self.content_project(cF['r4_1'].requires_grad_(True))
-        x = checkpoint(self.layer_norm[0], x, preserve_rng_state=False)
-        x = x + checkpoint(self.attention_block[0], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1']x, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
