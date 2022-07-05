@@ -994,7 +994,7 @@ class ThumbAdaConv(nn.Module):
         style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
-        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1']x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
