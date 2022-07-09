@@ -984,7 +984,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = F.leaky_relu(self.projection(style_enc)).view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
         #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         cb_loss = 0
         #style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
@@ -1412,12 +1412,13 @@ def loss_no_patch(stylized: torch.Tensor,
     l_identity3 = 0
     l_identity4 = 0
     cb_loss = 0
+    loss_c = 0
     #l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
     #l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
     #cb_loss = cb_loss + cb
     stylized_feats = encoder(stylized)
     #loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
-    loss_c = content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
+    #loss_c = content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r3_1'], cF['r3_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r2_1'], cF['r2_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r1_1'], cF['r1_1'].detach())
@@ -1428,8 +1429,8 @@ def loss_no_patch(stylized: torch.Tensor,
     #loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
     #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1']) + \
     #             CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
-    #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach()) + \
-    #               CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
+    content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
     p_loss = 0
     #p_loss = pixel_loss(stylized, si)
     if disc_:
