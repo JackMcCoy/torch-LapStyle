@@ -824,7 +824,7 @@ class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
-        self.kernel_size = 3
+        self.kernel_size = 5
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
@@ -840,8 +840,35 @@ class ThumbAdaConv(nn.Module):
         # p = 3 if size==256 else 1
         ks = 3
         p = 1
-        # 1,4,6,8
-        # 256, 128, 64,64
+        self.residual = nn.ModuleList([
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(512, 256, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                # BlurPool(256, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                # BlurPool(128, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
+                # BlurPool(64, filt_size=5, stride=1),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear')
+            ),
+            nn.Identity(),
+            nn.Identity(),
+        ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
@@ -935,22 +962,22 @@ class ThumbAdaConv(nn.Module):
 
         self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
+            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             #AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
             nn.Identity(),
             #AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 2),
+            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size / 2 ** 2),
                            kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             nn.Identity(),
             #AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=6, size=int(size / 2 ** 1),
+            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size / 2 ** 1),
                            kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=4, size=size,
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=2, size=size,
                            kernel_size=self.kernel_size, adaconv_norm=False),
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
         ])
@@ -989,28 +1016,41 @@ class ThumbAdaConv(nn.Module):
         #cb_loss = 0
         style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
+        x = x + res
         # in = 256 ch
-        # x = self.layer_norm_in[2](x)
-        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        res = x
+        x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = x + res
         #####
+        res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
+        x = x + res
+        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
+        x = x + res
         #####
-        x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        res = x
+        x = checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = res + x
         # in = 128 ch
+        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
+        x = x + res
         ######
         # in = 64 ch
-        x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        res = x
+        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
-        x = x + checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[9], x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x, cb_loss
 
@@ -1410,15 +1450,15 @@ def loss_no_patch(stylized: torch.Tensor,
     l_identity3 = 0
     l_identity4 = 0
     cb_loss = 0
-    #style_remd = 0
-    #content_relt = 0
+    style_remd = 0
+    content_relt = 0
     #loss_c = 0
     #l_identity1, l_identity2, cb_loss = identity_loss(ci, cF, encoder, decoder)
     #l_identity3, l_identity4, cb = identity_loss(si, sF, encoder, decoder)
     #cb_loss = cb_loss + cb
     stylized_feats = encoder(stylized)
     #loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
-    loss_c = content_loss.no_norm(stylized_feats['r4_1'], cF['r4_1'].detach())
+    loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r3_1'], cF['r3_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r2_1'], cF['r2_1'].detach())
     #loss_c = loss_c + content_loss.no_norm(stylized_feats['r1_1'], cF['r1_1'].detach())
@@ -1427,10 +1467,10 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     #loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1'])
-    style_remd = style_remd + CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
-    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
-    content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1'])
+    #style_remd = style_remd + CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
+    #content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
     p_loss = 0
     #p_loss = pixel_loss(stylized, si)
     if disc_:
