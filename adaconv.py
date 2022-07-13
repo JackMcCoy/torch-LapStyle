@@ -8,7 +8,7 @@ import math
 
 
 class AdaConv(nn.Module):
-    def __init__(self, c_in:int, n_g_denominator:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, size=16, layernorm=False, kernel_size=4):
+    def __init__(self, c_in:int, n_g_denominator:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, size=16, kernel_size=4):
         super(AdaConv, self).__init__()
         self.n_groups = (c_in//n_g_denominator)
         self.c_out = c_out if not c_out is None else c_in
@@ -31,10 +31,6 @@ class AdaConv(nn.Module):
             br = math.floor((kernel_size - 1) / 2)
             padding = (tl, br, tl, br)
             self.pad = nn.ReflectionPad2d(padding)
-        if self.layernorm:
-            self.shape = (c_in, size, size)
-            self.ln_weight = nn.Parameter(torch.ones(c_in, size, size))
-            self.ln_bias = nn.Parameter(torch.zeros(c_in, size, size))
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Sequential(
             self.pad,
@@ -65,18 +61,14 @@ class AdaConv(nn.Module):
         a, b, c, d = predicted.size()
         #predicted = self.project_in(predicted)
         if self.norm:
-            #predicted = F.instance_norm(predicted)
-            predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
+            predicted = F.instance_norm(predicted)
+            #predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
         predicted = predicted.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
                                      groups=self.batch_groups
                                      )
-        if self.layernorm:
-            content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_in, c, d)
-            content_out = checkpoint(F.layer_norm, content_out, self.shape, self.ln_weight, self.ln_bias, preserve_rng_state=False)
-            content_out = content_out.view(1,a*b,c,d)
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
