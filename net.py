@@ -1018,15 +1018,15 @@ class ThumbAdaConv(nn.Module):
         cb_loss = 0
         #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
-        x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
         x = x + res
         # in = 256 ch
         res = x
-        x = checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[2], x, preserve_rng_state=False)
         x = x + res
         #####
         res = x
@@ -1037,8 +1037,8 @@ class ThumbAdaConv(nn.Module):
         x = x + res
         #####
         res = x
-        x = checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[5], x, preserve_rng_state=False)
         x = res + x
         # in = 128 ch
         res = checkpoint(self.residual[6], x, preserve_rng_state=False)
@@ -1047,8 +1047,8 @@ class ThumbAdaConv(nn.Module):
         ######
         # in = 64 ch
         res = x
-        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = x + checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
