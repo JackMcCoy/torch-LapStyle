@@ -19,6 +19,7 @@ class AdaConv(nn.Module):
         self.kernel_size = kernel_size
         if (kernel_size-1) % 2 == 0:
             if kernel_size == 1:
+                print('kernel_size==1')
                 self.pad = nn.Identity()
                 kernel_size = 3
             else:
