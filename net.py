@@ -818,13 +818,14 @@ class ThumbAdaConv(nn.Module):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
         self.kernel_size = 1
+        ks = self.kernel_size if self.kernel_size>1 else 3
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
-        self.projection = nn.Linear(d, self.s_d * self.kernel_size**2)
+        self.projection = nn.Linear(d, self.s_d * ks**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
 
