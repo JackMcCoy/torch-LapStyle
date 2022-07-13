@@ -972,7 +972,7 @@ class ThumbAdaConv(nn.Module):
             #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size),
             StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=2, size=size,
                            kernel_size=self.kernel_size, adaconv_norm=False),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=False, kernel_size = self.kernel_size)
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
         ])
 
         if style_contrastive_loss:
