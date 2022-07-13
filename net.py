@@ -606,12 +606,12 @@ class ResidualConvAttention(nn.Module):
 
 
 class AdaConv_w_FF(nn.Module):
-    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_size=3, layernorm=False, size=16):
+    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_size=3, size=16):
         super(AdaConv_w_FF, self).__init__()
         #p = in_dims
         p = in_dims//s_d
         #self.project = nn.Conv2d(in_dims, out_dims, kernel_size = 1)
-        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, layernorm=layernorm, size=size, norm=norm)
+        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, size=size, norm=norm)
 
     def forward(self, style, x):
         #x = self.project(x)
@@ -681,7 +681,7 @@ class StyleAttention(nn.Module):
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        #_x = F.instance_norm(x)
+        x = F.instance_norm(x)
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
@@ -811,13 +811,6 @@ class StyleAttention_ContentValues(nn.Module):
         out = out.reshape(b, -1, h, w)
         out = self.to_out(out)
         return out
-
-
-class AdaConv1x1Combine(nn.Module):
-    def __init__(self):
-        super(AdaConv1x1Combine, self).__init__()
-    def forward(self, x):
-        return x
 
 
 class ThumbAdaConv(nn.Module):
