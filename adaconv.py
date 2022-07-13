@@ -17,7 +17,6 @@ class AdaConv(nn.Module):
         self.c_in = c_in
         self.s_d = s_d
         self.kernel_size = kernel_size
-        self.layernorm = layernorm
         if (kernel_size-1) % 2 == 0:
             if kernel_size == 1:
                 self.pad = nn.Identity()
