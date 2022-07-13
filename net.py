@@ -681,7 +681,7 @@ class StyleAttention(nn.Module):
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        x = F.instance_norm(x)
+        #x = F.instance_norm(x)
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
@@ -1458,9 +1458,9 @@ def loss_no_patch(stylized: torch.Tensor,
     stylized_feats = encoder(stylized)
     #loss_c = content_loss.no_norm(stylized_feats['r5_1'], cF['r5_1'].detach())
     loss_c = content_loss(stylized_feats['r4_1'], cF['r4_1'].detach())
-    #loss_c = loss_c + content_loss.no_norm(stylized_feats['r3_1'], cF['r3_1'].detach())
-    #loss_c = loss_c + content_loss.no_norm(stylized_feats['r2_1'], cF['r2_1'].detach())
-    #loss_c = loss_c + content_loss.no_norm(stylized_feats['r1_1'], cF['r1_1'].detach())
+    loss_c = loss_c + content_loss.(stylized_feats['r3_1'], cF['r3_1'].detach())
+    loss_c = loss_c + content_loss.(stylized_feats['r2_1'], cF['r2_1'].detach())
+    loss_c = loss_c + content_loss.(stylized_feats['r1_1'], cF['r1_1'].detach())
     loss_s = style_loss(stylized_feats['r1_1'], sF['r1_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r2_1'], sF['r2_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
