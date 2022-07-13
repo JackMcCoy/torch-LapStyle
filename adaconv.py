@@ -19,7 +19,6 @@ class AdaConv(nn.Module):
         self.kernel_size = kernel_size
         if (kernel_size-1) % 2 == 0:
             if kernel_size == 1:
-                print('kernel_size==1')
                 self.pad = nn.Identity()
                 kernel_size = 3
             else:
@@ -52,9 +51,7 @@ class AdaConv(nn.Module):
 
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
-        print(style_encoding.shape)
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        print(depthwise.shape)
         depthwise = depthwise.view(N*self.c_in, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
         s_d = self.pointwise_avg_pool(style_encoding)
         pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_in, 1, 1)
