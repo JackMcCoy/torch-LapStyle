@@ -24,12 +24,12 @@ class AdaConv(nn.Module):
             else:
                 padding = int((kernel_size - 1) / 2)
                 padding = (padding,)*4
-                self.pad = nn.ReflectionPad2d(padding)
+                self.pad = nn.ZeroPad2d(padding)
         else:
             tl = math.ceil((kernel_size - 1) / 2)
             br = math.floor((kernel_size - 1) / 2)
             padding = (tl, br, tl, br)
-            self.pad = nn.ReflectionPad2d(padding)
+            self.pad = nn.ZeroPad2d(padding)
         self.norm = F.instance_norm if norm else nn.Identity()
         self.depthwise_kernel_conv = nn.Sequential(
             self.pad,
