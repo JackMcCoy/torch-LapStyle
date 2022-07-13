@@ -952,8 +952,14 @@ class ThumbAdaConv(nn.Module):
                 nn.Conv2d(64, 3, (3, 3))
             )
         ])
-
-        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
+        self.spatial_quantize = VectorQuantize(dim=self.s_d,
+                                              codebook_size=1200,
+                                              accept_image_fmap=True,
+                                              orthogonal_reg_weight=10,
+                                              orthogonal_reg_max_codes=128,
+                                              orthogonal_reg_active_codes_only=False,
+                                              codebook_dim=self.s_d // 2)
+        #self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
             #AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
@@ -1004,10 +1010,9 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size**2)
-        style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc, _, cb_loss = self.spatial_quantize(style_enc)
         #cb_loss = 0
-        style_enc = style_enc.view(b, self.s_d, self.kernel_size, self.kernel_size)
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
         res = checkpoint(self.residual[1], x, preserve_rng_state=False)
