@@ -818,14 +818,14 @@ class ThumbAdaConv(nn.Module):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
         self.kernel_size = 1
-        ks = self.kernel_size if self.kernel_size>1 else 3
+        self.ks = self.kernel_size if self.kernel_size>1 else 3
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
             StyleEncoderBlock(512, kernel_size=3),
             *(StyleEncoderBlock(512, kernel_size=3),)*depth
         )
         d = math.floor(size / 2 ** (4 + depth)) ** 2 * 512
-        self.projection = nn.Linear(d, self.s_d * ks**2)
+        self.projection = nn.Linear(d, self.s_d * self.ks**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
 
@@ -1011,7 +1011,7 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b = cF['r4_1'].shape[0]
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.kernel_size, self.kernel_size)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks, self.ks)
         style_enc, _, cb_loss = self.spatial_quantize(style_enc)
         #cb_loss = 0
         x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
