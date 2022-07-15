@@ -368,7 +368,7 @@ def drafting_train():
     else:
         blurpool = False
     blur_iters = args.blur_iters
-    wandb.watch(dec_, log_freq=args.log_every_)
+    wandb.watch(dec_, log_freq=args.log_every_, log='all')
     for n in tqdm(range(args.max_iter), position=0):
         warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
