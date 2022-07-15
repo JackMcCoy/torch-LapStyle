@@ -976,12 +976,12 @@ class ThumbAdaConv(nn.Module):
             #               kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
-            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
-            StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
-                           kernel_size=self.kernel_size, adaconv_norm=False),
-            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
-            StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
-                           kernel_size=self.kernel_size, adaconv_norm=False),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            #StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
+            #               kernel_size=self.kernel_size, adaconv_norm=False),
+            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
+            #StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
+            #               kernel_size=self.kernel_size, adaconv_norm=False),
         ])
 
         if style_contrastive_loss:
