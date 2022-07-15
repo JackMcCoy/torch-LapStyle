@@ -1047,12 +1047,12 @@ class ThumbAdaConv(nn.Module):
         ######
         # in = 64 ch
         res = x
-        x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         res = x
-        x = x + checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
