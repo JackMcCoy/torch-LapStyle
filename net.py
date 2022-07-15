@@ -839,7 +839,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
                 BlurPool(256, filt_size=5, stride=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
             nn.Identity(),
             nn.Identity(),
@@ -848,7 +848,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
                 BlurPool(128, filt_size=5, stride=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
             nn.Identity(),
             nn.Sequential(
@@ -856,7 +856,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
                 BlurPool(64, filt_size=5, stride=1),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear')
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True)
             ),
             nn.Identity(),
             nn.Identity(),
