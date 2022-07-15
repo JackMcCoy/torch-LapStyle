@@ -942,7 +942,6 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=True),
                 nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                BlurPool(64, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
@@ -1051,10 +1050,8 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
-        res = x
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
-        x = res + x
         x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x, cb_loss
 
