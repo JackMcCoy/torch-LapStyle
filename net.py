@@ -680,7 +680,7 @@ class StyleAttention(nn.Module):
     def forward(self, style_enc, x):
         b, c, h, w, k_dim, heads = *x.shape, self.key_dim, self.heads
 
-        x = F.instance_norm(x)
+        #x = F.instance_norm(x)
 
         #position = (self.rel_h + self.rel_w).reshape(1, heads, -1, h * w)
         q, k, v = self.to_q(style_enc, x), self.to_k(style_enc, x), self.to_v(style_enc, x)
