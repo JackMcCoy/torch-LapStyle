@@ -39,7 +39,7 @@ class AdaConv(nn.Module):
                    kernel_size=kernel_size,))
 
         self.pointwise_avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out * self.c_out // self.ng, kernel_size=1)
+        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out * (self.c_out // self.ng), kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(self.s_d, self.c_out, kernel_size=1)
         self.apply(self._init_weights)
 
@@ -55,7 +55,7 @@ class AdaConv(nn.Module):
         depthwise = self.depthwise_kernel_conv(style_encoding)
         depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out// self.n_groups, 1, 1)
+        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out// self.ng, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
