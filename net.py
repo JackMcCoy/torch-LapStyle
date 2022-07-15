@@ -837,7 +837,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                BlurPool(256, filt_size=5, stride=1),
+                BlurPool(256, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
@@ -846,7 +846,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                BlurPool(128, filt_size=5, stride=1),
+                BlurPool(128, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
@@ -854,7 +854,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                BlurPool(64, filt_size=5, stride=1),
+                BlurPool(64, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True)
             ),
@@ -902,7 +902,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=True),
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                BlurPool(128, filt_size=5, stride=1),
+                BlurPool(128, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
@@ -918,7 +918,7 @@ class ThumbAdaConv(nn.Module):
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=True),
                 nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True),
-                BlurPool(64, filt_size=5, stride=1),
+                BlurPool(64, filt_size=3, stride=1),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
             ),
