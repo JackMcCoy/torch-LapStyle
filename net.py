@@ -606,12 +606,11 @@ class ResidualConvAttention(nn.Module):
 
 
 class AdaConv_w_FF(nn.Module):
-    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, kernel_size=3, size=16):
+    def __init__(self, in_dims, out_dims, s_d, batch_size, norm=False, ng=1, kernel_size=3, size=16):
         super(AdaConv_w_FF, self).__init__()
         #p = in_dims
-        p = in_dims//s_d
         #self.project = nn.Conv2d(in_dims, out_dims, kernel_size = 1)
-        self.ada = AdaConv(in_dims, p, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, size=size, norm=norm)
+        self.ada = AdaConv(in_dims, ng, s_d=s_d, batch_size=batch_size, c_out=out_dims, kernel_size=kernel_size, size=size, norm=norm)
 
     def forward(self, style, x):
         #x = self.project(x)
@@ -655,7 +654,7 @@ class MHSA(nn.Module):
 
 class StyleAttention(nn.Module):
     def __init__(self, chan, chan_out=None, s_d = 64, batch_size=4, padding=0, stride=1, key_dim=64, value_dim=64, heads=8,
-                 size=32, kernel_size=3, norm_queries=False, adaconv_norm=True):
+                 size=32, ng=1, kernel_size=3, norm_queries=False, adaconv_norm=True):
         super().__init__()
         self.chan = chan
         chan_out = chan if chan_out is None else chan_out
@@ -668,9 +667,9 @@ class StyleAttention(nn.Module):
         #self.rel_h = nn.Parameter(torch.randn([1, heads, key_dim, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, heads, key_dim, size, 1]), requires_grad=True)
         conv_kwargs = {'padding': padding, 'stride': stride}
-        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
-        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
-        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, norm=adaconv_norm, kernel_size=kernel_size, size=size)
+        self.to_q = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, ng=ng, norm=adaconv_norm, kernel_size=kernel_size, size=size)
+        self.to_k = AdaConv_w_FF(chan, key_dim * heads, s_d, batch_size, ng=ng, norm=adaconv_norm, kernel_size=kernel_size, size=size)
+        self.to_v = AdaConv_w_FF(chan, value_dim * heads, s_d, batch_size, ng=ng, norm=adaconv_norm, kernel_size=kernel_size, size=size)
 
         #self.rel_h = nn.Parameter(torch.randn([1, chan, 1, size]), requires_grad=True)
         #self.rel_w = nn.Parameter(torch.randn([1, chan, size, 1]), requires_grad=True)
@@ -828,7 +827,6 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(d, self.s_d * self.ks**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
-        self.pos = nn.Parameter(torch.randn([1, 512, int(size / 2 ** 3), int(size / 2 ** 3)]), requires_grad=True)
 
         # ks = 7 if size==256 else 3
         # p = 3 if size==256 else 1
@@ -964,24 +962,26 @@ class ThumbAdaConv(nn.Module):
         '''
         #self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
         self.attention_block = nn.ModuleList([
-            StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
-            #AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            #StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=12, size=int(size / 2 ** 3), kernel_size = self.kernel_size, adaconv_norm=False),
+            AdaConv(512, 1, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
             nn.Identity(),
-            #AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
-            StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size / 2 ** 2),
-                           kernel_size=self.kernel_size, adaconv_norm=False),
+            AdaConv(256, 2, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            #StyleAttention(256, s_d=s_d, batch_size=batch_size, heads=8, size=int(size / 2 ** 2),
+            #               kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             nn.Identity(),
-            #AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
-            StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size / 2 ** 1),
-                           kernel_size=self.kernel_size, adaconv_norm=False),
+            AdaConv(128, 4, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
+            #StyleAttention(128, s_d=s_d, batch_size=batch_size, heads=4, size=int(size / 2 ** 1),
+            #               kernel_size=self.kernel_size, adaconv_norm=False),
 
             nn.Identity(),
             #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
-            StyleAttention(64, s_d=s_d, batch_size=batch_size, heads=2, size=size,
+            StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=4, size=size,
                            kernel_size=self.kernel_size, adaconv_norm=False),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
+            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
+            StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=4, size=size,
+                           kernel_size=self.kernel_size, adaconv_norm=False),
         ])
 
         if style_contrastive_loss:
@@ -1017,8 +1017,7 @@ class ThumbAdaConv(nn.Module):
         #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         cb_loss = 0
         #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
-        c_in = cF['r4_1'] + self.pos
-        x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
+        x = checkpoint(self.attention_block[0], style_enc, cF['r4_1'], preserve_rng_state=False)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
         res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
