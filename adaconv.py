@@ -10,6 +10,7 @@ import math
 class AdaConv(nn.Module):
     def __init__(self, c_in:int, n_g_denominator:int, batch_size:int = 8, s_d: int = 512, norm:bool=True, c_out=None, size=16, kernel_size=4):
         super(AdaConv, self).__init__()
+        self.ng = n_g_denominator
         self.n_groups = (c_in//n_g_denominator)
         self.c_out = c_out if not c_out is None else c_in
         self.batch_groups = batch_size *(c_in // n_g_denominator)
@@ -34,11 +35,11 @@ class AdaConv(nn.Module):
         self.depthwise_kernel_conv = nn.Sequential(
             self.pad,
             nn.Conv2d(self.s_d,
-                   self.c_in * (self.c_in//self.n_groups),
+                   self.c_out * self.c_in//self.n_groups,
                    kernel_size=kernel_size,))
 
         self.pointwise_avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_in * self.c_out, kernel_size=1)
+        self.pw_cn_kn = nn.Conv2d(self.s_d, self.c_out * self.c_out // self.ng, kernel_size=1)
         self.pw_cn_bias = nn.Conv2d(self.s_d, self.c_out, kernel_size=1)
         self.apply(self._init_weights)
 
@@ -52,9 +53,9 @@ class AdaConv(nn.Module):
     def forward(self, style_encoding: torch.Tensor, predicted: torch.Tensor):
         N = style_encoding.shape[0]
         depthwise = self.depthwise_kernel_conv(style_encoding)
-        depthwise = depthwise.view(N*self.c_in, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
+        depthwise = depthwise.view(N*self.c_out, self.c_in // self.n_groups, self.kernel_size, self.kernel_size)
         s_d = self.pointwise_avg_pool(style_encoding)
-        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_in, 1, 1)
+        pointwise_kn = self.pw_cn_kn(s_d).view(N*self.c_out, self.c_out// self.n_groups, 1, 1)
         pointwise_bias = self.pw_cn_bias(s_d).view(N*self.c_out)
 
         a, b, c, d = predicted.size()
@@ -71,7 +72,7 @@ class AdaConv(nn.Module):
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
                 bias=pointwise_bias,
-                groups = N)
+                groups = N*self.ng)
         content_out = content_out.permute([1, 0, 2, 3]).view(a, self.c_out, c, d)
 
         return content_out
