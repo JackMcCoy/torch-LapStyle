@@ -89,8 +89,7 @@ class BlurPool(nn.Module):
         self.off = int((self.stride-1)/2.)
         self.channels = channels
 
-        filt = get_gaussian_filt(self.filt_size)
-        self.register_buffer('filt', filt[None,None,:,:].repeat((self.channels,1,1,1)))
+        self.filt = get_gaussian_filt(self.filt_size).repeat((self.channels,1,1,1)).requires_grad_(False)
 
         self.pad = get_pad_layer(pad_type)(self.pad_sizes)
 
