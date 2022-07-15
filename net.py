@@ -828,8 +828,7 @@ class ThumbAdaConv(nn.Module):
         self.projection = nn.Linear(d, self.s_d * self.ks**2)
         self.content_injection_layer = ['r4_1', None, 'r3_1', None, 'r2_1', None, 'r1_1']
         self.whitening = [False,False,True,False,True,False, True]
-        self.rel_h = nn.Parameter(torch.randn([1, 512, 1, int(size / 2 ** 3)]), requires_grad=True)
-        self.rel_w = nn.Parameter(torch.randn([1, 512, int(size / 2 ** 3), 1]), requires_grad=True)
+        self.pos = nn.Parameter(torch.randn([1, 512, int(size / 2 ** 3), int(size / 2 ** 3)]), requires_grad=True)
 
         # ks = 7 if size==256 else 3
         # p = 3 if size==256 else 1
@@ -1018,8 +1017,7 @@ class ThumbAdaConv(nn.Module):
         #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         cb_loss = 0
         #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
-        pos = (self.rel_h + self.rel_w).reshape(1, 512, h, w)
-        c_in = cF['r4_1'] + pos
+        c_in = cF['r4_1'] + self.pos
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
         x = checkpoint(self.learnable[0], x, preserve_rng_state=False)
         res = checkpoint(self.residual[1], x, preserve_rng_state=False)
