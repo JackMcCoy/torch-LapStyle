@@ -836,27 +836,27 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest', align_corners=True),
+                nn.Upsample(scale_factor=4, mode='nearest'),
                 BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='nearest', align_corners=True),
+                nn.Upsample(scale_factor=.5, mode='nearest'),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest', align_corners=True),
+                nn.Upsample(scale_factor=4, mode='nearest'),
                 BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='nearest', align_corners=True),
+                nn.Upsample(scale_factor=.5, mode='nearest'),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest', align_corners=True),
+                nn.Upsample(scale_factor=4, mode='nearest'),
                 BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='nearest', align_corners=True)
+                nn.Upsample(scale_factor=.5, mode='nearest')
             ),
             nn.Identity(),
             nn.Identity(),
