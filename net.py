@@ -836,27 +836,21 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest')
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear')
             ),
             nn.Identity(),
             nn.Identity(),
@@ -865,77 +859,52 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
                 nn.Conv2d(512, 512, (ks, ks), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=True),
+                nn.LeakyRelu(),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
             ), nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 128, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='nearest'),
-                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
+                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.LeakyRelu(),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-                nn.GELU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=False),
+                nn.LeakyRelu(),
             ),
 
             nn.Sequential(
@@ -1022,8 +991,6 @@ class ThumbAdaConv(nn.Module):
         #####
         res = x
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
-        x = x + res
-        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
         x = x + res
         #####
