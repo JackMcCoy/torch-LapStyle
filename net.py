@@ -946,8 +946,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
             nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 3, (3, 3))
+                nn.Conv2d(64, 3, kernel_size=1)
             )
         ])
         '''
