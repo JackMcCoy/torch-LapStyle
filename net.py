@@ -938,13 +938,7 @@ class ThumbAdaConv(nn.Module):
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='nearest'),
             ),
-            nn.Sequential(
-                nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
-            ),
+
             nn.Sequential(
                 nn.Conv2d(64, 3, kernel_size=1)
             )
@@ -1048,10 +1042,11 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
-        x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
+        res = x
         x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
+        x = res + x
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
-        x = checkpoint(self.learnable[10], x, preserve_rng_state=False)
         return x, cb_loss
 
 
