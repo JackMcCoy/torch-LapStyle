@@ -496,7 +496,7 @@ def drafting_train():
             if (n + 1) % args.save_model_interval == 0 or (n + 1) == args.max_iter:
                 state_dict = dec_.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
-                           'decoder.pth.tar')
+                           'decoder_iter_{:d}.pth.tar'.format(n + 1))
                 state_dict = dec_optimizer.state_dict()
                 torch.save(copy.deepcopy(state_dict), save_dir /
                            'dec_optimizer.pth.tar')
