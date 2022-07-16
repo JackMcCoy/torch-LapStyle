@@ -933,10 +933,9 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='nearest'),
-                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='nearest'),
+                nn.Upsample(scale_factor=.5, mode='bilinear', align_corners=False),
             ),
 
             nn.Sequential(
