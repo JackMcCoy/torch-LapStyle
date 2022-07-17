@@ -370,10 +370,10 @@ def drafting_train():
     blur_iters = args.blur_iters
     wandb.watch(dec_, log_freq=args.log_every_, log='all')
     for n in tqdm(range(args.max_iter), position=0):
-        warmup_lr_adjust(dec_optimizer, n, warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
+        warmup_lr_adjust(dec_optimizer, max(n//args.accumulation_steps,1), warmup_start=args.warmup_start, warmup_iters=args.warmup_iters, max_lr=args.lr,
                          decay=args.lr_decay)
         if use_disc:
-            warmup_lr_adjust(opt_D, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
+            warmup_lr_adjust(opt_D, max(n//args.accumulation_steps,1), warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
                              decay=args.disc_lr)
         #warmup_lr_adjust(opt_D2, n, warmup_start=1e-7, warmup_iters=args.warmup_iters, max_lr=args.lr,
         #                 decay=args.disc_lr)
