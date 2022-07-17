@@ -836,21 +836,21 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear')
             ),
             nn.Identity(),
             nn.Identity(),
@@ -864,8 +864,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -882,8 +882,8 @@ class ThumbAdaConv(nn.Module):
             ), nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -893,8 +893,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                 nn.LeakyReLU(),
-                nn.Upsample(scale_factor=2, mode='bilinear'),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
