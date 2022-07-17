@@ -439,7 +439,7 @@ def drafting_train():
 
             dec_.train()
             disc_.eval()
-        if n%args.accumulation_steps == 0:
+        if (n+1)%args.accumulation_steps == 0:
             for param in dec_.parameters():
                 param.grad = None
         stylized, cb_loss = dec_(cF, sF['r4_1'])
