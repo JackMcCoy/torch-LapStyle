@@ -836,20 +836,23 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Identity(),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Identity(),
@@ -864,7 +867,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(512, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(256, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Sequential(
@@ -882,7 +886,8 @@ class ThumbAdaConv(nn.Module):
             ), nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(256, 128, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(128, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Sequential(
@@ -893,7 +898,8 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(128, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='nearest'),
+                BlurPool(64, filt_size=5, stride=1, pad_type='replicate'),
                 nn.LeakyReLU(),
             ),
             nn.Sequential(
@@ -939,7 +945,7 @@ class ThumbAdaConv(nn.Module):
             AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size),
             #StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
             #               kernel_size=self.kernel_size, adaconv_norm=False),
-            AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
+            #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
             #StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
             #               kernel_size=self.kernel_size, adaconv_norm=False),
         ])
@@ -1008,10 +1014,7 @@ class ThumbAdaConv(nn.Module):
         x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         x = res + x
-        res = x
-        x = checkpoint(self.attention_block[8], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
-        x = res + x
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x, cb_loss
 
