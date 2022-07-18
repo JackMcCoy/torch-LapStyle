@@ -69,7 +69,7 @@ class AdaConv2d(nn.Module):
         super().__init__()
         self.n_groups = in_channels if n_groups is None else n_groups
         self.in_channels = in_channels
-        self.out_channels = c_out if not c_out is None else c_in
+        self.out_channels = c_out if not c_out is None else in_channels
         self.norm = norm
 
         padding = (kernel_size - 1) / 2
