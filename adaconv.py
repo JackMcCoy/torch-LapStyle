@@ -67,7 +67,7 @@ class AdaConv(nn.Module):
         content_out = nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
-                                     groups=self.batch_groups
+                                     groups=N*self.batch_groups
                                      )
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
