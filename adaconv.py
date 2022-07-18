@@ -73,11 +73,13 @@ class AdaConv2d(nn.Module):
         self.norm = norm
 
         padding = (kernel_size - 1) / 2
+        '''
         self.conv = nn.Conv2d(in_channels=in_channels,
-                              out_channels=out_channels,
+                              out_channels=self.out_channels,
                               kernel_size=(kernel_size, kernel_size),
                               padding=(ceil(padding), floor(padding)),
                               padding_mode='reflect')
+        '''
 
     def forward(self, x, w_spatial, w_pointwise, bias):
         assert len(x) == len(w_spatial) == len(w_pointwise) == len(bias)
@@ -92,7 +94,7 @@ class AdaConv2d(nn.Module):
             ys.append(y)
         ys = torch.cat(ys, dim=0)
 
-        ys = self.conv(ys)
+        #ys = self.conv(ys)
         return ys
 
     def _forward_single(self, x, w_spatial, w_pointwise, bias):
