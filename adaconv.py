@@ -64,10 +64,12 @@ class AdaConv(nn.Module):
             predicted = F.instance_norm(predicted)
             #predicted = predicted * torch.rsqrt(torch.mean(predicted ** 2, dim=1, keepdim=True) + 1e-8)
         predicted = predicted.view(1,a*b,c,d)
+        print(predicted.shape)
+        print(depthwise.shape)
         content_out = nn.functional.conv2d(self.pad(predicted),
                                      weight=depthwise,
                                      stride=1,
-                                     groups=N*self.batch_groups
+                                     groups=self.batch_groups
                                      )
         content_out = nn.functional.conv2d(content_out,stride=1,
                 weight=pointwise_kn,
