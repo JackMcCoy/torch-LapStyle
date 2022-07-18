@@ -816,7 +816,7 @@ class ThumbAdaConv(nn.Module):
     def __init__(self, style_contrastive_loss=False,content_contrastive_loss=False,batch_size=8, s_d = 64, size=256):
         super(ThumbAdaConv, self).__init__()
         self.s_d = s_d
-        self.kernel_size = 5
+        self.kernel_size = 3
         self.ks = self.kernel_size if self.kernel_size>1 else 3
         depth = 2 if size>128 else 1
         self.style_encoding = nn.Sequential(
