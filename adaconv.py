@@ -25,7 +25,7 @@ class KernelPredictor(nn.Module):
         self.pointwise = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Conv2d(style_channels,
-                      self.out_channels * out_channels // n_groups,
+                      self.out_channels * self.out_channels // n_groups,
                       kernel_size=1)
         )
         self.bias = nn.Sequential(
