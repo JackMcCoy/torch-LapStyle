@@ -13,7 +13,7 @@ class KernelPredictor(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels if not out_channels is None else in_channels
         self.w_channels = style_channels
-        self.n_groups = n_groups
+        self.n_groups = in_channels//n_groups
         self.kernel_size = kernel_size
 
         padding = (kernel_size - 1) / 2
@@ -67,7 +67,7 @@ class AdaConv(nn.Module):
 class AdaConv2d(nn.Module):
     def __init__(self, in_channels, c_out = None, kernel_size=3, n_groups=None, norm = True):
         super().__init__()
-        self.n_groups = in_channels if n_groups is None else n_groups
+        self.n_groups = in_channels if n_groups is None else in_channels//n_groups
         self.in_channels = in_channels
         self.out_channels = c_out if not c_out is None else in_channels
         self.norm = norm
