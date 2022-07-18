@@ -18,14 +18,14 @@ class KernelPredictor(nn.Module):
 
         padding = (kernel_size - 1) / 2
         self.spatial = nn.Conv2d(style_channels,
-                                 in_channels * self.out_channels // n_groups,
+                                 in_channels * self.out_channels // self.n_groups,
                                  kernel_size=kernel_size,
                                  padding=(ceil(padding), ceil(padding)),
                                  padding_mode='zeros')
         self.pointwise = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Conv2d(style_channels,
-                      self.out_channels * self.out_channels // n_groups,
+                      self.out_channels * self.out_channels // self.n_groups,
                       kernel_size=1)
         )
         self.bias = nn.Sequential(
