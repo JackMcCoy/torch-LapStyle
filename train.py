@@ -266,7 +266,7 @@ style_iter = iter(data.DataLoader(
     num_workers=args.n_threads,pin_memory=True))
 '''
 
-url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar"
+url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar.gz"
 content_dataset = (
     wds.WebDataset(url)
     .shuffle(batch)
@@ -275,7 +275,7 @@ content_dataset = (
 )
 content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
-url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar"
+url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar.gz"
 style_dataset = (
     wds.WebDataset(url)
     .shuffle(batch)
