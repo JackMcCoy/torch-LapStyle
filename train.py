@@ -265,13 +265,13 @@ style_iter = iter(data.DataLoader(
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads,pin_memory=True))
 '''
-
+transform = train_transform(args.load_size, args.crop_size)
 url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar.gz"
 content_dataset = (
     wds.WebDataset(url)
     .shuffle(batch)
     .decode("pil")
-    .map(train_transform(args.load_size, args.crop_size))
+    .map(lambda x: transform(x['png']))
 )
 content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
@@ -280,7 +280,7 @@ style_dataset = (
     wds.WebDataset(url)
     .shuffle(batch)
     .decode("pil")
-    .map(train_transform(args.load_size, args.crop_size))
+    .map(lambda x: transform(x['png']))
 )
 style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch))
 
