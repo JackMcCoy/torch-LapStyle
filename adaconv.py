@@ -18,7 +18,7 @@ class KernelPredictor(nn.Module):
 
         padding = (kernel_size - 1) / 2
         self.spatial = nn.Conv2d(style_channels,
-                                 in_channels * (self.out_channels // self.n_groups),
+                                 in_channels * self.out_channels // self.n_groups,
                                  kernel_size=kernel_size,
                                  padding=(ceil(padding), ceil(padding)),
                                  padding_mode='zeros')
