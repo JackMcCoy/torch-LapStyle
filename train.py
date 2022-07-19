@@ -30,6 +30,7 @@ from sampler import InfiniteSamplerWrapper, SequentialSamplerWrapper, Similarity
 from torch.cuda.amp import autocast, GradScaler
 from function import CartesianGrid as Grid
 from randaugment import RandAugment
+import webdataset as wds
 
 #setup_torch(0)
 #warnings.simplefilter("ignore")
@@ -65,7 +66,8 @@ def train_transform(load_size, crop_size):
     transform_list = [
         transforms.Resize(size=(load_size, load_size)),
         transforms.RandomCrop(crop_size),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        content_normalize
     ]
     return transforms.Compose(transform_list)
 
@@ -240,19 +242,19 @@ def build_enc(vgg):
     enc.train(False)
     return enc
 
+batch = args.batch_size if args.style_contrastive_loss==0 else args.batch_size//2
 with autocast(enabled=ac_enabled):
     vgg = vgg.vgg
 
     vgg.load_state_dict(torch.load(args.vgg), strict=False)
     vgg = nn.Sequential(*list(vgg.children()))
-
+'''
     content_tf = style_transform(args.load_size, args.crop_size) if args.content_augment == 1 else train_transform(args.load_size, args.crop_size)
     style_tf = style_transform(args.style_load_size, args.crop_size) if args.style_augment == 1 else train_transform(args.style_load_size, args.crop_size)
 
     content_dataset = FlatFolderDataset(args.content_dir, content_tf)
     style_dataset = FlatFolderDataset(args.style_dir, style_tf)
 
-batch = args.batch_size if args.style_contrastive_loss==0 else args.batch_size//2
 content_iter = iter(data.DataLoader(
     content_dataset, batch_size=batch,
     sampler=InfiniteSamplerWrapper(content_dataset),
@@ -262,6 +264,25 @@ style_iter = iter(data.DataLoader(
     style_dataset, batch_size=batch,
     sampler=InfiniteSamplerWrapper(style_dataset),
     num_workers=args.n_threads,pin_memory=True))
+'''
+
+url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar"
+content_dataset = (
+    wds.WebDataset(url)
+    .shuffle(batch_size)
+    .decode("pil")
+    .map(train_transform(args.load_size, args.crop_size))
+)
+content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch_size))
+
+url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar"
+style_dataset = (
+    wds.WebDataset(url)
+    .shuffle(batch_size)
+    .decode("pil")
+    .map(train_transform(args.load_size, args.crop_size))
+)
+style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch_size))
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
@@ -395,8 +416,8 @@ def drafting_train():
         ci = ci.to(device)
         si = si.to(device)
         with torch.no_grad():
-            ci = content_normalize(ci)
-            si = style_normalize(si)
+            #ci = content_normalize(ci)
+            #si = style_normalize(si)
             cF = enc_(ci)
             sF = enc_(si)
         if use_disc:
