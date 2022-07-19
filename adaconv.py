@@ -25,7 +25,7 @@ class KernelPredictor(nn.Module):
         self.pointwise = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Conv2d(style_channels,
-                      self.out_channels * (self.out_channels // self.n_groups),
+                      self.out_channels * self.out_channels,
                       kernel_size=1)
         )
         self.bias = nn.Sequential(
@@ -45,7 +45,7 @@ class KernelPredictor(nn.Module):
         w_pointwise = self.pointwise(w)
         w_pointwise = w_pointwise.reshape(len(w),
                                           self.out_channels,
-                                          self.out_channels // self.n_groups,
+                                          self.out_channels,
                                           1, 1)
 
         bias = self.bias(w)
@@ -105,5 +105,5 @@ class AdaConv2d(nn.Module):
 
         x = F.pad(x, pad=pad, mode='reflect')
         x = F.conv2d(x, w_spatial, groups=self.n_groups)
-        x = F.conv2d(x, w_pointwise, groups=self.n_groups, bias=bias)
+        x = F.conv2d(x, w_pointwise, bias=bias)
         return x
