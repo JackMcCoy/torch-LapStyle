@@ -273,7 +273,7 @@ content_dataset = (
     .decode("pil")
     .map(train_transform(args.load_size, args.crop_size))
 )
-content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch_size))
+content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
 url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar"
 style_dataset = (
@@ -282,7 +282,7 @@ style_dataset = (
     .decode("pil")
     .map(train_transform(args.load_size, args.crop_size))
 )
-style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch_size))
+style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch))
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
