@@ -271,7 +271,7 @@ content_dataset = (
     wds.WebDataset(url)
     .shuffle(batch)
     .decode("pil")
-    .map(lambda x: transform(x['png']))
+    .map(lambda x: transform(x['jpg']))
 )
 content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
