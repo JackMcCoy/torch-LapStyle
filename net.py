@@ -957,7 +957,7 @@ class ThumbAdaConv(nn.Module):
 
             nn.Identity(),
             #AdaConv(64, 8, s_d=self.s_d, norm=True, kernel_size = self.kernel_size),
-            StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, ng=8, heads=1, size=size,
+            StyleAttention(64, s_d=s_d, batch_size=batch_size, ng=8, heads=1, size=size,
                            kernel_size=self.kernel_size, adaconv_norm=False),
             #AdaConv(64, 8, s_d=self.s_d, batch_size=batch_size, norm=True, kernel_size = self.kernel_size)
             #StyleAttention(64, ng=8, s_d=s_d, batch_size=batch_size, heads=1, size=size,
