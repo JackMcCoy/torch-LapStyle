@@ -35,6 +35,13 @@ class KernelPredictor(nn.Module):
                       kernel_size=1)
         )
 
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.xavier_normal_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0)
+            m.requires_grad = True
+
     def forward(self, w):
         w_spatial = self.spatial(w)
         w_spatial = w_spatial.reshape(len(w),
