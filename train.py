@@ -269,7 +269,7 @@ style_iter = iter(data.DataLoader(
 url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar"
 content_dataset = (
     wds.WebDataset(url)
-    .shuffle(batch_size)
+    .shuffle(batch)
     .decode("pil")
     .map(train_transform(args.load_size, args.crop_size))
 )
@@ -278,7 +278,7 @@ content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, b
 url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar"
 style_dataset = (
     wds.WebDataset(url)
-    .shuffle(batch_size)
+    .shuffle(batch)
     .decode("pil")
     .map(train_transform(args.load_size, args.crop_size))
 )
