@@ -832,6 +832,7 @@ class ThumbAdaConv(nn.Module):
         # p = 3 if size==256 else 1
         ks = 3
         p = 1
+        '''
         self.residual = nn.ModuleList([
             nn.Identity(),
             nn.Sequential(
@@ -858,6 +859,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
             nn.Identity(),
         ])
+        '''
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
@@ -1000,35 +1002,35 @@ class ThumbAdaConv(nn.Module):
         c_in = cF['r4_1'] + self.position
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
-        res = checkpoint(self.residual[1], x, preserve_rng_state=False)
+        #res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
-        x = x + res
+        #x = x + res
         # in = 256 ch
-        res = x
+        #res = x
         x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
-        x = x + res
+        #x = x + res
         #####
-        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        #res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
-        x = x + res
+        #x = x + res
         #####
-        res = x
+        #res = x
         x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
-        x = res + x
+        #x = res + x
         # in = 128 ch
-        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        #res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
-        x = x + res
+        #x = x + res
         ######
         # in = 64 ch
-        res = x
+        #res = x
         x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
-        x = res + x
+        #x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x, cb_loss
