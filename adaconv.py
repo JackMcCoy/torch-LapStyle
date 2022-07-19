@@ -64,8 +64,8 @@ class KernelPredictor(nn.Module):
 class AdaConv(nn.Module):
     def __init__(self, in_channels, n_groups, s_d = 64, c_out = None, kernel_size=3, norm = True):
         super().__init__()
-        self.kernel_predictor = KernelPredictor(in_channels, n_groups, c_out, s_d, kernel_size)
-        self.conv = AdaConv2d(in_channels, c_out = in_channels, kernel_size=kernel_size, n_groups = n_groups, norm=norm)
+        self.kernel_predictor = KernelPredictor(in_channels, n_groups, in_channels, s_d, kernel_size)
+        self.conv = AdaConv2d(in_channels, c_out = c_out, kernel_size=kernel_size, n_groups = n_groups, norm=norm)
     def forward(self, style_enc, x):
         w_spatial, w_pointwise, bias = self.kernel_predictor(style_enc)
         x = self.conv(x, w_spatial, w_pointwise, bias)
