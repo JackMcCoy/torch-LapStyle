@@ -981,10 +981,10 @@ class ThumbAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b,C,h,w = cF['r4_1'].shape
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks, self.ks)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks*self.ks)
         style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         #cb_loss = 0
-        #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
+        style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
         c_in = self.content_project(cF['r4_1']) + self.position
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
