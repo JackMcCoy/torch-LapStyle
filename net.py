@@ -1147,8 +1147,8 @@ class AttentionAdaConv(nn.Module):
                                               orthogonal_reg_active_codes_only=False,
                                               codebook_dim=self.s_d // 2)
         '''
-        self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
-        self.content_project = nn.Conv2d(512,512,kernel_size=1)
+        #self.channelwise_quantize = VectorQuantize(dim=self.kernel_size ** 2, codebook_size=1200, decay=0.8)
+        #self.content_project = nn.Conv2d(512,512,kernel_size=1)
         self.attention_block = nn.ModuleList([
             StyleAttention(512, s_d=s_d, batch_size=batch_size, heads=16, size=int(size / 2 ** 3),\
                            kernel_size = self.kernel_size, adaconv_norm=False, norm_queries=True),
@@ -1202,11 +1202,11 @@ class AttentionAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b,C,h,w = cF['r4_1'].shape
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks*self.ks)
-        style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks, self.ks)
+        #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         #cb_loss = 0
-        style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
-        c_in = self.content_project(cF['r4_1']) + self.position
+        #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
+        c_in = cF['r4_1'] + self.position
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
         res = checkpoint(self.residual[1], x, preserve_rng_state=False)
