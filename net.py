@@ -1062,7 +1062,23 @@ class AttentionAdaConv(nn.Module):
                 nn.GELU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
-
+            nn.Identity(),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear'),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Sequential(
+                nn.Conv2d(128, 64, kernel_size=1),
+                nn.Upsample(scale_factor=4, mode='bilinear'),
+                nn.LeakyReLU(),
+                nn.Upsample(scale_factor=.5, mode='bilinear'),
+            ),
+            nn.Identity(),
+            nn.Identity(),
             ])
 
         self.learnable = nn.ModuleList([
@@ -1202,10 +1218,10 @@ class AttentionAdaConv(nn.Module):
     def forward(self, cF: torch.Tensor, sF, calc_style=True, style_norm= None):
         b,C,h,w = cF['r4_1'].shape
         style_enc = self.style_encoding(sF).flatten(1)
-        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks*self.ks)
-        style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
+        style_enc = self.projection(style_enc).view(b, self.s_d, self.ks,self.ks)
+        #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
         #cb_loss = 0
-        style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
+        #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
         c_in = self.content_project(cF['r4_1']) + self.position
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
         x = x + checkpoint(self.learnable[0], x, preserve_rng_state=False)
@@ -1216,29 +1232,31 @@ class AttentionAdaConv(nn.Module):
         # in = 256 ch
         #res = x
         x = x + checkpoint(self.attention_block[2], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[2], x, preserve_rng_state=False)
+        res = checkpoint(self.residual[4], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[2], x, preserve_rng_state=False)
         #x = x + res
         #####
-        #res = checkpoint(self.residual[4], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[3], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[4], x, preserve_rng_state=False)
-        #x = x + res
+        x = x + res
         #####
         #res = x
         x = x + checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[5], x, preserve_rng_state=False)
+        res = checkpoint(self.residual[6], x, preserve_rng_state=False)
+        x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         #x = res + x
         # in = 128 ch
-        #res = checkpoint(self.residual[6], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[6], x, preserve_rng_state=False)
-        #x = x + res
+        x = x + res
         ######
         # in = 64 ch
         #res = x
         x = x + checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
-        x = x + checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        res = x
+        x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
         #x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
+        x = res + x
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
         return x, cb_loss
 

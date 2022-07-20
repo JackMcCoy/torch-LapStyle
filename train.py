@@ -275,7 +275,7 @@ def get_img(dict):
         return transform(dict['jpeg'])
     else:
         return None
-url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..20}.tar.gz"
+url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..9}.tar.gz"
 content_dataset = (
     wds.WebDataset(url)
     .shuffle(1000)
@@ -284,7 +284,7 @@ content_dataset = (
 )
 content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
-url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..20}.tar.gz"
+url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..19}.tar.gz"
 style_dataset = (
     wds.WebDataset(url)
     .shuffle(1000)
