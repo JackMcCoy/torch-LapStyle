@@ -39,15 +39,16 @@ class BiasUpsample(nn.Module):
         super().__init__()
         self.ada_noise = AdaNoiseWeights(dim, s_d=s_d,
                                          kernel_size=kernel_size)
-        self.fun = nn.Sequential(
+        self.up = nn.Upsample(scale_factor=4, mode='bilinear'),
+        self.act_down = nn.Sequential(
             Bias(dim),
-            nn.Upsample(scale_factor=4, mode='bilinear'),
             nn.LeakyReLU(),
             nn.Upsample(scale_factor=.5, mode='bilinear'),
         )
     def forward(self, style_enc, x):
+        x = self.up(x)
         x = self.ada_noise(style_enc, x)
-        x = self.fun(x)
+        x = self.act_down(x)
         return x
 
 
