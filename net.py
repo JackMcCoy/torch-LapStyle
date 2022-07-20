@@ -1204,7 +1204,7 @@ class AttentionAdaConv(nn.Module):
         style_enc = self.style_encoding(sF).flatten(1)
         style_enc = self.projection(style_enc).view(b, self.s_d, self.ks, self.ks)
         #style_enc, _, cb_loss = self.channelwise_quantize(style_enc)
-        #cb_loss = 0
+        cb_loss = 0
         #style_enc = style_enc.view(b, self.s_d, self.ks, self.ks)
         c_in = cF['r4_1'] + self.position
         x = checkpoint(self.attention_block[0], style_enc, c_in, preserve_rng_state=False)
