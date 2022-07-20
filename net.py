@@ -1067,14 +1067,14 @@ class AttentionAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
             nn.Identity(),
             nn.Sequential(
                 nn.Conv2d(128, 64, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
             nn.Identity(),
