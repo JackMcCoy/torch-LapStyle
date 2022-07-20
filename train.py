@@ -282,7 +282,7 @@ content_dataset = (
     .decode("pil")
     .map(get_img)
 )
-content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
+content_iter = iter(wds.WebLoader(content_dataset, resampled=True, num_workers=args.n_threads, batch_size=batch))
 
 url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..19}.tar.gz"
 style_dataset = (
@@ -291,7 +291,7 @@ style_dataset = (
     .decode("pil")
     .map(get_img)
 )
-style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch))
+style_iter = iter(wds.WebLoader(style_dataset, resampled=True, num_workers=args.n_threads, batch_size=batch))
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
@@ -335,7 +335,7 @@ def drafting_train():
     num_rev = 0
     use_disc = args.discriminator == 1
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, args.crop_size, args.crop_size))), strict=False)
-    dec_ = net.AttentionAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
+    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
                             s_d=args.s_d,size=args.crop_size).to(device)
     if args.load_disc == 1:
@@ -490,7 +490,7 @@ def drafting_train():
                mdog * args.mdog_weight + pixel_loss * args.pixel_loss
 
         loss.backward()
-        _clip_gradient(dec_)
+        #_clip_gradient(dec_)
         dec_optimizer.step()
         #disc_.train()
         #disc2_.train()
