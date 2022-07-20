@@ -838,7 +838,7 @@ class ThumbAdaConv(nn.Module):
             nn.Sequential(
                 nn.Conv2d(512, 256, kernel_size=1),
                 nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
+                nn.GELU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ),
 
