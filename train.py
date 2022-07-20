@@ -277,21 +277,21 @@ def get_img(dict):
         return None
 url = "/content/gdrive/My Drive/img_style/coco/stuff-{00..9}.tar.gz"
 content_dataset = (
-    wds.WebDataset(url)
+    wds.WebDataset(url, resampled=True,)
     .shuffle(1000)
     .decode("pil")
     .map(get_img)
 )
-content_iter = iter(wds.WebLoader(content_dataset, resampled=True, num_workers=args.n_threads, batch_size=batch))
+content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
 url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..19}.tar.gz"
 style_dataset = (
-    wds.WebDataset(url)
+    wds.WebDataset(url, resampled=True,)
     .shuffle(1000)
     .decode("pil")
     .map(get_img)
 )
-style_iter = iter(wds.WebLoader(style_dataset, resampled=True, num_workers=args.n_threads, batch_size=batch))
+style_iter = iter(wds.WebLoader(style_dataset, num_workers=args.n_threads, batch_size=batch))
 
 remd_loss = True if args.remd_loss==1 else 0
 mdog_loss = True if args.mdog_loss==1 else 0
