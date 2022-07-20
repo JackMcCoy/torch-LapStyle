@@ -107,3 +107,27 @@ class AdaConv2d(nn.Module):
         x = F.conv2d(x, w_spatial, groups=self.n_groups)
         x = F.conv2d(x, w_pointwise, groups=self.n_groups, bias=bias)
         return x
+
+class AdaNoiseWeights(nn.Module):
+    def __init__(self, dim, s_d = 64, kernel_size=3):
+        super().__init__()
+        self.dim = dim
+        self.style_channels = s_d
+        self.kernel_size = kernel_size
+        self.mean_est = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Conv2d(style_channels,
+                      self.dim,
+                      kernel_size=1))
+        self.std_est = nn.Sequential(
+            nn.Conv2d(style_channels,
+                      self.dim,
+                      kernel_size=self.kernel_size),
+            nn.ReLU())
+    def forward(self, style_enc, x):
+        b, C, h, w = x.size()
+        mean = self.mean_est(style_enc).expand(b,C,h,w)
+        std = self.std_est(style_enc).expand(b,C,h,w)
+        normal = torch.normal(mean,std)
+        x = x + normal
+        return x

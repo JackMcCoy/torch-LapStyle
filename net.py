@@ -24,7 +24,7 @@ from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GAN
 from einops.layers.torch import Rearrange
 from vqgan import VQGANLayers, Quantize_No_Transformer, TransformerOnly
 from linear_attention_transformer import LinearAttentionTransformer as Transformer
-from adaconv import AdaConv
+from adaconv import AdaConv, AdaNoiseWeights
 from vector_quantize_pytorch import VectorQuantize
 from function import positionalencoding2d as pos_enc
 import copy
@@ -860,6 +860,12 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
         ])
         '''
+        self.noise_weights = nn.ModulesList([
+            AdaNoiseWeights(256, s_d=s_d),
+            AdaNoiseWeights(128, s_d=s_d),
+            AdaNoiseWeights(64, s_d=s_d),
+            AdaNoiseWeights(64, s_d=s_d),
+        ])
         self.learnable = nn.ModuleList([
             nn.Sequential(
                 nn.ReflectionPad2d((p, p, p, p)),
@@ -1004,6 +1010,7 @@ class ThumbAdaConv(nn.Module):
         #res = checkpoint(self.residual[1], x, preserve_rng_state=False)
         # quarter res
         x = checkpoint(self.learnable[1], x, preserve_rng_state=False)
+        x = checkpoint(self.noise_weights[0], style_enc, x, preserve_rng_state=True)
         #x = x + res
         # in = 256 ch
         #res = x
@@ -1017,6 +1024,7 @@ class ThumbAdaConv(nn.Module):
         #x = x + res
         #####
         #res = x
+        x = checkpoint(self.noise_weights[1], style_enc, x, preserve_rng_state=True)
         x = checkpoint(self.attention_block[5], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[5], x, preserve_rng_state=False)
         #x = res + x
@@ -1027,8 +1035,10 @@ class ThumbAdaConv(nn.Module):
         ######
         # in = 64 ch
         #res = x
+        x = checkpoint(self.noise_weights[2], style_enc, x, preserve_rng_state=True)
         x = checkpoint(self.attention_block[7], style_enc, x, preserve_rng_state=False)
         x = checkpoint(self.learnable[7], x, preserve_rng_state=False)
+        x = checkpoint(self.noise_weights[3], style_enc, x, preserve_rng_state=True)
         #x = res + x
         x = checkpoint(self.learnable[8], x, preserve_rng_state=False)
         x = checkpoint(self.learnable[9], x, preserve_rng_state=False)
