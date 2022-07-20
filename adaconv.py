@@ -116,11 +116,11 @@ class AdaNoiseWeights(nn.Module):
         self.kernel_size = kernel_size
         self.mean_est = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(style_channels,
+            nn.Conv2d(self.style_channels,
                       self.dim,
                       kernel_size=1))
         self.std_est = nn.Sequential(
-            nn.Conv2d(style_channels,
+            nn.Conv2d(self.style_channels,
                       self.dim,
                       kernel_size=self.kernel_size),
             nn.ReLU())
