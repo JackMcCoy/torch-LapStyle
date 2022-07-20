@@ -18,7 +18,7 @@ from deformable_attention import DeformableAttention2D
 from gaussian_diff import xdog, make_gaussians
 from function import whiten,adaptive_instance_normalization as adain
 from function import get_embeddings, positionalencoding2d
-from modules import RelPosEmb, StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
+from modules import BiasUpsample, RelPosEmb, StyleNERFUpsample,ETF,GaussianNoise, ScaleNorm, BlurPool, ConvMixer, ResBlock, ConvBlock, WavePool, WaveUnpool, SpectralResBlock, RiemannNoise, PixelShuffleUp, Upblock, Downblock, adaconvs, StyleEncoderBlock, Bias,FusedConvNoiseBias
 from cuda.fused_act import FusedLeakyReLU
 from losses import CalcStyleEmdNoSample, CalcContentReltNoSample, pixel_loss,GANLoss, CalcContentLoss, CalcContentReltLoss, CalcStyleEmdLoss, CalcStyleLoss, GramErrors, EdgeLoss
 from einops.layers.torch import Rearrange
@@ -861,9 +861,9 @@ class ThumbAdaConv(nn.Module):
         ])
         '''
         self.noise_weights = nn.ModuleList([
-            AdaNoiseWeights(256, s_d=s_d),
-            AdaNoiseWeights(128, s_d=s_d),
-            AdaNoiseWeights(64, s_d=s_d),
+            BiasUpsample(256, s_d=s_d),
+            BiasUpsample(128, s_d=s_d),
+            BiasUpsample(64, s_d=s_d),
             AdaNoiseWeights(64, s_d=s_d),
         ])
         self.learnable = nn.ModuleList([
@@ -876,10 +876,7 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(512, 256, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
+                nn.Conv2d(512, 256, (3, 3), bias=False),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -901,10 +898,7 @@ class ThumbAdaConv(nn.Module):
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
             ), nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(256, 128, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
+                nn.Conv2d(256, 128, (3, 3), bias=False),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
@@ -915,19 +909,17 @@ class ThumbAdaConv(nn.Module):
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(128, 64, (3, 3), bias=True),
-                nn.Upsample(scale_factor=4, mode='bilinear'),
-                nn.LeakyReLU(),
-                nn.Upsample(scale_factor=.5, mode='bilinear'),
+                nn.Conv2d(128, 64, (3, 3), bias=False),
             ),
             nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
-                nn.Conv2d(64, 64, (3, 3), bias=True),
+                nn.Conv2d(64, 64, (3, 3), bias=False),
+            ),
+            nn.Sequential(
+                Bias(64),
                 nn.Upsample(scale_factor=2, mode='bilinear'),
                 nn.LeakyReLU(),
                 nn.Upsample(scale_factor=.5, mode='bilinear'),
-            ),
-            nn.Sequential(
                 nn.ReflectionPad2d((1, 1, 1, 1)),
                 nn.Conv2d(64, 64, (3, 3), bias=True),
                 nn.Upsample(scale_factor=2, mode='bilinear'),

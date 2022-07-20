@@ -5,7 +5,7 @@ import typing
 import math
 from function import normalized_feat
 from gaussian_diff import gaussian
-from adaconv import AdaConv
+from adaconv import AdaConv, AdaNoiseWeights
 import numpy as np
 from torch.nn import functional as F
 from cuda.fused_act import FusedLeakyReLU
@@ -32,6 +32,24 @@ def relative_logits_1d(q, rel_k):
     logits = logits.reshape(b, heads, h, w, w)
     logits = expand_dim(logits, dim = 3, k = h)
     return logits
+
+
+class BiasUpsample(nn.Module):
+    def __init__(self, dim, s_d = 64, kernel_size=3):
+        super().__init__()
+        self.ada_noise = AdaNoiseWeights(dim, s_d=s_d,
+                                         kernel_size=kernel_size)
+        self.fun = nn.Sequential(
+            Bias(dim),
+            nn.Upsample(scale_factor=4, mode='bilinear'),
+            nn.LeakyReLU(),
+            nn.Upsample(scale_factor=.5, mode='bilinear'),
+        )
+    def forward(self, style_enc, x):
+        x = self.ada_noise(style_enc, x)
+        x = self.fun(x)
+        return x
+
 
 class RelPosEmb(nn.Module):
     def __init__(
