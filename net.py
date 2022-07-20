@@ -860,7 +860,7 @@ class ThumbAdaConv(nn.Module):
             nn.Identity(),
         ])
         '''
-        self.noise_weights = nn.ModulesList([
+        self.noise_weights = nn.ModuleList([
             AdaNoiseWeights(256, s_d=s_d),
             AdaNoiseWeights(128, s_d=s_d),
             AdaNoiseWeights(64, s_d=s_d),
