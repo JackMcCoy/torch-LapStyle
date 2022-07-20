@@ -39,7 +39,7 @@ class BiasUpsample(nn.Module):
         super().__init__()
         self.ada_noise = AdaNoiseWeights(dim, s_d=s_d,
                                          kernel_size=kernel_size)
-        self.up = nn.Upsample(scale_factor=4, mode='bilinear'),
+        self.up = nn.Upsample(scale_factor=4, mode='bilinear')
         self.act_down = nn.Sequential(
             Bias(dim),
             nn.LeakyReLU(),
