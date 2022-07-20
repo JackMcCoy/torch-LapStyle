@@ -25,7 +25,7 @@ class KernelPredictor(nn.Module):
         self.pointwise = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Conv2d(style_channels,
-                      self.out_channels * self.out_channels,
+                      self.out_channels * (self.out_channels // self.n_groups),
                       kernel_size=1)
         )
         self.bias = nn.Sequential(
@@ -34,13 +34,6 @@ class KernelPredictor(nn.Module):
                       self.out_channels,
                       kernel_size=1)
         )
-
-    @staticmethod
-    def _init_weights(m):
-        if isinstance(m, nn.Conv2d):
-            nn.init.xavier_normal_(m.weight.data)
-            nn.init.constant_(m.bias.data, 0)
-            m.requires_grad = True
 
     def forward(self, w):
         w_spatial = self.spatial(w)
@@ -52,7 +45,7 @@ class KernelPredictor(nn.Module):
         w_pointwise = self.pointwise(w)
         w_pointwise = w_pointwise.reshape(len(w),
                                           self.out_channels,
-                                          self.out_channels,
+                                          self.out_channels // self.n_groups,
                                           1, 1)
 
         bias = self.bias(w)
@@ -80,13 +73,13 @@ class AdaConv2d(nn.Module):
         self.norm = norm
 
         padding = (kernel_size - 1) / 2
-
-        self.conv = nn.Conv2d(in_channels=self.out_channels,
+        '''
+        self.conv = nn.Conv2d(in_channels=in_channels,
                               out_channels=self.out_channels,
                               kernel_size=(kernel_size, kernel_size),
                               padding=(ceil(padding), floor(padding)),
                               padding_mode='reflect')
-
+        '''
 
     def forward(self, x, w_spatial, w_pointwise, bias):
         assert len(x) == len(w_spatial) == len(w_pointwise) == len(bias)
@@ -101,7 +94,7 @@ class AdaConv2d(nn.Module):
             ys.append(y)
         ys = torch.cat(ys, dim=0)
 
-        ys = self.conv(ys)
+        #ys = self.conv(ys)
         return ys
 
     def _forward_single(self, x, w_spatial, w_pointwise, bias):
@@ -112,5 +105,5 @@ class AdaConv2d(nn.Module):
 
         x = F.pad(x, pad=pad, mode='reflect')
         x = F.conv2d(x, w_spatial, groups=self.n_groups)
-        x = F.conv2d(x, w_pointwise, bias=bias)
+        x = F.conv2d(x, w_pointwise, groups=self.n_groups, bias=bias)
         return x
