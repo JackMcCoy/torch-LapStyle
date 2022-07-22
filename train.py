@@ -284,7 +284,7 @@ content_dataset = (
 )
 content_iter = iter(wds.WebLoader(content_dataset, num_workers=args.n_threads, batch_size=batch))
 
-url = "/content/gdrive/My Drive/img_style/wikiart/data-{00..19}.tar.gz"
+url = "/content/gdrive/My Drive/img_style/wikiart/data-{20..39}.tar.gz"
 style_dataset = (
     wds.WebDataset(url, resampled=True,)
     .shuffle(1000)
