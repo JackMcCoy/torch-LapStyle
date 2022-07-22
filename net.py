@@ -1927,9 +1927,9 @@ def loss_no_patch(stylized: torch.Tensor,
                            morphs=1)
     cdogF = encoder(stylized_dog)
 
-    mxdog_content = content_loss.no_norm(stylized_feats['r3_3'], cXF['r3_3'])
-    mxdog_content_contraint = content_loss.no_norm(cdogF['r3_3'], cXF['r3_3'])
-    mxdog_style = mse_loss(cdogF['r3_3'], sXF['r3_3'])
+    mxdog_content = content_loss.no_norm(stylized_feats['r4_1'], cXF['r4_1'])
+    mxdog_content_contraint = content_loss.no_norm(cdogF['r4_1'], cXF['r4_1'])
+    mxdog_style = mse_loss(cdogF['r4_1'], sXF['r4_1'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
     '''
     s_contrastive_loss = 0
