@@ -1885,8 +1885,8 @@ def loss_no_patch(stylized: torch.Tensor,
     style_remd = 0
     content_relt = 0
     #loss_c = 0
-    l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
-    l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
+    #l_identity1, l_identity2 = identity_loss(ci, cF, encoder, decoder)
+    #l_identity3, l_identity4 = identity_loss(si, sF, encoder, decoder)
     #cb_loss = cb_loss + cb
     stylized_feats = encoder(stylized)
     #loss_c = content_loss(stylized_feats['r5_1'], cF['r5_1'].detach())
@@ -1899,9 +1899,9 @@ def loss_no_patch(stylized: torch.Tensor,
     loss_s = loss_s + style_loss(stylized_feats['r3_1'], sF['r3_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r4_1'], sF['r4_1'].detach())
     loss_s = loss_s + style_loss(stylized_feats['r5_1'], sF['r5_1'].detach())
-    style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1'])
-    style_remd = style_remd + CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
-    content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
+    #style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1'])
+    #style_remd = style_remd + CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
+    #content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
     #content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
     p_loss = 0
     #p_loss = pixel_loss(stylized, si)
@@ -1918,7 +1918,7 @@ def loss_no_patch(stylized: torch.Tensor,
     '''
     fake_loss = disc2_(random_crop(stylized))
     loss_Gp_GAN_patch = calc_GAN_loss_from_pred(fake_loss, True)
-    '''
+    
     cX, _ = xdog(torch.clip(ci, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
     sX, _ = xdog(torch.clip(si, min=0, max=1), gaus_1, gaus_2, morph, gamma=.9, morph_cutoff=8.85, morphs=1)
     cXF = encoder(cX)
@@ -1931,7 +1931,7 @@ def loss_no_patch(stylized: torch.Tensor,
     mxdog_content_contraint = content_loss.no_norm(cdogF['r4_1'], cXF['r4_1'])
     mxdog_style = mse_loss(cdogF['r4_1'], sXF['r4_1'])
     mxdog_losses = mxdog_content * .3 + mxdog_content_contraint * 100 + mxdog_style * 1000
-    '''
+    
     s_contrastive_loss = 0
     c_contrastive_loss = 0
     half = stylized_feats['r4_1'].shape[0] // 2
@@ -2010,7 +2010,7 @@ def loss_no_patch(stylized: torch.Tensor,
 
         c_contrastive_loss = c_contrastive_loss + compute_contrastive_loss(reference_content, content_comparisons,
     '''
-    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, mxdog_losses, 0, 0, p_loss, cb_loss # gan, patch_gan,mxdog, contrastive
+    return loss_c, loss_s, content_relt, style_remd, l_identity1, l_identity2, l_identity3, l_identity4, loss_Gp_GAN, 0, 0, 0, 0, p_loss, cb_loss # gan, patch_gan,mxdog, contrastive
 
 def calc_losses(stylized: torch.Tensor,
                 ci: torch.Tensor,
