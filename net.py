@@ -1902,7 +1902,7 @@ def loss_no_patch(stylized: torch.Tensor,
     style_remd = CalcStyleEmdNoSample(stylized_feats['r4_1'], sF['r4_1'])
     style_remd = style_remd + CalcStyleEmdNoSample(stylized_feats['r3_1'], sF['r3_1'])
     content_relt = CalcContentReltNoSample(stylized_feats['r4_1'], cF['r4_1'].detach())
-    content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
+    #content_relt = content_relt + CalcContentReltNoSample(stylized_feats['r3_1'], cF['r3_1'].detach())
     p_loss = 0
     #p_loss = pixel_loss(stylized, si)
     if disc_:
