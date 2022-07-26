@@ -335,7 +335,7 @@ def drafting_train():
     num_rev = 0
     use_disc = args.discriminator == 1
     enc_ = torch.jit.trace(build_enc(vgg), (torch.rand((args.batch_size, 3, args.crop_size, args.crop_size))), strict=False)
-    dec_ = net.ThumbAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
+    dec_ = net.AttentionAdaConv(style_contrastive_loss=args.style_contrastive_loss == 1,
                             content_contrastive_loss=args.content_contrastive_loss == 1, batch_size=args.batch_size,
                             s_d=args.s_d,size=args.crop_size).to(device)
     if args.load_disc == 1:
