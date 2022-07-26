@@ -74,7 +74,7 @@ class AdaConv2d(nn.Module):
 
         padding = (kernel_size - 1) / 2
 
-        self.conv = nn.Conv2d(in_channels=in_channels,
+        self.conv = nn.Conv2d(in_channels=self.out_channels,
                               out_channels=self.out_channels,
                               kernel_size=(kernel_size, kernel_size),
                               padding=(ceil(padding), floor(padding)),
